@@ -1,4 +1,8 @@
 # WaterEvents tools deps. curl_cffi=fetch, pypdf/pdfplumber=pdf, python-pptx=slides, faster-whisper=audio.
+# patchright=stealth browser render+screenshot (watercrawl.pool), openai=vLLM OpenAI-compat client (qwen_llm.client).
+playwright>=1.40          # DEFAULT headless render path (watercrawl.pool._launch line 94); needs `playwright install chromium`
+patchright>=1.40          # stealth fork for the residential/webshare fallback path only; `patchright install chromium`
+openai>=1.40              # AsyncOpenAI → talks to the local vLLM Qwen-VL server (OpenAI-compatible API)
 curl_cffi>=0.7
 pypdf>=4.0
 pdfplumber>=0.11
