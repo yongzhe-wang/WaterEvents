@@ -7,7 +7,7 @@
 # Client sends OpenAI vision messages: {"type":"image_url","image_url":{"url":"data:image/png;base64,..."}}.
 set -euo pipefail
 MODEL="${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}"
-GPU="${GPU:-3}"; PORT="${PORT:-8003}"; TP="${TP:-1}"
+GPU="${GPU:-0}"; PORT="${PORT:-8000}"; TP="${TP:-1}"
 export HF_HOME="${HF_HOME:-/mnt/data/hf_cache}"; export VLLM_LOGGING_LEVEL=WARNING
 mkdir -p /mnt/data/qwen_logs
 echo "[VL-7B] GPU $GPU port $PORT model $MODEL"

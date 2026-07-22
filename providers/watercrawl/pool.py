@@ -288,7 +288,7 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     async with _sem:
         ctx = await (browser or _browser).new_context(user_agent=_UA)
         try:
-            page = await _new_blocked_page(ctx)
+            page = await _new_shot_page(ctx)                 # shot path: keep CSS + images so the screenshot looks real
             await _goto(page, url)
             await _settle(page, wait_ms)
             try:
@@ -308,18 +308,59 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
             await ctx.close()
 
 
-def render_shot(url: str, wait_ms: int = 3000) -> tuple[str, list, str, str]:
-    """SYNC entry — open a page and return (text, links, html, screenshot_b64) for the LLM event extractor. text +
-    links feed the prompt; screenshot_b64 (JPEG, base64) feeds a Qwen-VL model. Best-effort: ("", [], "", "") when
-    the browser is unavailable or the render fails, so one bad page never raises into the crawl loop."""
-    if not _ensure_browser_blocking():
-        return "", [], "", ""
+def _shot_via(url: str, wait_ms: int, browser) -> tuple[str, list, str, str]:
+    """Run _render_shot_one on the loop → (text, links, html, shot_b64); ("", [], "", "") on any failure."""
     try:
-        fut = asyncio.run_coroutine_threadsafe(_render_shot_one(url, wait_ms), _loop)
+        fut = asyncio.run_coroutine_threadsafe(_render_shot_one(url, wait_ms, browser=browser), _loop)
         return fut.result(timeout=(_NAV_TIMEOUT_MS / 1000) + max(wait_ms, 0) / 1000 + 40)
-    except Exception as e:                                    # noqa: BLE001 — render failure must not sink the crawl loop
-        print(f"[watercrawl] render_shot failed for {url[:70]}: {type(e).__name__}: {e}", flush=True)
+    except Exception as e:                                    # noqa: BLE001 — a render failure must not sink the crawl loop
+        print(f"[watercrawl] render_shot ({'residential' if browser else 'render'}) failed for {url[:70]}: "
+              f"{type(e).__name__}: {e}", flush=True)
         return "", [], "", ""
+
+
+def render_shot(url: str, wait_ms: int = 3000) -> dict:
+    """SYNC entry — open a page with the fallback chain and return EVERYTHING the crawl needs + full traceability:
+        {"text", "links", "html", "shot_b64", "method"}
+    method ∈ "render" (headless Chromium), "residential" (patchright + webshare, for bot-walls), "impersonate"
+    (curl_cffi TLS bypass — NO browser so NO screenshot), or "" (all failed). text+links feed the prompt; shot_b64
+    (JPEG base64) feeds a Qwen-VL model. Best-effort: every field empty on total failure, never raises."""
+    empty = {"text": "", "links": [], "html": "", "shot_b64": "", "method": ""}
+
+    if not _ensure_browser_blocking():                       # no browser env → text-only impersonate is all we have
+        try:
+            from . import impersonate
+            it, il, ih = impersonate.fetch(url)
+            if it or il:
+                return {"text": it, "links": list(il), "html": ih or "", "shot_b64": "", "method": "impersonate"}
+        except Exception:                                    # noqa: BLE001
+            pass
+        return dict(empty)
+
+    # 1) headless render + full-page screenshot (the default, fastest path)
+    text, links, html, shot = _shot_via(url, wait_ms, browser=None)
+    if not _looks_walled(text, links):
+        return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render"}
+
+    # 2) walled → patchright residential render + screenshot (real browser from a residential IP, beats sensor.js)
+    if _browser_proxy is not None:
+        r_text, r_links, r_html, r_shot = _shot_via(url, wait_ms, browser=_browser_proxy)
+        if not _looks_walled(r_text, r_links):
+            return {"text": r_text, "links": list(r_links), "html": r_html, "shot_b64": r_shot, "method": "residential"}
+
+    # 3) still walled → curl_cffi impersonate (TLS/HTTP2 fingerprint bypass) — content only, NO screenshot
+    try:
+        from . import impersonate
+        i_text, i_links, i_html = impersonate.fetch(url)
+        if len(i_links) > len(links) or (i_text and not text):
+            return {"text": i_text, "links": list(i_links), "html": i_html or "", "shot_b64": "", "method": "impersonate"}
+    except Exception:                                        # noqa: BLE001
+        pass
+
+    # nothing beat the wall — return the headless render's (thin) result if it got anything, else empty
+    if text or links:
+        return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render"}
+    return dict(empty)
 
 
 async def _drive_years_seq(url: str, js_list: list, wait_ms: int) -> list:

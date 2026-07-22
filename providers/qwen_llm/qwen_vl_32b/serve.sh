@@ -9,7 +9,7 @@
 set -euo pipefail
 MODEL="${QWEN_MODEL:-Qwen/Qwen2.5-VL-32B-Instruct}"
 QUANT="${QUANT:-}"                                # set awq_marlin + an AWQ repo to shrink 64GB→~18GB
-GPU="${GPU:-4}"; PORT="${PORT:-8004}"; TP="${TP:-1}"
+GPU="${GPU:-1}"; PORT="${PORT:-8001}"; TP="${TP:-1}"
 export HF_HOME="${HF_HOME:-/mnt/data/hf_cache}"; export VLLM_LOGGING_LEVEL=WARNING
 mkdir -p /mnt/data/qwen_logs
 QFLAG=""; [ -n "$QUANT" ] && QFLAG="--quantization $QUANT"

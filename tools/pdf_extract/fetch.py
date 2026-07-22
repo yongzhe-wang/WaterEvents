@@ -19,7 +19,7 @@ _BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.
                "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 _SEC_UA = os.environ.get("SEC_USER_AGENT", "WaterEvents Research admin@focusalpha.io")
 _TIMEOUT_S = int(os.environ.get("PDF_FETCH_TIMEOUT_S", "25"))       # a real IR PDF returns in <5s; past 25s the host is dead
-_MAX_BYTES = int(os.environ.get("PDF_FETCH_MAX_BYTES", "18000000"))  # >18MB is almost always an image-only scan or a broken xref
+_MAX_BYTES = int(os.environ.get("PDF_FETCH_MAX_BYTES", "50000000"))  # 50MB — big enough for a full annual report (TMUS 2018 AR = 30MB); the 60-page text cap still bounds pypdf work
 
 
 def _host_is_public(host: str) -> bool:
