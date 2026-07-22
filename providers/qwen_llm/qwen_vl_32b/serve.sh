@@ -11,8 +11,8 @@ set -euo pipefail
 MODEL="${QWEN_MODEL:-Qwen/Qwen2.5-VL-32B-Instruct}"
 QUANT="${QUANT:-}"
 GPU="${GPU:-1}"; PORT="${PORT:-8001}"; TP="${TP:-2}"; GPU_UTIL="${GPU_UTIL:-0.70}"; MAXLEN="${MAXLEN:-16384}"
-export HF_HOME="${HF_HOME:-/mnt/data/hf_cache}"; export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
-mkdir -p /mnt/data/qwen_logs
+export HF_HOME="${HF_HOME:-/mnt/data/yongzhe/hf_cache}"; export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+mkdir -p /mnt/data/yongzhe/qwen_logs
 QFLAG=""; [ -n "$QUANT" ] && QFLAG="--quantization $QUANT"
 gpus=$(seq -s, "$GPU" $((GPU + TP - 1)))          # TP consecutive GPUs starting at $GPU
 
@@ -25,5 +25,5 @@ CUDA_VISIBLE_DEVICES="$gpus" PYTHONUNBUFFERED=1 HF_HUB_OFFLINE=1 \
   --model "$MODEL" --served-model-name qwen-vl $QFLAG \
   --tensor-parallel-size "$TP" --port "$PORT" \
   --max-model-len "$MAXLEN" --max-num-seqs 16 --gpu-memory-utilization "$GPU_UTIL" \
-  > "/mnt/data/qwen_logs/vl_32b.log" 2>&1 < /dev/null &
-echo "  PID $! → /mnt/data/qwen_logs/vl_32b.log (wait ~3-5min for 'Application startup complete')"
+  > "/mnt/data/yongzhe/qwen_logs/vl_32b.log" 2>&1 < /dev/null &
+echo "  PID $! → /mnt/data/yongzhe/qwen_logs/vl_32b.log (wait ~3-5min for 'Application startup complete')"

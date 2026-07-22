@@ -13,8 +13,8 @@
 set -euo pipefail
 MODEL="${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct}"
 GPU="${GPU:-0}"; PORT="${PORT:-8000}"; TP="${TP:-1}"; GPU_UTIL="${GPU_UTIL:-0.70}"; MAXLEN="${MAXLEN:-16384}"
-export HF_HOME="${HF_HOME:-/mnt/data/hf_cache}"; export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
-mkdir -p /mnt/data/qwen_logs
+export HF_HOME="${HF_HOME:-/mnt/data/yongzhe/hf_cache}"; export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+mkdir -p /mnt/data/yongzhe/qwen_logs
 
 # 1) pre-download weights (idempotent — skips if already cached) via the CN mirror
 echo "[VL-7B] ensuring weights cached ($MODEL) via $HF_ENDPOINT ..."
@@ -27,5 +27,5 @@ CUDA_VISIBLE_DEVICES="$GPU" PYTHONUNBUFFERED=1 HF_HUB_OFFLINE=1 \
   --model "$MODEL" --served-model-name qwen-vl \
   --tensor-parallel-size "$TP" --port "$PORT" \
   --max-model-len "$MAXLEN" --max-num-seqs 32 --gpu-memory-utilization "$GPU_UTIL" \
-  > "/mnt/data/qwen_logs/vl_7b.log" 2>&1 < /dev/null &
-echo "  PID $! → /mnt/data/qwen_logs/vl_7b.log (wait ~100s for 'Application startup complete')"
+  > "/mnt/data/yongzhe/qwen_logs/vl_7b.log" 2>&1 < /dev/null &
+echo "  PID $! → /mnt/data/yongzhe/qwen_logs/vl_7b.log (wait ~100s for 'Application startup complete')"

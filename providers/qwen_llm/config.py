@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import os
 
-# Model — Qwen2.5-Instruct. 7B is the throughput sweet spot for IR-page event extraction; 14B/32B for harder
-# reasoning (set QWEN_MODEL). vLLM downloads to HF_HOME (/mnt/data/hf_cache on the H20 box, 3.1T free).
-MODEL = os.environ.get("QWEN_MODEL", "Qwen/Qwen2.5-7B-Instruct")
-SERVED_NAME = "qwen"                                          # the --served-model-name the client asks for
+# Model — Qwen2.5-VL (VISION). The whole point of this project is layout-aware extraction: the model reads a
+# rendered-page SCREENSHOT so it can tell an events table from nav/footer/feed chrome — the signal text-only BERT
+# over-classifies on. 7B = throughput sweet spot; set QWEN_MODEL=Qwen/Qwen2.5-VL-32B-Instruct for the ceiling.
+# {SERVE.SH:27 "--served-model-name qwen-vl"} [CONFIDENCE: CONFIRMED 100% — serve.sh launches vLLM with this name;
+# the client asks for SERVED_NAME so it MUST equal the server's --served-model-name or every request 404s].
+MODEL = os.environ.get("QWEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct")
+SERVED_NAME = os.environ.get("QWEN_SERVED_NAME", "qwen-vl")   # MUST match serve.sh's --served-model-name (else 404)
 
 # Endpoint — the vLLM OpenAI-compatible server. One base URL; if you run N replicas, put a router in front and
 # point this at it (or pass a comma-list to the client for round-robin).
@@ -22,8 +25,10 @@ MAX_RETRIES = int(os.environ.get("QWEN_RETRIES", "2"))
 
 # Generation — deterministic extraction (temp 0), bounded output. IR pages need a JSON event list, not prose.
 TEMPERATURE = float(os.environ.get("QWEN_TEMPERATURE", "0.0"))
-# 16384 not 4096: the output is {events + routes}, and a link-heavy hub page can have 400 links → 400 route entries
-# ≈ 8k+ output tokens. At 4096 the JSON got TRUNCATED → parse fail → {} → the most event-rich hubs yielded nothing.
-# {AUDIT 2026-07-22 provider bug: MAX_TOKENS too low for the routes list}.
-MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "16384"))
+# 4096 output cap. VISION extraction emits ONLY an events array (no route list — the crawl's BFS handles link
+# discovery, not the model), so a few dozen events ≈ well under 4k tokens. Critically, max_tokens + input MUST fit
+# in the server's --max-model-len (16384): a full-page screenshot is ~1-1.5k image tokens + prompt, so 4096 output
+# leaves ample room. {SERVER 2026-07-23 400: "'max_tokens' ... too large: 16384 ... maximum context length is 16384"}
+# [CONFIDENCE: CONFIRMED 100% — vLLM rejects max_tokens>=max_model_len pre-flight; observed on the VL-7B smoke run].
+MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "4096"))
 MAX_INPUT_CHARS = int(os.environ.get("QWEN_MAX_INPUT_CHARS", "48000"))   # ~12-16k tokens; truncate huge pages

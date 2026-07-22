@@ -63,9 +63,15 @@ class QwenClient:
         """Build the OpenAI messages array. With image_b64 → a MULTIMODAL user turn (text + image) for Qwen-VL; the
         exact same call shape a text model just gets text, so the sender stays model-agnostic."""
         if image_b64:
+            # Sniff the real image mime from the base64 magic prefix so the data URI is honest regardless of the
+            # producer (watercrawl render_shot emits JPEG `type="jpeg"` → b64 starts "/9j/"; a PNG would start
+            # "iVBOR"). Keeps this transport layer format-agnostic — no caller has to declare the mime.
+            # {POOL.PY:302 "shot = await page.screenshot(full_page=True, type=\"jpeg\", quality=70)"}
+            # [CONFIDENCE: CONFIRMED 95% — JPEG/PNG b64 magic prefixes are fixed by the file-format headers]
+            mime = "image/jpeg" if image_b64.startswith("/9j/") else "image/png"
             user_content: object = [
                 {"type": "text", "text": user},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}},
+                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{image_b64}"}},
             ]
         else:
             user_content = user
