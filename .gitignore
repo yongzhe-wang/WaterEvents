@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Runtime / logs (live on the VM, never in git)
+*.log
+qwen_logs/
+
+# Model weights / checkpoints — live on the VM (/mnt/data/hf_cache) or GCP, NEVER in git or on the Mac
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+hf_cache/
+
+# Secrets
+.env
+*.key
