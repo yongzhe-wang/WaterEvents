@@ -25,13 +25,13 @@ filing, webcast, conference appearance, annual or special shareholder meeting, d
 several, and do NOT try to label which link is which. One event = one item carrying all its links.
    Only title/date/type may be empty; every event MUST have at least one url.
 
-2) "routes" — for EVERY OTHER link on the page (a link that is NOT part of any event above), decide whether the \
-crawler should FOLLOW it to discover MORE events:
-     - go_deeper=true  → the link leads to more events: a next page (pagination ?page=2), a year / archive \
-(/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
-     - go_deeper=false → navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external \
-or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, \
-/media/documents/), or anything not leading to events.
+2) "routes" — the links the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following \
+(each with go_deeper=true); OMIT every link you would skip — do NOT list them. A link is worth following when it \
+leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth \
+expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an \
+external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, \
+/media/documents/), or anything not leading to events. Listing only the follow-worthy links keeps the output small.
 
 HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear \
 in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.

@@ -4,3 +4,5 @@ pypdf>=4.0
 pdfplumber>=0.11
 python-pptx>=1.0
 faster-whisper>=1.0    # audio_extract; heavy — install when running audio tests
+
+pymupdf>=1.24    # pdf_extract VLM-OCR: render pages to images for the VLM

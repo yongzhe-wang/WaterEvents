@@ -29,16 +29,19 @@ def _parse_json(text: str) -> dict:
     Never raises — a malformed reply becomes {} so one bad page can't sink the batch."""
     if not text:
         return {}
+    obj = None
     try:
-        return json.loads(text)
+        obj = json.loads(text)
     except Exception:                                        # noqa: BLE001 — model added prose around the JSON
         m = _JSON_RE.search(text)
         if m:
             try:
-                return json.loads(m.group(0))
+                obj = json.loads(m.group(0))
             except Exception:                               # noqa: BLE001 — truncated / still malformed
-                return {}
-    return {}
+                obj = None
+    # MUST be a dict — a model that replies with a bare array [...] (or a scalar) would otherwise reach the caller's
+    # result.get("events") and raise AttributeError, sinking the whole batch. Coerce non-dict → {}.
+    return obj if isinstance(obj, dict) else {}
 
 
 class QwenClient:

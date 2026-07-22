@@ -22,5 +22,8 @@ MAX_RETRIES = int(os.environ.get("QWEN_RETRIES", "2"))
 
 # Generation — deterministic extraction (temp 0), bounded output. IR pages need a JSON event list, not prose.
 TEMPERATURE = float(os.environ.get("QWEN_TEMPERATURE", "0.0"))
-MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "4096"))
+# 16384 not 4096: the output is {events + routes}, and a link-heavy hub page can have 400 links → 400 route entries
+# ≈ 8k+ output tokens. At 4096 the JSON got TRUNCATED → parse fail → {} → the most event-rich hubs yielded nothing.
+# {AUDIT 2026-07-22 provider bug: MAX_TOKENS too low for the routes list}.
+MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "16384"))
 MAX_INPUT_CHARS = int(os.environ.get("QWEN_MAX_INPUT_CHARS", "48000"))   # ~12-16k tokens; truncate huge pages

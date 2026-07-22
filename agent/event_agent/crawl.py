@@ -41,13 +41,29 @@ def _canon(url: str) -> str:
         return url
 
 
+# Common 2-part public suffixes — a host ending in one of these needs THREE labels for its registrable domain, not
+# two (acme.co.uk → acme.co.uk, NOT co.uk). Without this, _same_site treats EVERY .co.uk / .com.tw / .co.jp company
+# as the same site → the off-site guard leaks the crawl to unrelated UK/JP/TW hosts. {AUDIT 2026-07-22 bug #2}.
+_TWO_PART_SUFFIXES = frozenset({
+    "co.uk", "com.tw", "co.jp", "com.cn", "com.hk", "com.au", "co.kr", "com.br", "com.mx", "com.sg", "co.in",
+    "co.za", "org.uk", "ne.jp", "or.jp", "com.tr", "co.nz", "com.my", "com.vn", "co.id", "com.ph"})
+
+
+def _reg(host: str) -> str:
+    """Registrable domain of host, public-suffix aware: 3 labels when the last two are a known 2-part ccTLD suffix
+    (hotaimotor.com.tw), else 2 (pepsico.com)."""
+    labels = (host or "").lower().split(".")
+    if len(labels) >= 3 and ".".join(labels[-2:]) in _TWO_PART_SUFFIXES:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:]) if len(labels) >= 2 else (labels[0] if labels else "")
+
+
 def _same_site(url: str, root: str) -> bool:
-    """True if url is on the SAME registrable-ish host family as root — a cheap scope guard so a stray external
-    go_deeper (a partner/social link the model mis-judged) can't send the crawl off-site."""
-    def reg(u: str) -> str:
-        h = (urlsplit(u if u.startswith("http") else "https://" + u).netloc or "").lower()
-        return ".".join(h.split(".")[-2:]) if h.count(".") >= 1 else h
-    return reg(url) == reg(root)
+    """True if url is on the SAME registrable domain as root — a cheap scope guard so a stray external go_deeper
+    (a partner/social link the model mis-judged) can't send the crawl off-site. Public-suffix aware (see _reg)."""
+    def host(u: str) -> str:
+        return (urlsplit(u if u.startswith("http") else "https://" + u).netloc or "").lower()
+    return _reg(host(url)) == _reg(host(root))
 
 
 async def _render_one(url: str) -> dict | None:
@@ -86,7 +102,9 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
 
     while frontier and len(visited) < max_pages:
         round_urls: list[str] = []
-        while frontier and len(round_urls) < batch and (len(visited) + len(round_urls)) < max_pages:
+        # visited already includes the urls added THIS round (added below), so the cap is len(visited) < max_pages —
+        # NOT len(visited)+len(round_urls) which double-counts the round and trips the cap early. {AUDIT bug #4}.
+        while frontier and len(round_urls) < batch and len(visited) < max_pages:
             u = frontier.pop(0)
             ck = _canon(u)
             if ck in visited:
@@ -107,11 +125,15 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
         for render, res in zip(renders, results):
             tracer.save_page(render["url"], render, res)      # <-- full audit trail: content/shot/html/links/result/method
             for e in res["events"]:
-                key = _canon(e["urls"][0])                    # dedup an event by its primary (first) url
-                if key not in seen_event:
-                    seen_event.add(key)
-                    events.append(e)
-                    new_events += 1
+                # dedup by ANY overlapping url, not just urls[0] — the same event can surface on two pages with a
+                # different primary url (one lists the detail first, another the pdf first), so first-url-only would
+                # store it twice. If any of this event's urls was already seen, it's a duplicate. {AUDIT bug #3}.
+                ekeys = {_canon(u) for u in e["urls"]}
+                if ekeys & seen_event:
+                    continue
+                seen_event |= ekeys
+                events.append(e)
+                new_events += 1
             for rt in res["routes"]:
                 if rt["go_deeper"] and _same_site(rt["url"], start_url) and _canon(rt["url"]) not in visited:
                     frontier.append(rt["url"])

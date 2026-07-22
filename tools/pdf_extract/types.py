@@ -24,6 +24,7 @@ class PdfResult:
     n_pages: int = 0
     n_bytes: int = 0
     source: str = ""
+    text_via: str = ""                                             # how `text` was obtained: 'pypdf' | 'vlm' (OCR fallback) | ''
     error: str = ""
 
     @property
