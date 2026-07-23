@@ -6,8 +6,19 @@
 -- Applied via the versioned CLI pipeline: supabase migration new -> edit -> supabase db push (NOT MCP apply_migration).
 -- {ROOT CLAUDE.md rule 20 "migrations go through the canonical version-controlled pipeline ... supabase db push"}.
 
--- gen_random_uuid() lives in pgcrypto on older PG; no-op if already present.
+-- gen_random_uuid() lives in pgcrypto on older PG; no-op if already present. Created in the DEFAULT schema (public)
+-- BEFORE the search_path switch below, so the function resolves for the `default gen_random_uuid()` columns.
 create extension if not exists pgcrypto;
+
+-- Pin WaterEvents to its OWN schema. WHY: `supabase db push` runs this file with NO search_path override, so a bare
+-- `create table companies` would land the tables in `public` — but the worker pool connects with
+-- server_settings={"search_path": "waterevents"} (db.py _SCHEMA), so it would look in waterevents, find NOTHING, and
+-- silently report "0 companies queued" (false-green). Creating the schema + switching search_path HERE makes the
+-- migration self-contained: the tables always land where the worker looks, on a fresh `db push` too. {AUDIT 2026-07-23
+-- HIGH: migration had no CREATE SCHEMA → db push put tables in public while the pool read the waterevents schema}
+-- [CONFIDENCE: CONFIRMED 100% — the live Supabase only worked because the schema was hand-created via PGOPTIONS].
+create schema if not exists waterevents;
+set search_path = waterevents, public;   -- tables → waterevents (1st in path); gen_random_uuid resolves from public (2nd)
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- companies — the DISCOVERY queue. One row per company to crawl. A worker claims exactly one (SKIP LOCKED), runs the

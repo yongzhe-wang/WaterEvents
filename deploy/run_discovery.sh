@@ -25,13 +25,18 @@ with sync_playwright() as p:
 print("[run] ✓ chromium launches")
 PY
 
-# ── preflight 3: DB reachable ──
-PYTHONPATH="$CODE" python3 - <<'PY' || { echo "[run] ✗ DB not reachable at WATEREVENTS_DB_DSN. ABORT."; exit 1; }
+# ── preflight 3: DB reachable AND the worker's schema really has the companies table ──
+# MUST pin search_path to the SAME schema the pool uses (WATEREVENTS_DB_SCHEMA, default waterevents) — else this counts
+# `public.companies` while the worker reads `waterevents.companies` → "0 queued" false-green vs a full queue. {AUDIT
+# 2026-07-23 HIGH: preflight connected with no search_path → checked the wrong schema}.
+PYTHONPATH="$CODE" python3 - <<'PY' || { echo "[run] ✗ DB not reachable / wrong schema at WATEREVENTS_DB_DSN. ABORT."; exit 1; }
 import asyncio, os, asyncpg
+_schema = os.environ.get("WATEREVENTS_DB_SCHEMA", "waterevents")   # same default as db.py _SCHEMA
 async def _c():
-    c = await asyncpg.connect(os.environ["WATEREVENTS_DB_DSN"], statement_cache_size=0)
+    c = await asyncpg.connect(os.environ["WATEREVENTS_DB_DSN"], statement_cache_size=0,
+                              server_settings={"search_path": _schema})
     n = await c.fetchval("SELECT count(*) FROM companies WHERE status='queued'"); await c.close()
-    print(f"[run] ✓ DB reachable — {n} companies queued")
+    print(f"[run] ✓ DB reachable — schema={_schema}, {n} companies queued")
 asyncio.run(_c())
 PY
 

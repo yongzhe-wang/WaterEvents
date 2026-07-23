@@ -14,7 +14,9 @@ from urllib.parse import urlsplit, urlunsplit
 def _canon(url: str) -> str:
     """Canonical dedup key: lowercase scheme+host, drop #fragment + trailing slash. Path case + query preserved."""
     try:
-        p = urlsplit(url if url.startswith("http") else "https://" + url)
+        # case-INSENSITIVE scheme check: "HTTPS://X" must NOT get "https://" prepended (→ "https://HTTPS://X", a broken
+        # dedup_key that defeats ON CONFLICT idempotency). {AUDIT 2026-07-23 MEDIUM}.
+        p = urlsplit(url if url.lower().startswith("http") else "https://" + url)
         return urlunsplit((p.scheme.lower(), p.netloc.lower(), p.path.rstrip("/"), p.query, "")) or url
     except Exception:                                        # noqa: BLE001 — unparseable → use the raw string as key
         return url

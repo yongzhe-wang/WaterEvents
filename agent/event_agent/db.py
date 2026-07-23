@@ -36,10 +36,12 @@ ENRICH_BATCH = int(os.environ.get("WATEREVENTS_ENRICH_BATCH", "16"))    # events
 
 # WaterEvents lives in its OWN schema so it starts from scratch WITHOUT touching the decommissioned ir-pipeline's
 # cluttered `public` (60+ tables incl. shared api_keys/api_jobs + dozens of *_arch_* snapshots). Old data stays
-# archived-in-place; WaterEvents gets a pristine namespace. Default 'public' so local throwaway-Postgres tests still
-# work; set WATEREVENTS_DB_SCHEMA=waterevents against the real Supabase. {USER 2026-07-23 "archive them all + start from
-# scratch"} [CONFIDENCE: CONFIRMED — a dedicated schema is the safe "start from scratch" that never breaks the shared DB].
-_SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "public")
+# archived-in-place; WaterEvents gets a pristine namespace. Default 'waterevents' to MATCH the migration, which does
+# `create schema waterevents; set search_path=waterevents` — so a fresh `db push` (and a local throwaway Postgres that
+# runs the same migration) both land the tables in waterevents, and the pool must read that same schema by default or it
+# false-greens on an empty `public`. {AUDIT 2026-07-23 HIGH: default 'public' mismatched the waterevents-only migration}
+# [CONFIDENCE: CONFIRMED 100% — schema in the migration and schema in the pool MUST be the one-and-same name].
+_SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "waterevents")
 
 
 async def connect_pool(min_size: int = 1, max_size: int = 4) -> asyncpg.Pool:
@@ -189,7 +191,10 @@ async def reconcile(pool: asyncpg.Pool) -> int:
             "UPDATE companies SET status='queued', lease_owner=NULL, lease_until=NULL, updated_at=now() "
             "WHERE status='discovering' AND lease_until < now();"
         )
-        return int(tag.split()[-1]) if tag.startswith("UPDATE") else 0
+        try:                                             # a malformed command tag must return 0, never crash the cron
+            return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+        except (ValueError, IndexError):                 # {AUDIT 2026-07-23 MEDIUM: int(tag.split()) could raise}
+            return 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -224,11 +229,17 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
 async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: str, urls: list[str]) -> bool:
     """Flip an event to `enriched` with its generative basic_info + merged urls. FENCED on claim_token: if the lease
     expired and another worker re-claimed (new token), this UPDATE matches nothing → the stale result never clobbers.
-    Returns True if it landed (we still owned it)."""
+    media_urls is MERGED (union, dedup) NOT replaced — a discovery re-crawl may have ON-CONFLICT-added urls AFTER this
+    worker read the event; a plain `=$4::jsonb` would overwrite + LOSE them. {AUDIT 2026-07-23 HIGH: mark_enriched
+    replaced instead of merged}. Returns True if it landed (we still owned it)."""
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            UPDATE events SET status='enriched', basic_info=$3, media_urls=$4::jsonb, enriched_at=now(), claim_token=NULL
+            UPDATE events SET status='enriched', enriched_at=now(), claim_token=NULL, basic_info=$3,
+                media_urls = (
+                    SELECT coalesce(jsonb_agg(DISTINCT u), '[]'::jsonb)          -- union current(may have grown) + new, dedup
+                    FROM jsonb_array_elements(events.media_urls || $4::jsonb) AS u
+                )
             WHERE id=$1 AND claim_token=$2 RETURNING id;
             """,
             event_id, claim_token, basic_info, json.dumps(urls or []),
@@ -263,4 +274,7 @@ async def reconcile_events(pool: asyncpg.Pool) -> int:
             "UPDATE events SET status='discovered', claim_token=NULL "
             "WHERE status='rendering' AND lease_until < now();"
         )
-        return int(tag.split()[-1]) if tag.startswith("UPDATE") else 0
+        try:                                             # a malformed command tag must return 0, never crash the cron
+            return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+        except (ValueError, IndexError):                 # {AUDIT 2026-07-23 MEDIUM: int(tag.split()) could raise}
+            return 0

@@ -37,45 +37,73 @@ _USE_IMAGE = os.environ.get("EVENT_USE_IMAGE", "1") not in ("0", "false", "no") 
 _ASSET_RE = re.compile(r"\.(pdf|mp3|wav|m4a|zip|xlsx?|docx?|pptx?)(\?|#|$)", re.I)
 
 
+def _as_list(v) -> list:
+    """asyncpg returns a jsonb column as a Python list already — but stay robust to a str (double-encoded) or dirty
+    non-list data (a dict), which would make a bare json.loads(dict) raise TypeError and crash the worker. {AUDIT
+    2026-07-23: media_urls dict → json.loads(dict) TypeError}. Anything that isn't a clean list → []."""
+    if isinstance(v, list):
+        return v
+    if isinstance(v, str) and v.strip():
+        try:
+            x = json.loads(v)
+            return x if isinstance(x, list) else []
+        except Exception:                                # noqa: BLE001 — malformed json → empty, never crash
+            return []
+    return []
+
+
 def _detail_url(media_urls: list[str]) -> str | None:
     """Pick the event's DETAIL PAGE to render: the first http url that is NOT a media asset (pdf/mp3/…). The assets are
     recorded as urls but we don't render them — the HTML detail page is where basic_info + newly-linked media live."""
     for u in media_urls or []:
-        if u.startswith("http") and not _ASSET_RE.search(u):
+        if isinstance(u, str) and u.lower().startswith("http") and not _ASSET_RE.search(u):
             return u
     return None
 
 
 async def process_event(pool, client: QwenClient, ev) -> None:
     """Enrich ONE claimed event: render its detail page + VLM → basic_info, write back fenced. Every failure path is
-    LOUD (fail_event with a reason) so a page we couldn't render / the VLM couldn't parse is NEVER marked enriched."""
+    LOUD (fail_event with a reason) so a page we couldn't render / the VLM couldn't parse is NEVER marked enriched. The
+    WHOLE body is wrapped so an UNEXPECTED exception (mark_enriched conn error / bad data) fails JUST this event via
+    fail_event — it must NOT propagate out of gather and sink the batch (leaving the batch's rows stuck in 'rendering'
+    until lease-expiry). {AUDIT 2026-07-23 HIGH: gather(return_exceptions=False) + no try/except}."""
     eid, tok = ev["id"], ev["claim_token"]
-    media = ev["media_urls"] if isinstance(ev["media_urls"], list) else json.loads(ev["media_urls"] or "[]")
-    known = {"title": ev["title"], "date": ev["event_date"], "type": ev["event_type"], "media_urls": media}
-    url = _detail_url(media)
-    if not url:                                          # only asset urls (pdf/mp3) → no HTML page to enrich from
-        print(f"[enrich] ⛔ event {eid} has no HTML detail url (only assets) — fail", flush=True)
-        await db.fail_event(pool, eid, tok, "no_html_detail_url")
-        return
-    r = await asyncio.to_thread(watercrawl.render_shot, url)   # render_shot is sync + marshals to the browser loop
-    if not r.get("text") and not r.get("links"):        # walled/dead/empty → fail-loud, don't enrich a blank
-        print(f"[enrich] ⛔ event {eid} detail render FAILED ({r.get('method','')!r}) {url[:60]} — fail", flush=True)
-        await db.fail_event(pool, eid, tok, f"render_failed:{r.get('method','')}")
-        return
-    page = {"page_url": url, "page_text": r.get("inline") or r.get("text", ""),
-            "image_b64": r.get("shot_b64") or None}
-    enriched = await enrich_page(known, page, client=client, use_image=_USE_IMAGE)
-    if enriched.get("_error"):                           # LLM hard-fail / truncation → fail-loud, never silent-enrich
-        print(f"[enrich] ⛔ event {eid} VLM FAILED: {enriched['_error']} — fail", flush=True)
-        await db.fail_event(pool, eid, tok, f"vlm:{enriched['_error']}")
-        return
-    # store basic_info + transcript as one JSON blob in the basic_info TEXT column; urls = enrich's merged known∪new
-    blob = json.dumps({"basic_info": enriched.get("basic_info"),
-                       "transcript_segments": enriched.get("transcript_segments")}, ensure_ascii=False)
-    ok = await db.mark_enriched(pool, eid, tok, blob, enriched.get("urls") or media)
-    n_blocks = len(enriched.get("basic_info") or [])
-    print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} → {n_blocks} basic_info blocks, "
-          f"{len(enriched.get('urls') or media)} urls", flush=True)
+    try:
+        media = _as_list(ev["media_urls"])
+        known = {"title": ev["title"], "date": ev["event_date"], "type": ev["event_type"], "media_urls": media}
+        url = _detail_url(media)
+        if not url:                                          # only asset urls (pdf/mp3) → no HTML page to enrich from
+            print(f"[enrich] ⛔ event {eid} has no HTML detail url (only assets) — fail", flush=True)
+            await db.fail_event(pool, eid, tok, "no_html_detail_url")
+            return
+        r = await asyncio.to_thread(watercrawl.render_shot, url)   # render_shot is sync + marshals to the browser loop
+        if not r.get("text") and not r.get("links"):        # walled/dead/empty → fail-loud, don't enrich a blank
+            print(f"[enrich] ⛔ event {eid} detail render FAILED ({r.get('method','')!r}) {url[:60]} — fail", flush=True)
+            await db.fail_event(pool, eid, tok, f"render_failed:{r.get('method','')}")
+            return
+        page = {"page_url": url, "page_text": r.get("inline") or r.get("text", ""),
+                "image_b64": r.get("shot_b64") or None}
+        enriched = await enrich_page(known, page, client=client, use_image=_USE_IMAGE)
+        # enrich_page flags a HARD-FAIL (server down / retries exhausted) AND an output-truncation via output_truncated
+        # (it does NOT return an _error key — _finalize returns output_truncated). Check THAT field, else the failure is
+        # silently marked enriched. {AUDIT 2026-07-23 CRITICAL: worker checked enriched.get('_error') which never exists}.
+        if enriched.get("output_truncated") or enriched.get("_error"):
+            print(f"[enrich] ⛔ event {eid} VLM incomplete (hard-fail / truncated) {url[:60]} — fail, NOT enriched", flush=True)
+            await db.fail_event(pool, eid, tok, "vlm_incomplete_or_truncated")
+            return
+        # store basic_info + transcript as one JSON blob in the basic_info TEXT column; urls = enrich's merged known∪new
+        blob = json.dumps({"basic_info": enriched.get("basic_info"),
+                           "transcript_segments": enriched.get("transcript_segments")}, ensure_ascii=False)
+        ok = await db.mark_enriched(pool, eid, tok, blob, enriched.get("urls") or media)
+        n_blocks = len(enriched.get("basic_info") or [])
+        print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} → {n_blocks} basic_info blocks, "
+              f"{len(enriched.get('urls') or media)} urls", flush=True)
+    except Exception as e:                               # noqa: BLE001 — one event's crash must NOT sink the whole batch
+        print(f"[enrich] ⛔ event {eid} UNEXPECTED {type(e).__name__}: {e} — fail (batch continues)", flush=True)
+        try:
+            await db.fail_event(pool, eid, tok, f"crash:{type(e).__name__}: {e}")
+        except Exception:                                # noqa: BLE001 — even fail_event failing must not raise out
+            pass
 
 
 async def worker_loop(pool) -> None:
@@ -92,7 +120,9 @@ async def worker_loop(pool) -> None:
             continue
         idle = 0
         print(f"[enrich] claimed {len(events)} events", flush=True)
-        await asyncio.gather(*(process_event(pool, client, ev) for ev in events))   # enrich the batch in parallel
+        # process_event already self-contains failures (try/except → fail_event); return_exceptions=True is the belt so
+        # even an escaped error can't sink the loop + strand the whole batch's claimed rows. {AUDIT 2026-07-23 HIGH}.
+        await asyncio.gather(*(process_event(pool, client, ev) for ev in events), return_exceptions=True)
     print(f"[enrich] {_WORKER_ID} exiting — enrichment queue drained after {_MAX_IDLE_ROUNDS} idle rounds", flush=True)
 
 

@@ -118,9 +118,14 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
     acc = _new_acc(known_event)
 
     reply = await _vlm(c, page_text, page_url, img, known_event)
-    if not reply:                                             # {} = hard failure after retries (connection/parse)
-        acc["output_truncated"] = True                        # no usable reply ⇒ NOT complete — say so, loudly
-        print(f"[enrich] ⛔ no usable reply {page_url[:70]} — output_truncated=True (server down / connection error?)", flush=True)
+    # HARD FAILURE = an EMPTY dict {} OR a NON-EMPTY {"_error": ...} (send_one returns the latter after retries — a
+    # truthy dict, so a bare `if not reply` MISSES it and the failure sails through to a silent "enriched"). Catch BOTH.
+    # {CLIENT.PY hard-fail "return {\"_error\": ...}"; AUDIT 2026-07-23 CRITICAL: `if not reply` never fires on {\"_error\"}}
+    # [CONFIDENCE: CONFIRMED 100% — mirror of extract.py's _error propagation; a failed VLM call must NEVER become enriched].
+    if not reply or reply.get("_error"):
+        acc["output_truncated"] = True                        # no usable reply ⇒ NOT complete — flag it (worker fails on this)
+        print(f"[enrich] ⛔ no usable reply {page_url[:70]} — output_truncated=True "
+              f"(err={reply.get('_error') if reply else 'empty'})", flush=True)
         return _finalize(acc, known_event, page_url)
 
     if reply.get("__finish__") == "length":                  # extreme mega-page overflowed the output cap → FAIL LOUD, no chunk
