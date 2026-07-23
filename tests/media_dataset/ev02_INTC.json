@@ -1,0 +1,58 @@
+{
+  "id": "ev02_INTC",
+  "event_url": "https://www.intc.com/news-events/ir-calendar/detail/20251023-q3-2025-intel-corporation-earnings-conference-call",
+  "known_event": {
+    "title": "Q3 2025 Intel Corporation Earnings Conference Call",
+    "date": "2025-10-23",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.intc.com/news-events/ir-calendar/detail/20251023-q3-2025-intel-corporation-earnings-conference-call"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "financials"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "filing"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "filing"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "audio"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "webcast"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "slides"
+    },
+    {
+      "url": "https://www.intc.com/news-events/ir-calendar",
+      "anchor": "IR Calendar",
+      "label": "transcript"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "financials": 1,
+    "filing": 2,
+    "audio": 1,
+    "webcast": 1,
+    "slides": 1,
+    "transcript": 1
+  }
+}

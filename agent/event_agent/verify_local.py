@@ -1,8 +1,8 @@
 """event_agent local verification — runs the FULL crawl_company close-loop with MOCKED watercrawl + LLM, so we prove
 the orchestration + tracing are correct WITHOUT a running Qwen server or browser. Run: python3 -m agent.event_agent.verify_local
 
-Fake site:  /news (hub) --go_deeper--> /news/q3-detail   plus /about (go_deeper=false) + twitter.com (off-site)
-Proves: events collected + deduped · multi-url event kept · go_deeper followed · nav NOT followed · off-site blocked
+Fake site:  /news (hub) --route--> /news/q3-detail   plus twitter.com in routes (off-site); /about omitted (not a route)
+Proves: events collected + deduped · multi-url event kept · routes followed · off-site route blocked · nav never in routes
         · every page traced to disk (content/screenshot/html/links/result/meta with the winning fetch method).
 """
 from __future__ import annotations
@@ -39,9 +39,10 @@ async def _fake_extract_pages(pages, client=None, use_image=False):
             out.append({"events": [{"title": "Q3 2025 Results", "date": "2025-10-28", "type": "earnings",
                                     "urls": ["https://investors.acme.com/news/q3",
                                              "https://investors.acme.com/files/q3-slides.pdf"]}],
-                        "routes": [{"url": "https://investors.acme.com/news/q3-detail", "go_deeper": True},
-                                   {"url": "https://investors.acme.com/about", "go_deeper": False},
-                                   {"url": "https://twitter.com/acme", "go_deeper": True}]})   # off-site → must be blocked
+                        # routes = flat go-deeper url list. /about is simply OMITTED (not follow-worthy); twitter is
+                        # listed but off-site so _same_site must block it. {USER 2026-07-23 "just keep a list of urls"}.
+                        "routes": ["https://investors.acme.com/news/q3-detail",
+                                   "https://twitter.com/acme"]})   # off-site → _same_site must block
         elif "q3-detail" in u:
             out.append({"events": [{"title": "Q4 2025 Guidance", "date": "", "type": "",
                                     "urls": ["https://investors.acme.com/news/q4-guidance"]}], "routes": []})

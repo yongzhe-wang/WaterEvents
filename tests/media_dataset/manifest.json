@@ -1,0 +1,154 @@
+[
+  {
+    "id": "ev01_KO",
+    "ticker": "KO",
+    "host": "investors.coca-colacompany.com",
+    "n_media": 12,
+    "types": [
+      "webcast",
+      "financials",
+      "audio",
+      "transcript",
+      "slides",
+      "filing"
+    ],
+    "title": "4Th Quarter 2016 Earnings Call",
+    "date": "2017-02-09"
+  },
+  {
+    "id": "ev02_INTC",
+    "ticker": "INTC",
+    "host": "www.intc.com",
+    "n_media": 7,
+    "types": [
+      "financials",
+      "filing",
+      "audio",
+      "webcast",
+      "slides",
+      "transcript"
+    ],
+    "title": "Q3 2025 Intel Corporation Earnings Con",
+    "date": "2025-10-23"
+  },
+  {
+    "id": "ev03_XYZ",
+    "ticker": "XYZ",
+    "host": "block.xyz",
+    "n_media": 28,
+    "types": [
+      "webcast",
+      "transcript",
+      "slides",
+      "filing",
+      "financials"
+    ],
+    "title": "Investor Day 2025",
+    "date": "2025"
+  },
+  {
+    "id": "ev04_GILD",
+    "ticker": "GILD",
+    "host": "investors.gilead.com",
+    "n_media": 12,
+    "types": [
+      "financials",
+      "slides",
+      "transcript",
+      "filing",
+      "webcast"
+    ],
+    "title": "Default.Aspx",
+    "date": ""
+  },
+  {
+    "id": "ev05_CBRE",
+    "ticker": "CBRE",
+    "host": "ir.cbre.com",
+    "n_media": 6,
+    "types": [
+      "financials",
+      "webcast",
+      "transcript",
+      "slides",
+      "filing"
+    ],
+    "title": "Q1 2026 Cbre Group Inc Earnings Confer",
+    "date": "2026-04-23"
+  },
+  {
+    "id": "ev06_PM",
+    "ticker": "PM",
+    "host": "philipmorrisinternational.gcs-web.com",
+    "n_media": 6,
+    "types": [
+      "webcast",
+      "filing",
+      "financials",
+      "slides",
+      "transcript"
+    ],
+    "title": "Philip Morris International Inc 2025 F",
+    "date": "2025"
+  },
+  {
+    "id": "ev07_JBL",
+    "ticker": "JBL",
+    "host": "investors.jabil.com",
+    "n_media": 6,
+    "types": [
+      "webcast",
+      "filing",
+      "slides",
+      "financials",
+      "transcript"
+    ],
+    "title": "Default.Aspx",
+    "date": ""
+  },
+  {
+    "id": "ev08_GEV",
+    "ticker": "GEV",
+    "host": "www.gevernova.com",
+    "n_media": 5,
+    "types": [
+      "webcast",
+      "slides",
+      "financials",
+      "transcript",
+      "audio"
+    ],
+    "title": "2024 Investor Update",
+    "date": "2024"
+  },
+  {
+    "id": "ev09_W",
+    "ticker": "W",
+    "host": "investor.wayfair.com",
+    "n_media": 5,
+    "types": [
+      "webcast",
+      "financials",
+      "slides",
+      "transcript",
+      "filing"
+    ],
+    "title": "Default.Aspx",
+    "date": ""
+  },
+  {
+    "id": "ev10_VZ",
+    "ticker": "VZ",
+    "host": "www.verizon.com",
+    "n_media": 5,
+    "types": [
+      "webcast",
+      "transcript",
+      "slides",
+      "financials",
+      "filing"
+    ],
+    "title": "2Q 2024 Earnings Conference Call Webca",
+    "date": "2024"
+  }
+]

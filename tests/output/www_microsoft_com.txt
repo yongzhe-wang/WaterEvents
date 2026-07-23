@@ -1,0 +1,430 @@
+==========================================================================================
+COMPANY: https://www.microsoft.com/en-us/investor
+==========================================================================================
+RESULT: 2 events over 1 pages | status=ok | failed_render=0 failed_extract=0
+trace_dir: /workspace/WaterEvents/tests/output/_trace_3_www_microsoft_com
+
+=== EVENTS (final, deduped) ===
+  [2026-Q4] [earnings] Upcoming Microsoft FY26 Q4 Earnings  (3 urls)
+        https://www.microsoft.com/en-us/investor/events/get-notification
+        https://news.microsoft.com/source/?p=25022
+        https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3
+  [2024-Q4] [press_release] FY 2024 Q4 Press Release Webcast  (2 urls)
+        http://www.facebook.com/sharer.php?u=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast
+        http://www.linkedin.com/shareArticle?url=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast
+
+##########################################################################################
+# FULL PROMPT + RAW MODEL OUTPUT PER PAGE  (the exact I/O for every VLM call)
+##########################################################################################
+
+
+----------------- req_0020.txt -----------------
+=== REQUEST 20 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.microsoft.com/en-us/investor
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+- [Follow Microsoft on LinkedIn (opens in new window)](https://www.linkedin.com/company/microsoft)
+- [Follow Microsoft on YouTube (opens in new window)](https://www.youtube.com/microsoft)
+
+## Share this page
+
+- [Share Microsoft Investor Relations on Facebook (opens in new window)](http://www.facebook.com/sharer.php?u=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast)
+- [Share Microsoft Investor Relations on LinkedIn (opens in new window)](http://www.linkedin.com/shareArticle?url=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast)
+-
+
+##
+
+- [Surface Pro](https://www.microsoft.com/surface/devices/surface-pro)
+- [Surface Laptop](https://www.microsoft.com/surface/devices/surface-laptop)
+- [Surface Laptop Ultra](https://www.microsoft.com/en-us/surface/devices/surface-laptop-ultra?icid=DSM_Footer_WhatsNew_SurfaceLaptopUltra)
+- [Surface RTX Spark Dev Box](https://www.microsoft.com/en-us/surface/devices/surface-rtx-spark-dev-box?icid=DSM_Footer_WhatsNew_SurfaceRTXSparkDevBox)
+- [Copilot for organizations](https://www.microsoft.com/en-us/microsoft-copilot/organizations?icid=DSM_Footer_CopilotOrganizations)
+- [Copilot for personal use](https://www.microsoft.com/en-us/microsoft-copilot/for-individuals?form=MY02PT&OCID=GE_web_Copilot_Free_868g3t5nj)
+- [Explore Microsoft products](https://www.microsoft.com/en-us/microsoft-products-and-apps)
+- [Windows 11 apps](https://www.microsoft.com/en-us/windows/apps-for-windows?icid=DSM_Footer_WhatsNew_Windows11apps)
+
+##
+
+- [Account profile](https://account.microsoft.com/)
+- [Download Center](https://www.microsoft.com/en-us/download)
+- [Microsoft Store support](https://go.microsoft.com/fwlink/?linkid=2139749)
+- [Returns](https://www.microsoft.com/en-us/store/b/returns)
+- [Order tracking](https://www.microsoft.com/en-us/store/b/order-tracking)
+- [Certified Refurbished](https://www.microsoft.com/en-us/store/b/certified-refurbished-products)
+- [Microsoft Store Promise](https://www.microsoft.com/en-us/store/b/why-microsoft-store?icid=footer_why-msft-store_7102020)
+- [Flexible Payments](https://www.microsoft.com/en-us/store/b/payment-financing-options?icid=footer_financing_vcc)
+
+##
+
+- [Microsoft in education](https://www.microsoft.com/en-us/education)
+- [Devices for education](https://www.microsoft.com/en-us/education/devices/overview)
+- [Microsoft Teams for Education](https://www.microsoft.com/en-us/education/products/teams)
+- [Microsoft 365 Education](https://www.microsoft.com/en-us/education/products/microsoft-365)
+- [How to buy for your school](https://www.microsoft.com/education/how-to-buy)
+- [Educator training and development](https://education.microsoft.com/)
+- [Deals for students and parents](https://www.microsoft.com/en-us/store/b/education)
+- [AI for education](https://www.microsoft.com/en-us/education/ai-in-education)
+
+##
+
+- [Microsoft AI](https://www.microsoft.com/en-us/ai?icid=DSM_Footer_AI)
+- [Microsoft Security](https://www.microsoft.com/en-us/security)
+- [Dynamics 365](https://www.microsoft.com/en-us/dynamics-365)
+- [Microsoft 365](https://www.microsoft.com/en-us/microsoft-365/business)
+- [Microsoft Power Platform](https://www.microsoft.com/en-us/power-platform)
+- [Microsoft Teams](https://www.microsoft.com/en-us/microsoft-teams/group-chat-software)
+- [Microsoft 365 Copilot](https://www.microsoft.com/en-us/microsoft-365-copilot?icid=DSM_Footer_Microsoft365Copilot)
+- [Small Business](https://www.microsoft.com/en-us/store/b/business?icid=CNavBusinessStore)
+
+##
+
+- [Azure](https://azure.microsoft.com/en-us/)
+- [Microsoft Developer](https://developer.microsoft.com/en-us/)
+- [Microsoft Learn](https://learn.microsoft.com/)
+- [Support for AI marketplace apps](https://www.microsoft.com/software-development-companies/offers-benefits/isv-success?icid=DSM_Footer_SupportAIMarketplace&ocid=cmm3atxvn98)
+- [Microsoft Tech Community](https://techcommunity.microsoft.com/)
+- [Microsoft Marketplace](https://marketplace.microsoft.com/?icid=DSM_Footer_Marketplace&ocid=cmm3atxvn98)
+- [Software companies](https://www.microsoft.com/software-development-companies?icid=DSM_Footer_SoftwareCompanies&ocid=cmm3atxvn98)
+- [Visual Studio](https://visualstudio.microsoft.com/)
+
+##
+
+- [Careers](https://careers.microsoft.com/)
+- [About Microsoft](https://www.microsoft.com/about)
+- [Company news](https://news.microsoft.com/source/?icid=DSM_Footer_Company_CompanyNews)
+- [Privacy at Microsoft](https://www.microsoft.com/en-us/privacy?icid=DSM_Footer_Company_Privacy)
+- [Investors](https://www.microsoft.com/investor/default.aspx)
+- [Diversity and inclusion](https://www.microsoft.com/en-us/diversity/default?icid=DSM_Footer_Company_Diversity)
+- [Accessibility](https://www.microsoft.com/en-us/accessibility)
+- [Sustainability](https://www.microsoft.com/en-us/corporate-responsibility/sustainability?icid=DSM_Footer_Sustainability)
+
+[English (United States)](http://www.microsoft.com/en-us/locale.aspx)
+
+[Your Privacy Choices](https://aka.ms/yourcaliforniaprivacychoices)
+[Consumer Health Privacy](https://go.microsoft.com/fwlink/?linkid=2259814)
+
+- [Sitemap](https://www.microsoft.com/en-us/sitemap1.aspx)
+- [Contact Microsoft](https://support.microsoft.com/contactus)
+- [Privacy](https://go.microsoft.com/fwlink/?LinkId=521839)
+- [Manage cookies](https://www.microsoft.com/en-us/investor/default#)
+- [Terms of use](https://go.microsoft.com/fwlink/?LinkID=206977)
+- [Trademarks](https://go.microsoft.com/fwlink/?linkid=2196228)
+- [Safety & eco](https://go.microsoft.com/fwlink/?linkid=2196227)
+- [Recycling](https://www.microsoft.com/en-us/legal/compliance/recycling)
+- [About our ads](https://choice.microsoft.com/)
+- © Microsoft 2026
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "FY 2024 Q4 Press Release Webcast",
+      "date": "2024-Q4",
+      "type": "press_release",
+      "urls": [
+        "http://www.facebook.com/sharer.php?u=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast",
+        "http://www.linkedin.com/shareArticle?url=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast"
+      ]
+    }
+  ],
+  "routes": []
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "FY 2024 Q4 Press Release Webcast",
+      "date": "2024-Q4",
+      "type": "press_release",
+      "urls": [
+        "http://www.facebook.com/sharer.php?u=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast",
+        "http://www.linkedin.com/shareArticle?url=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast"
+      ]
+    }
+  ],
+  "routes": [],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0021.txt -----------------
+=== REQUEST 21 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.microsoft.com/en-us/investor
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://www.microsoft.com/en-us/investor/default#mainContent)
+
+[Microsoft](https://www.microsoft.com/)
+
+[Investor Relations](https://www.microsoft.com/en-us/investor/default)
+
+Earnings & FinancialsBoard & ESG [Annual Reports](https://www.microsoft.com/en-us/Investor/annual-reports) [SEC Filings](https://www.microsoft.com/en-us/Investor/sec-filings)
+More
+
+All Microsoft
+
+Slide 1 of 6. Upcoming Microsoft FY26 Q4 Earnings
+
+[Skip News](https://www.microsoft.com/en-us/investor/default#46013ad5-34ba-4fcb-8139-ab8436029bf3)
+
+Previous slide
+
+-
+-
+-
+-
+-
+-
+Next slide
+
+## Upcoming Microsoft FY26 Q4 Earnings
+
+July 29, 2026
+
+[GET NOTIFICATION >](https://www.microsoft.com/en-us/investor/events/get-notification)
+
+End of News section
+
+Microsoft Corp (MSFT)
+
+[$390.34 -$7.41 (-1.86%) Volume 28.14 Mil Market Cap 2899.62 Bil 52 Week High 555.45 52 Week Low 349.20 $386.98 $392.42 10am 12pm 2pm 4pm](https://www.msn.com/en-us/money/stockdetails/fi-a1xzim?id=a1xzim)
+
+Quotes delayed by up to 15 minutes. Price Quote as of 7/22/2026 4:00:00 PM - ET. Supplied by [Refinitiv](https://www.refinitiv.com/en)
+
+[Click 2025 Annual Report (opens in new window)](https://www.microsoft.com/investor/reports/ar25/index.html)
+
+2025 ANNUAL REPORT
+
+[VIEW ONLINE](https://www.microsoft.com/investor/reports/ar25/index.html)
+
+[DOWNLOAD NOW](https://www.microsoft.com/investor/reports/ar25/download-center/)
+
+Announcements
+
+June 10, 2026
+
+### Microsoft announces quarterly dividend
+
+[Press Release](https://news.microsoft.com/source/?p=25022)
+
+April 29, 2026
+
+### Microsoft Cloud and AI Strength Fuels Third Quarter Results
+
+[Press Release](https://www.microsoft.com/en-us/investor/earnings/fy-2026-q3/press-release-webcast) [Webcast](https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3)
+
+##
+I want to...
+
+`
+
+Expand All | Collapse All
+
+-
+### Know the next earnings release date
+
+-
+### Know the dates for the quarterly dividend
+
+-
+### Lookup Microsoft stock prices by date
+
+Investor Service
+
+[Direct Stock Purchase and Dividend Reinvestment Program](https://www.computershare.com/Microsoft)
+
+[Electronic Delivery Enrollment Form](https://enroll.icsdelivery.com/msft)
+
+[Frequently Asked Questions](https://www.microsoft.com/en-us/investor/faq)
+
+[Email Alert](https://www.microsoft.com/en-us/investor/events/get-notification)
+
+FEEDBACK
+
+## Follow us
+
+- [Follow Microsoft on Facebook (opens in new window)](https://www.facebook.com/Microsoft)
+- [Follow Microsoft on X (formerly Twitter) (opens in new window)](https://x.com/Microsoft?mx=2)
+- [Follow Microsoft on LinkedIn (opens in new window)](https://www.linkedin.com/company/microsoft)
+- [Follow Microsoft on YouTube (opens in new window)](https://www.youtube.com/microsoft)
+
+## Share this page
+
+- [Share Microsoft Investor Relations on Facebook (opens in new window)](http://www.facebook.com/sharer.php?u=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast)
+- [Share Microsoft Investor Relations on LinkedIn (opens in new window)](http://www.linkedin.com/shareArticle?url=https://www.microsoft.com/en-us/investor/earnings/fy-2024-q4/press-release-webcast)
+-
+
+##
+
+- [Surface Pro](https://www.microsoft.com/surface/devices/surface-pro)
+- [Surface Laptop](https://www.microsoft.com/surface/devices/surface-laptop)
+- [Surface Laptop Ultra](https://www.microsoft.com/en-us/surface/devices/surface-laptop-ultra?icid=DSM_Footer_WhatsNew_SurfaceLaptopUltra)
+- [Surface RTX Spark Dev Box](https://www.microsoft.com/en-us/surface/devices/surface-rtx-spark-dev-box?icid=DSM_Footer_WhatsNew_SurfaceRTXSparkDevBox)
+- [Copilot for organizations](https://www.microsoft.com/en-us/microsoft-copilot/organizations?icid=DSM_Footer_CopilotOrganizations)
+- [Copilot for personal use](https://www.microsoft.com/en-us/microsoft-copilot/for-individuals?form=MY02PT&OCID=GE_web_Copilot_Free_868g3t5nj)
+- [Explore Microsoft products](https://www.microsoft.com/en-us/microsoft-products-and-apps)
+- [Windows 11 apps](https://www.microsoft.com/en-us/windows/apps-for-windows?icid=DSM_Footer_WhatsNew_Windows11apps)
+
+##
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Upcoming Microsoft FY26 Q4 Earnings",
+      "date": "2026-Q4",
+      "type": "earnings",
+      "urls": [
+        "[GET NOTIFICATION >](https://www.microsoft.com/en-us/investor/events/get-notification)",
+        "[Press Release](https://news.microsoft.com/source/?p=25022)",
+        "[Webcast](https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3)"
+      ]
+    },
+    {
+      "title": "Microsoft announces quarterly dividend",
+      "date": "2026-Q2",
+      "type": "press_release",
+      "urls": [
+        "[Press Release](https://news.microsoft.com/source/?p=25022)"
+      ]
+    },
+    {
+      "title": "Microsoft Cloud and AI Strength Fuels Third Quarter Results",
+      "date": "2026-Q3",
+      "type": "press_release",
+      "urls": [
+        "[Press Release](https://www.microsoft.com/en-us/investor/earnings/fy-2026-q3/press-release-webcast)",
+        "[Webcast](https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3)"
+      ]
+    }
+  ],
+  "routes": [
+    "/investor/annual-reports",
+    "/investor/sec-filings",
+    "/investor/earnings",
+    "/investor/faq",
+    "/investor/events"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Upcoming Microsoft FY26 Q4 Earnings",
+      "date": "2026-Q4",
+      "type": "earnings",
+      "urls": [
+        "[GET NOTIFICATION >](https://www.microsoft.com/en-us/investor/events/get-notification)",
+        "[Press Release](https://news.microsoft.com/source/?p=25022)",
+        "[Webcast](https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3)"
+      ]
+    },
+    {
+      "title": "Microsoft announces quarterly dividend",
+      "date": "2026-Q2",
+      "type": "press_release",
+      "urls": [
+        "[Press Release](https://news.microsoft.com/source/?p=25022)"
+      ]
+    },
+    {
+      "title": "Microsoft Cloud and AI Strength Fuels Third Quarter Results",
+      "date": "2026-Q3",
+      "type": "press_release",
+      "urls": [
+        "[Press Release](https://www.microsoft.com/en-us/investor/earnings/fy-2026-q3/press-release-webcast)",
+        "[Webcast](https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3)"
+      ]
+    }
+  ],
+  "routes": [
+    "/investor/annual-reports",
+    "/investor/sec-filings",
+    "/investor/earnings",
+    "/investor/faq",
+    "/investor/events"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+##########################################################################################
+# PER-PAGE TRACE META  (which watercrawl method won / go_deeper routes / counts)
+##########################################################################################
+
+pages/0001_https-www-microsoft-com-en-us-investor/meta.json:
+{
+  "url": "https://www.microsoft.com/en-us/investor",
+  "method": "render",
+  "ts": "2026-07-23T05:48:21",
+  "has_screenshot": true,
+  "n_links": 162,
+  "n_events": 2,
+  "n_routes": 0,
+  "go_deeper": []
+}

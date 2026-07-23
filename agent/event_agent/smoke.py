@@ -2,7 +2,7 @@
 Run ON the H100 box AFTER the qwen_llm serve.sh:  python3 -m agent.event_agent.smoke
 
 Checks: parallel pages/s · finds the 2 real releases · keeps a release's MULTIPLE urls (page + pdf) as ONE event ·
-drops rss feed + dam asset · pagination/archive → go_deeper=true · /about → false · event url never in routes.
+drops rss feed + dam asset · pagination/archive land in routes (go-deeper) · /about omitted · event url never in routes.
 """
 from __future__ import annotations
 
@@ -42,8 +42,8 @@ async def main() -> None:
     print(f"[smoke] {n} pages in {dt:.2f}s ({n / dt:.1f} pages/s) | events={len(events)} routes={len(routes)}")
     for e in events:
         print("   EVENT", e["date"] or "—", "|", e["type"] or "—", "|", e["title"][:40], "| urls:", e["urls"])
-    for rt in routes:
-        print("   ROUTE", "deeper" if rt["go_deeper"] else "skip  ", rt["url"])
+    for rt in routes:                                         # routes are now plain go-deeper url strings
+        print("   ROUTE deeper", rt)
 
     ev_urls = {u for e in events for u in e["urls"]}
     checks = {
@@ -51,8 +51,9 @@ async def main() -> None:
         "conf": any("investor-conference" in u for u in ev_urls),
         "multi_url": any(len(e["urls"]) >= 2 and any(".pdf" in u for u in e["urls"]) for e in events),
         "no_junk": not any(("rss" in u or "/content/dam/" in u) for u in ev_urls),
-        "route_deeper": any(rt["go_deeper"] and ("page=2" in rt["url"] or "/archive/" in rt["url"]) for rt in routes),
-        "exclusive": ev_urls.isdisjoint({rt["url"] for rt in routes}),
+        # pagination/archive must appear in routes (routes = go-deeper url list, no flag to check anymore)
+        "route_deeper": any(("page=2" in u or "/archive/" in u) for u in routes),
+        "exclusive": ev_urls.isdisjoint(set(routes)),         # an event url never doubles as a route
     }
     print("[smoke]", checks, "→", "PASS ✅" if all(checks.values()) else "FAIL ❌")
 

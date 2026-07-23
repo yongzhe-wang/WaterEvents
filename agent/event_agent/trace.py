@@ -3,7 +3,7 @@ so any page is reproducible/inspectable after the fact.
 
 用一句话讲完: crawl 每导航一页, Tracer 就在 run 目录下建一个页面文件夹, 存下 ①content.txt(喂给 LLM 的正文)
 ②page.html(渲染后 html)③screenshot.jpg(VL 模型实际看的那张图, 从 b64 解出)④links.txt(页上所有链接)
-⑤result.json(LLM 返回的 {events, routes}, routes 带 go_deeper)⑥meta.json(url + 哪个 watercrawl 方法成功了 +
+⑤result.json(LLM 返回的 {events, routes}, routes = go-deeper url 列表)⑥meta.json(url + 哪个 watercrawl 方法成功了 +
 时间戳 + 各计数)。加上 run 根的 summary.json(全部事件 + 页面列表)—— 打开任何一页就能看到 agent 用了什么内容
 + 什么截图、判了什么、哪个 fetch 方法拿到的。
 
@@ -67,9 +67,11 @@ class Tracer:
             except Exception:                                                     # noqa: BLE001 — bad b64 → skip the image
                 pass
 
-        _write_json(os.path.join(d, "result.json"), result)                       # {events, routes} incl. go_deeper
+        _write_json(os.path.join(d, "result.json"), result)                       # {events, routes} — routes = url list
 
-        go_deeper = [r["url"] for r in (result.get("routes") or []) if r.get("go_deeper")]
+        # routes is now a flat list of go-deeper url strings, so the "which links we crawl deeper" list IS routes
+        # verbatim. {USER 2026-07-23 "just keep a list of urls go deeper"} [CONFIDENCE: CONFIRMED 100% — user instruction].
+        go_deeper = list(result.get("routes") or [])
         meta = {
             "url": url,
             "method": render.get("method", ""),              # WHICH watercrawl fetch worked: render/residential/impersonate

@@ -1,0 +1,52 @@
+{
+  "id": "ev06_PM",
+  "event_url": "https://philipmorrisinternational.gcs-web.com/events/event-details/philip-morris-international-inc-2025-first-quarter-results",
+  "known_event": {
+    "title": "Philip Morris International Inc 2025 First Quarter Results",
+    "date": "2025",
+    "type": "earnings",
+    "media_urls": [
+      "https://philipmorrisinternational.gcs-web.com/events/event-details/philip-morris-international-inc-2025-first-quarter-results"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://edge.media-server.com/mmc/p/s2qisdyj/",
+      "anchor": "GO TO WEBCAST",
+      "label": "webcast"
+    },
+    {
+      "url": "https://philipmorrisinternational.gcs-web.com/static-files/70383109-9a23-49cd-91f7-5caa3dceb320",
+      "anchor": "Webcast Advisory",
+      "label": "filing"
+    },
+    {
+      "url": "https://philipmorrisinternational.gcs-web.com/static-files/950f5ba1-cfee-4e97-a137-a90ad7afead5",
+      "anchor": "Press Release",
+      "label": "financials"
+    },
+    {
+      "url": "https://philipmorrisinternational.gcs-web.com/static-files/3ce069c8-5e97-44d7-bba8-dbb53c2d48fd",
+      "anchor": "Glossary &amp; Non-GAAP Reconciliations",
+      "label": "financials"
+    },
+    {
+      "url": "https://philipmorrisinternational.gcs-web.com/static-files/7a4fc96b-b570-407e-bdfa-caa9a819cf80",
+      "anchor": "Presentation",
+      "label": "slides"
+    },
+    {
+      "url": "https://philipmorrisinternational.gcs-web.com/static-files/4768a36a-d9e4-4443-a936-f3e22a1b9f43",
+      "anchor": "Script",
+      "label": "transcript"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "webcast": 1,
+    "filing": 1,
+    "financials": 2,
+    "slides": 1,
+    "transcript": 1
+  }
+}

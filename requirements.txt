@@ -3,6 +3,7 @@
 playwright>=1.40          # DEFAULT headless render path (watercrawl.pool._launch line 94); needs `playwright install chromium`
 patchright>=1.40          # stealth fork for the residential/webshare fallback path only; `patchright install chromium`
 openai>=1.40              # AsyncOpenAI → talks to the local vLLM Qwen-VL server (OpenAI-compatible API)
+asyncpg>=0.29             # discovery worker DB layer (event_agent.db) → Supabase Supavisor pooler; statement_cache_size=0
 curl_cffi>=0.7
 pypdf>=4.0
 pdfplumber>=0.11
@@ -10,3 +11,4 @@ python-pptx>=1.0
 faster-whisper>=1.0    # audio_extract; heavy — install when running audio tests
 
 pymupdf>=1.24    # pdf_extract VLM-OCR: render pages to images for the VLM
+yt-dlp>=2024        # youtube tool: download bestaudio

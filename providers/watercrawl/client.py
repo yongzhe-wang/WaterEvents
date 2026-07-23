@@ -7,11 +7,12 @@ providers called watercrawl ... put this entire system into that as a good tool"
 
 Upstream: page.fetch_page / drive_archive pick watercrawl as the primary render+drive lane. Downstream: returns
 a WaterDoc whose attributes mirror firecrawl's Document, so `getattr(doc, "markdown", "")` / `.links` / `.html`
-work unchanged. The heavy lifting (browser lifecycle, page pool, year-select driving) lives in pool.py.
+work unchanged. The heavy lifting (browser lifecycle in runtime.py, rendering in render.py, driving in drivers/)
+lives across the refactored watercrawl package; this facade only calls render.render().
 """
 from __future__ import annotations
 
-from . import pool
+from . import render as _render
 
 
 class WaterDoc:
@@ -28,7 +29,7 @@ class WaterDoc:
 
 
 class WatercrawlClient:
-    """Thin stateless facade — all state (the resident browser) lives in pool.py's module singletons, so the
+    """Thin stateless facade — all state (the resident browser) lives in runtime.py's module singletons, so the
     client itself is cheap to construct per call, exactly like firecrawl_client()."""
 
     def scrape(self, url: str, *, formats: list | None = None, only_main_content: bool = False,
@@ -48,7 +49,7 @@ class WatercrawlClient:
                 inject = (inject + ";" if inject else "") + a["script"]   # chain multiple scripts into one injection
             elif isinstance(a, dict) and a.get("type") == "wait":
                 settle = max(settle, int(a.get("milliseconds") or 0))     # honor the longest requested settle
-        text, links = pool.render(url, inject_js=inject, wait_ms=settle)   # the resident-browser render
+        text, links = _render.render(url, inject_js=inject, wait_ms=settle)   # the resident-browser render
         return WaterDoc(text, links)                         # firecrawl-shaped result
 
 

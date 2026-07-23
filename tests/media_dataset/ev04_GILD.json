@@ -1,0 +1,82 @@
+{
+  "id": "ev04_GILD",
+  "event_url": "https://investors.gilead.com/events-and-presentations/events/event-details/2021/First-Quarter-2021-Gilead-Sciences-Earnings-Conference-Call/default.aspx",
+  "known_event": {
+    "title": "Default.Aspx",
+    "date": "",
+    "type": "",
+    "media_urls": [
+      "https://investors.gilead.com/events-and-presentations/events/event-details/2021/First-Quarter-2021-Gilead-Sciences-Earnings-Conference-Call/default.aspx"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-EPR-FINAL.pdf",
+      "anchor": "Q1 2021 Earnings Release(opens in new window)PDF953 KB",
+      "label": "financials"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Supplemental-Data-FINAL.pdf",
+      "anchor": "Q1 2021 Supplementary Info(opens in new window)PDF182 KB",
+      "label": "financials"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-EPR-FINAL.pdf",
+      "anchor": "Q1 2021 Earnings Release(opens in new window)PDF953 KB",
+      "label": "financials"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Supplemental-Data-FINAL.pdf",
+      "anchor": "Q1 2021 Supplementary Info(opens in new window)PDF182 KB",
+      "label": "financials"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Earnings-DeckC.pdf",
+      "anchor": "Q1 2021 Presentation(opens in new window)PDF2.74 MB",
+      "label": "slides"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Earnings-DeckC.pdf",
+      "anchor": "Q1 2021 Presentation(opens in new window)PDF2.74 MB",
+      "label": "slides"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Earnings-DeckC.pdf",
+      "anchor": "Q1 2021 Presentation(opens in new window)PDF2.74 MB",
+      "label": "slides"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Summary-of-Prepared-RemarksD.pdf",
+      "anchor": "Q1 2021 Summary of Remarks(opens in new window)PDF442 KB",
+      "label": "transcript"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Summary-of-Prepared-RemarksD.pdf",
+      "anchor": "Q1 2021 Summary of Remarks(opens in new window)PDF442 KB",
+      "label": "transcript"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-Summary-of-Prepared-RemarksD.pdf",
+      "anchor": "Q1 2021 Summary of Remarks(opens in new window)PDF442 KB",
+      "label": "transcript"
+    },
+    {
+      "url": "https://investors.gilead.com//s29.q4cdn.com/585078350/files/doc_events/2021/04/29/GILD-Q121-10Q-FINAL.pdf",
+      "anchor": null,
+      "label": "filing"
+    },
+    {
+      "url": "https://edge.media-server.com/mmc/p/4j7y6i4m",
+      "anchor": "Webcast",
+      "label": "webcast"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "financials": 4,
+    "slides": 3,
+    "transcript": 3,
+    "filing": 1,
+    "webcast": 1
+  }
+}

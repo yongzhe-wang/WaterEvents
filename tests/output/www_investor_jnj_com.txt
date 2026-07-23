@@ -1,0 +1,2689 @@
+==========================================================================================
+COMPANY: https://www.investor.jnj.com
+==========================================================================================
+RESULT: 31 events over 6 pages | status=ok | failed_render=0 failed_extract=0
+trace_dir: /workspace/WaterEvents/tests/output/_trace_4_www_investor_jnj_com
+
+=== EVENTS (final, deduped) ===
+  [2026-07-15] [earnings] Johnson & Johnson Second Quarter 2026 Earnings Call  (3 urls)
+        https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call
+        https://www.investor.jnj.com/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf
+        https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140
+  [2026-06-09] [conference] Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global H...  (3 urls)
+        https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf
+        https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf
+  [2026-07-22] [press_release] Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTTAVA™ Robotic Su  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System-2026.pdf
+  [2026-07-16] [press_release] Johnson & Johnson Announces Collaboration with TIME to Introduce New Healthcare Champion o  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award-2026.pdf
+  [2026-07-15] [press_release] Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026-2026.pdf
+  [2026-07-15] [press_release] Johnson & Johnson reports Q2 2026 results, raises 2026 outlook  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf
+  [2026-07-08] [press_release] Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Plat  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf
+  [2026-06-29] [press_release] DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer  (2 urls)
+        https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf
+  [2026-06-26] [press_release] Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neur  (2 urls)
+        https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-d-KLMSA.pdf
+        https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-disease-control-in-generalized-myasthenia-gravis/default.aspx
+  [2026-06-26] [press_release] CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab  (2 urls)
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/Jul/26/TEC-3-CHMP-Press-Release.pdf
+        https://www.investor.jnj.com/investor-news/news-details/2026/CHMP-recommendation-advances-Johnson--Johnsons-TECVAYLI-teclistamab-plus-daratumumab-as-a-potential-standard-of-care-for-relapsedrefractory-multiple-myeloma-2026-81_gOgYIQp/default.aspx
+  [2026] [other] 2026 Key events  (1 urls)
+        https://www.investor.jnj.com/pipeline/2026-Key-events/default.aspx
+  [-] [other] Development pipeline  (1 urls)
+        https://www.investor.jnj.com/pipeline/development-pipeline/default.aspx
+  [-] [other] Novel therapies  (1 urls)
+        https://www.investor.jnj.com/pipeline/novel-therapies/default.aspx
+  [-] [other] U.S. patent expiry tables  (1 urls)
+        https://s203.q4cdn.com/636242992/files/pipeline-tables/2026-Patent-Table-FINAL.pdf
+  [2026-Q2] [presentation] 2026 Second-Quarter Infographic & Earnings Presentation  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf
+  [2026-Q2] [presentation] 2026 Second-Quarter Earnings Transcript  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf
+  [2026-Q2] [filing] 2026 Second-Quarter Other Financial Disclosures (PDF)  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Other-Financial-Disclosures.pdf
+  [2026-Q2] [filing] 2026 Second-Quarter Other Financial Disclosures (Excel)  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/PROTECTED-2Q26-Other-Financial-Disclosures.xlsx
+  [2026-Q2] [presentation] 2026 Second-Quarter Earnings Infographic  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Infographic-Q2-2026-Final.pdf
+  [2026-Q1] [press_release] 2026 First-Quarter Press Release & Supplemental Schedules  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf
+  [2026-Q1] [presentation] 2026 First-Quarter Infographic & Earnings Presentation  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf
+  [2026-Q1] [filing] 2026 First-Quarter Form 10-Q  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/2026-Q1-Form-10-Q-29Mar2026-04222026.pdf
+  [2026-Q1] [presentation] 2026 First-Quarter Earnings Transcript  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-USQ_Transcript_2026-04-14.pdf
+  [2026-Q1] [filing] 2026 First-Quarter Other Financial Disclosures (PDF)  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Other-Financial-Disclosures.pdf
+  [2026-Q1] [filing] 2026 First-Quarter Other Financial Disclosures (Excel)  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/PROTECTED-1Q26-Other-Financial-Disclosures.xlsx
+  [2026-Q1] [presentation] 2026 First-Quarter Earnings Infographic  (1 urls)
+        https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Infographic-Q1-2026.pdf
+  [2026-Q2] [conference] Johnson & Johnson to Participate in the Bernstein’s 42nd Annual Strategic Decisions Confer  (4 urls)
+        https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx
+        https://event.summitcast.com/view/LCrkJqkW2kWbeKaWQnzTns/CHgBPZaZEsfmeXtca9UkDM
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/27/Bernstein-Press-Release.pdf
+        https://s203.q4cdn.com/636242992/files/doc_events/2026/May/27/JNJ-USQ_Transcript_2026-05-27.pdf
+  [2026-Q2] [conference] Johnson & Johnson to Participate in the 2026 RBC Capital Markets Global Healthcare Confere  (4 urls)
+        https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx
+        https://kvgo.com/rbc/johnson-and-johnson-may-2026
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/RBC-Press-Release-docx.pdf
+        https://s203.q4cdn.com/636242992/files/doc_events/2026/May/19/JNJ-USQ_Transcript_2026-05-19-2.pdf
+  [2026-Q2] [conference] Johnson & Johnson to Participate in the Bank of America 2026 Healthcare Conference  (4 urls)
+        https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx
+        https://bofa.veracast.com/webcasts/bofa/healthcare2026/idT8QaOF.cfm
+        https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/BofA-Press-Release.pdf
+        https://s203.q4cdn.com/636242992/files/doc_events/2026/May/12/JNJ-USQ_Transcript_2026-05-12-2.pdf
+  [2026-Q1] [webcast] Q1 2026 Earnings Webcast  (1 urls)
+        https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6
+  [2026-Q2] [earnings] Q2 2026 Earnings Conference Call  (2 urls)
+        https://www.investor.jnj.com/investor-news/default.aspx
+        https://www.investor.jnj.com/events-and-presentations/default.aspx
+
+##########################################################################################
+# FULL PROMPT + RAW MODEL OUTPUT PER PAGE  (the exact I/O for every VLM call)
+##########################################################################################
+
+
+----------------- req_0022.txt -----------------
+=== REQUEST 22 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: JNJ
+
+# Overview
+
+[Skip to main content](https://www.investor.jnj.com/overview/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+NYSE: JNJLast updated: 7/22/2026 4:00 PM
+
+255.63+5.02 (2.00%) [See all stock information](https://www.investor.jnj.com/stock-info/default.aspx)
+
+showing slide 1 of 1.
+
+## Johnson & Johnson
+Second Quarter 2026 Earnings Call
+
+### Wednesday, July 15th, 2026
+[Event & presentation](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call) [Press release](https://www.investor.jnj.com/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf) [Webcast](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140)
+
+-
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+
+## The J&J value
+
+At Johnson & Johnson, we believe health is everything. Our strength in healthcare innovation empowers us to build a world where complex diseases are prevented, treated and cured, treatments are smarter and less invasive and solutions are personal.
+[About Johnson & Johnson](https://www.jnj.com/about-jnj)
+
+## Delivering long-term value for our stakeholders
+
+showing 1-3 of 3.
+
+### >60
+
+#### Consecutive years of dividend increases
+
+### >65%
+
+#### 5-Year free cash flow returned to shareholders
+
+### >75%
+
+#### Of sales come from #1 or #2 global market share position
+
+[2025 Investor fact sheet](https://s203.q4cdn.com/636242992/files/doc_downloads/2026/04/2025-IR-Fact-Sheet-Final.pdf)
+
+## Investor news
+
+July 22, 2026
+
+Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTT...
+
+[Read article](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System/default.aspx) [Download PDF](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System-2026.pdf)
+
+July 16, 2026
+
+Johnson & Johnson Announces Collaboration with TIME to Introduce New Health...
+
+[Read article](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award/default.aspx) [Download PDF](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award-2026.pdf)
+
+[See all investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+
+## Events and presentations
+
+July 15, 2026
+
+Johnson & Johnson Second Quarter 2026 Earnings Call
+
+[Webcast](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140) (opens in new window)
+
+[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf)
+
+[Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf)
+
+[Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+
+[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)
+
+[See details (opens in new window)](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx)
+
+June 9, 2026
+
+Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global H...
+
+[Webcast](https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8) (opens in new window)
+
+[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf)
+
+[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf)
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Call",
+      "date": "2026-07-15",
+      "type": "earnings",
+      "urls": [
+        "[Event & presentation](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call)",
+        "[Press release](https://www.investor.jnj.com/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf)",
+        "[Webcast](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global H...",
+      "date": "2026-06-09",
+      "type": "conference",
+      "urls": [
+        "[Webcast](https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8)",
+        "[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf)",
+        "[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/default.aspx)",
+    "[Financials](https://www.investor.jnj.com/financials/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/default.aspx)",
+    "[Resources](https://www.investor.jnj.com/resources/default.aspx)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Call",
+      "date": "2026-07-15",
+      "type": "earnings",
+      "urls": [
+        "[Event & presentation](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call)",
+        "[Press release](https://www.investor.jnj.com/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf)",
+        "[Webcast](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global H...",
+      "date": "2026-06-09",
+      "type": "conference",
+      "urls": [
+        "[Webcast](https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8)",
+        "[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf)",
+        "[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/default.aspx)",
+    "[Financials](https://www.investor.jnj.com/financials/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/default.aspx)",
+    "[Resources](https://www.investor.jnj.com/resources/default.aspx)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0023.txt -----------------
+=== REQUEST 23 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[See all investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+
+## Events and presentations
+
+July 15, 2026
+
+Johnson & Johnson Second Quarter 2026 Earnings Call
+
+[Webcast](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140) (opens in new window)
+
+[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf)
+
+[Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf)
+
+[Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+
+[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)
+
+[See details (opens in new window)](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx)
+
+June 9, 2026
+
+Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global H...
+
+[Webcast](https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8) (opens in new window)
+
+[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf)
+
+[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf)
+
+[See details (opens in new window)](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx)
+
+[See all investor events](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+
+## Q2 2026 Results
+
+Previous Slide
+
+showing 1-5 of 6.
+
+[2026 Second-Quarter Press Release & Supplemental Schedules (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)
+
+[2026 Second-Quarter Infographic & Earnings Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+
+[2026 Second-Quarter Earnings Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)
+
+[2Q26 Other Financial Disclosures (PDF) (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Other-Financial-Disclosures.pdf)
+
+[2Q26 Other Financial Disclosures (Excel) (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/PROTECTED-2Q26-Other-Financial-Disclosures.xlsx)
+
+[Earnings Infographic (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Infographic-Q2-2026-Final.pdf)
+
+Next Slide
+
+[Learn more about quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+
+## Innovative Medicine pipeline
+[Learn more Innovative Medicine pipeline](https://www.investor.jnj.com/pipeline/pharmaceutical-pipeline/default.aspx)
+
+## Environmental, social, and governance
+[Learn more about Environmental, social, and governance](https://www.jnj.com/esg-resources)
+
+## [Information on tax basis following Kenvue separation](https://s203.q4cdn.com/636242992/files/doc_downloads/Gov_Docs/COD/IRS-Form-8937.pdf)
+
+### Questions? Please contact us:
+1-800-950-5089investor-relations@its.jnj.com
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/overview/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Call",
+      "date": "2026-07",
+      "type": "earnings",
+      "urls": [
+        "https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47th Annual Global Healthcare Conference",
+      "date": "2026-06",
+      "type": "conference",
+      "urls": [
+        "https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/pipeline/pharmaceutical-pipeline/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.jnj.com/esg-resources",
+    "https://www.investor.jnj.com/overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.jnj.com/",
+    "https://innovativemedicine.jnj.com/",
+    "https://thenext.jnjmedtech.com/",
+    "https://www.careers.jnj.com/en/",
+    "https://www.jnj.com/media-center",
+    "https://www.investor.jnj.com/corporate/legal-notice",
+    "https://www.investor.jnj.com/corporate/privacy-policy/",
+    "https://www.investor.jnj.com/cookie-policy/",
+    "https://www.investor.jnj.com/overview/default.aspx#",
+    "https://www.investor.jnj.com/resources/investor-contacts/default.aspx"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Call",
+      "date": "2026-07",
+      "type": "earnings",
+      "urls": [
+        "https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47th Annual Global Healthcare Conference",
+      "date": "2026-06",
+      "type": "conference",
+      "urls": [
+        "https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/pipeline/pharmaceutical-pipeline/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.jnj.com/esg-resources",
+    "https://www.investor.jnj.com/overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.jnj.com/",
+    "https://innovativemedicine.jnj.com/",
+    "https://thenext.jnjmedtech.com/",
+    "https://www.careers.jnj.com/en/",
+    "https://www.jnj.com/media-center",
+    "https://www.investor.jnj.com/corporate/legal-notice",
+    "https://www.investor.jnj.com/corporate/privacy-policy/",
+    "https://www.investor.jnj.com/cookie-policy/",
+    "https://www.investor.jnj.com/overview/default.aspx#",
+    "https://www.investor.jnj.com/resources/investor-contacts/default.aspx"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0024.txt -----------------
+=== REQUEST 24 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=286116
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/stock-info/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: JNJ
+
+[Skip to main content](https://www.investor.jnj.com/stock-info/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+# Stock info
+
+-
+
+-
+
+- [Stock quote](https://www.investor.jnj.com/stock-info/default.aspx#stock-quote)
+- [Stock chart](https://www.investor.jnj.com/stock-info/default.aspx#stock-chart)
+- [Historical stock quote](https://www.investor.jnj.com/stock-info/default.aspx#stock-historical)
+- [Investment calculator](https://www.investor.jnj.com/stock-info/default.aspx#calculator)
+- [Dividend history](https://www.investor.jnj.com/stock-info/dividend-history/default.aspx)
+- [Stock split information](https://www.investor.jnj.com/stock-info/Stock-Split-Information/default.aspx)
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+
+## Stock quote
+
+Stock quote information. Pricing delayed by 20 minutes. Last updated 07/22/2026 4:00 PM
+
+Price | $255.63 | Volume | 9,100,165
+Change | +5.02 | % Change | +2.00%
+Today's open | $252.76 | Previous close | $250.61
+Intraday high | $256.29 | Intraday low | $251.21
+52 Week high | $269.43 | 52 Week low | $164.23
+
+## Stock chart
+
+### Chart
+
+Combination chart with 4 data series.
+
+The chart shows company stock prices from begin year to present.
+
+The chart has 2 X axes displaying Time, and navigator-x-axis.
+
+The chart has 3 Y axes displaying values, values, and navigator-y-axis.
+
+Stockchart Zoom Select Options
+
+-
+-
+
+Created with Highcharts 12.5.0ZoomView 1 month1mView 3 months3mView 6 months6mView year to dateYTDView 1 year1yView allAllNYSE:JNJNews releasesApr 27May 4May 11May 18May 25Jun 1Jun 8Jun 15Jun 22Jun 29Jul 6Jul 13Jul 202021​20212022​20222023​20232024​20242025​20252026​202621022524025505M10M15M
+
+Stock chart min and max date selectorsFrom date: Stock Chart CalendarTo date: Stock Chart Calendar
+
+End of interactive chart.
+
+## Historical stock quote
+
+Lookup date: Day12345678910111213141516171819202122232425262728293031MonthJanFebMarAprMayJunJulAugSepOctNovDecYear20262025202420232022202120202019201820172016Look up
+
+Historical stock quote information. 07/22/2026
+
+Day's open | $252.76 | Closing price | $255.63
+Intraday low | $251.21 | Intraday high | $256.29
+Volume | 9,100,165
+
+## Investment calculator
+
+Investment calculator
+Amount ($)
+
+Start date:Investment calculator calendar
+
+End date:Investment calculator calendar
+
+Calculate investment
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/stock-info/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Q2 2026 Earnings Conference Call",
+      "date": "2026-Q2",
+      "type": "earnings",
+      "urls": [
+        "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+        "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Conference Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+        "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Q2 2026 Earnings Conference Call",
+      "date": "2026-Q2",
+      "type": "earnings",
+      "urls": [
+        "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+        "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Conference Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+        "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0025.txt -----------------
+=== REQUEST 25 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=197292
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/pipeline/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+# Innovative Medicine pipeline
+
+-
+
+-
+
+- [Innovative Medicine pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Development pipeline](https://www.investor.jnj.com/pipeline/development-pipeline/default.aspx)
+- [Novel therapies](https://www.investor.jnj.com/pipeline/novel-therapies/default.aspx)
+- [2026 Key events](https://www.investor.jnj.com/pipeline/2026-Key-events/default.aspx)
+- [Patent table](https://s203.q4cdn.com/636242992/files/pipeline-tables/2026-Patent-Table-FINAL.pdf)
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Innovative Medicine pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+
+## Development pipeline
+
+Select programs in development, Phase 1 through Approval (removed after programs achieve approval in both US/EU)
+[Learn more](https://www.investor.jnj.com/pipeline/development-pipeline/default.aspx)
+
+## Novel therapies
+
+Select Novel Therapy programs recently approved or with potential filings in the US/EU within a specified window as outlined in the Enterprise Business Review.
+[Learn more](https://www.investor.jnj.com/pipeline/novel-therapies/default.aspx)
+
+## 2026 Key events
+
+Major US/EU approvals and submissions and phase 2/3 clinical data presentations being planned or achieved for the year.
+[Learn more](https://www.investor.jnj.com/pipeline/2026-key-events/default.aspx)
+
+## U.S. patent expiry tables
+
+Information about our Innovative Medicine patent portfolio.
+[Learn more](https://s203.q4cdn.com/636242992/files/pipeline-tables/2026-Patent-Table-FINAL.pdf)
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "2026 Key events",
+      "date": "2026",
+      "type": "other",
+      "urls": [
+        "[2026 Key events](https://www.investor.jnj.com/pipeline/2026-Key-events/default.aspx)"
+      ]
+    },
+    {
+      "title": "Development pipeline",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[Development pipeline](https://www.investor.jnj.com/pipeline/development-pipeline/default.aspx)"
+      ]
+    },
+    {
+      "title": "Novel therapies",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[Novel therapies](https://www.investor.jnj.com/pipeline/novel-therapies/default.aspx)"
+      ]
+    },
+    {
+      "title": "U.S. patent expiry tables",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[U.S. patent expiry tables](https://s203.q4cdn.com/636242992/files/pipeline-tables/2026-Patent-Table-FINAL.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "2026 Key events",
+      "date": "2026",
+      "type": "other",
+      "urls": [
+        "[2026 Key events](https://www.investor.jnj.com/pipeline/2026-Key-events/default.aspx)"
+      ]
+    },
+    {
+      "title": "Development pipeline",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[Development pipeline](https://www.investor.jnj.com/pipeline/development-pipeline/default.aspx)"
+      ]
+    },
+    {
+      "title": "Novel therapies",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[Novel therapies](https://www.investor.jnj.com/pipeline/novel-therapies/default.aspx)"
+      ]
+    },
+    {
+      "title": "U.S. patent expiry tables",
+      "date": "",
+      "type": "other",
+      "urls": [
+        "[U.S. patent expiry tables](https://s203.q4cdn.com/636242992/files/pipeline-tables/2026-Patent-Table-FINAL.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0026.txt -----------------
+=== REQUEST 26 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/events-and-presentations/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+- [Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)
+- [Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf)
+- [Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf)
+
+Showing page 1 of 2
+
+-
+- 1
+- 2
+-
+
+Cautionary statement
+
+These webcasts, presentations and transcripts contain "forward-looking statements" as defined in the Private Securities Litigation Reform Act of 1995 regarding, among other things, future operating and financial performance, product development, regulatory approvals, market position, expenditures, impact of acquisitions and dispositions, business strategy and restructuring plans. These statements use words, and variations of words, such as "will," "plan," "expect," , "anticipate," "estimate," "next," "project," "potential," "continue," "expand" and "grow". You are cautioned not to rely on these forward-looking statements. These statements are based on current assumptions and expectations of future events at the time they are made and thus are inherently subject to uncertainty.
+
+If underlying assumptions prove inaccurate, or known or unknown risks or uncertainties materialize, actual results could vary materially from the expectations and projections expressed in these forward-looking statements. Risks and uncertainties include, but are not limited to: economic and financial market factors, such as interest rate and currency exchange rate fluctuations; competition, including technological advances, new products and patents attained by competitors; challenges inherent in product development, including uncertainty of clinical success and obtaining regulatory approvals; challenges to patents; the impact of patent expirations; uncertainty of commercial success of new and existing products; significant adverse litigation or government action, including related to product liability claims; the ability of the company to successfully execute strategic plans including restructuring plans; the impact of business combinations and divestitures and the possibility that the expected benefits and opportunities of an acquisition are not realized in the anticipated time frame or at all; changes in behavior and spending patterns or financial distress of purchasers of health care products and services; changes to applicable laws and regulations, including tax laws and global health care reforms; trends toward health care cost containment; financial instability of international economies and legal systems and sovereign risk; manufacturing difficulties or delays, internally or within the supply chain; increased scrutiny of the health care industry by government agencies; product efficacy or safety concerns resulting in product recalls or regulatory action; and the potential failure to meet obligations in compliance agreements with government bodies.
+
+A further list and description of these risks, uncertainties and other factors can be found in the company's most recently filed Annual Report on Form 10-K and Quarterly Report on Form 10-Q, including in the sections captioned “Cautionary Note Regarding Forward-Looking Statements” and “Risk Factors,” and in the company's subsequent filings with the Securities and Exchange Commission. Copies of these filings are available online at www.sec.gov, on this Internet site (www.investor.jnj.com) under “Financials—SEC Filings,” or on request from Johnson & Johnson. Information in each of these presentations is as of the dates and time periods indicated therein, and the company does not undertake to update any of the information contained in these materials. Accordingly, YOU SHOULD NOT RELY ON THE ACCURACY OF ANY OF THE STATEMENTS OR OTHER INFORMATION CONTAINED IN ANY ARCHIVED WEBCASTS OR ON DEMAND VIDEOS.
+
+Webcasts on this website are the property of Johnson & Johnson. Any redistribution, retransmission or rebroadcast of this webcast in any form without the express written consent of Johnson & Johnson is strictly prohibited. Please see our Legal Notice for more information about the content of this website and copyright laws.
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/events-and-presentations/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## Cautionary statement
+
+These webcasts, presentations and transcripts contain "forward-looking statements" as defined in the Private Securities Litigation Reform Act of 1995 regarding, among other things, future operating and financial performance, product development, regulatory approvals, market position, expenditures, impact of acquisitions and dispositions, business strategy and restructuring plans. These statements use words, and variations of words, such as "will," "plan," "expect," , "anticipate," "estimate," "next," "project," "potential," "continue," "expand" and "grow". You are cautioned not to rely on these forward-looking statements. These statements are based on current assumptions and expectations of future events at the time they are made and thus are inherently subject to uncertainty.
+
+If underlying assumptions prove inaccurate, or known or unknown risks or uncertainties materialize, actual results could vary materially from the expectations and projections expressed in these forward-looking statements. Risks and uncertainties include, but are not limited to: economic and financial market factors, such as interest rate and currency exchange rate fluctuations; competition, including technological advances, new products and patents attained by competitors; challenges inherent in product development, including uncertainty of clinical success and obtaining regulatory approvals; challenges to patents; the impact of patent expirations; uncertainty of commercial success of new and existing products; significant adverse litigation or government action, including related to product liability claims; the ability of the company to successfully execute strategic plans including restructuring plans; the impact of business combinations and divestitures and the possibility that the expected benefits and opportunities of an acquisition are not realized in the anticipated time frame or at all; changes in behavior and spending patterns or financial distress of purchasers of health care products and services; changes to applicable laws and regulations, including tax laws and global health care reforms; trends toward health care cost containment; financial instability of international economies and legal systems and sovereign risk; manufacturing difficulties or delays, internally or within the supply chain; increased scrutiny of the health care industry by government agencies; product efficacy or safety concerns resulting in product recalls or regulatory action; and the potential failure to meet obligations in compliance agreements with government bodies.
+
+A further list and description of these risks, uncertainties and other factors can be found in the company's most recently filed Annual Report on Form 10-K and Quarterly Report on Form 10-Q, including in the sections captioned “Cautionary Note Regarding Forward-Looking Statements” and “Risk Factors,” and in the company's subsequent filings with the Securities and Exchange Commission. Copies of these filings are available online at www.sec.gov, on this Internet site (www.investor.jnj.com) under “Financials—SEC Filings,” or on request from Johnson & Johnson. Information in each of these presentations is as of the dates and time periods indicated therein, and the company does not undertake to update any of the information contained in these materials. Accordingly, YOU SHOULD NOT RELY ON THE ACCURACY OF ANY OF THE STATEMENTS OR OTHER INFORMATION CONTAINED IN ANY ARCHIVED WEBCASTS OR ON DEMAND VIDEOS.
+
+Webcasts on this website are the property of Johnson & Johnson. Any redistribution, retransmission or rebroadcast of this webcast in any form without the express written consent of Johnson & Johnson is strictly prohibited. Please see our Legal Notice for more information about the content of this website and copyright laws.
+
+Accept [Decline](https://www.investor.jnj.com/)
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Q1 2026 Earnings Webcast",
+      "date": "2026-Q1",
+      "type": "webcast",
+      "urls": [
+        "[Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6)"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Press Release",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)",
+        "[Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf)",
+        "[Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)",
+        "[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Investor Links](https://www.investor.jnj.com/investor-links/default.aspx)",
+    "[Medicines & therapies](https://innovativemedicine.jnj.com/our-innovation/our-products)",
+    "[Medical devices & technology](https://thenext.jnjmedtech.com/en-US/products)",
+    "[About us](https://www.jnj.com/)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Q1 2026 Earnings Webcast",
+      "date": "2026-Q1",
+      "type": "webcast",
+      "urls": [
+        "[Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6)"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Press Release",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "[Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)",
+        "[Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf)",
+        "[Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)",
+        "[Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)",
+    "[Stock info](https://www.investor.jnj.com/stock-info/default.aspx)",
+    "[Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)",
+    "[Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)",
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Investor Links](https://www.investor.jnj.com/investor-links/default.aspx)",
+    "[Medicines & therapies](https://innovativemedicine.jnj.com/our-innovation/our-products)",
+    "[Medical devices & technology](https://thenext.jnjmedtech.com/en-US/products)",
+    "[About us](https://www.jnj.com/)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0027.txt -----------------
+=== REQUEST 27 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/investor-news/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://www.investor.jnj.com/investor-news/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+# Investor news
+
+-
+
+-
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+
+Selecting a year value will change the news content
+Select Year:
+20262025202420232022202120202019201820172016201520142013
+
+Selecting a category value will change the news content
+Select Category:
+AllCorporateEarnings
+
+Showing 8 (out of 78) news from year 2026
+
+Jul 22, 2026
+
+[Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTTAVA™ Robotic Surgical System](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System/default.aspx)
+
+- [Download , Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTTAVA™ Robotic Surgical System, Jul 22, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System-2026.pdf)
+
+Jul 16, 2026
+
+[Johnson & Johnson Announces Collaboration with TIME to Introduce New Healthcare Champion of the Year Award](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award/default.aspx)
+
+- [Download , Johnson & Johnson Announces Collaboration with TIME to Introduce New Healthcare Champion of the Year Award, Jul 16, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award-2026.pdf)
+
+Jul 15, 2026
+
+[Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026/default.aspx)
+
+- [Download , Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026-2026.pdf)
+
+Jul 15, 2026
+
+[Johnson & Johnson reports Q2 2026 results, raises 2026 outlook](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx)
+
+- [Download , Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)
+
+Jul 8, 2026
+
+[Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx)
+
+- [Download , Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform, Jul 8, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf)
+
+Jun 29, 2026
+
+[DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer](https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx)
+
+- [Download , DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer , Jun 29, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf)
+
+Jun 26, 2026
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTTAVA™ Robotic Surgical System",
+      "date": "2026-07-22",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces Collaboration with TIME to Introduce New Healthcare Champion of the Year Award",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson reports Q2 2026 results, raises 2026 outlook",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform",
+      "date": "2026-07-08",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf"
+      ]
+    },
+    {
+      "title": "DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2026",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2025",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2024",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2023",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2022",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2021",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2020",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2019",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2018",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2017",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2016",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2015",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2014",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2013"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Receives FDA Market Authorization in the U.S. for its OTTAVA™ Robotic Surgical System",
+      "date": "2026-07-22",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Receives-FDA-Market-Authorization-in-the-U-S--for-its-OTTAVA-Robotic-Surgical-System-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces Collaboration with TIME to Introduce New Healthcare Champion of the Year Award",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Collaboration-with-TIME-to-Introduce-New-Healthcare-Champion-of-the-Year-Award-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026-2026.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson reports Q2 2026 results, raises 2026 outlook",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform",
+      "date": "2026-07-08",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf"
+      ]
+    },
+    {
+      "title": "DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2026",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2025",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2024",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2023",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2022",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2021",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2020",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2019",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2018",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2017",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2016",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2015",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2014",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2013"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0028.txt -----------------
+=== REQUEST 28 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/investor-news/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+- [Download , Johnson & Johnson Announces Quarterly Dividend for Third Quarter 2026, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-Quarterly-Dividend-for-Third-Quarter-2026-2026.pdf)
+
+Jul 15, 2026
+
+[Johnson & Johnson reports Q2 2026 results, raises 2026 outlook](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx)
+
+- [Download , Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)
+
+Jul 8, 2026
+
+[Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx)
+
+- [Download , Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform, Jul 8, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf)
+
+Jun 29, 2026
+
+[DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer](https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx)
+
+- [Download , DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer , Jun 29, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf)
+
+Jun 26, 2026
+
+[Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-disease-control-in-generalized-myasthenia-gravis/default.aspx)
+
+- [Download , Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis, J](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-d-KLMSA.pdf)
+
+Jun 26, 2026
+
+[CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma](https://www.investor.jnj.com/investor-news/news-details/2026/CHMP-recommendation-advances-Johnson--Johnsons-TECVAYLI-teclistamab-plus-daratumumab-as-a-potential-standard-of-care-for-relapsedrefractory-multiple-myeloma-2026-81_gOgYIQp/default.aspx)
+
+- [Download , CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma, Jun 26, 2026, (opens in ](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jul/26/TEC-3-CHMP-Press-Release.pdf)
+
+Showing page 1 of 10
+
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/investor-news/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson reports Q2 2026 results, raises 2026 outlook",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)",
+        "[Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform",
+      "date": "2026-07-08",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform, Jul 8, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf)",
+        "[Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx)"
+      ]
+    },
+    {
+      "title": "DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "[Download , DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer , Jun 29, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf)",
+        "[DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer](https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis",
+      "date": "2026-06-26",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis, J](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-d-KLMSA.pdf)",
+        "[Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-disease-control-in-generalized-myasthenia-gravis/default.aspx)"
+      ]
+    },
+    {
+      "title": "CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma",
+      "date": "2026-06-26",
+      "type": "press_release",
+      "urls": [
+        "[Download , CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma, Jun 26, 2026, (opens in ](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jul/26/TEC-3-CHMP-Press-Release.pdf)",
+        "[CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma](https://www.investor.jnj.com/investor-news/news-details/2026/CHMP-recommendation-advances-Johnson--Johnsons-TECVAYLI-teclistamab-plus-daratumumab-as-a-potential-standard-of-care-for-relapsedrefractory-multiple-myeloma-2026-81_gOgYIQp/default.aspx)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson reports Q2 2026 results, raises 2026 outlook",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)",
+        "[Johnson & Johnson reports Q2 2026 results, raises 2026 outlook, Jul 15, 2026, (opens in new window)](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-reports-Q2-2026-results-raises-2026-outlook/default.aspx)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform",
+      "date": "2026-07-08",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform, Jul 8, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform-2026.pdf)",
+        "[Johnson & Johnson Announces FDA Approval for the Dual Energy THERMOCOOL SMARTTOUCH SF Platform](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-Announces-FDA-Approval-for-the-Dual-Energy-THERMOCOOL-SMARTTOUCH-SF-Platform/default.aspx)"
+      ]
+    },
+    {
+      "title": "DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "[Download , DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer , Jun 29, 2026, (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jun/29/CFO-Announcement_DS-Press-Release_FINAL.pdf)",
+        "[DePuy Synthes Appoints Christina Zamarro as Chief Financial Officer](https://www.investor.jnj.com/investor-news/news-details/2026/DePuy-Synthes-Appoints-Christina-Zamarro-as-Chief-Financial-Officer--2026-Lg0IIPIzI9/default.aspx)"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis",
+      "date": "2026-06-26",
+      "type": "press_release",
+      "urls": [
+        "[Download , Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis, J](https://s203.q4cdn.com/636242992/files/doc_news/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-d-KLMSA.pdf)",
+        "[Johnson & Johnson presents new IMAAVY® (nipocalimab-aahu) data at European Academy of Neurology (EAN) 2026 Congress reinforcing sustained disease control in generalized myasthenia gravis](https://www.investor.jnj.com/investor-news/news-details/2026/Johnson--Johnson-presents-new-IMAAVY-nipocalimab-aahu-data-at-European-Academy-of-Neurology-EAN-2026-Congress-reinforcing-sustained-disease-control-in-generalized-myasthenia-gravis/default.aspx)"
+      ]
+    },
+    {
+      "title": "CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma",
+      "date": "2026-06-26",
+      "type": "press_release",
+      "urls": [
+        "[Download , CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma, Jun 26, 2026, (opens in ](https://s203.q4cdn.com/636242992/files/doc_news/2026/Jul/26/TEC-3-CHMP-Press-Release.pdf)",
+        "[CHMP recommendation advances Johnson & Johnson’s TECVAYLI®▼ (teclistamab) plus daratumumab as a potential standard of care for relapsed/refractory multiple myeloma](https://www.investor.jnj.com/investor-news/news-details/2026/CHMP-recommendation-advances-Johnson--Johnsons-TECVAYLI-teclistamab-plus-daratumumab-as-a-potential-standard-of-care-for-relapsedrefractory-multiple-myeloma-2026-81_gOgYIQp/default.aspx)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)",
+    "[Investor news](https://www.investor.jnj.com/investor-news/default.aspx)",
+    "[Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)",
+    "[Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0029.txt -----------------
+=== REQUEST 29 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=186300
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/financials/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://www.investor.jnj.com/financials/quarterly-results/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+# Quarterly results
+
+-
+
+-
+
+- [Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Annual reports](https://www.jnj.com/about-jnj/corporate-reports)
+- [SEC filings](https://www.investor.jnj.com/financials/sec-filings/default.aspx)
+- [Investor fact sheet](https://s203.q4cdn.com/636242992/files/doc_downloads/2026/04/2025-IR-Fact-Sheet-Final.pdf)
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+- [Financials](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+
+Selecting the value will change the page content
+Year:20262025202420232022202120202019201820172016201520142013
+Showing quarterly results from year 2026
+
+2026
+
+## Q2
+
+[2026 Second-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)
+
+[2026 Second-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+
+[2026 Second-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)
+
+[2Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Other-Financial-Disclosures.pdf)
+
+[2Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/PROTECTED-2Q26-Other-Financial-Disclosures.xlsx)
+
+[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Infographic-Q2-2026-Final.pdf)
+
+## Q1
+
+[2026 First-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)
+
+[2026 First-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)
+
+[Form 10-Q (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/2026-Q1-Form-10-Q-29Mar2026-04222026.pdf)
+
+[2026 First-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-USQ_Transcript_2026-04-14.pdf)
+
+[1Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Other-Financial-Disclosures.pdf)
+
+[1Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/PROTECTED-1Q26-Other-Financial-Disclosures.xlsx)
+
+[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Infographic-Q1-2026.pdf)
+
+[Johnson & Johnson logo](https://www.investor.jnj.com/overview/default.aspx)
+
+## Investor Links
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- [Pipeline](https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx)
+- [Financials - Quarterly results](https://www.investor.jnj.com/financials/quarterly-results/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- [Stock info](https://www.investor.jnj.com/stock-info/default.aspx)
+- [Governance](https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx)
+- [Resources - Investor FAQs](https://www.investor.jnj.com/resources/investor-faqs/default.aspx)
+
+## Medicines & therapies
+
+- [Products](https://innovativemedicine.jnj.com/our-innovation/our-products)
+- [Oncology](https://www.jnj.com/innovativemedicine/oncology)
+- [Immunology](https://www.jnj.com/innovativemedicine/immunology)
+- [Neuroscience](https://www.jnj.com/innovativemedicine/neuroscience)
+- [Cardiopulmonary](https://www.jnj.com/innovativemedicine/cardiopulmonary)
+
+## Medical devices & technology
+
+- [Products](https://www.jnjmedtech.com/en-US/products)
+- [Cardiovascular](https://thenext.jnjmedtech.com/healthcare-area/cardiovascular)
+- [Orthopaedics](https://thenext.jnjmedtech.com/healthcare-area/orthopaedics)
+- [Surgery](https://thenext.jnjmedtech.com/healthcare-area/surgery)
+- [Vision](https://thenext.jnjmedtech.com/healthcare-area/vision)
+
+## About us
+
+- [Our company](https://www.jnj.com/)
+- [Medicines & therapies](https://innovativemedicine.jnj.com/)
+- [Medical devices & technology](https://thenext.jnjmedtech.com/)
+- [Careers](https://www.careers.jnj.com/en/)
+- [Investors](https://www.investor.jnj.com/overview/default.aspx)
+- [Media](https://www.jnj.com/media-center)
+
+## Key links
+
+- [Terms of use](https://www.investor.jnj.com/corporate/legal-notice)
+- [Privacy statement](https://www.investor.jnj.com/corporate/privacy-policy/)
+- [Cookie policy](https://www.investor.jnj.com/cookie-policy/)
+- [Customize Cookie Settings](https://www.investor.jnj.com/financials/quarterly-results/default.aspx#)
+
+## Get in touch
+
+- [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+[Do not sell or share my personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+[Limit the use of my sensitive personal information](https://privacyportal-cdn.onetrust.com/dsarwebform/96f23ee1-34e3-41d6-8d5a-07f0d554152b/e10a8ea9-63dd-4d22-b709-06a9b97de6b4.html?WebsiteName=www.investor.jnj.com)
+© 2026 Johnson & Johnson and its affiliates 2025
+
+opens in new window
+
+## We Value Your Privacy
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We may also share information about your use of our site with our social media, advertising, and analytics partners.
+
+Customize Cookie Settings
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "2026 Second-Quarter Press Release & Supplemental Schedules",
+      "date": "2026-Q2",
+      "type": "press_release",
+      "urls": [
+        "[2026 Second-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Infographic & Earnings Presentation",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[2026 Second-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Earnings Transcript",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[2026 Second-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Other Financial Disclosures (PDF)",
+      "date": "2026-Q2",
+      "type": "filing",
+      "urls": [
+        "[2Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Other-Financial-Disclosures.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Other Financial Disclosures (Excel)",
+      "date": "2026-Q2",
+      "type": "filing",
+      "urls": [
+        "[2Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/PROTECTED-2Q26-Other-Financial-Disclosures.xlsx)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Earnings Infographic",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Infographic-Q2-2026-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Press Release & Supplemental Schedules",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "[2026 First-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Infographic & Earnings Presentation",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[2026 First-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Form 10-Q",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[Form 10-Q (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/2026-Q1-Form-10-Q-29Mar2026-04222026.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Earnings Transcript",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[2026 First-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-USQ_Transcript_2026-04-14.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Other Financial Disclosures (PDF)",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[1Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Other-Financial-Disclosures.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Other Financial Disclosures (Excel)",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[1Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/PROTECTED-1Q26-Other-Financial-Disclosures.xlsx)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Earnings Infographic",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Infographic-Q1-2026.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/financials/sec-filings/default.aspx"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "2026 Second-Quarter Press Release & Supplemental Schedules",
+      "date": "2026-Q2",
+      "type": "press_release",
+      "urls": [
+        "[2026 Second-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Earnings-Press-Release-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Infographic & Earnings Presentation",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[2026 Second-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Earnings Transcript",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[2026 Second-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Other Financial Disclosures (PDF)",
+      "date": "2026-Q2",
+      "type": "filing",
+      "urls": [
+        "[2Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/2Q26-Other-Financial-Disclosures.pdf)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Other Financial Disclosures (Excel)",
+      "date": "2026-Q2",
+      "type": "filing",
+      "urls": [
+        "[2Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/PROTECTED-2Q26-Other-Financial-Disclosures.xlsx)"
+      ]
+    },
+    {
+      "title": "2026 Second-Quarter Earnings Infographic",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Infographic-Q2-2026-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Press Release & Supplemental Schedules",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "[2026 First-Quarter Press Release & Supplemental Schedules (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Infographic & Earnings Presentation",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[2026 First-Quarter Infographic & Earnings Presentation (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Form 10-Q",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[Form 10-Q (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/2026-Q1-Form-10-Q-29Mar2026-04222026.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Earnings Transcript",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[2026 First-Quarter Earnings Transcript (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-USQ_Transcript_2026-04-14.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Other Financial Disclosures (PDF)",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[1Q26 Other Financial Disclosures (PDF) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/1Q26-Other-Financial-Disclosures.pdf)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Other Financial Disclosures (Excel)",
+      "date": "2026-Q1",
+      "type": "filing",
+      "urls": [
+        "[1Q26 Other Financial Disclosures (Excel) (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/PROTECTED-1Q26-Other-Financial-Disclosures.xlsx)"
+      ]
+    },
+    {
+      "title": "2026 First-Quarter Earnings Infographic",
+      "date": "2026-Q1",
+      "type": "presentation",
+      "urls": [
+        "[Earnings Infographic (Opens In New Window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Infographic-Q1-2026.pdf)"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/financials/sec-filings/default.aspx"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0030.txt -----------------
+=== REQUEST 30 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.investor.jnj.com/events-and-presentations/default.aspx
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://www.investor.jnj.com/events-and-presentations/default.aspx#maincontent)
+
+[Johnson & Johnson Company](https://www.investor.jnj.com/)
+
+- [Investor news](https://www.investor.jnj.com/investor-news/default.aspx)
+- Pipeline
+- Financials
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+- Stock info
+- Governance
+- Resources
+
+Search query
+
+[Discover J&J](https://www.jnj.com/) [Medicines & therapies](https://innovativemedicine.jnj.com/) [Medical devices & technology](https://thenext.jnjmedtech.com/)
+
+[News](https://www.jnj.com/latest-news) [Careers](https://www.careers.jnj.com/en/) [Contact](https://www.investor.jnj.com/resources/investor-contacts/default.aspx)
+
+# Events & presentations
+
+-
+
+-
+
+- [jnj.com](https://www.jnj.com/)
+- [Investor relations](https://www.investor.jnj.com/overview/default.aspx)
+- [Events & presentations](https://www.investor.jnj.com/events-and-presentations/default.aspx)
+
+## Featured presentation
+
+Jul 15, 2026
+
+Johnson & Johnson Second Quarter 2026 Earnings Presentation
+
+[Download (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+
+## Upcoming events
+
+There are no events scheduled.
+
+## Archived events & presentations
+
+Selecting the value will change the page content
+
+Select Year: 20262025202420232022
+Showing from year 2026
+
+Jul 15, 2026 AT 08:30 AM ET
+
+[Johnson & Johnson Second Quarter 2026 Earnings Call](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx)
+
+- [Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf)
+- [Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf)
+- [Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf)
+
+Jun 9, 2026 AT 10:00 AM ET
+
+[Johnson & Johnson to Participate in the Goldman Sachs 47 th Annual Global Healthcare Conference](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx)
+
+- [Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf)
+
+May 27, 2026 AT 11:00 AM ET
+
+[Johnson & Johnson to Participate in the Bernstein’s 42nd Annual Strategic Decisions Conference](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx)
+
+- [Webcast (opens in new window)](https://event.summitcast.com/view/LCrkJqkW2kWbeKaWQnzTns/CHgBPZaZEsfmeXtca9UkDM)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/27/Bernstein-Press-Release.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/May/27/JNJ-USQ_Transcript_2026-05-27.pdf)
+
+May 19, 2026 AT 11:30 AM ET
+
+[Johnson & Johnson to Participate in the 2026 RBC Capital Markets Global Healthcare Conference](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx)
+
+- [Webcast (opens in new window)](https://kvgo.com/rbc/johnson-and-johnson-may-2026)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/RBC-Press-Release-docx.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/May/19/JNJ-USQ_Transcript_2026-05-19-2.pdf)
+
+May 12, 2026 AT 02:20 PM ET
+
+[Johnson & Johnson to Participate in the Bank of America 2026 Healthcare Conference](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx)
+
+- [Webcast (opens in new window)](https://bofa.veracast.com/webcasts/bofa/healthcare2026/idT8QaOF.cfm)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/BofA-Press-Release.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/May/12/JNJ-USQ_Transcript_2026-05-12-2.pdf)
+
+Apr 14, 2026 AT 08:30 AM ET
+
+[Johnson & Johnson First Quarter 2026 Earnings Call](https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-First-Quarter-2026-Earnings-Call/default.aspx)
+
+- [Webcast (opens in new window)](https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6)
+- [Press Release (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf)
+- [Investor materials (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf)
+- [Presentation (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf)
+- [Transcript (opens in new window)](https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf)
+
+Showing page 1 of 2
+
+-
+- 1
+- 2
+-
+
+Cautionary statement
+
+These webcasts, presentations and transcripts contain "forward-looking statements" as defined in the Private Securities Litigation Reform Act of 1995 regarding, among other things, future operating and financial performance, product development, regulatory approvals, market position, expenditures, impact of acquisitions and dispositions, business strategy and restructuring plans. These statements use words, and variations of words, such as "will," "plan," "expect," , "anticipate," "estimate," "next," "project," "potential," "continue," "expand" and "grow". You are cautioned not to rely on these forward-looking statements. These statements are based on current assumptions and expectations of future events at the time they are made and thus are inherently subject to uncertainty.
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Presentation",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47th Annual Global Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Bernstein’s 42nd Annual Strategic Decisions Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx",
+        "https://event.summitcast.com/view/LCrkJqkW2kWbeKaWQnzTns/CHgBPZaZEsfmeXtca9UkDM",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/27/Bernstein-Press-Release.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/27/JNJ-USQ_Transcript_2026-05-27.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the 2026 RBC Capital Markets Global Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx",
+        "https://kvgo.com/rbc/johnson-and-johnson-may-2026",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/RBC-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/19/JNJ-USQ_Transcript_2026-05-19-2.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Bank of America 2026 Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx",
+        "https://bofa.veracast.com/webcasts/bofa/healthcare2026/idT8QaOF.cfm",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/BofA-Press-Release.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/12/JNJ-USQ_Transcript_2026-05-12-2.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson First Quarter 2026 Earnings Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-First-Quarter-2026-Earnings-Call/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx?page=2",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-First-Quarter-2026-Earnings-Call/default.aspx"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Johnson & Johnson Second Quarter 2026 Earnings Presentation",
+      "date": "2026-Q2",
+      "type": "presentation",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1765248&tp_key=d41c1c3140",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/2Q26-Press-Release-Invitation-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/Q2-2026-Economic-Factors-JNJ-Announcements-Final-Web-Version-2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-Earnings-Presentation-Q2-2026-Final-V2.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q2/JNJ-USQ_Transcript_2026-07-15.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Goldman Sachs 47th Annual Global Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1764411&tp_key=383e819878&tp_special=8",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/Goldman-Sachs-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Jun/09/JNJ-USQ_Transcript_2026-06-09.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Bernstein’s 42nd Annual Strategic Decisions Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx",
+        "https://event.summitcast.com/view/LCrkJqkW2kWbeKaWQnzTns/CHgBPZaZEsfmeXtca9UkDM",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/27/Bernstein-Press-Release.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/27/JNJ-USQ_Transcript_2026-05-27.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the 2026 RBC Capital Markets Global Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx",
+        "https://kvgo.com/rbc/johnson-and-johnson-may-2026",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/RBC-Press-Release-docx.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/19/JNJ-USQ_Transcript_2026-05-19-2.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson to Participate in the Bank of America 2026 Healthcare Conference",
+      "date": "2026-Q2",
+      "type": "conference",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx",
+        "https://bofa.veracast.com/webcasts/bofa/healthcare2026/idT8QaOF.cfm",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/Apr/04/BofA-Press-Release.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/May/12/JNJ-USQ_Transcript_2026-05-12-2.pdf"
+      ]
+    },
+    {
+      "title": "Johnson & Johnson First Quarter 2026 Earnings Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-First-Quarter-2026-Earnings-Call/default.aspx",
+        "https://event.webcasts.com/starthere.jsp?ei=1754141&tp_key=61db3732b6",
+        "https://s203.q4cdn.com/636242992/files/doc_news/2026/May/1Q26-Earnings-Press-Release-Final-Draft-04-13-26_10AM-with-attachments.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/Q1-2026-Economic-Factors-JNJ-Announcements-Final.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_financials/2026/q1/JNJ-Earnings-Presentation-Q1-2026-Final.pdf",
+        "https://s203.q4cdn.com/636242992/files/doc_events/2026/Apr/14/JNJ-USQ_Transcript_2026-04-14.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx?page=2",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-Second-Quarter-2026-Earnings-Call/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Goldman-Sachs-47-th-Annual-Global-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bernsteins-42nd-Annual-Strategic-Decisions-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-2026-RBC-Capital-Markets-Global-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-to-Participate-in-the-Bank-of-America-2026-Healthcare-Conference/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/events/event-details/2026/Johnson--Johnson-First-Quarter-2026-Earnings-Call/default.aspx"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+##########################################################################################
+# PER-PAGE TRACE META  (which watercrawl method won / go_deeper routes / counts)
+##########################################################################################
+
+pages/0001_https-www-investor-jnj-com/meta.json:
+{
+  "url": "https://www.investor.jnj.com",
+  "method": "render",
+  "ts": "2026-07-23T05:48:54",
+  "has_screenshot": true,
+  "n_links": 80,
+  "n_events": 4,
+  "n_routes": 24,
+  "go_deeper": [
+    "https://www.investor.jnj.com/investor-news/default.aspx",
+    "https://www.investor.jnj.com/pipeline/default.aspx",
+    "https://www.investor.jnj.com/financials/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/default.aspx",
+    "https://www.investor.jnj.com/resources/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/pipeline/pharmaceutical-pipeline/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.jnj.com/esg-resources",
+    "https://www.investor.jnj.com/overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.jnj.com/",
+    "https://innovativemedicine.jnj.com/",
+    "https://thenext.jnjmedtech.com/",
+    "https://www.careers.jnj.com/en/",
+    "https://www.jnj.com/media-center",
+    "https://www.investor.jnj.com/corporate/legal-notice",
+    "https://www.investor.jnj.com/corporate/privacy-policy/",
+    "https://www.investor.jnj.com/cookie-policy/",
+    "https://www.investor.jnj.com/overview/default.aspx#",
+    "https://www.investor.jnj.com/resources/investor-contacts/default.aspx"
+  ]
+}
+
+pages/0002_https-www-investor-jnj-com-investor-news-default-aspx/meta.json:
+{
+  "url": "https://www.investor.jnj.com/investor-news/default.aspx",
+  "method": "render",
+  "ts": "2026-07-23T05:50:09",
+  "has_screenshot": true,
+  "n_links": 213,
+  "n_events": 11,
+  "n_routes": 18,
+  "go_deeper": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2026",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2025",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2024",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2023",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2022",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2021",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2020",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2019",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2018",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2017",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2016",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2015",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2014",
+    "https://www.investor.jnj.com/investor-news/default.aspx?year=2013",
+    "https://www.investor.jnj.com/investor-news/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx"
+  ]
+}
+
+pages/0003_https-www-investor-jnj-com-pipeline-default-aspx/meta.json:
+{
+  "url": "https://www.investor.jnj.com/pipeline/default.aspx",
+  "method": "render",
+  "ts": "2026-07-23T05:50:09",
+  "has_screenshot": true,
+  "n_links": 58,
+  "n_events": 4,
+  "n_routes": 7,
+  "go_deeper": [
+    "https://www.investor.jnj.com/investor-news/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx"
+  ]
+}
+
+pages/0004_https-www-investor-jnj-com-financials-default-aspx/meta.json:
+{
+  "url": "https://www.investor.jnj.com/financials/default.aspx",
+  "method": "render",
+  "ts": "2026-07-23T05:50:09",
+  "has_screenshot": true,
+  "n_links": 475,
+  "n_events": 13,
+  "n_routes": 3,
+  "go_deeper": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/financials/sec-filings/default.aspx"
+  ]
+}
+
+pages/0005_https-www-investor-jnj-com-events-and-presentations-default-/meta.json:
+{
+  "url": "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+  "method": "render",
+  "ts": "2026-07-23T05:50:09",
+  "has_screenshot": true,
+  "n_links": 103,
+  "n_events": 8,
+  "n_routes": 12,
+  "go_deeper": [
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx?page=2",
+    "https://www.investor.jnj.com/investor-news/default.aspx",
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx",
+    "https://www.investor.jnj.com/events-and-presentations/default.aspx",
+    "https://www.investor.jnj.com/investor-links/default.aspx",
+    "https://innovativemedicine.jnj.com/our-innovation/our-products",
+    "https://thenext.jnjmedtech.com/en-US/products",
+    "https://www.jnj.com/"
+  ]
+}
+
+pages/0006_https-www-investor-jnj-com-stock-info-default-aspx/meta.json:
+{
+  "url": "https://www.investor.jnj.com/stock-info/default.aspx",
+  "method": "render",
+  "ts": "2026-07-23T05:50:09",
+  "has_screenshot": true,
+  "n_links": 57,
+  "n_events": 2,
+  "n_routes": 5,
+  "go_deeper": [
+    "https://www.investor.jnj.com/pipeline/Innovative-Medicine-pipeline/default.aspx",
+    "https://www.investor.jnj.com/financials/quarterly-results/default.aspx",
+    "https://www.investor.jnj.com/stock-info/default.aspx",
+    "https://www.investor.jnj.com/governance/corporate-governance-overview/default.aspx",
+    "https://www.investor.jnj.com/resources/investor-faqs/default.aspx"
+  ]
+}

@@ -1,0 +1,2709 @@
+==========================================================================================
+COMPANY: https://investor.apple.com
+==========================================================================================
+RESULT: 8 events over 6 pages | status=incomplete | failed_render=2 failed_extract=0
+trace_dir: /workspace/WaterEvents/tests/output/_trace_2_investor_apple_com
+
+=== EVENTS (final, deduped) ===
+  [2026-Q3] [earnings] FY 26 Third Quarter Results  (1 urls)
+        https://www.apple.com/investor/earnings-call/
+  [2026-07-15] [press_release] Major League Soccer returns to Apple TV tomorrow  (1 urls)
+        https://www.apple.com/newsroom/2026/07/major-league-soccer-returns-to-apple-tv-tomorrow/
+  [2026-07-14] [press_release] Madden NFL 27 Arcade Edition brings gridiron action to Apple Arcade on August 6  (1 urls)
+        https://www.apple.com/newsroom/2026/07/madden-nfl-27-arcade-edition-brings-gridiron-action-to-apple-arcade-on-august-6/
+  [2026-07-09] [press_release] Apple and Major League Baseball announce August “Friday Night Baseball” schedule  (1 urls)
+        https://www.apple.com/newsroom/2026/07/apple-and-major-league-baseball-announce-august-friday-night-baseball-schedule/
+  [2026-04-30] [press_release] Apple reports second quarter results  (2 urls)
+        https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/
+        https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf
+  [2026-Q2] [earnings] Q2 2026 Earnings Conference Call  (1 urls)
+        https://apple.com/investor/earnings-call
+  [2026-01-29] [press_release] Apple reports first quarter results  (2 urls)
+        https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/
+        https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf
+  [-] [-]   (49 urls)
+        https://www.apple.com/shop/bag
+        https://www.apple.com/shop/browse/overlay/store/specialist
+        https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com
+        https://www.apple.com/shop/browse/overlay/store/personal
+        https://www.apple.com/shop/browse/overlay/store/genius
+        https://www.apple.com/shop/browse/overlay/store/tradein
+        https://www.apple.com/shop/browse/overlay/store/financing
+        https://www.apple.com/shop/browse/overlay/store/engraving
+        https://www.apple.com/shop/browse/overlay/store/delivery
+        https://www.apple.com/shop/browse/overlay/store/personalized_shopping
+        https://www.apple.com/shop/browse/overlay/store/cto
+        https://www.apple.com/shop/accessories/all
+        https://www.apple.com/shop/accessories/all/new-arrivals
+        https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava
+        https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava
+        https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m
+        https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe
+        https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l
+        https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black
+        https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery
+        https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan
+        https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink
+        https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air
+        https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone
+        https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max
+        https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter
+        https://www.apple.com/shop/product/mhwk4am/a/midnight
+        https://www.apple.com/shop/product/mfhp4ll/a
+        https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation
+        https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange
+        https://www.apple.com/shop/product/mdew4ll/a/midnight
+        https://www.apple.com/shop/product/mj2d3ll/a/orange
+        https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink
+        https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth%E2%84%A2-speaker-statement-red
+        https://www.apple.com/apple-music
+        https://www.apple.com/apple-intelligence
+        https://www.apple.com/today/event/apple-camp-fy26
+        https://www.apple.com/macos/continuity
+        https://www.apple.com/shop/browse/overlay/store/handled_with_applecare
+        https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting
+        https://www.apple.com/apple-one
+        https://www.apple.com/apple-pay
+        https://www.apple.com/ios/home
+        https://www.apple.com/shop/buy-iphone/carrier-offers
+        https://www.apple.com/shop/education-pricing
+        https://www.apple.com/shop/refurbished
+        https://www.apple.com/business/small-business
+        http://www.apple.com/r/store/government
+        http://www.apple.com/shop/browse/home/veterans_military
+
+##########################################################################################
+# FULL PROMPT + RAW MODEL OUTPUT PER PAGE  (the exact I/O for every VLM call)
+##########################################################################################
+
+
+----------------- req_0011.txt -----------------
+=== REQUEST 11 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=413072
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investor.apple.com
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Skip to main content](https://investor.apple.com/investor-relations/default.aspx#maincontent)
+
+- [Apple](https://www.apple.com/)
+-
+
+- [Store](https://www.apple.com/us/shop/goto/store)
+-
+
+- [Mac](https://www.apple.com/mac/)
+-
+
+- [iPad](https://www.apple.com/ipad/)
+-
+
+- [iPhone](https://www.apple.com/iphone/)
+-
+
+- [Watch](https://www.apple.com/watch/)
+-
+
+- [AirPods](https://www.apple.com/airpods/)
+-
+
+- [TV & Home](https://www.apple.com/tv-home/)
+-
+
+- [Entertainment](https://www.apple.com/entertainment/)
+-
+
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+-
+
+- [Support](https://support.apple.com/)
+-
+
+- [Search apple.com](https://www.apple.com/us/search)
+-
+[0 +](https://www.apple.com/us/shop/goto/bag)
+
+- [Investor Relations](https://investor.apple.com/investor-relations/default.aspx)
+
+- [Stock Price](https://investor.apple.com/stock-price/default.aspx)
+- [SEC Filings](https://investor.apple.com/sec-filings/default.aspx)
+- [Leadership and Governance](https://investor.apple.com/leadership-and-governance/default.aspx)
+- [Our Values](https://investor.apple.com/our_values/default.aspx)
+- [FAQ](https://investor.apple.com/faq/default.aspx)
+- [Contact](https://investor.apple.com/contact/default.aspx)
+
+# News and Results
+
+## Investor Updates
+
+### FY 26 Third Quarter Results
+
+Apple’s conference call to discuss third fiscal quarter results and business updates is scheduled for Thursday, July 30, 2026 at 2:00 p.m. PT / 5:00 p.m. ET.
+
+[Listen to the conference call webcast](https://www.apple.com/investor/earnings-call/)
+
+## Newsroom
+
+### Major League Soccer returns to Apple TV tomorrow
+
+July 15, 2026
+
+Following a monthlong break for the FIFA World Cup, Major League Soccer returns to Apple TV tomorrow, July 16.
+
+[Read more](https://www.apple.com/newsroom/2026/07/major-league-soccer-returns-to-apple-tv-tomorrow/)
+
+### Madden NFL 27 Arcade Edition brings gridiron action to Apple Arcade on August 6
+
+July 14, 2026
+
+[Read more](https://www.apple.com/newsroom/2026/07/madden-nfl-27-arcade-edition-brings-gridiron-action-to-apple-arcade-on-august-6/)
+
+### Apple and Major League Baseball announce August “Friday Night Baseball” schedule
+
+July 9, 2026
+
+[Read more](https://www.apple.com/newsroom/2026/07/apple-and-major-league-baseball-announce-august-friday-night-baseball-schedule/)
+
+[More from Newsroom](https://www.apple.com/newsroom/)
+
+## Financial Data
+
+### Quarterly Earnings Reports
+
+2026202520242023
+
+#### Q2
+
+[Press Release](https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/)
+
+[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf)
+
+[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q2/filing/10Q-Q2-2026-as-filed.pdf)
+
+#### Q1
+
+[Press Release](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)
+
+[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf)
+
+[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q1/filing/10Q-Q1-2026-as-filed.pdf)
+
+### Annual Reports on Form 10-K
+
+[2025 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2025/ar/_10-K-2025-As-Filed.pdf)
+
+[2024 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2024/q4/filing/10-Q4-2024-As-Filed.pdf)
+
+[2023 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2023/q4/filing/_10-K-Q4-2023-As-Filed.pdf)
+
+[2022 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2022/q4/_10-K-2022-(As-Filed).pdf)
+
+### Additional Reports
+
+#### Net Sales by Category
+
+[Reclassification of FY18 net sales](https://s2.q4cdn.com/470004039/files/doc_downloads/additional_reports/Net-Sales-By-Category-Qtrly-FY18.pdf)
+
+#### Capital Return History
+
+[Trended Capital Return](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q2/generic/Q2-26-Return-of-Capital-Timeline.pdf)
+
+#### Dividend History
+
+[Historical dividend amounts and dates](https://investor.apple.com/dividend-history/default.aspx)
+
+#### Green Bond Report
+
+[Annual green bond impact report](https://www.apple.com/environment/pdf/Apple_Environmental_Progress_Report_2025.pdf#page=89)
+
+- [Apple](http://www.apple.com/)
+- [Investor Relations](https://investor.apple.com/investor-relations/default.aspx)
+
+## Apple Footer
+
+### Shop and Learn
+
+- [Mac](https://www.apple.com/mac/)
+- [iPad](https://www.apple.com/ipad/)
+- [iPhone](https://www.apple.com/iphone/)
+- [Watch](https://www.apple.com/watch/)
+- [TV](https://www.apple.com/tv/)
+- [Music](https://www.apple.com/music/)
+- [iTunes](https://www.apple.com/itunes/)
+- [HomePod](https://www.apple.com/homepod/)
+- [iPod touch](https://www.apple.com/ipod-touch/)
+- [Apple Card](https://www.apple.com/apple-card/)
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+- [Gift Cards](https://www.apple.com/us/shop/goto/giftcards)
+
+### Apple Store
+
+- [Find a Store](https://www.apple.com/retail/)
+- [Genius Bar](https://www.apple.com/retail/geniusbar/)
+- [Today at Apple](https://www.apple.com/today/)
+- [Apple Camp](https://www.apple.com/retail/camp/)
+- [Field Trip](https://www.apple.com/retail/fieldtrip/)
+- [Apple Store App](https://itunes.apple.com/app/apple-store/id375380948?pt=2003&ct=footer&mt=8)
+- [Refurbished and Clearance](https://www.apple.com/us/shop/goto/special_deals)
+- [Financing](https://www.apple.com/us/shop/goto/payment_plan)
+- [Apple Trade In](https://www.apple.com/shop/trade-in)
+- [Order Status](https://www.apple.com/us/shop/goto/account)
+- [Shopping Help](https://www.apple.com/us/shop/goto/help)
+
+### For Education
+
+- [Apple and Education](https://www.apple.com/education/)
+- [Shop for College](https://www.apple.com/us/shop/goto/educationrouting)
+
+### For Business
+
+- [Apple and Business](https://www.apple.com/business/)
+- [Shop for Business](https://www.apple.com/retail/business/)
+
+### For Healthcare
+
+- [Apple in Healthcare](https://www.apple.com/healthcare/)
+- [Health on Apple Watch](https://www.apple.com/healthcare/apple-watch/)
+- [Health Records on iPhone](https://www.apple.com/healthcare/health-records/)
+
+### Account
+
+- [Manage Your Apple ID](https://appleid.apple.com/us/)
+- [Apple Store Account](https://www.apple.com/us/shop/goto/account)
+- [iCloud.com](https://www.icloud.com/)
+
+### Apple Values
+
+- [Accessibility](https://www.apple.com/accessibility/)
+- [Education](https://www.apple.com/education/connectED/)
+- [Environment](https://www.apple.com/environment/)
+- [Inclusion and Diversity](https://www.apple.com/diversity/)
+- [Privacy](https://www.apple.com/privacy/)
+- [Racial Equity and Justice](https://www.apple.com/racial-equity-justice-initiative/)
+- [Supply Chain](https://www.apple.com/supplier-responsibility/)
+
+### For Government
+
+- [Shop for Government](https://www.apple.com/r/store/government)
+- [Shop for Veterans and Military](https://www.apple.com/us/shop/goto/eppstore/veteransandmilitary)
+
+### About Apple
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- [Apple Leadership](https://www.apple.com/leadership/)
+- [Job Opportunities](https://www.apple.com/jobs/us/)
+- [Investors](https://investor.apple.com/investor-relations/default.aspx)
+- [Events](https://www.apple.com/apple-events/)
+- [Contact Apple](https://www.apple.com/contact/)
+
+More ways to shop: [Visit an Apple Store](https://www.apple.com/retail/) , call 1-800-MY-APPLE, or [find a reseller](https://locate.apple.com/) .
+
+[United States](https://www.apple.com/choose-country-region/)
+
+Copyright © 2026 Apple Inc. All rights reserved
+
+- [Privacy Policy](http://www.apple.com/privacy/privacy-policy/)
+- [Terms of Use](http://www.apple.com/legal/internet-services/terms/site.html)
+- [Sales and Refunds](http://www.apple.com/us/shop/goto/help/sales_refunds)
+- [Legal](https://www.apple.com/legal/)
+- [Site Map](https://investor.apple.com/site-map/default.aspx)
+
+[Powered By Q4 Inc. 5.183.0.4 (opens in new window)](https://www.q4inc.com/Powered-by-Q4/)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "FY 26 Third Quarter Results",
+      "date": "2026-Q3",
+      "type": "earnings",
+      "urls": [
+        "[Listen to the conference call webcast](https://www.apple.com/investor/earnings-call/)"
+      ]
+    },
+    {
+      "title": "Major League Soccer returns to Apple TV tomorrow",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/major-league-soccer-returns-to-apple-tv-tomorrow/)"
+      ]
+    },
+    {
+      "title": "Madden NFL 27 Arcade Edition brings gridiron action to Apple Arcade on August 6",
+      "date": "2026-07-14",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/madden-nfl-27-arcade-edition-brings-gridiron-action-to-apple-arcade-on-august-6/)"
+      ]
+    },
+    {
+      "title": "Apple and Major League Baseball announce August “Friday Night Baseball” schedule",
+      "date": "2026-07-09",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/apple-and-major-league-baseball-announce-august-friday-night-baseball-schedule/)"
+      ]
+    }
+  ],
+  "routes": [
+    "[2025 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2025/ar/_10-K-2025-As-Filed.pdf)",
+    "[2024 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2024/q4/filing/10-Q4-2024-As-Filed.pdf)",
+    "[2023 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2023/q4/filing/_10-K-Q4-2023-As-Filed.pdf)",
+    "[2022 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2022/q4/_10-K-2022-(As-Filed).pdf)",
+    "[Press Release](https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/)",
+    "[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf)",
+    "[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q2/filing/10Q-Q2-2026-as-filed.pdf)",
+    "[Press Release](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)",
+    "[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf)",
+    "[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q1/filing/10Q-Q1-2026-as-filed.pdf)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "FY 26 Third Quarter Results",
+      "date": "2026-Q3",
+      "type": "earnings",
+      "urls": [
+        "[Listen to the conference call webcast](https://www.apple.com/investor/earnings-call/)"
+      ]
+    },
+    {
+      "title": "Major League Soccer returns to Apple TV tomorrow",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/major-league-soccer-returns-to-apple-tv-tomorrow/)"
+      ]
+    },
+    {
+      "title": "Madden NFL 27 Arcade Edition brings gridiron action to Apple Arcade on August 6",
+      "date": "2026-07-14",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/madden-nfl-27-arcade-edition-brings-gridiron-action-to-apple-arcade-on-august-6/)"
+      ]
+    },
+    {
+      "title": "Apple and Major League Baseball announce August “Friday Night Baseball” schedule",
+      "date": "2026-07-09",
+      "type": "press_release",
+      "urls": [
+        "[Read more](https://www.apple.com/newsroom/2026/07/apple-and-major-league-baseball-announce-august-friday-night-baseball-schedule/)"
+      ]
+    }
+  ],
+  "routes": [
+    "[2025 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2025/ar/_10-K-2025-As-Filed.pdf)",
+    "[2024 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2024/q4/filing/10-Q4-2024-As-Filed.pdf)",
+    "[2023 10-K](https://s2.q4cdn.com/470004039/files/doc_earnings/2023/q4/filing/_10-K-Q4-2023-As-Filed.pdf)",
+    "[2022 10-K](https://s2.q4cdn.com/470004039/files/doc_financials/2022/q4/_10-K-2022-(As-Filed).pdf)",
+    "[Press Release](https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/)",
+    "[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf)",
+    "[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q2/filing/10Q-Q2-2026-as-filed.pdf)",
+    "[Press Release](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)",
+    "[Financial Statements](https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf)",
+    "[10-Q](https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q1/filing/10Q-Q1-2026-as-filed.pdf)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0012.txt -----------------
+=== REQUEST 12 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+“Today, Apple is proud to report a remarkable, record-breaking quarter, with revenue of $143.8 billion, up 16 percent from a year ago and well above our expectations,” said Tim Cook, Apple’s CEO. “iPhone had its best-ever quarter driven by unprecedented demand, with all-time records across every geographic segment, and Services also achieved an all-time revenue record, up 14 percent from a year ago. We are also excited to announce that our installed base now has more than 2.5 billion active devices, which is a testament to incredible customer satisfaction for the very best products and services in the world.”
+
+“During the December quarter, our record business performance and strong margins led to EPS growth of 19 percent, setting a new all-time EPS record,” said Kevan Parekh, Apple’s CFO. “These exceptionally strong results generated nearly $54 billion in operating cash flow, allowing us to return almost $32 billion to shareholders.”
+
+Apple’s board of directors has declared a cash dividend of $0.26 per share of the Company’s common stock. The dividend is payable on February 12, 2026, to shareholders of record as of the close of business on February 9, 2026.
+
+Apple will provide live streaming of its Q1 2026 financial results conference call beginning at 2:00 p.m. PT on January 29, 2026, at [apple.com/investor/earnings-call](https://www.apple.com/investor/earnings-call) . The webcast will be available for replay for approximately two weeks thereafter.
+
+## Media
+
+-
+
+Consolidated Financial Statements
+
+[View PDF](https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf)
+
+Apple periodically provides information for investors on its corporate website, [apple.com](https://www.apple.com/) , and its investor relations website, [investor.apple.com](https://investor.apple.com/) . This includes press releases and other information about financial performance, reports filed or furnished with the SEC, information on corporate governance, and details related to its annual meeting of shareholders.
+
+This press release contains forward-looking statements, within the meaning of the Private Securities Litigation Reform Act of 1995. These forward-looking statements include without limitation those about payment of the Company’s quarterly dividend and future business plans. These statements involve risks and uncertainties, and actual results may differ materially from any future results expressed or implied by the forward-looking statements. Risks and uncertainties include without limitation: effects of global and regional economic conditions, including as a result of government policies, trade and other international disputes, geopolitical tensions, conflict, terrorism, natural disasters, and public health issues; risks relating to the design, manufacture, introduction, and transition of products and services in highly competitive and rapidly changing markets, including from reliance on third parties for components, technology, manufacturing, applications, services, support, and content; risks relating to information technology system failures, network disruptions, and failure to protect, loss of, or unauthorized access to, or release of, data; and effects of unfavorable legal proceedings, government investigations, and complex and changing laws and regulations. More information on these risks and other potential factors that could affect the Company’s business, reputation, results of operations, financial condition, and stock price is included in the Company’s filings with the SEC, including in the “Risk Factors” and “Management’s Discussion and Analysis of Financial Condition and Results of Operations” sections of the Company’s most recently filed periodic reports on Form 10-K and Form 10-Q and subsequent filings. The Company assumes no obligation to update any forward-looking statements, which speak only as of the date they are made.
+
+### About Apple
+
+Apple revolutionized personal technology with the introduction of the Macintosh in 1984. Today, Apple leads the world in innovation with iPhone, iPad, Mac, AirPods, Apple Watch, and Apple Vision Pro. Apple’s six software platforms — iOS, iPadOS, macOS, watchOS, visionOS, and tvOS — provide seamless experiences across all Apple devices and empower people with breakthrough services including the App Store, Apple Music, Apple Pay, iCloud, and Apple TV. Apple’s more than 150,000 employees are dedicated to making the best products on earth and to leaving the world better than we found it.
+
+## Press Contacts
+
+Josh Rosenstock
+
+Apple
+
+jrosenstock@apple.com
+
+(408) 862-1142
+
+## Investor Relations Contact
+
+Suhasini Chandramouli
+
+Apple
+
+suhasini@apple.com
+
+(408) 974-3123
+
+© 2026 Apple Inc. All rights reserved. Apple and the Apple logo are trademarks of Apple. Other company and product names may be trademarks of their respective owners.
+
+[Apple Newsroom The latest news and updates, direct from Apple. Read more](https://www.apple.com/newsroom/)
+
+## Apple Footer
+
+[ Apple](https://www.apple.com/)
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- Apple reports first quarter results
+
+### Shop and Learn
+
+- [Store](https://www.apple.com/us/shop/goto/store)
+- [Mac](https://www.apple.com/mac/)
+- [iPad](https://www.apple.com/ipad/)
+- [iPhone](https://www.apple.com/iphone/)
+- [Watch](https://www.apple.com/watch/)
+- [Vision](https://www.apple.com/apple-vision-pro/)
+- [AirPods](https://www.apple.com/airpods/)
+- [TV & Home](https://www.apple.com/tv-home/)
+- [AirTag](https://www.apple.com/airtag/)
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+- [Gift Cards](https://www.apple.com/us/shop/goto/giftcards)
+
+### Apple Wallet
+
+- [Wallet](https://www.apple.com/wallet/)
+- [Apple Card](https://www.apple.com/apple-card/)
+- [Apple Pay](https://www.apple.com/apple-pay/)
+- [Apple Cash](https://www.apple.com/apple-cash/)
+
+### Account
+
+- [Manage Your Apple Account](https://account.apple.com/)
+- [Apple Store Account](https://www.apple.com/us/shop/goto/account)
+- [iCloud.com](https://www.icloud.com/)
+
+### Entertainment
+
+- [Apple One](https://www.apple.com/apple-one/)
+- [Apple TV](https://www.apple.com/apple-tv/)
+- [Apple Music](https://www.apple.com/apple-music/)
+- [Apple Arcade](https://www.apple.com/apple-arcade/)
+- [Apple Fitness+](https://www.apple.com/apple-fitness-plus/)
+- [Apple News+](https://www.apple.com/apple-news/)
+- [Apple Podcasts](https://www.apple.com/apple-podcasts/)
+- [Apple Books](https://www.apple.com/apple-books/)
+- [App Store](https://www.apple.com/app-store/)
+
+### Apple Store
+
+- [Find a Store](https://www.apple.com/retail/)
+- [Genius Bar](https://www.apple.com/retail/geniusbar/)
+- [Today at Apple](https://www.apple.com/today/)
+- [Group Reservations](https://www.apple.com/today/groups/)
+- [Apple Camp](https://www.apple.com/today/camp/)
+- [Apple Store App](https://apps.apple.com/us/app/apple-store/id375380948)
+- [Certified Refurbished](https://www.apple.com/us/shop/goto/special_deals)
+- [Apple Trade In](https://www.apple.com/us/shop/goto/trade_in)
+- [Financing](https://www.apple.com/us/shop/goto/payment_plan)
+- [Carrier Deals at Apple](https://www.apple.com/us/shop/goto/buy_iphone/carrier_offers)
+- [Order Status](https://www.apple.com/us/shop/goto/order/list)
+- [Shopping Help](https://www.apple.com/us/shop/goto/help)
+
+### For Business
+
+- [Apple and Business](https://www.apple.com/business/)
+- [Shop for Business](https://www.apple.com/retail/business/)
+
+### For Education
+
+- [Apple and Education](https://www.apple.com/education/)
+- [Shop for K-12](https://www.apple.com/education/k12/how-to-buy/)
+- [Shop for College](https://www.apple.com/us/shop/goto/educationrouting)
+
+### For Healthcare
+
+- [Apple and Healthcare](https://www.apple.com/healthcare/)
+
+### For Government
+
+- [Apple and Government](https://www.apple.com/government/)
+- [Shop for Veterans and Military](https://www.apple.com/us/shop/goto/eppstore/veteransandmilitary)
+- [Shop for State and Local Employees](https://www.apple.com/us_epp_67909/store)
+- [Shop for Federal Employees](https://www.apple.com/us_epp_55499/store)
+
+### Apple Values
+
+- [Accessibility](https://www.apple.com/accessibility/)
+- [Education](https://www.apple.com/education-initiative/)
+- [Environment](https://www.apple.com/environment/)
+- [Inclusion and Diversity](https://www.apple.com/diversity/)
+- [Privacy](https://www.apple.com/privacy/)
+- [Racial Equity and Justice](https://www.apple.com/racial-equity-justice-initiative/)
+- [Supply Chain Innovation](https://www.apple.com/supply-chain/)
+
+### About Apple
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- [Apple Leadership](https://www.apple.com/leadership/)
+- [Career Opportunities](https://www.apple.com/careers/us/)
+- [Investors](https://investor.apple.com/)
+- [Ethics & Compliance](https://www.apple.com/compliance/)
+- [Events](https://www.apple.com/apple-events/)
+- [Contact Apple](https://www.apple.com/contact/)
+
+More ways to shop: [Find an Apple Store](https://www.apple.com/retail/) or [other retailer](https://locate.apple.com/) near you. Or call 1-800-MY-APPLE (1-800-692-7753).
+
+[United States](https://www.apple.com/choose-country-region/) [Español](https://www.apple.com/us-es/newsroom/2026/01/apple-reports-first-quarter-results/)
+
+Copyright © 2026 Apple Inc. All rights reserved.
+
+- [Privacy Policy](https://www.apple.com/legal/privacy/)
+- [Terms of Use](https://www.apple.com/legal/internet-services/terms/site.html)
+- [Sales and Refunds](https://www.apple.com/us/shop/goto/help/sales_refunds)
+- [Legal](https://www.apple.com/legal/)
+- [Site Map](https://www.apple.com/sitemap/)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Q1 2026 Earnings Conference Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "[apple.com/investor/earnings-call](https://www.apple.com/investor/earnings-call)"
+      ]
+    }
+  ],
+  "routes": [
+    "[apple.com/newsroom/2026/01/apple-reports-first-quarter-results/](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)",
+    "[investor.apple.com](https://investor.apple.com/)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Q1 2026 Earnings Conference Call",
+      "date": "2026-Q1",
+      "type": "earnings",
+      "urls": [
+        "[apple.com/investor/earnings-call](https://www.apple.com/investor/earnings-call)"
+      ]
+    }
+  ],
+  "routes": [
+    "[apple.com/newsroom/2026/01/apple-reports-first-quarter-results/](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)",
+    "[investor.apple.com](https://investor.apple.com/)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0013.txt -----------------
+=== REQUEST 13 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+“Our strong business performance during the March quarter generated over $28 billion in operating cash flow and drove new March quarter records for both operating cash flow and EPS,” said Kevan Parekh, Apple’s CFO. “Continued strong customer demand for our products and services once again helped us achieve a new all-time high for our installed base of active devices across all major product categories and geographic segments.”
+
+Apple’s board of directors has declared a cash dividend of $0.27 per share of the Company’s common stock, an increase of 4 percent. The dividend is payable on May 14, 2026, to shareholders of record as of the close of business on May 11, 2026. The board of directors has also authorized an additional program to repurchase up to $100 billion of the Company’s common stock.
+
+Apple will provide live streaming of its Q2 2026 financial results conference call beginning at 2:00 p.m. PT on April 30, 2026, at [apple.com/investor/earnings-call](https://apple.com/investor/earnings-call) . The webcast will be available for replay for approximately two weeks thereafter.
+
+## Media
+
+-
+
+Consolidated Financial Statements
+
+[View PDF](https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf)
+
+Apple periodically provides information for investors on its corporate website, [apple.com](https://apple.com/) , and its investor relations website, [investor.apple.com](https://investor.apple.com/) . This includes press releases and other information about financial performance, reports filed or furnished with the SEC, information on corporate governance, and details related to its annual meeting of shareholders.
+
+This press release contains forward-looking statements, within the meaning of the Private Securities Litigation Reform Act of 1995. These forward-looking statements include without limitation those about the Company’s plan for return of capital, payment of the Company’s quarterly dividend and future business plans. These statements involve risks and uncertainties, and actual results may differ materially from any future results expressed or implied by the forward-looking statements. Risks and uncertainties include without limitation: effects of global and regional economic conditions, including as a result of government policies, trade and other international disputes, geopolitical tensions, conflict, terrorism, natural disasters, and public health issues; risks relating to the design, manufacture, introduction, and transition of products and services in highly competitive and rapidly changing markets, including from reliance on third parties for components, technology, manufacturing, applications, services, support, and content; risks relating to information technology system failures, network disruptions, and failure to protect, loss of, or unauthorized access to, or release of, data; and effects of unfavorable legal proceedings, government investigations, and complex and changing laws and regulations. More information on these risks and other potential factors that could affect the Company’s business, reputation, results of operations, financial condition, and stock price is included in the Company’s filings with the SEC, including in the “Risk Factors” and “Management’s Discussion and Analysis of Financial Condition and Results of Operations” sections of the Company’s most recently filed periodic reports on Form 10-K and Form 10-Q and subsequent filings. The Company assumes no obligation to update any forward-looking statements, which speak only as of the date they are made.
+
+### About Apple
+
+Apple revolutionized personal technology with the introduction of the Macintosh in 1984. Today, Apple leads the world in innovation with iPhone, iPad, Mac, AirPods, Apple Watch, and Apple Vision Pro. Apple’s six software platforms — iOS, iPadOS, macOS, watchOS, visionOS, and tvOS — provide seamless experiences across all Apple devices and empower people with breakthrough services including the App Store, Apple Music, Apple Pay, iCloud, and Apple TV. Apple’s more than 150,000 employees are dedicated to making the best products on earth and to leaving the world better than we found it.
+
+## Press Contact
+
+Josh Rosenstock
+
+Apple
+
+jrosenstock@apple.com
+
+(408) 862-1142
+
+## Investor Relations Contact
+
+Suhasini Chandramouli
+
+Apple
+
+suhasini@apple.com
+
+(408) 974-3123
+
+© 2026 Apple Inc. All rights reserved. Apple and the Apple logo are trademarks of Apple. Other company and product names may be trademarks of their respective owners.
+
+[Apple Newsroom The latest news and updates, direct from Apple. Read more](https://www.apple.com/newsroom/)
+
+## Apple Footer
+
+[ Apple](https://www.apple.com/)
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- Apple reports second quarter results
+
+### Shop and Learn
+
+- [Store](https://www.apple.com/us/shop/goto/store)
+- [Mac](https://www.apple.com/mac/)
+- [iPad](https://www.apple.com/ipad/)
+- [iPhone](https://www.apple.com/iphone/)
+- [Watch](https://www.apple.com/watch/)
+- [Vision](https://www.apple.com/apple-vision-pro/)
+- [AirPods](https://www.apple.com/airpods/)
+- [TV & Home](https://www.apple.com/tv-home/)
+- [AirTag](https://www.apple.com/airtag/)
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+- [Gift Cards](https://www.apple.com/us/shop/goto/giftcards)
+
+### Apple Wallet
+
+- [Wallet](https://www.apple.com/wallet/)
+- [Apple Card](https://www.apple.com/apple-card/)
+- [Apple Pay](https://www.apple.com/apple-pay/)
+- [Apple Cash](https://www.apple.com/apple-cash/)
+
+### Account
+
+- [Manage Your Apple Account](https://account.apple.com/)
+- [Apple Store Account](https://www.apple.com/us/shop/goto/account)
+- [iCloud.com](https://www.icloud.com/)
+
+### Entertainment
+
+- [Apple One](https://www.apple.com/apple-one/)
+- [Apple TV](https://www.apple.com/apple-tv/)
+- [Apple Music](https://www.apple.com/apple-music/)
+- [Apple Arcade](https://www.apple.com/apple-arcade/)
+- [Apple Fitness+](https://www.apple.com/apple-fitness-plus/)
+- [Apple News+](https://www.apple.com/apple-news/)
+- [Apple Podcasts](https://www.apple.com/apple-podcasts/)
+- [Apple Books](https://www.apple.com/apple-books/)
+- [App Store](https://www.apple.com/app-store/)
+
+### Apple Store
+
+- [Find a Store](https://www.apple.com/retail/)
+- [Genius Bar](https://www.apple.com/retail/geniusbar/)
+- [Today at Apple](https://www.apple.com/today/)
+- [Group Reservations](https://www.apple.com/today/groups/)
+- [Apple Camp](https://www.apple.com/today/camp/)
+- [Apple Store App](https://apps.apple.com/us/app/apple-store/id375380948)
+- [Certified Refurbished](https://www.apple.com/us/shop/goto/special_deals)
+- [Apple Trade In](https://www.apple.com/us/shop/goto/trade_in)
+- [Financing](https://www.apple.com/us/shop/goto/payment_plan)
+- [Carrier Deals at Apple](https://www.apple.com/us/shop/goto/buy_iphone/carrier_offers)
+- [Order Status](https://www.apple.com/us/shop/goto/order/list)
+- [Shopping Help](https://www.apple.com/us/shop/goto/help)
+
+### For Business
+
+- [Apple and Business](https://www.apple.com/business/)
+- [Shop for Business](https://www.apple.com/retail/business/)
+
+### For Education
+
+- [Apple and Education](https://www.apple.com/education/)
+- [Shop for K-12](https://www.apple.com/education/k12/how-to-buy/)
+- [Shop for College](https://www.apple.com/us/shop/goto/educationrouting)
+
+### For Healthcare
+
+- [Apple and Healthcare](https://www.apple.com/healthcare/)
+
+### For Government
+
+- [Apple and Government](https://www.apple.com/government/)
+- [Shop for Veterans and Military](https://www.apple.com/us/shop/goto/eppstore/veteransandmilitary)
+- [Shop for State and Local Employees](https://www.apple.com/us_epp_67909/store)
+- [Shop for Federal Employees](https://www.apple.com/us_epp_55499/store)
+
+### Apple Values
+
+- [Accessibility](https://www.apple.com/accessibility/)
+- [Education](https://www.apple.com/education-initiative/)
+- [Environment](https://www.apple.com/environment/)
+- [Inclusion and Diversity](https://www.apple.com/diversity/)
+- [Privacy](https://www.apple.com/privacy/)
+- [Racial Equity and Justice](https://www.apple.com/racial-equity-justice-initiative/)
+- [Supply Chain Innovation](https://www.apple.com/supply-chain/)
+
+### About Apple
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- [Apple Leadership](https://www.apple.com/leadership/)
+- [Career Opportunities](https://www.apple.com/careers/us/)
+- [Investors](https://investor.apple.com/)
+- [Ethics & Compliance](https://www.apple.com/compliance/)
+- [Events](https://www.apple.com/apple-events/)
+- [Contact Apple](https://www.apple.com/contact/)
+
+More ways to shop: [Find an Apple Store](https://www.apple.com/retail/) or [other retailer](https://locate.apple.com/) near you. Or call 1-800-MY-APPLE (1-800-692-7753).
+
+[United States](https://www.apple.com/choose-country-region/) [Español](https://www.apple.com/us-es/newsroom/2026/04/apple-reports-second-quarter-results/)
+
+Copyright © 2026 Apple Inc. All rights reserved.
+
+- [Privacy Policy](https://www.apple.com/legal/privacy/)
+- [Terms of Use](https://www.apple.com/legal/internet-services/terms/site.html)
+- [Sales and Refunds](https://www.apple.com/us/shop/goto/help/sales_refunds)
+- [Legal](https://www.apple.com/legal/)
+- [Site Map](https://www.apple.com/sitemap/)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Q2 2026 Earnings Conference Call",
+      "date": "2026-Q2",
+      "type": "earnings",
+      "urls": [
+        "https://apple.com/investor/earnings-call"
+      ]
+    },
+    {
+      "title": "Cash Dividend Declaration",
+      "date": "2026-04",
+      "type": "dividend",
+      "urls": [
+        "https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/newsroom/",
+    "https://investor.apple.com/"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Q2 2026 Earnings Conference Call",
+      "date": "2026-Q2",
+      "type": "earnings",
+      "urls": [
+        "https://apple.com/investor/earnings-call"
+      ]
+    },
+    {
+      "title": "Cash Dividend Declaration",
+      "date": "2026-04",
+      "type": "dividend",
+      "urls": [
+        "https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/newsroom/",
+    "https://investor.apple.com/"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0014.txt -----------------
+=== REQUEST 14 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+STRUCTURED EVENTS (from JSON-LD — reliable):
+- Apple reports first quarter results — 2026-01-29Z — [link](https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/)
+
+Choose another country or region to see content specific to your location and shop online.
+
+Canada (English)
+
+[Continue](https://www.apple.com/ca/newsroom/2026/01/apple-reports-first-quarter-results/)
+
+- [Apple](https://www.apple.com/)
+-
+
+- [Store](https://www.apple.com/us/shop/goto/store)
+-
+
+- [Mac](https://www.apple.com/mac/)
+-
+
+- [iPad](https://www.apple.com/ipad/)
+-
+
+- [iPhone](https://www.apple.com/iphone/)
+-
+
+- [Watch](https://www.apple.com/watch/)
+-
+
+- [Vision](https://www.apple.com/apple-vision-pro/)
+-
+
+- [AirPods](https://www.apple.com/airpods/)
+-
+
+- [TV & Home](https://www.apple.com/tv-home/)
+-
+
+- [Entertainment](https://www.apple.com/entertainment/)
+-
+
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+-
+
+- [Support](https://support.apple.com/?cid=gn-ols-home-hp-tab)
+-
+
+- [Search apple.com](https://www.apple.com/us/search)
+-
+[0 +](https://www.apple.com/us/shop/goto/bag)
+
+[Newsroom](https://www.apple.com/newsroom/)
+
+- [Apple Services](https://www.apple.com/newsroom/apple-services/)
+- [Apple Stories](https://www.apple.com/newsroom/apple-stories/)
+
+Search Newsroom
+
+PRESS RELEASEJanuary 29, 2026
+
+# Apple reports first quarter results
+
+All-time records for total company revenue and EPS
+
+iPhone and Services revenue reach new all-time highs
+
+-
+-
+-
+-
+
+CUPERTINO, CALIFORNIA Apple today announced financial results for its fiscal 2026 first quarter ended December 27, 2025. The Company posted quarterly revenue of $143.8 billion, up 16 percent year over year. Diluted earnings per share was $2.84, up 19 percent year over year.
+
+“Today, Apple is proud to report a remarkable, record-breaking quarter, with revenue of $143.8 billion, up 16 percent from a year ago and well above our expectations,” said Tim Cook, Apple’s CEO. “iPhone had its best-ever quarter driven by unprecedented demand, with all-time records across every geographic segment, and Services also achieved an all-time revenue record, up 14 percent from a year ago. We are also excited to announce that our installed base now has more than 2.5 billion active devices, which is a testament to incredible customer satisfaction for the very best products and services in the world.”
+
+“During the December quarter, our record business performance and strong margins led to EPS growth of 19 percent, setting a new all-time EPS record,” said Kevan Parekh, Apple’s CFO. “These exceptionally strong results generated nearly $54 billion in operating cash flow, allowing us to return almost $32 billion to shareholders.”
+
+Apple’s board of directors has declared a cash dividend of $0.26 per share of the Company’s common stock. The dividend is payable on February 12, 2026, to shareholders of record as of the close of business on February 9, 2026.
+
+Apple will provide live streaming of its Q1 2026 financial results conference call beginning at 2:00 p.m. PT on January 29, 2026, at [apple.com/investor/earnings-call](https://www.apple.com/investor/earnings-call) . The webcast will be available for replay for approximately two weeks thereafter.
+
+## Media
+
+-
+
+Consolidated Financial Statements
+
+[View PDF](https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf)
+
+Apple periodically provides information for investors on its corporate website, [apple.com](https://www.apple.com/) , and its investor relations website, [investor.apple.com](https://investor.apple.com/) . This includes press releases and other information about financial performance, reports filed or furnished with the SEC, information on corporate governance, and details related to its annual meeting of shareholders.
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Apple reports first quarter results",
+      "date": "2026-01-29",
+      "type": "press_release",
+      "urls": [
+        "https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/",
+        "https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Apple reports first quarter results",
+      "date": "2026-01-29",
+      "type": "press_release",
+      "urls": [
+        "https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/",
+        "https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0015.txt -----------------
+=== REQUEST 15 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+STRUCTURED EVENTS (from JSON-LD — reliable):
+- Apple reports second quarter results — 2026-04-30Z — [link](https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/)
+
+Choose another country or region to see content specific to your location and shop online.
+
+Canada (English)
+
+[Continue](https://www.apple.com/ca/newsroom/2026/04/apple-reports-second-quarter-results/)
+
+- [Apple](https://www.apple.com/)
+-
+
+- [Store](https://www.apple.com/us/shop/goto/store)
+-
+
+- [Mac](https://www.apple.com/mac/)
+-
+
+- [iPad](https://www.apple.com/ipad/)
+-
+
+- [iPhone](https://www.apple.com/iphone/)
+-
+
+- [Watch](https://www.apple.com/watch/)
+-
+
+- [Vision](https://www.apple.com/apple-vision-pro/)
+-
+
+- [AirPods](https://www.apple.com/airpods/)
+-
+
+- [TV & Home](https://www.apple.com/tv-home/)
+-
+
+- [Entertainment](https://www.apple.com/entertainment/)
+-
+
+- [Accessories](https://www.apple.com/us/shop/goto/buy_accessories)
+-
+
+- [Support](https://support.apple.com/?cid=gn-ols-home-hp-tab)
+-
+
+- [Search apple.com](https://www.apple.com/us/search)
+-
+[0 +](https://www.apple.com/us/shop/goto/bag)
+
+[Newsroom](https://www.apple.com/newsroom/)
+
+- [Apple Services](https://www.apple.com/newsroom/apple-services/)
+- [Apple Stories](https://www.apple.com/newsroom/apple-stories/)
+
+Search Newsroom
+
+PRESS RELEASEApril 30, 2026
+
+# Apple reports second quarter results
+
+March quarter records for total company revenue, iPhone revenue, and EPS
+
+Services revenue reaches new all-time high
+
+-
+-
+-
+-
+
+CUPERTINO, CALIFORNIA Apple today announced financial results for its fiscal 2026 second quarter ended March 28, 2026. The Company posted quarterly revenue of $111.2 billion, up 17 percent year over year. Diluted earnings per share was $2.01, up 22 percent year over year.
+
+“Today Apple is proud to report our best March quarter ever, with revenue of $111.2 billion and double-digit growth across every geographic segment,” said Tim Cook, Apple’s CEO. “iPhone achieved a March quarter revenue record, fueled by such extraordinary demand for the iPhone 17 lineup. During the quarter, Services achieved yet another all-time record, and we were excited to introduce remarkable new products to our strongest lineup ever. That included the addition of the iPhone 17e and the M4-powered iPad Air, along with the launch of MacBook Neo, which is captivating customers all around the world.”
+
+“Our strong business performance during the March quarter generated over $28 billion in operating cash flow and drove new March quarter records for both operating cash flow and EPS,” said Kevan Parekh, Apple’s CFO. “Continued strong customer demand for our products and services once again helped us achieve a new all-time high for our installed base of active devices across all major product categories and geographic segments.”
+
+Apple’s board of directors has declared a cash dividend of $0.27 per share of the Company’s common stock, an increase of 4 percent. The dividend is payable on May 14, 2026, to shareholders of record as of the close of business on May 11, 2026. The board of directors has also authorized an additional program to repurchase up to $100 billion of the Company’s common stock.
+
+Apple will provide live streaming of its Q2 2026 financial results conference call beginning at 2:00 p.m. PT on April 30, 2026, at [apple.com/investor/earnings-call](https://apple.com/investor/earnings-call) . The webcast will be available for replay for approximately two weeks thereafter.
+
+## Media
+
+-
+
+Consolidated Financial Statements
+
+[View PDF](https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf)
+
+Apple periodically provides information for investors on its corporate website, [apple.com](https://apple.com/) , and its investor relations website, [investor.apple.com](https://investor.apple.com/) . This includes press releases and other information about financial performance, reports filed or furnished with the SEC, information on corporate governance, and details related to its annual meeting of shareholders.
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Apple reports second quarter results",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/",
+        "https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Apple reports second quarter results",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/",
+        "https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0016.txt -----------------
+=== REQUEST 16 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/us/shop/goto/store
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+- Footnote§ Financing available to qualified customers, subject to credit approval and credit limit, and requires you to select Apple Card Monthly Installments (ACMI) as your payment type at checkout at Apple. Financing terms vary by product. Taxes and shipping on items purchased using ACMI are subject to your card’s variable APR, not the ACMI 0% APR. ACMI is not available for purchases made at special storefronts or when using such special discounts in-store at Apple, except ACMI is available at the Education storefront and with the Education discount. The last month’s payment for each product will be the product’s purchase price, less all other payments at the monthly payment amount. ACMI is subject to change at any time for any reason, including but not limited to installment term lengths and eligible products. See the [Apple Card Customer Agreement (Opens in a new window)](http://www.goldmansachs.com/terms-and-conditions/Apple-Card-Customer-Agreement.pdf) for more information about ACMI.
+- Footnote± Trade-in values will vary based on the condition, year, and configuration of your eligible trade-in device. Not all devices are eligible for credit. You must be at least the age of majority to be eligible to trade in for credit or for an Apple Gift Card. Trade-in value may be applied toward qualifying new device purchase, or added to an Apple Gift Card. Actual value awarded is based on receipt of a qualifying device matching the description provided when estimate was made. Sales tax may be assessed on full value of a new device purchase. In-store trade-in requires presentation of a valid photo ID (local law may require saving this information). Offer may not be available in all stores, and may vary between in-store and online trade-in. Some stores may have additional requirements. Apple or its trade-in partners reserve the right to refuse, cancel, or limit quantity of any trade-in transaction for any reason. More details are available from Apple’s trade-in partner for trade-in and recycling of eligible devices. Restrictions and limitations may apply.
+- Footnote† New subscribers only. $11.99/month after trial. Offer is available for new Apple Music subscribers with a new eligible device for a limited time only. Offer redemption for eligible audio devices requires connecting or pairing to an Apple device running the latest iOS or iPadOS. Offer redemption for Apple Watch requires connecting or pairing to an iPhone running the latest iOS. Offer good for three months after eligible device activation. Only one offer per Apple Account, regardless of the number of eligible devices you purchase. Plan automatically renews until cancelled. Restrictions and other [offer terms (Opens in a new window)](https://www.apple.com/promo) apply.
+- Footnote‡ AT&T iPhone 17 Pro, iPhone 17 Pro Max, and iPhone 17 Special Deal: Monthly price (if shown) reflects net monthly payment, after application of AT&T trade-in credit applied over 36 months with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, and iPhone 17 and trade-in of eligible smartphone. Receive credit with purchase of an iPhone 17 Pro or iPhone 17 Pro Max activated on any eligible AT&T unlimited plan except Unlimited Starter, Unlimited Starter SL, Unlimited Starter(SM), or AT&T Value 2.0 plans of either $1100, $830 or $350 (based upon the model and condition of your trade-in smartphone). Receive credit with purchase of an iPhone 17 Pro or iPhone 17 Pro Max activated on an AT&T Unlimited Starter, AT&T Unlimited Starter SL, or AT&T Unlimited Starter(SM) plan of either $830 or $350 (based upon the model and condition of your trade-in smartphone). Receive credit with purchase of an iPhone 17 Pro or iPhone 17 Pro Max activated on an AT&T Value 2.0 plan of either $500 or $350 (based upon the model and condition of your trade-in smartphone). Receive credit with purchase of an iPhone 17 activated on any eligible AT&T unlimited plan except Unlimited Starter, Unlimited Starter SL, Unlimited Starter(SM), or AT&T Value 2.0 plans of either $800 or $350 (based upon the model and condition of your trade-in smartphone). Receive credit with purchase of an iPhone 17 activated on an AT&T Unlimited Starter, AT&T Unlimited Starter SL, or AT&T Unlimited Starter(SM) plan of either $800 or $350 (based upon the model and condition of your trade-in smartphone). Receive credit with purchase of an iPhone 17 activated on AT&T Value 2.0 plans of either $500 or $350 (based upon the model and condition of your trade-in smartphone). Max bill credits will not exceed the cost of the device. Requires upgrade of an existing line or activation of a new line and purchase of a new iPhone 17 Pro, iPhone 17 Pro Max, or iPhone 17 on qualifying 36 month 0% APR installment plan, subject to carrier credit qualification. Customers purchasing this offer through Apple cannot add the Next Up Anytime option. $0 down for well qualified customers only, or down payment may be required and depends on a variety of factors. Tax on full retail price due at sale. Requires activation on eligible AT&T unlimited plan. AT&T may temporarily slow data speeds if the network is busy. If you cancel eligible wireless service, credits will stop and you will owe the remaining device balance. Activation/Upgrade Fee: $35. Trade in device may not be on existing installment plan. Bill credits are applied as a monthly credit over the 36-month installment plan. Credits start within 3 bills. Will receive catchup credits once credits start. Wireless line must be on an installment agreement, active, and in good standing for 30 days to qualify. Installment agreement starts when device is shipped. To get all credits, device must remain on agreement for entire term and you must keep eligible service on device for entire installment term. Limited time offer; subject to change. Limits: one trade-in per qualifying purchase and one credit per line. May not be combinable with other offers, discounts, or credits. Purchase, financing, other limits, and restrictions apply. Price for iPhone 17 includes $30 AT&T connectivity discount. Activation required.
+
+AT&T iPhone Air Special Deal: Monthly price (if shown) reflects net monthly payment, after application of AT&T bill credit applied over 36 months. Buy an iPhone Air 256GB and get $639.36 in bill credits applied over 36 months. Buy an iPhone Air 512GB and get $659.36 in bill credits applied over 36 months. Buy an iPhone Air 1 TB and get $679.36 in bill credits applied over 36 months. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) AT&T monthly bill credits applied over 36 months. Requires upgrade of an existing line (or activation of a new line) and purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. $0 down for well-qualified customers only, or down payment may be required and depends on a variety of factors. Tax on full retail price due at sale. Requires activation on eligible AT&T unlimited plan. AT&T may temporarily slow data speeds if the network is busy. If you cancel eligible wireless service, credits will stop and you will owe the remaining device balance. Activation/Upgrade Fee: $35. Bill credits are applied as a monthly credit over the 36-month installment plan. Credits start within 3 bills. Will receive catch-up credits once credits start. Wireless line must be on an installment agreement, active, and in good standing for 30 days to qualify. Installment agreement starts when device is shipped. To get all credits, device must remain on agreement for entire term and you must keep eligible service on device for entire installment term. Limited-time offer; subject to change. Limits: one credit per line. May not be combinable with other offers, discounts, or credits. Purchase, financing, other limits, and restrictions apply. Activation required.
+
+T-Mobile iPhone 17 and iPhone Air Special Deal: Monthly price (if shown) reflects net monthly payment, after application of T-Mobile trade-in credit applied over 24 months with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air and trade-in of eligible smartphone. Any Condition trade-in offer requires Experience Beyond or Go5G Next plan. Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) T-Mobile monthly bill credits applied over 24 months. Allow 2 bill cycles from valid submission and validation of trade-in. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit, data plan, and trade-in (e.g., iPhone 16 Pro Max) in good condition required. $35 device connection charge due on next bill. May not be combinable with some offers, discounts, or promotions. Activation required. Price for iPhone 17 includes $30 T-Mobile connectivity discount. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Existing customers: Receive credit with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air (based upon the model and condition of your trade-in smartphone) of $1100, $800 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $900, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans)($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings)plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be an existing T-Mobile customer.
+
+Add-a-Line customers: Receive credit with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air (based upon the model and condition of your trade-in smartphone) of $1100, $800 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $900, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans)($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings)plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $700 or $350 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials (with 55+, Military, & First Responder Savings) plan ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New customers: Receive credit with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air (based upon the model and condition of your trade-in smartphone) of $1100, $800 or $500 for customers on an Experience Beyond plan (excluding all 55, Military, First Responder plans) ($100+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More plan (excluding all 55, Military, First Responder plans) ($85+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; or $700 or $350 for customers on an Essentials plan (excluding all 55, Military, First Responder plans) ($60+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account. Must be a new T-Mobile customer.
+
+T-Mobile iPhone 17 and iPhone Air No Trade-in Required Deal: T-Mobile port-in bill credit applied over 24 months with purchase of an iPhone 17 Pro Max, iPhone 17 Pro, iPhone Air, or iPhone 17. Max bill credits will not exceed the cost of the device. Line with promo must be active and in good standing to receive credits; allow 2 bill cycles. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit, service, and port-in (AT&T, Verizon, or another eligible carrier, see complete list at [T‑Mobile.com/port (Opens in a new window)](https://t-mobile.com/port) ) required. $35 device connection charge due on next bill. Max 4 promotions on any iPhone per account. May not be combinable with some offers, discounts, or promotions. Activation required. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Add-a-line Customers: Buy an iPhone 17, iPhone 17 Pro, iPhone 17 Pro Max, or iPhone Air and get up to $1100 in bill credits applied over 24 months for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable); or up to $900 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable); or up to $800 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable); or up to $600 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable). No trade-in required. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New Customers: Buy an iPhone 17, iPhone 17 Pro, iPhone 17 Pro Max, or iPhone Air and get up to $1100 in bill credits applied over 24 months for customers on an Experience Beyond plan (excluding all 55+, Military, & First Responder Savings plans)($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable); or up to $800 for customers on an Experience More plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable). No trade-in required. Must be a new T-Mobile customer.
+
+Verizon iPhone 17 and iPhone Air Special Deal: Monthly price (if shown) reflects net monthly payment, after application of Verizon trade-in credit applied over 36 months with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air.
+
+Existing customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive: $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro or iPhone 17 Pro Max; $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone Air; or $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $360 or $180 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Must be an existing Verizon mobile customer.
+
+New or Add-a-Line customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive: $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro or iPhone 17 Pro Max; $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone Air; or $830 or $550 credit if porting in a phone number or $830 or $415 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $650 or $325 credit if porting in a phone number or $360 or $180 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Must be a new Verizon mobile customer or adding a new line to an existing Verizon mobile account.
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [],
+  "routes": []
+}
+
+=== PARSED ===
+{
+  "events": [],
+  "routes": [],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0017.txt -----------------
+=== REQUEST 17 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/us/shop/goto/store
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+Existing customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive: $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro or iPhone 17 Pro Max; $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone Air; or $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $360 or $180 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Must be an existing Verizon mobile customer.
+
+New or Add-a-Line customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive: $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro or iPhone 17 Pro Max; $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone Air; or $830 or $550 credit if porting in a phone number or $830 or $415 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $830 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $650 or $325 credit if porting in a phone number or $360 or $180 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17. Must be a new Verizon mobile customer or adding a new line to an existing Verizon mobile account.
+
+Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) Verizon monthly bill credits applied over 36 months. Customer must remain in the Verizon Device Payment Program for 36 months to receive the full benefit of the Verizon bill credits. Bill credits may take 1-2 bill cycles to appear. If it takes two cycles for bill credits to appear, you'll see the credit for the first cycle on your second bill in addition to that month's credit. Requires purchase and activation of a new iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17, or iPhone Air with the Verizon Device Payment Program at 0% APR for 36 months, subject to Verizon credit qualification, and iPhone availability and limits. Taxes and shipping not included in monthly price. Sales tax may be assessed on full value of new iPhone. Requires eligible unlimited Verizon mobile plan. Requires trade-in of eligible device. Must be at least 18 to trade-in. Apple or its trade-in partners reserve the right to refuse or limit any trade-in transaction for any reason. In-store trade-in requires presentation of a valid, government-issued photo ID (local law may require saving this information). In-store promotion availability subject to local law; speak to a Specialist to learn more. Limited-time offer; subject to change. Additional terms from Apple, Verizon, and Apple's trade-in partners may apply. Price for iPhone 17 includes $30 Verizon connectivity discount
+
+Verizon iPhone 17 and iPhone Air No Trade-in Required Deal: Monthly price (if shown) reflects net monthly payment, after application of Verizon bill credit applied over 36 months. Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos), Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) or Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $1,000, $830 or $0 (respective) credit with purchase of an iPhone 17 Pro Max; $1,000, $830, or $0 (respectively) credit with purchase of an iPhone 17 Pro; $1,000, $830, or $0 (respectively) credit with purchase of an iPhone Air; or $830, $830, or $0 (respectively) credit with purchase of an iPhone 17. Must be a new Verizon customer or adding a new line to an existing Verizon account. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) Verizon monthly bill credits applied over 36 months. Max bill credits will not exceed the cost of the device. Credit comprised of Verizon monthly bill credits applied over 36 months. Customer must remain in the Verizon Device Payment Program for 36 months to receive the full benefit of the Verizon bill credits. Bill credits may take 1-2 bill cycles to appear. If it takes two cycles for bill credits to appear, you'll see the credit for the first cycle on your second bill in addition to that month's credit. Requires purchase and activation of a new iPhone 17 Pro, iPhone 17 Pro Max, iPhone Air, or iPhone 17 with the Verizon Device Payment Program at 0% APR for 36 months, subject to carrier credit qualification, and iPhone availability and limits. Taxes and shipping not included in monthly price. Sales tax may be assessed on full value of new iPhone. Requires eligible unlimited service plan. In-store promotion availability subject to local law; speak to a Specialist to learn more. Limited-time offer; subject to change. Additional terms from Apple and Verizon may apply. Price for iPhone 17 includes $30 Verizon connectivity discount.
+
+AT&T iPhone 17e Special Deal: Monthly price (if shown) reflects net monthly payment, after application of AT&T bill credit applied over 36 months. Requires upgrade of an existing line or activation of a new line. Customers upgrading or activating a new line and buying an (i) iPhone 17e 256 GB will get $383.36 in bill credits or (ii) an iPhone 17e 512 GB and get $367.36 in bill credits. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) AT&T monthly bill credits applied over 36 months. Requires purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. $0 down for well-qualified customers only, or down payment may be required and depends on a variety of factors. Tax on full retail price due at sale. Requires activation on eligible AT&T unlimited plan. AT&T may temporarily slow data speeds if the network is busy. If you cancel eligible wireless service, credits will stop and you will owe the remaining device balance. Activation/Upgrade Fee: $35. Bill credits are applied as a monthly credit over the 36-month installment plan. Credits start within 3 bills. Will receive catch-up credits once credits start. Wireless line must be on an installment agreement, active, and in good standing for 30 days to qualify. Installment agreement starts when device is shipped. To get all credits, device must remain on agreement for entire term and you must keep eligible service on device for entire installment term. Limited-time offer; subject to change. Limits: one credit per line. May not be combinable with other offers, discounts, or credits. Purchase, financing, other limits, and restrictions apply. Activation required.
+
+T-Mobile iPhone 17e Special Deal: Monthly price (if shown) reflects net monthly payment, after application of T-Mobile trade-in credit applied over 24 months with purchase of an iPhone 17e and trade-in of eligible smartphone. Any Condition trade-in offer requires Experience Beyond or Go5G Next plan. Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) T-Mobile monthly bill credits applied over 24 months. Allow 2 bill cycles from valid submission and validation of trade-in. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit, data plan, and trade-in (e.g., iPhone 16 Pro Max) in good condition required. $35 device connection charge due on next bill. May not be combinable with some offers, discounts, or promotions. Activation required. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Existing customers: Receive credit with purchase of an iPhone 17e (based upon the model and condition of your trade-in smartphone) of $799 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $799, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $799 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be an existing T-Mobile customer.
+
+Add-a-Line customers: Receive credit with purchase of an iPhone 17e (based upon the model and condition of your trade-in smartphone) of $799 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $799, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $799 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $700 or $350 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials (with 55+, Military, & First Responder Savings) plan ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New customers: Receive credit with purchase of an iPhone 17e (based upon the model and condition of your trade-in smartphone) of $799 or $500 for customers on an Experience Beyond plan (excluding all 55, Military, First Responder plans) ($100+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; $799 or $400 for customers on an Experience More plan (excluding all 55, Military, First Responder plans) ($85+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; or $700 or $350 for customers on an Essentials plan (excluding all 55, Military, First Responder plans) ($60+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account. Must be a new T-Mobile customer.
+
+T-Mobile iPhone 17e No Trade-in Required Deal: T-Mobile port-in bill credit applied over 24 months with purchase of an iPhone 17e. Max bill credits will not exceed the cost of the device. Line with promo must be active and in good standing to receive credits; allow 2 bill cycles. Tax on pre-credit price due at sale. Limited-time; subject to change. $35 device connection charge due on next bill. Qualifying credit, service, and port-in (excludes Google Voice, Tracfone, Simple Mobile, Safe Link, TelCel, Total Wireless, Net 10, Straight Talk, Walmart Family Mobile, Walmart-Safelink, TruConnect (T-Mobile), Working Assets (aka Credo Mobile), T-Mobile prepaid, Metro, Assurance Wireless for Metro, Cammio, LLC, TextNow, Phone.com, Republic Wireless, Ring Central, Ooma Home Phone Support, Vonage:197D-NSR/4, Bandwidth.com, Neutral Tandem, or TCI Telephony Svcs) required. Max 4 promotions on any iPhone per account. May not be combinable with some offers, discounts, or promotions. Activation required. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Add-a-line Customers: Buy an iPhone 17e and get up to $630 in bill credits applied over 24 months for customers on an Experience Beyond, Experience More, Essentials, Go5G Next, Go5G Plus, Go5G, Magenta, or Magenta MAX plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable). No trade-in required. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New Customers: Buy an iPhone 17e and get up to $630 in bill credits applied over 24 months for customers on an Experience Beyond, Experience More, or Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount if applicable; plus taxes & fees). No trade-in required. Must be a new T-Mobile customer.
+
+Verizon iPhone 17e Special Deal: Monthly price (if shown) reflects net monthly payment, after application of Verizon trade-in credit applied over 36 months with purchase of an iPhone 17e.
+
+Existing customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $600 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $600 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $360 or $180 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Must be an existing Verizon mobile customer.
+
+New or Add-a-Line customers: Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $600 or $550 credit if porting in a phone number or $600 or $415 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Customers on an Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $600 or $415 credit (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Customers on an Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive $600 or $325 credit if porting in a phone number or $360 or $180 if not porting in a phone number (based upon the model of your trade-in smartphone) with purchase of an iPhone 17e. Must be a new Verizon mobile customer or adding a new line to an existing Verizon mobile account.
+
+Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) Verizon monthly bill credits applied over 36 months. Customer must remain in the Verizon Device Payment Program for 36 months to receive the full benefit of the Verizon bill credits. Bill credits may take 1-2 bill cycles to appear. If it takes two cycles for bill credits to appear, you’ll see the credit for the first cycle on your second bill in addition to that month’s credit. Requires purchase and activation of a new iPhone 17e with the Verizon Device Payment Program at 0% APR for 36 months, subject to Verizon credit qualification, and iPhone availability and limits. Taxes and shipping not included in monthly price. Sales tax may be assessed on full value of new iPhone. Requires eligible unlimited Verizon mobile plan. Requires trade-in of eligible device. Must be at least 18 to trade-in. Apple or its trade-in partners reserve the right to refuse or limit any trade-in transaction for any reason. In-store trade-in requires presentation of a valid, government-issued photo ID (local law may require saving this information). In-store promotion availability subject to local law; speak to a Specialist to learn more. Limited-time offer; subject to change. Additional terms from Apple, Verizon, and Apple’s trade-in partners may apply.
+
+AT&T iPhone 16 Special Deal: Monthly price (if shown) reflects net monthly payment, after application of AT&T bill credit applied over 36 months. Requires upgrade of an existing line or activation of a new line. Customers upgrading or activating a new line and buying an iPhone 16 128 GB will get $441.36 in bill credits. Requires purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) AT&T monthly bill credits applied over 36 months. Requires purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. $0 down for well-qualified customers only, or down payment may be required and depends on a variety of factors. Tax on full retail price due at sale. Requires activation on eligible AT&T unlimited plan. AT&T may temporarily slow data speeds if the network is busy. If you cancel eligible wireless service, credits will stop and you will owe the remaining device balance. Activation/Upgrade Fee: $35. Bill credits are applied as a monthly credit over the 36-month installment plan. Credits start within 3 bills. Will receive catch-up credits once credits start. Wireless line must be on an installment agreement, active, and in good standing for 30 days to qualify. Installment agreement starts when device is shipped. To get all credits, device must remain on agreement for entire term and you must keep eligible service on device for entire installment term. Limited-time offer; subject to change. Limits: one credit per line. May not be combinable with other offers, discounts, or credits. Purchase, financing, other limits, and restrictions apply. Activation required.
+
+T-Mobile iPhone 16 Special Deal: Monthly price (if shown) reflects net monthly payment, after application of T-Mobile trade-in credit applied over 24 months with purchase of an iPhone 16 or iPhone 16 Plus and trade-in of eligible smartphone. Any Condition trade-in offer requires Experience Beyond or Go5G Next plan. Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) T-Mobile monthly bill credits applied over 24 months. Allow 2 bill cycles from valid submission and validation of trade-in. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit, data plan, and trade-in (e.g., iPhone 16 Pro Max) in good condition required. $35 device connection charge due on next bill. May not be combinable with some offers, discounts, or promotions. Activation required. Price for iPhone 16 and iPhone 16 Plus includes $30 T-Mobile connectivity discount. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "",
+      "urls": []
+    }
+  ],
+  "routes": []
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "",
+      "urls": []
+    }
+  ],
+  "routes": [],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0018.txt -----------------
+=== REQUEST 18 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/us/shop/goto/store
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+AT&T iPhone 16 Special Deal: Monthly price (if shown) reflects net monthly payment, after application of AT&T bill credit applied over 36 months. Requires upgrade of an existing line or activation of a new line. Customers upgrading or activating a new line and buying an iPhone 16 128 GB will get $441.36 in bill credits. Requires purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) AT&T monthly bill credits applied over 36 months. Requires purchase on qualifying 36-month 0% APR installment plan, subject to carrier credit qualification. $0 down for well-qualified customers only, or down payment may be required and depends on a variety of factors. Tax on full retail price due at sale. Requires activation on eligible AT&T unlimited plan. AT&T may temporarily slow data speeds if the network is busy. If you cancel eligible wireless service, credits will stop and you will owe the remaining device balance. Activation/Upgrade Fee: $35. Bill credits are applied as a monthly credit over the 36-month installment plan. Credits start within 3 bills. Will receive catch-up credits once credits start. Wireless line must be on an installment agreement, active, and in good standing for 30 days to qualify. Installment agreement starts when device is shipped. To get all credits, device must remain on agreement for entire term and you must keep eligible service on device for entire installment term. Limited-time offer; subject to change. Limits: one credit per line. May not be combinable with other offers, discounts, or credits. Purchase, financing, other limits, and restrictions apply. Activation required.
+
+T-Mobile iPhone 16 Special Deal: Monthly price (if shown) reflects net monthly payment, after application of T-Mobile trade-in credit applied over 24 months with purchase of an iPhone 16 or iPhone 16 Plus and trade-in of eligible smartphone. Any Condition trade-in offer requires Experience Beyond or Go5G Next plan. Max bill credits will not exceed the cost of the device. Credit comprised of (i) Apple instant trade-in credit at checkout and (ii) T-Mobile monthly bill credits applied over 24 months. Allow 2 bill cycles from valid submission and validation of trade-in. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit, data plan, and trade-in (e.g., iPhone 16 Pro Max) in good condition required. $35 device connection charge due on next bill. May not be combinable with some offers, discounts, or promotions. Activation required. Price for iPhone 16 and iPhone 16 Plus includes $30 T-Mobile connectivity discount. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Existing customers: Receive credit with purchase of an iPhone 16 or iPhone 16 Plus (based upon the model and condition of your trade-in smartphone) of $899, $800 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $899, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be an existing T-Mobile customer.
+
+Add-a-Line customers: Receive credit with purchase of an iPhone 16 or iPhone 16 Plus (based upon the model and condition of your trade-in smartphone) of $899, $800 or $500 for customers on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $899, $600 or $300 for customers on an Experience Beyond or Go5G Next (with 55+, Military, & First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $600 or $300 for customers on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; $700 or $350 for customers on a Go5G, Magenta, Magenta MAX, or Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account; or $300 or $150 for customers on a Go5G, Magenta, Magenta MAX, or Essentials (with 55+, Military, & First Responder Savings) plan ($45+/mo. plan after AutoPay discount and plus taxes & fees if applicable) Max 4 promotions on any iPhone per account. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New customers: Receive credit with purchase of an iPhone 16 or iPhone 16 Plus (based upon the model and condition of your trade-in smartphone) of $899, $800 or $500 for customers on an Experience Beyond plan (excluding all 55, Military, First Responder plans) ($100+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; $800 or $400 for customers on an Experience More plan (excluding all 55, Military, First Responder plans) ($85+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account; or $700 or $350 for customers on an Essentials plan (excluding all 55, Military, First Responder plans) ($60+/mo. plan after AutoPay discount if applicable; plus taxes & fees) Max 4 promotions on any iPhone per account. Must be a new T-Mobile customer.
+
+Verizon iPhone 16, iPhone 16 Plus No Trade-in Required Deal: Monthly price (if shown) reflects net monthly payment, after application of Verizon bill credit applied over 36 months. Customers on an Unlimited Ultimate plan (min. $95/mo w/Auto Pay (+taxes/fees) for 36 mos), Unlimited Plus plan (min. $80/mo w/Auto Pay (+taxes/fees) for 36 mos) or Unlimited Welcome plan (min. $65/mo w/Auto Pay (+taxes/fees) for 36 mos) receive: $730 credit (respectively) with purchase of an iPhone 16; $830 credit with purchase of an iPhone 16 Plus. Must be a new Verizon customer or adding a new line to an existing Verizon account. If you are trading in a device with this deal, credits will be comprised of (i) Apple instant trade-in credit at checkout and (ii) Verizon monthly bill credits applied over 36 months. Max bill credits will not exceed the cost of the device. Credit comprised of Verizon monthly bill credits applied over 36 months. Customer must remain in the Verizon Device Payment Program for 36 months to receive the full benefit of the Verizon bill credits. Bill credits may take 1-2 bill cycles to appear. If it takes two cycles for bill credits to appear, you'll see the credit for the first cycle on your second bill in addition to that month's credit. Requires purchase and activation of a new iPhone 16, iPhone 16 Plus, or iPhone 16e with the Verizon Device Payment Program at 0% APR for 36 months, subject to carrier credit qualification, and iPhone availability and limits. Taxes and shipping not included in monthly price. Sales tax may be assessed on full value of new iPhone. Requires eligible unlimited service plan. In-store promotion availability subject to local law; speak to a Specialist to learn more. Limited-time offer; subject to change. Additional terms from Apple and Verizon may apply. Price for iPhone 16 and iPhone 16 Plus includes $30 Verizon connectivity discount. Activation required.
+
+T-Mobile iPhone 16 and iPhone 16 Plus No Trade-in Required Deal: T-Mobile bill credits applied over 24 months with purchase of an iPhone 16 or iPhone 16 Plus. Max bill credits will not exceed the cost of the device. Line with promo must be active and in good standing to receive credits; allow 2 bill cycles. Tax on pre-credit price due at sale. Limited-time; subject to change. Qualifying credit and service required. $35 device connection charge due on next bill. May not be combinable with some offers, discounts, or promotions. Activation required. Price for iPhone 16 and iPhone 16 Plus includes $30 T-Mobile connectivity discount. Contact T-Mobile before cancelling entire account to continue remaining bill credits, or credits stop & balance on required finance agreement is due. Bill credits end if you pay off early.
+
+Add-a-line Customers: Buy an iPhone 16 or iPhone 16 Plus activated on select plans and get bill credits applied over 24 months. Customers porting from AT&T, Verizon, or another eligible carrier (see complete list at [T‑Mobile.com/port (Opens in a new window)](https://t-mobile.com/port) ) and on an Experience Beyond or Go5G Next plan (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $899 in credits, or on an Experience Beyond or Go5G Next (with 55+, Military, or First Responder Savings) plan ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $899 in credits, or on an Experience More or Go5G Plus plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $800 in credits; max 4 promotions on any iPhone per account. Customers porting from carriers other than Google Voice, Tracfone, Simple Mobile, Safe Link, TelCel, Total Wireless, Net 10, Straight Talk, Walmart Family Mobile, Walmart-Safelink, TruConnect (T-Mobile), Working Assets (aka Credo Mobile), T-Mobile prepaid, Metro, Assurance Wireless for Metro, Cammio, LLC, TextNow, Phone.com, Republic Wireless, Ring Central, Ooma Home Phone Support, Vonage:197D-NSR/4, Bandwidth.com, Neutral Tandem, or TCI Telephony Svcs and on an Experience More or Go5G Plus (with 55+, Military, & First Responder Savings) plan ($70+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $630 in credits, or on an Essentials, Go5G, Magenta, or Magenta MAX plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount; plus taxes & fees) get up to $630 in credits; max 4 promotions on any iPhone per account. Customers without a qualifying port-in and on an Experience Beyond, Go5G Next, Experience More, Go5G Plus, Essentials, Go5G, Magenta, or Magenta MAX plan (including 55+, Military, & First Responder Savings plans) ($45+/mo. plan after AutoPay discount; plus taxes & fees) get up to $315 in credits; max 12 discounted devices per account. No trade-in required. Must be a T-Mobile customer adding a new line to an existing T-Mobile account.
+
+New Customers: Buy an iPhone 16 or iPhone 16 Plus activated on select plans and get bill credits applied over 24 months. Customers porting from AT&T, Verizon, or another eligible carrier (see complete list at ) and on an Experience Beyond (excluding all 55+, Military, & First Responder Savings plans) ($100+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $899 in credits, or on an Experience More plan (excluding all 55+, Military, & First Responder Savings plans) ($85+/mo. plan after AutoPay discount and plus taxes & fees if applicable) get up to $800 in credits; max 4 promotions on any iPhone per account. Customers porting from carriers other than Google Voice, Tracfone, Simple Mobile, Safe Link, TelCel, Total Wireless, Net 10, Straight Talk, Walmart Family Mobile, Walmart-Safelink, TruConnect (T-Mobile), Working Assets (aka Credo Mobile), T-Mobile prepaid, Metro, Assurance Wireless for Metro, Cammio, LLC, TextNow, Phone.com, Republic Wireless, Ring Central, Ooma Home Phone Support, Vonage:197D-NSR/4, Bandwidth.com, Neutral Tandem, or TCI Telephony Svcs and on an Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount; plus taxes & fees) get up to $630 in credits; max 4 promotions on any iPhone per account. Customers without a qualifying port-in on an Experience Beyond, Experience More, or Essentials plan (excluding all 55+, Military, & First Responder Savings plans) ($60+/mo. plan after AutoPay discount; plus taxes & fees) get up to $315 in credits; max 12 discounted devices per account. No trade-in required. Must be a new T-Mobile customer.
+
+- Footnote※ Apple Watch Hermès is not eligible for education savings.
+- Footnote# Available to current and newly accepted college students and their parents, as well as faculty, staff, and homeschool teachers of all grade levels. See [Terms](https://www.apple.com/us-edu/shop/browse/open/salespolicies/edu) for more information.
+- Footnote1. $9 two-hour delivery on eligible Apple products in most metros. Offer is not available on customized Mac, engraved products, and for certain order types including orders paid for with financing or by bank transfer. Delivery times vary according to your selected delivery address, availability of your items, and the time of day you place your order. Find a store to view local store hours or see checkout for estimated delivery. A signature is required for delivery. Drivers may ask for verbal confirmation of receipt from a safe distance to satisfy the signature requirement. See [https://www.apple.com/shop/shipping-pickup/](https://www.apple.com/shop/shipping-pickup) for more information.
+- Footnote2. Apple Intelligence is available in beta. Some features may not be available in all regions or languages. For feature and language availability and system requirements, see [support.apple.com/121115 (Opens in a new window)](https://support.apple.com/en-us/121115) .
+- Footnote3. Special pricing available to qualified customers. To learn more about how to start qualifying toward special pricing, talk to an Apple Specialist in a store or give us a call at 1‑800‑MY‑APPLE.
+-
+To access and use all Apple Card features and products available only to Apple Card users, you must add Apple Card to Wallet on an iPhone or iPad that supports and has the latest version of iOS or iPadOS. Apple Card is subject to credit approval, available only for qualifying applicants in the United States, and issued by Goldman Sachs Bank USA, Salt Lake City Branch.
+
+Apple Payments Services LLC, a subsidiary of Apple Inc., is a service provider of Goldman Sachs Bank USA for Apple Card and Savings accounts. Neither Apple Inc. nor Apple Payments Services LLC is a bank.
+
+All communications from Apple and Goldman Sachs Bank USA about Apple Card (including transactional and marketing communications) and customer service support are available in English. Certain communications about Apple Card can be viewed in another language depending on your device language settings. If you reside in the U.S. Virgin Islands, American Samoa, Guam, Northern Mariana Islands, or U.S. Minor Outlying Islands, please call Goldman Sachs at 877-255-5923 with questions about Apple Card.
+
+- Apple Pay is a service provided by Apple Payments Services LLC, a subsidiary of Apple Inc. Neither Apple Inc. nor Apple Payments Services LLC is a bank. Any card used in Apple Pay is offered by the card issuer.
+
+We approximate your location from your internet IP address by matching it to a geographic region or from the location entered during your previous visit to Apple.
+
+[Apple](https://www.apple.com/)
+
+- Apple Store Online
+
+### Shop and Learn
+
+- [Store](https://www.apple.com/shop/goto/store)
+- [Mac](https://www.apple.com/mac/)
+- [iPad](https://www.apple.com/ipad/)
+- [iPhone](https://www.apple.com/iphone/)
+- [Watch](https://www.apple.com/watch/)
+- [Vision](https://www.apple.com/apple-vision-pro/)
+- [AirPods](https://www.apple.com/airpods/)
+- [TV & Home](https://www.apple.com/tv/)
+- [AirTag](https://www.apple.com/airtag/)
+- [Accessories](https://www.apple.com/shop/accessories/all)
+- [Gift Cards](https://www.apple.com/shop/gift-cards)
+
+### Apple Wallet
+
+- [Wallet](https://www.apple.com/wallet/)
+- [Apple Card](https://www.apple.com/apple-card/)
+- [Apple Pay](https://www.apple.com/apple-pay/)
+- [Apple Cash](https://www.apple.com/apple-cash/)
+
+### Account
+
+- [Manage Your Apple Account](https://appleid.apple.com/)
+- [Apple Store Account](https://secure.store.apple.com/shop/account/home)
+- [iCloud.com](https://www.icloud.com/)
+
+### Entertainment
+
+- [Apple One](https://www.apple.com/apple-one/)
+- [Apple TV](https://www.apple.com/apple-tv-plus/)
+- [Apple Music](https://www.apple.com/apple-music/)
+- [Apple Arcade](https://www.apple.com/apple-arcade/)
+- [Apple Fitness+](https://www.apple.com/apple-fitness-plus/)
+- [Apple News+](https://www.apple.com/apple-news/)
+- [Apple Podcasts](https://www.apple.com/apple-podcasts/)
+- [Apple Books](https://www.apple.com/apple-books/)
+- [App Store](https://www.apple.com/app-store/)
+
+### Apple Store
+
+- [Find a Store](https://www.apple.com/retail/)
+- [Genius Bar](https://www.apple.com/retail/geniusbar/)
+- [Today at Apple](https://www.apple.com/today/)
+- [Apple Camp](https://www.apple.com/today/camp/)
+- [Apple Store App](https://itunes.apple.com/us/app/apple-store/id375380948?mt=8)
+- [Certified Refurbished](https://www.apple.com/shop/refurbished)
+- [Apple Trade In](https://www.apple.com/shop/trade-in)
+- [Financing](https://www.apple.com/shop/browse/finance/PaypalFinancingLandingPage)
+- [Carrier Deals at Apple](https://www.apple.com/shop/buy-iphone/carrier-offers)
+- [Order Status](https://secure.store.apple.com/shop/order/list)
+- [Shopping Help](https://www.apple.com/shop/help)
+
+### For Business
+
+- [Apple and Business](https://www.apple.com/business/)
+- [Shop for Business](https://www.apple.com/retail/business/)
+
+### For Education
+
+- [Apple and Education](https://www.apple.com/education/)
+- [Shop for K-12](https://www.apple.com/education/k12/how-to-buy/)
+- [Shop for College](https://www.apple.com/shop/browse/home/education_routing)
+
+### For Healthcare
+
+- [Apple in Healthcare](https://www.apple.com/healthcare/)
+- [Health on Apple Watch](https://www.apple.com/healthcare/apple-watch/)
+- [Health Records on iPhone](https://www.apple.com/healthcare/health-records/)
+
+### For Government
+
+- [Shop for Government](https://www.apple.com/r/store/government)
+- [Shop for Veterans and Military](https://www.apple.com/shop/browse/home/veterans_military)
+
+### Apple Values
+
+- [Accessibility](https://www.apple.com/accessibility/)
+- [Education](https://www.apple.com/education/connectED/)
+- [Environment](https://www.apple.com/environment/)
+- [Inclusion and Diversity](https://www.apple.com/diversity/)
+- [Privacy](https://www.apple.com/privacy/)
+- [Racial Equity and Justice](https://www.apple.com/racial-equity-justice-initiative/)
+- [Supply Chain](https://www.apple.com/supply-chain/)
+
+### About Apple
+
+- [Newsroom](https://www.apple.com/newsroom/)
+- [Apple Leadership](https://www.apple.com/leadership/)
+- [Career Opportunities](https://www.apple.com/jobs/us/)
+- [Investors](https://investor.apple.com/)
+- [Ethics & Compliance](https://www.apple.com/compliance)
+- [Events](https://www.apple.com/apple-events/)
+- [Contact Apple](https://www.apple.com/contact/)
+
+More ways to shop: [Find an Apple Store](https://www.apple.com/retail) or [other retailer](https://locate.apple.com/) near you. Or call 1‑800‑MY‑APPLE.
+
+Copyright © 2026 Apple Inc. All rights reserved.
+
+- [Privacy Policy](https://www.apple.com/privacy/privacy-policy)
+- [Terms of Use](https://apple.com/legal/internet-services/terms/site.html)
+- [Sales and Refunds](https://www.apple.com/shop/open/salespolicies)
+- [Legal](https://apple.com/legal)
+- [Site Map](https://www.apple.com/shop/browse/sitemap)
+
+[United States](https://www.apple.com/choose-your-country)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [],
+  "routes": [
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv/",
+    "https://www.apple.com/airtag/",
+    "https://www.apple.com/shop/accessories/all",
+    "https://www.apple.com/shop/gift-cards",
+    "https://www.apple.com/wallet/",
+    "https://www.apple.com/apple-card/",
+    "https://www.apple.com/apple-pay/",
+    "https://www.apple.com/apple-cash/",
+    "https://appleid.apple.com/",
+    "https://secure.store.apple.com/shop/account/home",
+    "https://www.icloud.com/",
+    "https://www.apple.com/apple-one/",
+    "https://www.apple.com/apple-tv-plus/",
+    "https://www.apple.com/apple-music/",
+    "https://www.apple.com/apple-arcade/",
+    "https://www.apple.com/apple-fitness-plus/",
+    "https://www.apple.com/apple-news/",
+    "https://www.apple.com/apple-podcasts/",
+    "https://www.apple.com/apple-books/",
+    "https://www.apple.com/app-store/",
+    "https://www.apple.com/retail/",
+    "https://www.apple.com/retail/geniusbar/",
+    "https://www.apple.com/today/",
+    "https://www.apple.com/today/camp/",
+    "https://itunes.apple.com/us/app/apple-store/id375380948?mt=8",
+    "https://www.apple.com/shop/refurbished",
+    "https://www.apple.com/shop/trade-in",
+    "https://www.apple.com/shop/browse/finance/PaypalFinancingLandingPage",
+    "https://www.apple.com/shop/buy-iphone/carrier-offers",
+    "https://secure.store.apple.com/shop/order/list",
+    "https://www.apple.com/shop/help",
+    "https://www.apple.com/business/",
+    "https://www.apple.com/retail/business/",
+    "https://www.apple.com/education/",
+    "https://www.apple.com/education/k12/how-to-buy/",
+    "https://www.apple.com/shop/browse/home/education_routing",
+    "https://www.apple.com/healthcare/",
+    "https://www.apple.com/healthcare/apple-watch/",
+    "https://www.apple.com/healthcare/health-records/",
+    "https://www.apple.com/r/store/government",
+    "https://www.apple.com/shop/browse/home/veterans_military",
+    "https://www.apple.com/accessibility/",
+    "https://www.apple.com/education/connectED/",
+    "https://www.apple.com/environment/",
+    "https://www.apple.com/diversity/",
+    "https://www.apple.com/privacy/",
+    "https://www.apple.com/racial-equity-justice-initiative/",
+    "https://www.apple.com/supply-chain/",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/leadership/",
+    "https://www.apple.com/jobs/us/",
+    "https://www.apple.com/compliance",
+    "https://www.apple.com/apple-events/",
+    "https://www.apple.com/contact/"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [],
+  "routes": [
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv/",
+    "https://www.apple.com/airtag/",
+    "https://www.apple.com/shop/accessories/all",
+    "https://www.apple.com/shop/gift-cards",
+    "https://www.apple.com/wallet/",
+    "https://www.apple.com/apple-card/",
+    "https://www.apple.com/apple-pay/",
+    "https://www.apple.com/apple-cash/",
+    "https://appleid.apple.com/",
+    "https://secure.store.apple.com/shop/account/home",
+    "https://www.icloud.com/",
+    "https://www.apple.com/apple-one/",
+    "https://www.apple.com/apple-tv-plus/",
+    "https://www.apple.com/apple-music/",
+    "https://www.apple.com/apple-arcade/",
+    "https://www.apple.com/apple-fitness-plus/",
+    "https://www.apple.com/apple-news/",
+    "https://www.apple.com/apple-podcasts/",
+    "https://www.apple.com/apple-books/",
+    "https://www.apple.com/app-store/",
+    "https://www.apple.com/retail/",
+    "https://www.apple.com/retail/geniusbar/",
+    "https://www.apple.com/today/",
+    "https://www.apple.com/today/camp/",
+    "https://itunes.apple.com/us/app/apple-store/id375380948?mt=8",
+    "https://www.apple.com/shop/refurbished",
+    "https://www.apple.com/shop/trade-in",
+    "https://www.apple.com/shop/browse/finance/PaypalFinancingLandingPage",
+    "https://www.apple.com/shop/buy-iphone/carrier-offers",
+    "https://secure.store.apple.com/shop/order/list",
+    "https://www.apple.com/shop/help",
+    "https://www.apple.com/business/",
+    "https://www.apple.com/retail/business/",
+    "https://www.apple.com/education/",
+    "https://www.apple.com/education/k12/how-to-buy/",
+    "https://www.apple.com/shop/browse/home/education_routing",
+    "https://www.apple.com/healthcare/",
+    "https://www.apple.com/healthcare/apple-watch/",
+    "https://www.apple.com/healthcare/health-records/",
+    "https://www.apple.com/r/store/government",
+    "https://www.apple.com/shop/browse/home/veterans_military",
+    "https://www.apple.com/accessibility/",
+    "https://www.apple.com/education/connectED/",
+    "https://www.apple.com/environment/",
+    "https://www.apple.com/diversity/",
+    "https://www.apple.com/privacy/",
+    "https://www.apple.com/racial-equity-justice-initiative/",
+    "https://www.apple.com/supply-chain/",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/leadership/",
+    "https://www.apple.com/jobs/us/",
+    "https://www.apple.com/compliance",
+    "https://www.apple.com/apple-events/",
+    "https://www.apple.com/contact/"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0019.txt -----------------
+=== REQUEST 19 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.apple.com/us/shop/goto/store
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+- [Apple](https://www.apple.com/)
+-
+
+- [Store](https://www.apple.com/store)
+-
+
+- [Mac](https://www.apple.com/mac/)
+-
+
+- [iPad](https://www.apple.com/ipad/)
+-
+
+- [iPhone](https://www.apple.com/iphone/)
+-
+
+- [Watch](https://www.apple.com/watch/)
+-
+
+- [Vision](https://www.apple.com/apple-vision-pro/)
+-
+
+- [AirPods](https://www.apple.com/airpods/)
+-
+
+- [TV & Home](https://www.apple.com/tv-home/)
+-
+
+- [Entertainment](https://www.apple.com/services/)
+-
+
+- [Accessories](https://www.apple.com/shop/accessories/all)
+-
+
+- [Support](https://www.apple.com/support/)
+-
+
+- [Search apple.com](https://www.apple.com/search)
+-
+[0 +](https://www.apple.com/shop/bag)
+
+For a limited time, get a gift card up to $150 Footnote ◊ when you buy Mac or iPad with education savings. [Learn more Education Savings](https://www.apple.com/shop/browse/overlay/backtoschool)
+
+# Store
+
+The best way to buy the products you love.
+
+[Connect with a Specialist (Opens in a new window)](https://www.apple.com/store#)
+
+[Find an Apple Store Visit an Apple Store (opens in a new window)](https://www.apple.com/retail)
+
+[Mac](https://www.apple.com/shop/buy-mac)
+
+[iPhone](https://www.apple.com/shop/buy-iphone)
+
+[iPad](https://www.apple.com/shop/buy-ipad)
+
+[Apple Watch](https://www.apple.com/shop/buy-watch)
+
+[Apple Vision Pro](https://www.apple.com/shop/buy-vision)
+
+[AirPods](https://www.apple.com/airpods)
+
+[AirTag](https://www.apple.com/shop/accessories/all/airtag)
+
+[Apple TV 4K](https://www.apple.com/apple-tv-4k)
+
+[HomePod](https://www.apple.com/shop/homepod)
+
+[Accessories](https://www.apple.com/shop/accessories/all)
+
+[Apple Gift Card](https://www.apple.com/shop/gift-cards)
+
+Previous - ProductNext - Product
+
+## The latest.
+Take a look at what’s new, right now.
+
+[iPhone 17 Pro](https://www.apple.com/shop/buy-iphone/iphone-17-pro)
+
+All out Pro. From $1099 or $45.79/mo. per month for 24 mo.months Footnote ∆
+
+### NEW
+
+[MacBook Neo](https://www.apple.com/shop/buy-mac/macbook-neo)
+
+The magic of Mac at a surprising price.
+From $699 or $58.25/mo. per month for 12 mo.months Footnote §
+
+### LIMITED TIME
+
+[Buy Mac or iPad with education savings. - (Opens in a new window)](https://www.apple.com/shop/browse/home/education_routing)
+
+And get a gift card from $100 to $150. Footnote ◊
+
+[iPhone 17e](https://www.apple.com/shop/buy-iphone/iphone-17e)
+
+Feature stacked. Value packed. From $599 or $24.95/mo. per month for 24 mo.months Footnote ∆
+
+### FREE ENGRAVING
+
+[AirPods Max 2](https://www.apple.com/shop/buy-airpods/airpods-max-2)
+
+New intelligent features. More immersive listening. $549 or $91.50/mo. per month for 6 mo.months Footnote §
+
+[MacBook Pro](https://www.apple.com/shop/buy-mac/macbook-pro)
+
+Now with M5, M5 Pro, and M5 Max.
+From $1999 or $166.58/mo. per month for 12 mo.months Footnote §
+
+[MacBook Air](https://www.apple.com/shop/buy-mac/macbook-air/macbook-air-with-m5-chip)
+
+Now supercharged by M5.
+From $1299 or $108.25/mo. per month for 12 mo.months Footnote §
+
+[iPad Air](https://www.apple.com/shop/buy-ipad/ipad-air)
+
+Now supercharged by M4.
+From $749 or $62.41/mo. per month for 12 mo.months Footnote §
+
+[Apple Watch Series 11](https://www.apple.com/shop/buy-watch/apple-watch)
+
+The ultimate way to watch your health. From $399 or $33.25/mo. per month for 12 mo. months Footnote §
+
+[iPhone 17](https://www.apple.com/shop/buy-iphone/iphone-17)
+
+Magichromatic. From $799 or $33.29/mo. per month for 24 mo.months Footnote ∆
+
+[iPhone Air](https://www.apple.com/shop/buy-iphone/iphone-air)
+
+The thinnest iPhone ever. From $999 or $41.62/mo. per month for 24 mo.months Footnote ∆
+
+[Studio Display](https://www.apple.com/shop/buy-mac/studio-display)
+
+A sight to be bold.
+From $1599 or $133.25/mo. per month for 12 mo.months Footnote §
+
+[Studio Display XDR](https://www.apple.com/shop/buy-mac/studio-display-xdr)
+
+Pixel sharpener.
+From $3299 or $274.91/mo. per month for 12 mo.months Footnote §
+
+[Apple Watch SE 3](https://www.apple.com/shop/buy-watch/apple-watch-se)
+
+Walk it. Talk it. Track it. Love it. From $249 or $20.75/mo. per month for 12 mo. months Footnote §
+
+Previous - The latest.Next - The latest.
+
+## Help is here.
+Whenever and however you need it.
+
+### APPLE SPECIALIST
+
+[Shop one on one with a Specialist. Online or in a store.](https://www.apple.com/shop/browse/overlay/store/specialist)
+
+[Shop with a Specialist over video. - (Opens in a new window)](https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com)
+
+Choose your next device in a guided, one-way video session.
+
+### Today at Apple
+
+[Explore Apple Intelligence - (Opens in a new window)](https://www.apple.com/today/event/spotlight-apple-intelligence?cid=rem-us-taa-store-consumer-spotlight-ai)
+
+Come try it for yourself in a free session at the Apple Store.
+
+### Today at Apple
+
+[Join free sessions at your Apple Store. - (Opens in a new window)](https://www.apple.com/today/calendar?sessions=skills&topics=daily-sessions&cid=rem-us-taa-store-fundm-cal)
+
+Learn about the latest features and how to go further with your Apple devices.
+
+### PERSONAL SETUP
+
+[Set up your new device with help from a Specialist.](https://www.apple.com/shop/browse/overlay/store/personal)
+
+Let us guide you through data transfer, the latest features, and more in an online, one-on-one session.
+
+[Get expert service and support at the Genius Bar.](https://www.apple.com/shop/browse/overlay/store/genius)
+
+Previous - Help is here.Next - Help is here.
+
+## The Apple Store difference.
+Even more reasons to shop with us.
+
+[Trade in your current device. Get credit toward a new one. Footnote ±](https://www.apple.com/shop/browse/overlay/store/tradein)
+
+[Pay in full or pay over time. Your choice.](https://www.apple.com/shop/browse/overlay/store/financing)
+
+[Make them yours. Engrave a mix of emoji, names, and numbers for free.](https://www.apple.com/shop/browse/overlay/store/engraving)
+
+[Enjoy two-hour delivery from an Apple Store, free delivery, or easy pickup. Footnote 1](https://www.apple.com/shop/browse/overlay/store/delivery)
+
+[Get a personalized shopping experience in the Apple Store app.](https://www.apple.com/shop/browse/overlay/store/personalized_shopping)
+
+[Customize a Mac and style an Apple Watch just for them.](https://www.apple.com/shop/browse/overlay/store/cto)
+
+Previous - The Apple Store difference.Next - The Apple Store difference.
+
+## Accessories.
+Essentials that pair perfectly with your favorite devices.
+
+[Here and wow. - (Opens in a new window)](https://www.apple.com/shop/accessories/all/new-arrivals)
+
+The accessories you love.
+In a fresh mix of colors.
+
+-
+-
+-
+-
+-
+-
+- +
+
+New
+
+### [iPhone 17 Pro Silicone Case with MagSafe – Bright Guava - New](https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava)
+
+$49.00
+
+-
+-
+-
+-
+-
+-
+- +
+
+New
+
+### [Crossbody Strap - Bright Guava - New](https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava)
+
+$59.00
+
+### [MagSafe Charger (1 m)](https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m)
+
+$39.00
+
+New
+
+### [iPhone 17e Clear Case with MagSafe - New](https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe)
+
+$49.00
+
+-
+-
+-
+-
+-
+-
+- +
+
+### [46mm Clementine Sport Band - M/L](https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l)
+
+$49.00
+
+-
+-
+
+### [Magic Keyboard for iPad Air 13‑inch (M4) - US English - Black](https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black)
+
+$319.00
+
+### [iPhone Air MagSafe Battery](https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery)
+
+$99.00
+
+-
+-
+-
+-
+
+### [iPhone Air Bumper – Tan](https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan)
+
+$39.00
+
+-
+-
+-
+-
+-
+
+New
+
+### [Beats USB‑C to USB‑C Woven Cable (1.5 m / 5 ft.) – Power Pink - New](https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink)
+
+$18.99
+
+### [mophie Check Case for iPhone Air](https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air)
+
+$59.95
+
+-
+-
+
+### [Herschel Cloud Sling for iPhone](https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone)
+
+$59.95
+
+### [40W Dynamic Power Adapter with 60W Max](https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max)
+
+$39.00
+
+### [20W USB-C Power Adapter](https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter)
+
+$19.00
+
+[Explore all accessories. - (Opens in a new window)](https://www.apple.com/shop/accessories/all)
+
+Previous - Accessories.Next - Accessories.
+
+## Loud and clear.
+Unparalleled choices for rich, high-quality sound.
+
+[Get 3 months of Apple Music free. - (Opens in a new window)](https://www.apple.com/apple-music)
+
+Included with the purchase of select Apple devices. Footnote †
+
+-
+-
+-
+-
+-
+
+Free Engraving
+
+### [AirPods Max 2 - Midnight - Free Engraving](https://www.apple.com/shop/product/mhwk4am/a/midnight)
+
+$549.00
+
+Free Engraving
+
+### [AirPods Pro 3 - Free Engraving](https://www.apple.com/shop/product/mfhp4ll/a)
+
+$249.00
+
+Free Engraving
+
+### [AirPods 4 with Active Noise Cancellation - Free Engraving](https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation)
+
+$179.00
+
+-
+-
+-
+-
+
+### [Powerbeats Pro 2 — High-Performance Earbuds — Electric Orange](https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange)
+
+$249.99
+
+-
+-
+
+### [HomePod - Midnight](https://www.apple.com/shop/product/mdew4ll/a/midnight)
+
+$349.00
+
+-
+-
+-
+-
+-
+
+### [HomePod mini - Orange](https://www.apple.com/shop/product/mj2d3ll/a/orange)
+
+$129.00
+
+-
+-
+-
+
+### [Beats Solo 4 — On-Ear Wireless Headphones — Cloud Pink](https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink)
+
+$199.99
+
+-
+-
+-
+
+### [Beats Pill — Wireless Bluetooth® Speaker — Statement Red](https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth-speaker-statement-red)
+
+$149.99
+
+Previous - Loud and clear.Next - Loud and clear.
+
+## The Apple experience.
+Do even more with Apple products and services.
+
+[Apple Intelligence. Create, communicate, and get things done effortlessly. Footnote 2 - (Opens in a new window)](https://www.apple.com/apple-intelligence)
+
+### TODAY AT APPLE
+
+[Join the fun at Apple Camp - (Opens in a new window)](https://www.apple.com/today/event/apple-camp-fy26?cid=remm-us-taa-camp26-aso-tile)
+
+Create a helpful superhero in a free session on iPad. For kids 6–10.
+
+###
+CONTINUITY
+
+[Powerful alone. Superpowered together. - (Opens in a new window)](https://www.apple.com/macos/continuity)
+
+### APPLECARE
+
+[Handled with AppleCare.](https://www.apple.com/shop/browse/overlay/store/handled_with_applecare)
+
+Protect your products individually with AppleCare+ or multiple products with AppleCare One.
+
+###
+APPLE STORE APP
+
+[Put your bow on it.](https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting)
+
+Make the gift unmistakably theirs with a personalized message created especially for them.
+
+[Six Apple services. One easy subscription. - (Opens in a new window)](https://www.apple.com/apple-one)
+
+[Discover all the ways to use Apple Pay. - (Opens in a new window)](https://www.apple.com/apple-pay)
+
+### HOME
+
+[See how one app can control your entire home. - (Opens in a new window)](https://www.apple.com/ios/home)
+
+Previous - The Apple experience.Next - The Apple experience.
+
+## Savings and offers.
+Exclusive deals, special stores and more.
+
+### CARRIER DEALS AT APPLE
+
+[Get up to $800–$1100 in credit on a new iPhone after trade-in. - (Opens in a new window)](https://www.apple.com/shop/buy-iphone/carrier-offers)
+
+Explore deals that accept eligible trade-in devices in any condition — and some that don’t require a trade-in at all. Footnote ‡
+
+### EDUCATION
+
+[Save on a new Mac, iPad, and Apple Watch Footnote ※ with education pricing. Footnote # - (Opens in a new window)](https://www.apple.com/shop/education-pricing)
+
+### CERTIFIED REFURBISHED
+
+[Shop refurbished Apple products backed by a one‑year warranty. - (Opens in a new window)](https://www.apple.com/shop/refurbished)
+
+### SMALL BUSINESS
+
+[Simple solutions for all the ways you work. - (Opens in a new window)](https://www.apple.com/business/small-business)
+
+### GOVERNMENT
+
+[Special pricing is available for state, local, and federal agencies. Footnote 3 - (Opens in a new window)](http://www.apple.com/r/store/government)
+
+### VETERANS AND MILITARY
+
+[Active and veteran members may be eligible for exclusive savings. Footnote 3 - (Opens in a new window)](http://www.apple.com/shop/browse/home/veterans_military)
+
+Previous - Special Savings.Next - Special Savings.
+
+## Quick Links
+
+- [Find a Store (Opens in a new window)](https://www.apple.com/retail)
+- [Order Status (Opens in a new window)](https://secure.store.apple.com/shop/order/list)
+- [Shopping Help (Opens in a new window)](https://www.apple.com/shop/help)
+- [Returns (Opens in a new window)](https://www.apple.com/shop/help/returns_refund)
+- [Your Saves (Opens in a new window)](https://www.apple.com/shop/yoursaves)
+
+## Footer
+
+### footnotes
+
+- Footnote◊ Available for Qualified Purchasers only. Qualified Purchasers receive an Apple Gift Card when they purchase an eligible Mac or iPad (“Eligible Product”) at a Qualifying Location through August 27, 2026. Gift card values may vary by Eligible Product. Customers will receive a discount equal to the value of the Apple Gift Card off the price of the Eligible Product, but will be charged for all items in their cart, including the Apple Gift Card. Only one Apple Gift Card per Eligible Product per Qualified Purchaser. Offer subject to availability. While supplies last. Additional restrictions apply. View full offer terms [here](https://apple.com/us-edu/shop/back-to-school/terms-conditions) .
+- Footnote∆ Financing available to qualified customers, subject to credit approval and credit limit, and requires you to select Citizens One Apple iPhone Payments or Apple Card Monthly Installments (ACMI) as your payment type at checkout at Apple. In order to buy an iPhone with ACMI, you must select one of the following carriers (but you cannot use a prepaid carrier plan): AT&T, T-Mobile, or Verizon. An iPhone purchased with ACMI is always unlocked, so you can switch carriers at any time, subject to your carrier’s terms. Taxes and shipping on items purchased using ACMI are subject to your card’s variable APR, not the ACMI 0% APR. ACMI is not available for purchases made at special storefronts or when using such special discounts in-store at Apple, except ACMI is available at the Education storefront and with the Education discount. The last month’s payment for each product will be the product’s purchase price, less all other payments at the monthly payment amount. ACMI is subject to change at any time for any reason, including but not limited to installment term lengths and eligible products. See the [Apple Card Customer Agreement (Opens in a new window)](https://www.goldmansachs.com/terms-and-conditions/Apple-Card-Customer-Agreement.pdf) for more information about ACMI. Additional Citizens One Apple iPhone Payments terms are [here (Opens in a new window)](https://www.apple.com/legal/sales-support/iphoneinstallments_us/) .
+- Footnote§ Financing available to qualified customers, subject to credit approval and credit limit, and requires you to select Apple Card Monthly Installments (ACMI) as your payment type at checkout at Apple. Financing terms vary by product. Taxes and shipping on items purchased using ACMI are subject to your card’s variable APR, not the ACMI 0% APR. ACMI is not available for purchases made at special storefronts or when using such special discounts in-store at Apple, except ACMI is available at the Education storefront and with the Education discount. The last month’s payment for each product will be the product’s purchase price, less all other payments at the monthly payment amount. ACMI is subject to change at any time for any reason, including but not limited to installment term lengths and eligible products. See the [Apple Card Customer Agreement (Opens in a new window)](http://www.goldmansachs.com/terms-and-conditions/Apple-Card-Customer-Agreement.pdf) for more information about ACMI.
+- Footnote± Trade-in values will vary based on the condition, year, and configuration of your eligible trade-in device. Not all devices are eligible for credit. You must be at least the age of majority to be eligible to trade in for credit or for an Apple Gift Card. Trade-in value may be applied toward qualifying new device purchase, or added to an Apple Gift Card. Actual value awarded is based on receipt of a qualifying device matching the description provided when estimate was made. Sales tax may be assessed on full value of a new device purchase. In-store trade-in requires presentation of a valid photo ID (local law may require saving this information). Offer may not be available in all stores, and may vary between in-store and online trade-in. Some stores may have additional requirements. Apple or its trade-in partners reserve the right to refuse, cancel, or limit quantity of any trade-in transaction for any reason. More details are available from Apple’s trade-in partner for trade-in and recycling of eligible devices. Restrictions and limitations may apply.
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "",
+      "urls": [
+        "https://www.apple.com/shop/bag",
+        "https://www.apple.com/shop/browse/overlay/store/specialist",
+        "https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com",
+        "https://www.apple.com/shop/browse/overlay/store/personal",
+        "https://www.apple.com/shop/browse/overlay/store/genius",
+        "https://www.apple.com/shop/browse/overlay/store/tradein",
+        "https://www.apple.com/shop/browse/overlay/store/financing",
+        "https://www.apple.com/shop/browse/overlay/store/engraving",
+        "https://www.apple.com/shop/browse/overlay/store/delivery",
+        "https://www.apple.com/shop/browse/overlay/store/personalized_shopping",
+        "https://www.apple.com/shop/browse/overlay/store/cto",
+        "https://www.apple.com/shop/accessories/all",
+        "https://www.apple.com/shop/accessories/all/new-arrivals",
+        "https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava",
+        "https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava",
+        "https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m",
+        "https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe",
+        "https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l",
+        "https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black",
+        "https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery",
+        "https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan",
+        "https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink",
+        "https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air",
+        "https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone",
+        "https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max",
+        "https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter",
+        "https://www.apple.com/shop/product/mhwk4am/a/midnight",
+        "https://www.apple.com/shop/product/mfhp4ll/a",
+        "https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation",
+        "https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange",
+        "https://www.apple.com/shop/product/mdew4ll/a/midnight",
+        "https://www.apple.com/shop/product/mj2d3ll/a/orange",
+        "https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink",
+        "https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth%E2%84%A2-speaker-statement-red",
+        "https://www.apple.com/apple-music",
+        "https://www.apple.com/apple-intelligence",
+        "https://www.apple.com/today/event/apple-camp-fy26",
+        "https://www.apple.com/macos/continuity",
+        "https://www.apple.com/shop/browse/overlay/store/handled_with_applecare",
+        "https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting",
+        "https://www.apple.com/apple-one",
+        "https://www.apple.com/apple-pay",
+        "https://www.apple.com/ios/home",
+        "https://www.apple.com/shop/buy-iphone/carrier-offers",
+        "https://www.apple.com/shop/education-pricing",
+        "https://www.apple.com/shop/refurbished",
+        "https://www.apple.com/business/small-business",
+        "http://www.apple.com/r/store/government",
+        "http://www.apple.com/shop/browse/home/veterans_military"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/shop/browse/overlay/store/specialist",
+    "https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com",
+    "https://www.apple.com/shop/browse/overlay/store/personal",
+    "https://www.apple.com/shop/browse/overlay/store/genius",
+    "https://www.apple.com/shop/browse/overlay/store/tradein",
+    "https://www.apple.com/shop/browse/overlay/store/financing",
+    "https://www.apple.com/shop/browse/overlay/store/engraving",
+    "https://www.apple.com/shop/browse/overlay/store/delivery",
+    "https://www.apple.com/shop/browse/overlay/store/personalized_shopping",
+    "https://www.apple.com/shop/browse/overlay/store/cto",
+    "https://www.apple.com/shop/accessories/all",
+    "https://www.apple.com/shop/accessories/all/new-arrivals",
+    "https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava",
+    "https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava",
+    "https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m",
+    "https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe",
+    "https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l",
+    "https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black",
+    "https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery",
+    "https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan",
+    "https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink",
+    "https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air",
+    "https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone",
+    "https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max",
+    "https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter",
+    "https://www.apple.com/shop/product/mhwk4am/a/midnight",
+    "https://www.apple.com/shop/product/mfhp4ll/a",
+    "https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation",
+    "https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange",
+    "https://www.apple.com/shop/product/mdew4ll/a/midnight",
+    "https://www.apple.com/shop/product/mj2d3ll/a/orange",
+    "https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink",
+    "https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth%E2%84%A2-speaker-statement-red",
+    "https://www.apple.com/apple-music",
+    "https://www.apple.com/apple-intelligence",
+    "https://www.apple.com/today/event/apple-camp-fy26",
+    "https://www.apple.com/macos/continuity",
+    "https://www.apple.com/shop/browse/overlay/store/handled_with_applecare",
+    "https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting",
+    "https://www.apple.com/apple-one",
+    "https://www.apple.com/apple-pay",
+    "https://www.apple.com/ios/home",
+    "https://www.apple.com/shop/buy-iphone/carrier-offers",
+    "https://www.apple.com/shop/education-pricing",
+    "https://www.apple.com/shop/refurbished",
+    "https://www.apple.com/business/small-business",
+    "http://www.apple.com/r/store/government",
+    "http://www.apple.com/shop/browse/home/veterans_military"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "",
+      "urls": [
+        "https://www.apple.com/shop/bag",
+        "https://www.apple.com/shop/browse/overlay/store/specialist",
+        "https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com",
+        "https://www.apple.com/shop/browse/overlay/store/personal",
+        "https://www.apple.com/shop/browse/overlay/store/genius",
+        "https://www.apple.com/shop/browse/overlay/store/tradein",
+        "https://www.apple.com/shop/browse/overlay/store/financing",
+        "https://www.apple.com/shop/browse/overlay/store/engraving",
+        "https://www.apple.com/shop/browse/overlay/store/delivery",
+        "https://www.apple.com/shop/browse/overlay/store/personalized_shopping",
+        "https://www.apple.com/shop/browse/overlay/store/cto",
+        "https://www.apple.com/shop/accessories/all",
+        "https://www.apple.com/shop/accessories/all/new-arrivals",
+        "https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava",
+        "https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava",
+        "https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m",
+        "https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe",
+        "https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l",
+        "https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black",
+        "https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery",
+        "https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan",
+        "https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink",
+        "https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air",
+        "https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone",
+        "https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max",
+        "https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter",
+        "https://www.apple.com/shop/product/mhwk4am/a/midnight",
+        "https://www.apple.com/shop/product/mfhp4ll/a",
+        "https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation",
+        "https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange",
+        "https://www.apple.com/shop/product/mdew4ll/a/midnight",
+        "https://www.apple.com/shop/product/mj2d3ll/a/orange",
+        "https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink",
+        "https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth%E2%84%A2-speaker-statement-red",
+        "https://www.apple.com/apple-music",
+        "https://www.apple.com/apple-intelligence",
+        "https://www.apple.com/today/event/apple-camp-fy26",
+        "https://www.apple.com/macos/continuity",
+        "https://www.apple.com/shop/browse/overlay/store/handled_with_applecare",
+        "https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting",
+        "https://www.apple.com/apple-one",
+        "https://www.apple.com/apple-pay",
+        "https://www.apple.com/ios/home",
+        "https://www.apple.com/shop/buy-iphone/carrier-offers",
+        "https://www.apple.com/shop/education-pricing",
+        "https://www.apple.com/shop/refurbished",
+        "https://www.apple.com/business/small-business",
+        "http://www.apple.com/r/store/government",
+        "http://www.apple.com/shop/browse/home/veterans_military"
+      ]
+    }
+  ],
+  "routes": [
+    "https://www.apple.com/shop/browse/overlay/store/specialist",
+    "https://contactretail.apple.com/?c=us&ag=SWSOV&pg=iphone_storemain&l=en&ap=com",
+    "https://www.apple.com/shop/browse/overlay/store/personal",
+    "https://www.apple.com/shop/browse/overlay/store/genius",
+    "https://www.apple.com/shop/browse/overlay/store/tradein",
+    "https://www.apple.com/shop/browse/overlay/store/financing",
+    "https://www.apple.com/shop/browse/overlay/store/engraving",
+    "https://www.apple.com/shop/browse/overlay/store/delivery",
+    "https://www.apple.com/shop/browse/overlay/store/personalized_shopping",
+    "https://www.apple.com/shop/browse/overlay/store/cto",
+    "https://www.apple.com/shop/accessories/all",
+    "https://www.apple.com/shop/accessories/all/new-arrivals",
+    "https://www.apple.com/shop/product/mhw04zm/a/iphone-17-pro-silicone-case-with-magsafe-bright-guava",
+    "https://www.apple.com/shop/product/mhyx4ll/a/crossbody-strap-bright-guava",
+    "https://www.apple.com/shop/product/mgd74ll/a/magsafe-charger-1-m",
+    "https://www.apple.com/shop/product/mhwc4zm/a/iphone-17e-clear-case-with-magsafe",
+    "https://www.apple.com/shop/product/mhyl4am/a/46mm-clementine-sport-band-m-l",
+    "https://www.apple.com/shop/product/mgyy4ll/a/magic-keyboard-for-ipad-air-13%E2%80%91inch-m4-us-english-black",
+    "https://www.apple.com/shop/product/mgpg4am/a/iphone-air-magsafe-battery",
+    "https://www.apple.com/shop/product/mh044zm/a/iphone-air-bumper-tan",
+    "https://www.apple.com/shop/product/mk8p4ll/a/beats-usb%E2%80%91c-to-usb%E2%80%91c-woven-cable-15-m-5-ft-power-pink",
+    "https://www.apple.com/shop/product/hsfn2zm/a/mophie-check-case-for-iphone-air",
+    "https://www.apple.com/shop/product/hsfd2zm/a/herschel-cloud-sling-for-iphone",
+    "https://www.apple.com/shop/product/mgkn4am/a/40w-dynamic-power-adapter-with-60w-max",
+    "https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter",
+    "https://www.apple.com/shop/product/mhwk4am/a/midnight",
+    "https://www.apple.com/shop/product/mfhp4ll/a",
+    "https://www.apple.com/shop/product/mxp93ll/a/with-active-noise-cancellation",
+    "https://www.apple.com/shop/product/mx743ll/a/powerbeats-pro-2-high-performance-earbuds-electric-orange",
+    "https://www.apple.com/shop/product/mdew4ll/a/midnight",
+    "https://www.apple.com/shop/product/mj2d3ll/a/orange",
+    "https://www.apple.com/shop/product/muw33ll/a/beats-solo-4-on-ear-wireless-headphones-cloud-pink",
+    "https://www.apple.com/shop/product/mwqw3ll/a/beats-pill-wireless-bluetooth%E2%84%A2-speaker-statement-red",
+    "https://www.apple.com/apple-music",
+    "https://www.apple.com/apple-intelligence",
+    "https://www.apple.com/today/event/apple-camp-fy26",
+    "https://www.apple.com/macos/continuity",
+    "https://www.apple.com/shop/browse/overlay/store/handled_with_applecare",
+    "https://www.apple.com/shop/browse/overlay/store/asa_digital_gifting",
+    "https://www.apple.com/apple-one",
+    "https://www.apple.com/apple-pay",
+    "https://www.apple.com/ios/home",
+    "https://www.apple.com/shop/buy-iphone/carrier-offers",
+    "https://www.apple.com/shop/education-pricing",
+    "https://www.apple.com/shop/refurbished",
+    "https://www.apple.com/business/small-business",
+    "http://www.apple.com/r/store/government",
+    "http://www.apple.com/shop/browse/home/veterans_military"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+##########################################################################################
+# PER-PAGE TRACE META  (which watercrawl method won / go_deeper routes / counts)
+##########################################################################################
+
+pages/0001_https-investor-apple-com/meta.json:
+{
+  "url": "https://investor.apple.com",
+  "method": "render",
+  "ts": "2026-07-23T05:46:39",
+  "has_screenshot": true,
+  "n_links": 252,
+  "n_events": 4,
+  "n_routes": 10,
+  "go_deeper": [
+    "https://s2.q4cdn.com/470004039/files/doc_financials/2025/ar/_10-K-2025-As-Filed.pdf",
+    "https://s2.q4cdn.com/470004039/files/doc_earnings/2024/q4/filing/10-Q4-2024-As-Filed.pdf",
+    "https://s2.q4cdn.com/470004039/files/doc_earnings/2023/q4/filing/_10-K-Q4-2023-As-Filed.pdf",
+    "https://s2.q4cdn.com/470004039/files/doc_financials/2022/q4/_10-K-2022-(As-Filed",
+    "https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/",
+    "https://www.apple.com/newsroom/pdfs/fy2026q2/FY26_Q2_Consolidated_Financial_Statements.pdf",
+    "https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q2/filing/10Q-Q2-2026-as-filed.pdf",
+    "https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/",
+    "https://www.apple.com/newsroom/pdfs/fy2026-q1/FY26_Q1_Consolidated_Financial_Statements.pdf",
+    "https://s2.q4cdn.com/470004039/files/doc_earnings/2026/q1/filing/10Q-Q1-2026-as-filed.pdf"
+  ]
+}
+
+pages/0002_https-www-apple-com-newsroom-2026-04-apple-reports-second-qu/meta.json:
+{
+  "url": "https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/",
+  "method": "render",
+  "ts": "2026-07-23T05:46:55",
+  "has_screenshot": true,
+  "n_links": 201,
+  "n_events": 2,
+  "n_routes": 17,
+  "go_deeper": [
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/",
+    "https://investor.apple.com/"
+  ]
+}
+
+pages/0003_https-www-apple-com-newsroom-2026-01-apple-reports-first-qua/meta.json:
+{
+  "url": "https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/",
+  "method": "render",
+  "ts": "2026-07-23T05:46:55",
+  "has_screenshot": true,
+  "n_links": 200,
+  "n_events": 2,
+  "n_routes": 17,
+  "go_deeper": [
+    "https://www.apple.com/us/shop/goto/bag",
+    "https://www.apple.com/us/shop/goto/store",
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv-home/",
+    "https://www.apple.com/entertainment/",
+    "https://www.apple.com/us/shop/goto/buy_accessories",
+    "https://support.apple.com/?cid=gn-ols-home-hp-tab",
+    "https://www.apple.com/us/search",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/newsroom/apple-services/",
+    "https://www.apple.com/newsroom/apple-stories/",
+    "https://investor.apple.com/"
+  ]
+}
+
+pages/0004_https-www-apple-com-us-shop-goto-store/meta.json:
+{
+  "url": "https://www.apple.com/us/shop/goto/store",
+  "method": "render",
+  "ts": "2026-07-23T05:48:02",
+  "has_screenshot": true,
+  "n_links": 276,
+  "n_events": 1,
+  "n_routes": 57,
+  "go_deeper": [
+    "https://www.apple.com/mac/",
+    "https://www.apple.com/ipad/",
+    "https://www.apple.com/iphone/",
+    "https://www.apple.com/watch/",
+    "https://www.apple.com/apple-vision-pro/",
+    "https://www.apple.com/airpods/",
+    "https://www.apple.com/tv/",
+    "https://www.apple.com/airtag/",
+    "https://www.apple.com/shop/gift-cards",
+    "https://www.apple.com/wallet/",
+    "https://www.apple.com/apple-card/",
+    "https://www.apple.com/apple-pay/",
+    "https://www.apple.com/apple-cash/",
+    "https://appleid.apple.com/",
+    "https://secure.store.apple.com/shop/account/home",
+    "https://www.icloud.com/",
+    "https://www.apple.com/apple-one/",
+    "https://www.apple.com/apple-tv-plus/",
+    "https://www.apple.com/apple-music/",
+    "https://www.apple.com/apple-arcade/",
+    "https://www.apple.com/apple-fitness-plus/",
+    "https://www.apple.com/apple-news/",
+    "https://www.apple.com/apple-podcasts/",
+    "https://www.apple.com/apple-books/",
+    "https://www.apple.com/app-store/",
+    "https://www.apple.com/retail/",
+    "https://www.apple.com/retail/geniusbar/",
+    "https://www.apple.com/today/",
+    "https://www.apple.com/today/camp/",
+    "https://itunes.apple.com/us/app/apple-store/id375380948?mt=8",
+    "https://www.apple.com/shop/trade-in",
+    "https://www.apple.com/shop/browse/finance/PaypalFinancingLandingPage",
+    "https://secure.store.apple.com/shop/order/list",
+    "https://www.apple.com/shop/help",
+    "https://www.apple.com/business/",
+    "https://www.apple.com/retail/business/",
+    "https://www.apple.com/education/",
+    "https://www.apple.com/education/k12/how-to-buy/",
+    "https://www.apple.com/shop/browse/home/education_routing",
+    "https://www.apple.com/healthcare/",
+    "https://www.apple.com/healthcare/apple-watch/",
+    "https://www.apple.com/healthcare/health-records/",
+    "https://www.apple.com/r/store/government",
+    "https://www.apple.com/shop/browse/home/veterans_military",
+    "https://www.apple.com/accessibility/",
+    "https://www.apple.com/education/connectED/",
+    "https://www.apple.com/environment/",
+    "https://www.apple.com/diversity/",
+    "https://www.apple.com/privacy/",
+    "https://www.apple.com/racial-equity-justice-initiative/",
+    "https://www.apple.com/supply-chain/",
+    "https://www.apple.com/newsroom/",
+    "https://www.apple.com/leadership/",
+    "https://www.apple.com/jobs/us/",
+    "https://www.apple.com/compliance",
+    "https://www.apple.com/apple-events/",
+    "https://www.apple.com/contact/"
+  ]
+}

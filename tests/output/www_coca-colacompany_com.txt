@@ -1,0 +1,2569 @@
+==========================================================================================
+COMPANY: https://www.coca-colacompany.com/investors
+==========================================================================================
+RESULT: 32 events over 6 pages | status=ok | failed_render=0 failed_extract=0
+trace_dir: /workspace/WaterEvents/tests/output/_trace_0_www_coca-colacompany_com
+
+=== EVENTS (final, deduped) ===
+  [2026-07-28] [earnings] 2nd Quarter 2026 Earnings Call  (3 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call
+        https://events.q4inc.com/attendee/862353277
+        https://investors.coca-colacompany.com/ical?id=11127
+  [2026-Q1] [press_release] Q1 2026 Earnings Release  (9 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/earnings_release/Coca-Cola+2026+Q1+Earnings+Release_Full+Release_4.28.26.pdf
+        https://investors.coca-colacompany.com/_assets/_276be6890dd5622aaec9a97b9756c216/cocacolacompany/files/KO_1Q_2026_Webcast_Audio.mp3
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/webcast_transcript/CORRECTED+TRANSCRIPT_KO+Q126+Earnings+Call.pdf
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/margin_analysis_schedule/Q1%2726+Margin+Analysis+Schedule.pdf
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures/2026+Q1+GNG.pdf
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures_for_earnings_conference_call/Q1+2026+Earnings+Call+GNGs.pdf
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/ko-20260403.htm
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/0001628280-26-028802-xbrl.zip
+  [2026-07-16] [press_release] [The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations» View  (3 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations
+        https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf
+  [2026-03-09] [conference] Citi 2026 Global Consumer & Retail Conference  (3 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11099/file/KO-US_03092026_3410459.mp3
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11100/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Citi+Global+Consumer+++Retail+Conference%2C+9-March-2026+8+00+AM+ET.pdf
+  [2025-12-03] [conference] Head of Generative AI Fireside Chat with UBS  (2 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20251203-head-of-generative-ai-fireside-chat-with-ubs
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11086/file/UBS+Global+Technology+and+AI+Conference+-+Fireside+Chat+Transcript.pdf
+  [2025-12-02] [conference] Morgan Stanley Global Consumer & Retail Conference  (3 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20251202-morgan-stanley-global-consumer-retail-conference
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11084/file/Morgan+Stanley+Audio+12.2.25.mp3
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11083/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Morgan+Stanley+Global+Consumer+++Retail+Conference%2C+2-December-2025+11+45+AM+ET.pdf
+  [2025-09-03] [conference] Barclays Global Consumer Staples Conference  (2 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20250903-barclays-global-consumer-staples-conference
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11071/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Barclays+Global+Consumer+Staples+Conference%2C+3-September-2025+12_00+PM+ET+%281%29.pdf
+  [2025-06-04] [conference] dbAccess Global Consumer Conference 2025  (2 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20250604-dbaccess-global-consumer-conference-2025
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11062/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+Consumer+Conference%2C+4-June-2025+4_30+AM+ET+%281%29.pdf
+  [2026-02-17] [conference] CAGNY 2026 Conference  (5 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/856/11090/presentation/2026+CAGNY+Presentation+-+Final.pdf
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11091/file/CAGNY+2026+KO+Audio+Recording.mp3
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11093/file/ko+cagny+26.mp4
+        https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11092/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Consumer+Analyst+Group+Of+New+York+Conference%2C+17-February-2026+10+00+AM+ET.pdf
+  [2026-06-04] [conference] dbAccess Global Consumer Conference 2026  (1 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026
+  [2026-04-29] [shareholder_meeting] 2026 Annual Meeting of Shareowners  (1 urls)
+        https://investors.coca-colacompany.com/shareowners/annual-meeting-of-shareowners
+  [2026-04-28] [earnings] 1st Quarter 2026 Earnings Call  (1 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260428-1st-quarter-2026-earnings-call
+  [2026-02-10] [earnings] 4th Quarter 2025 Earnings Call  (1 urls)
+        https://investors.coca-colacompany.com/news-events/events/detail/20260210-4th-quarter-2025-earnings-call
+  [2026-07-15] [press_release] [Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quart  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend
+  [2026-06-30] [press_release] [Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festiv  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture
+  [2026-06-29] [press_release] [The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release]  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release
+  [2026-06-25] [press_release] [The Coca-Cola Company Announces Leadership Transition for North America Operating Unit]  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit
+  [2026-06-01] [press_release] [The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india
+  [2026-05-19] [press_release] [The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026
+  [2026-04-28] [press_release] Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Q  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend
+  [-] [press_release] The Coca-Cola Company Selects New Global Chief People Officer  (1 urls)
+        https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer
+  [2026-07-16] [filing] [Form 8-K: Current report] on 07/16/26  (2 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/ko-20260716.htm
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/0001628280-26-048466-xbrl.zip
+  [2026-06-25] [filing] [Form 8-K: Current report] on 06/25/26  (2 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip
+  [2026-06-18] [filing] [Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/  (2 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip
+  [2026-06-18] [filing] [Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/  (2 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip
+  [2026-06-12] [filing] [Form 4: Statement of changes in beneficial ownership of securities] on 06/12/26  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html
+  [2026-06-11] [filing] [Form 4: Statement of changes in beneficial ownership of securities] on 06/11/26  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html
+  [2026-06-10] [filing] [Form 144: Report of proposed sale of securities] on 06/10/26  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html
+  [2026-06-10] [filing] Form 4: Statement of changes in beneficial ownership of securities  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000148/form4.html
+  [2026-06-09] [filing] Form 144: Report of proposed sale of securities  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005819/primary_doc.html
+  [2026-06-09] [filing] Form 4: Statement of changes in beneficial ownership of securities  (1 urls)
+        https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000146/form4.html
+  [-] [email_alerts]   (1 urls)
+        https://investors.coca-colacompany.com/news-events/email-alerts
+
+##########################################################################################
+# FULL PROMPT + RAW MODEL OUTPUT PER PAGE  (the exact I/O for every VLM call)
+##########################################################################################
+
+
+----------------- req_0001.txt -----------------
+=== REQUEST 1 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.coca-colacompany.com/investors
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: KO
+
+[Skip to main content](https://investors.coca-colacompany.com/#mainContent) [Skip to footer](https://investors.coca-colacompany.com/#footer)
+
+[chevron_leftBack to Coca-ColaCompany.com](https://www.coca-colacompany.com/)
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [IR Home](https://investors.coca-colacompany.com/)
+- [About](https://investors.coca-colacompany.com/about)
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Financial Information](https://investors.coca-colacompany.com/financial-information)
+- [Stock Information](https://investors.coca-colacompany.com/stock-info)
+- [Filings & Reports](https://investors.coca-colacompany.com/filings-reports)
+- [Corporate Governance](https://investors.coca-colacompany.com/corporate-governance)
+- [Shareowners](https://investors.coca-colacompany.com/shareowners)
+
+# Investor Relations
+
+## 2nd Quarter 2026 Earnings Call
+
+Jul 28, 2026 8:30 am ET
+
+[View Event Details](https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call) [Register For Webcast](https://events.q4inc.com/attendee/862353277) [Add to Calendar](https://investors.coca-colacompany.com/ical?id=11127)
+
+## Latest Financial Results
+
+### Q1 2026
+
+Quarter Ended Apr 3, 2026
+
+[Earnings Release HTML](https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance) [PDF](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/earnings_release/Coca-Cola+2026+Q1+Earnings+Release_Full+Release_4.28.26.pdf)
+
+[Earnings Call AUDIO](https://investors.coca-colacompany.com/_assets/_276be6890dd5622aaec9a97b9756c216/cocacolacompany/files/KO_1Q_2026_Webcast_Audio.mp3) [TRANSCRIPT](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/webcast_transcript/CORRECTED+TRANSCRIPT_KO+Q126+Earnings+Call.pdf)
+
+[Margin Analysis Schedule PDF](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/margin_analysis_schedule/Q1%2726+Margin+Analysis+Schedule.pdf)
+
+[Non-GAAP Financial Measures PDF](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures/2026+Q1+GNG.pdf)
+
+[Non-GAAP Financial Measures for Earnings Conference Call PDF](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures_for_earnings_conference_call/Q1+2026+Earnings+Call+GNGs.pdf)
+
+[10-Q HTML](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/ko-20260403.htm) [XBRL ZIP](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/0001628280-26-028802-xbrl.zip)
+
+## Company Updates
+
+[First Quarter 2026 Investor Overview – Updated as of April 3, 2026» View Presentation](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/861/11123/pdf/1Q26+IR+Overview+Presentation.pdf)
+
+[View More Company Updates](https://investors.coca-colacompany.com/#company-updates)
+
+## Upcoming Events
+
+Jul 28, 2026 8:30 am ET (2026-07-28T08:30:00) [2nd Quarter 2026 Earnings Call» View Event](https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call)
+[Add to Calendar](https://investors.coca-colacompany.com/ical?id=11127)
+
+[View All Events](https://investors.coca-colacompany.com/news-events/events)
+
+## Latest News
+
+Jul 16, 2026 4:15 pm ET (2026-07-16T16:15:00) [The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations» View Press Release](https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations)
+
+[View All News](https://investors.coca-colacompany.com/news-events/press-releases)
+
+## Company Updates
+
+[dbAccess Global Consumer Conference 2026](https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026)
+
+[Webcast](https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf)
+
+[Citi 2026 Global Consumer & Retail Conference](https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference)
+
+[Webcast (Audio)](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11099/file/KO-US_03092026_3410459.mp3) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11100/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Citi+Global+Consumer+++Retail+Conference%2C+9-March-2026+8+00+AM+ET.pdf)
+
+[Head of Generative AI Fireside Chat with UBS](https://investors.coca-colacompany.com/news-events/events/detail/20251203-head-of-generative-ai-fireside-chat-with-ubs)
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "2nd Quarter 2026 Earnings Call",
+      "date": "2026-07-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call",
+        "https://events.q4inc.com/attendee/862353277",
+        "https://investors.coca-colacompany.com/ical?id=11127"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Release",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/earnings_release/Coca-Cola+2026+Q1+Earnings+Release_Full+Release_4.28.26.pdf",
+        "https://investors.coca-colacompany.com/_assets/_276be6890dd5622aaec9a97b9756c216/cocacolacompany/files/KO_1Q_2026_Webcast_Audio.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/webcast_transcript/CORRECTED+TRANSCRIPT_KO+Q126+Earnings+Call.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/margin_analysis_schedule/Q1%2726+Margin+Analysis+Schedule.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures/2026+Q1+GNG.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures_for_earnings_conference_call/Q1+2026+Earnings+Call+GNGs.pdf",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/ko-20260403.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/0001628280-26-028802-xbrl.zip"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "2nd Quarter 2026 Earnings Call",
+      "date": "2026-07-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call",
+        "https://events.q4inc.com/attendee/862353277",
+        "https://investors.coca-colacompany.com/ical?id=11127"
+      ]
+    },
+    {
+      "title": "Q1 2026 Earnings Release",
+      "date": "2026-Q1",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/earnings_release/Coca-Cola+2026+Q1+Earnings+Release_Full+Release_4.28.26.pdf",
+        "https://investors.coca-colacompany.com/_assets/_276be6890dd5622aaec9a97b9756c216/cocacolacompany/files/KO_1Q_2026_Webcast_Audio.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/webcast_transcript/CORRECTED+TRANSCRIPT_KO+Q126+Earnings+Call.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/margin_analysis_schedule/Q1%2726+Margin+Analysis+Schedule.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures/2026+Q1+GNG.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/880/11107/non_gaap_financial_measures_for_earnings_conference_call/Q1+2026+Earnings+Call+GNGs.pdf",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/ko-20260403.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-028802/0001628280-26-028802-xbrl.zip"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0002.txt -----------------
+=== REQUEST 2 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://www.coca-colacompany.com/investors
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+Jul 16, 2026 4:15 pm ET (2026-07-16T16:15:00) [The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations» View Press Release](https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations)
+
+[View All News](https://investors.coca-colacompany.com/news-events/press-releases)
+
+## Company Updates
+
+[dbAccess Global Consumer Conference 2026](https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026)
+
+[Webcast](https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf)
+
+[Citi 2026 Global Consumer & Retail Conference](https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference)
+
+[Webcast (Audio)](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11099/file/KO-US_03092026_3410459.mp3) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11100/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Citi+Global+Consumer+++Retail+Conference%2C+9-March-2026+8+00+AM+ET.pdf)
+
+[Head of Generative AI Fireside Chat with UBS](https://investors.coca-colacompany.com/news-events/events/detail/20251203-head-of-generative-ai-fireside-chat-with-ubs)
+
+[Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11086/file/UBS+Global+Technology+and+AI+Conference+-+Fireside+Chat+Transcript.pdf)
+
+[Morgan Stanley Global Consumer & Retail Conference](https://investors.coca-colacompany.com/news-events/events/detail/20251202-morgan-stanley-global-consumer-retail-conference)
+
+[Webcast (Audio)](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11084/file/Morgan+Stanley+Audio+12.2.25.mp3) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11083/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Morgan+Stanley+Global+Consumer+++Retail+Conference%2C+2-December-2025+11+45+AM+ET.pdf)
+
+[Barclays Global Consumer Staples Conference](https://investors.coca-colacompany.com/news-events/events/detail/20250903-barclays-global-consumer-staples-conference)
+
+[Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11071/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Barclays+Global+Consumer+Staples+Conference%2C+3-September-2025+12_00+PM+ET+%281%29.pdf)
+
+[dbAccess Global Consumer Conference 2025](https://investors.coca-colacompany.com/news-events/events/detail/20250604-dbaccess-global-consumer-conference-2025)
+
+[Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11062/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+Consumer+Conference%2C+4-June-2025+4_30+AM+ET+%281%29.pdf)
+
+### Key Resources
+
+[CAGNY 2026 Conference](https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference)
+
+[Presentation](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/856/11090/presentation/2026+CAGNY+Presentation+-+Final.pdf) [Webcast (Audio)](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11091/file/CAGNY+2026+KO+Audio+Recording.mp3) [Webcast (Video)](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11093/file/ko+cagny+26.mp4) [Transcript](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11092/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Consumer+Analyst+Group+Of+New+York+Conference%2C+17-February-2026+10+00+AM+ET.pdf)
+
+2024 Environmental Update
+[Report](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/1015/11008/file/26-01-26+Environmental+Update+%282024%29+ADA+v3.pdf) [Presentation](https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/1015/11072/file/The+Coca-Cola+Company+-+Sustainability+Update.pdf)
+
+## Contacts
+
+### Investor Relations
+
+Todd Beiger
+VP & Head of Investor Relations
+KOInvestorRelations@coca-cola.com
+
+### Transfer Agent
+
+Computershare Trust Company, N.A.
+P.O. Box 43078
+Providence, RI 02940-3078
+T: 781-575-2653
+coca-cola@computershare.com
+[https://www.computershare.com/coca-cola](https://www.computershare.com/coca-cola)
+
+- [emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+- [rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)
+- [account_treeSitemap](https://investors.coca-colacompany.com/sitemap)
+
+This website may contain statements, estimates or projections that constitute "forward-looking statements" as defined under U.S. federal securities laws. Generally, the words "believe," "expect," "intend," "estimate," "anticipate," "project," "will" and similar expressions identify forward-looking statements, which generally are not historical in nature. Forward-looking statements are subject to certain risks and uncertainties that could cause The Coca-Cola Company’s actual results to differ materially from its historical experience and our present expectations or projections. For more information please see the risks discussed in our periodic reports filed with the Securities and Exchange Commission.
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [Contact Us](https://www.coca-colacompany.com/contact-us)
+- [Media Center](https://www.coca-colacompany.com/media-center)
+- [Investors](https://investors.coca-colacompany.com/ir-home)
+- [Policies](https://www.coca-colacompany.com/policies-and-practices)
+- [Leadership](https://www.coca-colacompany.com/company/leadership)
+- [History](https://www.coca-colacompany.com/company/history)
+- [FAQs](https://www.coca-colacompany.com/about-us/faq)
+- [International](https://www.coca-colacompany.com/country-selector)
+
+© 2026 (2026) [The Coca-Cola Company](https://investors.coca-colacompany.com/) . All Rights Reserved.
+
+- [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice)
+- [California Notice at Collection](https://www.coca-cola.com/us/en/legal/privacy-policy#privacy-rights-and-choices-for-specific-jurisdictions)
+- [Terms of Service](https://www.coca-cola.com/us/en/legal/terms-of-service)
+- [Do Not Sell or Share My Personal Information](https://www.coca-cola.com/us/en/legal/do-not-sell-or-share-my-personal-information)
+
+- [Opens in a new window](https://www.facebook.com/TheCocaColaCo)
+- [Opens in a new window](https://www.instagram.com/TheCocaColaCo/)
+- [Opens in a new window](https://www.linkedin.com/company/the-coca-cola-company/)
+- [Opens in a new window](https://x.com/CocaColaCo)
+- [Opens in a new window](https://www.youtube.com/user/CocaColaCo)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations» View Press Release]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations",
+        "https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2026",
+      "date": "2026-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026",
+        "https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Citi 2026 Global Consumer & Retail Conference",
+      "date": "2026-03-09",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11099/file/KO-US_03092026_3410459.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11100/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Citi+Global+Consumer+++Retail+Conference%2C+9-March-2026+8+00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Head of Generative AI Fireside Chat with UBS",
+      "date": "2025-12-03",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20251203-head-of-generative-ai-fireside-chat-with-ubs",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11086/file/UBS+Global+Technology+and+AI+Conference+-+Fireside+Chat+Transcript.pdf"
+      ]
+    },
+    {
+      "title": "Morgan Stanley Global Consumer & Retail Conference",
+      "date": "2025-12-02",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20251202-morgan-stanley-global-consumer-retail-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11084/file/Morgan+Stanley+Audio+12.2.25.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11083/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Morgan+Stanley+Global+Consumer+++Retail+Conference%2C+2-December-2025+11+45+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Barclays Global Consumer Staples Conference",
+      "date": "2025-09-03",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20250903-barclays-global-consumer-staples-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11071/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Barclays+Global+Consumer+Staples+Conference%2C+3-September-2025+12_00+PM+ET+%281%29.pdf"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2025",
+      "date": "2025-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20250604-dbaccess-global-consumer-conference-2025",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11062/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+Consumer+Conference%2C+4-June-2025+4_30+AM+ET+%281%29.pdf"
+      ]
+    },
+    {
+      "title": "CAGNY 2026 Conference",
+      "date": "2026-02-17",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/856/11090/presentation/2026+CAGNY+Presentation+-+Final.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11091/file/CAGNY+2026+KO+Audio+Recording.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11093/file/ko+cagny+26.mp4",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11092/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Consumer+Analyst+Group+Of+New+York+Conference%2C+17-February-2026+10+00+AM+ET.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed",
+    "https://investors.coca-colacompany.com/sitemap"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations» View Press Release]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations",
+        "https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2026",
+      "date": "2026-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026",
+        "https://investors.coca-colacompany.com/_assets/_448d31d216190121ddf5a6ce56d914d0/cocacolacompany/files/audio/KO-US_06042026_3476451.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11125/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+dbAccess+Global+Consumer+Conference%2C+4-June-2026+5_00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Citi 2026 Global Consumer & Retail Conference",
+      "date": "2026-03-09",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11099/file/KO-US_03092026_3410459.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11100/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Citi+Global+Consumer+++Retail+Conference%2C+9-March-2026+8+00+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Head of Generative AI Fireside Chat with UBS",
+      "date": "2025-12-03",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20251203-head-of-generative-ai-fireside-chat-with-ubs",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11086/file/UBS+Global+Technology+and+AI+Conference+-+Fireside+Chat+Transcript.pdf"
+      ]
+    },
+    {
+      "title": "Morgan Stanley Global Consumer & Retail Conference",
+      "date": "2025-12-02",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20251202-morgan-stanley-global-consumer-retail-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11084/file/Morgan+Stanley+Audio+12.2.25.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11083/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Morgan+Stanley+Global+Consumer+++Retail+Conference%2C+2-December-2025+11+45+AM+ET.pdf"
+      ]
+    },
+    {
+      "title": "Barclays Global Consumer Staples Conference",
+      "date": "2025-09-03",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20250903-barclays-global-consumer-staples-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11071/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Barclays+Global+Consumer+Staples+Conference%2C+3-September-2025+12_00+PM+ET+%281%29.pdf"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2025",
+      "date": "2025-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20250604-dbaccess-global-consumer-conference-2025",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11062/file/CORRECTED+TRANSCRIPT_+The+Coca-Cola+Co.%28KO-US%29%2C+Deutsche+Bank+Consumer+Conference%2C+4-June-2025+4_30+AM+ET+%281%29.pdf"
+      ]
+    },
+    {
+      "title": "CAGNY 2026 Conference",
+      "date": "2026-02-17",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/856/11090/presentation/2026+CAGNY+Presentation+-+Final.pdf",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11091/file/CAGNY+2026+KO+Audio+Recording.mp3",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11093/file/ko+cagny+26.mp4",
+        "https://investors.coca-colacompany.com/_assets/_014b8b8f047681531f8b5adc4eb10f2d/cocacolacompany/db/857/11092/file/CORRECTED+TRANSCRIPT++The+Coca-Cola+Co.%28KO-US%29%2C+Consumer+Analyst+Group+Of+New+York+Conference%2C+17-February-2026+10+00+AM+ET.pdf"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed",
+    "https://investors.coca-colacompany.com/sitemap"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0003.txt -----------------
+=== REQUEST 3 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=196008
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/news-events/email-alerts
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: KO
+
+[Skip to main content](https://investors.coca-colacompany.com/news-events/email-alerts#mainContent) [Skip to section navigation](https://investors.coca-colacompany.com/news-events/email-alerts#sectionNav) [Skip to footer](https://investors.coca-colacompany.com/news-events/email-alerts#footer)
+
+[chevron_leftBack to Coca-ColaCompany.com](https://www.coca-colacompany.com/)
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [IR Home](https://investors.coca-colacompany.com/)
+- [About](https://investors.coca-colacompany.com/about)
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Financial Information](https://investors.coca-colacompany.com/financial-information)
+- [Stock Information](https://investors.coca-colacompany.com/stock-info)
+- [Filings & Reports](https://investors.coca-colacompany.com/filings-reports)
+- [Corporate Governance](https://investors.coca-colacompany.com/corporate-governance)
+- [Shareowners](https://investors.coca-colacompany.com/shareowners)
+
+# Email Alerts
+
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Press Releases](https://investors.coca-colacompany.com/news-events/press-releases)
+- [Earnings](https://investors.coca-colacompany.com/financial-information)
+- [Events](https://investors.coca-colacompany.com/news-events/events)
+- [Email Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+
+Please fill out the form below to receive company press releases via email when they occur.
+
+* denotes a required field
+
+First Name*
+
+Last Name*
+
+Email*
+
+Contact TypeIndividual Investor Analyst Broker/Investment Advisor Portfolio Manager Banker/Financing Source Press/Media Consultant Employee Customer/Client Student Other
+
+## Choose Notifications
+
+### Company Information
+
+- All Press Releases
+- Events
+
+### SEC Filings
+
+- All SEC Filings
+
+- Annual & Quarterly Reports
+- Current Reports
+- Insider Transactions
+- Proxy Information
+
+By checking this box, you are confirming your acceptance of The Coca-Cola Company [Terms of Use](https://www.coca-cola.com/us/en/legal/terms-of-service) and [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice) *
+
+This site is protected by hCaptcha and its [Privacy Policy](https://hcaptcha.com/privacy) and [Terms of Service](https://hcaptcha.com/terms) apply.
+
+Submit
+
+We respect your privacy. We do not sell, rent, or loan any information to any third party. Any information you give us is held with the utmost care and security, and will be used only in ways to which you have consented.
+
+- [emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+- [rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)
+- [account_treeSitemap](https://investors.coca-colacompany.com/sitemap)
+
+This website may contain statements, estimates or projections that constitute "forward-looking statements" as defined under U.S. federal securities laws. Generally, the words "believe," "expect," "intend," "estimate," "anticipate," "project," "will" and similar expressions identify forward-looking statements, which generally are not historical in nature. Forward-looking statements are subject to certain risks and uncertainties that could cause The Coca-Cola Company’s actual results to differ materially from its historical experience and our present expectations or projections. For more information please see the risks discussed in our periodic reports filed with the Securities and Exchange Commission.
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [Contact Us](https://www.coca-colacompany.com/contact-us)
+- [Media Center](https://www.coca-colacompany.com/media-center)
+- [Investors](https://investors.coca-colacompany.com/ir-home)
+- [Policies](https://www.coca-colacompany.com/policies-and-practices)
+- [Leadership](https://www.coca-colacompany.com/company/leadership)
+- [History](https://www.coca-colacompany.com/company/history)
+- [FAQs](https://www.coca-colacompany.com/about-us/faq)
+- [International](https://www.coca-colacompany.com/country-selector)
+
+© 2026 (2026) [The Coca-Cola Company](https://investors.coca-colacompany.com/) . All Rights Reserved.
+
+- [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice)
+- [California Notice at Collection](https://www.coca-cola.com/us/en/legal/privacy-policy#privacy-rights-and-choices-for-specific-jurisdictions)
+- [Terms of Service](https://www.coca-cola.com/us/en/legal/terms-of-service)
+- [Do Not Sell or Share My Personal Information](https://www.coca-cola.com/us/en/legal/do-not-sell-or-share-my-personal-information)
+
+- [Opens in a new window](https://www.facebook.com/TheCocaColaCo)
+- [Opens in a new window](https://www.instagram.com/TheCocaColaCo/)
+- [Opens in a new window](https://www.linkedin.com/company/the-coca-cola-company/)
+- [Opens in a new window](https://x.com/CocaColaCo)
+- [Opens in a new window](https://www.youtube.com/user/CocaColaCo)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "email_alerts",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/email-alerts"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/financial-information",
+    "https://investors.coca-colacompany.com/financial-information",
+    "https://investors.coca-colacompany.com/filings-reports",
+    "https://investors.coca-colacompany.com/filings-reports",
+    "https://investors.coca-colacompany.com/corporate-governance",
+    "https://investors.coca-colacompany.com/shareowners"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "",
+      "date": "",
+      "type": "email_alerts",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/email-alerts"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/financial-information",
+    "https://investors.coca-colacompany.com/financial-information",
+    "https://investors.coca-colacompany.com/filings-reports",
+    "https://investors.coca-colacompany.com/filings-reports",
+    "https://investors.coca-colacompany.com/corporate-governance",
+    "https://investors.coca-colacompany.com/shareowners"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0004.txt -----------------
+=== REQUEST 4 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=181384
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/news-events/events
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: KO
+
+[Skip to main content](https://investors.coca-colacompany.com/news-events/events#mainContent) [Skip to section navigation](https://investors.coca-colacompany.com/news-events/events#sectionNav) [Skip to footer](https://investors.coca-colacompany.com/news-events/events#footer)
+
+[chevron_leftBack to Coca-ColaCompany.com](https://www.coca-colacompany.com/)
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [IR Home](https://investors.coca-colacompany.com/)
+- [About](https://investors.coca-colacompany.com/about)
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Financial Information](https://investors.coca-colacompany.com/financial-information)
+- [Stock Information](https://investors.coca-colacompany.com/stock-info)
+- [Filings & Reports](https://investors.coca-colacompany.com/filings-reports)
+- [Corporate Governance](https://investors.coca-colacompany.com/corporate-governance)
+- [Shareowners](https://investors.coca-colacompany.com/shareowners)
+
+# Events
+
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Press Releases](https://investors.coca-colacompany.com/news-events/press-releases)
+- [Earnings](https://investors.coca-colacompany.com/financial-information)
+- [Events](https://investors.coca-colacompany.com/news-events/events)
+- [Email Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+
+## Upcoming Events
+
+Jul 28, 2026 8:30 am ET (2026-07-28T08:30:00)
+
+### [2nd Quarter 2026 Earnings Call](https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call)
+
+## Past Events
+
+Jun 4, 2026 11:00 am CET (2026-06-04T05:00:00)
+
+[dbAccess Global Consumer Conference 2026](https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026)
+
+Apr 29, 2026 8:30 am ET (2026-04-29T08:30:00)
+
+[2026 Annual Meeting of Shareowners](https://investors.coca-colacompany.com/shareowners/annual-meeting-of-shareowners)
+
+Apr 28, 2026 8:30 am ET (2026-04-28T08:30:00)
+
+[1st Quarter 2026 Earnings Call](https://investors.coca-colacompany.com/news-events/events/detail/20260428-1st-quarter-2026-earnings-call)
+
+Mar 9, 2026 8:00 am ET (2026-03-09T08:00:00)
+
+[Citi 2026 Global Consumer & Retail Conference](https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference)
+
+Feb 17, 2026 10:00 am ET (2026-02-17T10:00:00)
+
+[CAGNY 2026 Conference](https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference)
+
+Feb 10, 2026 8:30 am ET (2026-02-10T08:30:00)
+
+[4th Quarter 2025 Earnings Call](https://investors.coca-colacompany.com/news-events/events/detail/20260210-4th-quarter-2025-earnings-call)
+
+[View All Past Events](https://investors.coca-colacompany.com/news-events/events/past)
+
+- [emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+- [rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)
+- [account_treeSitemap](https://investors.coca-colacompany.com/sitemap)
+
+This website may contain statements, estimates or projections that constitute "forward-looking statements" as defined under U.S. federal securities laws. Generally, the words "believe," "expect," "intend," "estimate," "anticipate," "project," "will" and similar expressions identify forward-looking statements, which generally are not historical in nature. Forward-looking statements are subject to certain risks and uncertainties that could cause The Coca-Cola Company’s actual results to differ materially from its historical experience and our present expectations or projections. For more information please see the risks discussed in our periodic reports filed with the Securities and Exchange Commission.
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [Contact Us](https://www.coca-colacompany.com/contact-us)
+- [Media Center](https://www.coca-colacompany.com/media-center)
+- [Investors](https://investors.coca-colacompany.com/ir-home)
+- [Policies](https://www.coca-colacompany.com/policies-and-practices)
+- [Leadership](https://www.coca-colacompany.com/company/leadership)
+- [History](https://www.coca-colacompany.com/company/history)
+- [FAQs](https://www.coca-colacompany.com/about-us/faq)
+- [International](https://www.coca-colacompany.com/country-selector)
+
+© 2026 (2026) [The Coca-Cola Company](https://investors.coca-colacompany.com/) . All Rights Reserved.
+
+- [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice)
+- [California Notice at Collection](https://www.coca-cola.com/us/en/legal/privacy-policy#privacy-rights-and-choices-for-specific-jurisdictions)
+- [Terms of Service](https://www.coca-cola.com/us/en/legal/terms-of-service)
+- [Do Not Sell or Share My Personal Information](https://www.coca-cola.com/us/en/legal/do-not-sell-or-share-my-personal-information)
+
+- [Opens in a new window](https://www.facebook.com/TheCocaColaCo)
+- [Opens in a new window](https://www.instagram.com/TheCocaColaCo/)
+- [Opens in a new window](https://www.linkedin.com/company/the-coca-cola-company/)
+- [Opens in a new window](https://x.com/CocaColaCo)
+- [Opens in a new window](https://www.youtube.com/user/CocaColaCo)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "2nd Quarter 2026 Earnings Call",
+      "date": "2026-07-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2026",
+      "date": "2026-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "2026 Annual Meeting of Shareowners",
+      "date": "2026-04-29",
+      "type": "shareholder_meeting",
+      "urls": [
+        "https://investors.coca-colacompany.com/shareowners/annual-meeting-of-shareowners"
+      ]
+    },
+    {
+      "title": "1st Quarter 2026 Earnings Call",
+      "date": "2026-04-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260428-1st-quarter-2026-earnings-call"
+      ]
+    },
+    {
+      "title": "Citi 2026 Global Consumer & Retail Conference",
+      "date": "2026-03-09",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference"
+      ]
+    },
+    {
+      "title": "CAGNY 2026 Conference",
+      "date": "2026-02-17",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference"
+      ]
+    },
+    {
+      "title": "4th Quarter 2025 Earnings Call",
+      "date": "2026-02-10",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260210-4th-quarter-2025-earnings-call"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/events/past",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/email-alerts"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "2nd Quarter 2026 Earnings Call",
+      "date": "2026-07-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260728-2nd-quarter-2026-earnings-call"
+      ]
+    },
+    {
+      "title": "dbAccess Global Consumer Conference 2026",
+      "date": "2026-06-04",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260604-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "2026 Annual Meeting of Shareowners",
+      "date": "2026-04-29",
+      "type": "shareholder_meeting",
+      "urls": [
+        "https://investors.coca-colacompany.com/shareowners/annual-meeting-of-shareowners"
+      ]
+    },
+    {
+      "title": "1st Quarter 2026 Earnings Call",
+      "date": "2026-04-28",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260428-1st-quarter-2026-earnings-call"
+      ]
+    },
+    {
+      "title": "Citi 2026 Global Consumer & Retail Conference",
+      "date": "2026-03-09",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260309-citi-2026-global-consumer-retail-conference"
+      ]
+    },
+    {
+      "title": "CAGNY 2026 Conference",
+      "date": "2026-02-17",
+      "type": "conference",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260217-cagny-2026-conference"
+      ]
+    },
+    {
+      "title": "4th Quarter 2025 Earnings Call",
+      "date": "2026-02-10",
+      "type": "earnings",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/events/detail/20260210-4th-quarter-2025-earnings-call"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/events/past",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/email-alerts"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0005.txt -----------------
+=== REQUEST 5 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=True  b64_len=495008
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/rss-news-feed
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+This XML file does not appear to have any style information associated with it. The document tree is shown below.<!-- Generated on Thu, 23 Jul 2026 01:44:50 -0400 --><rssversion="2.0"><channel><title>The Coca-Cola Company (KO) Press Releases</title><link>https://investors.coca-colacompany.com/news-events/press-releases/rss</link><description/><language>en-us</language><image><url>https://d1io3yog0oux5.cloudfront.net/_70ea86a9ad011bdc44db90ba21af0f27/cocacolacompany/files/theme/images/logo-sm.png</url><title>The Coca-Cola Company Logo</title><link/></image><generator>Equisolve Investor Relations Suite</generator><item><title><![CDATA[ The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations</link><pubDate>Thu, 16 Jul 26 16:15:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations</guid></item><item><title><![CDATA[ Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend</link><pubDate>Wed, 15 Jul 26 14:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend</guid></item><item><title><![CDATA[ Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture® ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture</link><pubDate>Tue, 30 Jun 26 09:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release</link><pubDate>Mon, 29 Jun 26 11:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Leadership Transition for North America Operating Unit ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit</link><pubDate>Thu, 25 Jun 26 16:15:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit</guid></item><item><title><![CDATA[ The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india</link><pubDate>Mon, 01 Jun 26 19:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026 ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026</link><pubDate>Tue, 19 May 26 09:30:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026</guid></item><item><title><![CDATA[ Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend</link><pubDate>Thu, 30 Apr 26 14:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend</guid></item><item><title><![CDATA[ Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance</link><pubDate>Tue, 28 Apr 26 06:55:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance</guid></item><item><title><![CDATA[ The Coca-Cola Company Selects New Global Chief People Officer ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer</link><pubDate>Tue, 14 Apr 26 06:55:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer</guid></item></channel></rss>
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend]",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®]",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release]",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit]",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India]",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026]",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend]",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance]",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Selects New Global Chief People Officer]",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend]",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®]",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release]",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit]",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India]",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026]",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend]",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance]",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Selects New Global Chief People Officer]",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0006.txt -----------------
+=== REQUEST 6 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/news-events/press-releases
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®](https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture)
+
+Jun 29, 2026 11:00 am EDT (2026-06-29T11:00:00)
+
+[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release](https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release)
+
+Jun 25, 2026 4:15 pm EDT (2026-06-25T16:15:00)
+
+[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit](https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit)
+
+Jun 1, 2026 7:00 pm EDT (2026-06-01T19:00:00)
+
+[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India](https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india)
+
+May 19, 2026 9:30 am EDT (2026-05-19T09:30:00)
+
+[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026](https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026)
+
+Apr 30, 2026 2:00 pm EDT (2026-04-30T14:00:00)
+
+[Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend](https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend)
+
+Apr 28, 2026 6:55 am EDT (2026-04-28T06:55:00)
+
+[Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance](https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance)
+
+Apr 14, 2026 6:55 am EDT (2026-04-14T06:55:00)
+
+[The Coca-Cola Company Selects New Global Chief People Officer](https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer)
+
+- [Page 1](https://investors.coca-colacompany.com/news-events/press-releases?page=1)
+- [Page 2](https://investors.coca-colacompany.com/news-events/press-releases?page=2)
+- [Page 3](https://investors.coca-colacompany.com/news-events/press-releases?page=3)
+- [Page 4](https://investors.coca-colacompany.com/news-events/press-releases?page=4)
+- [Page 5](https://investors.coca-colacompany.com/news-events/press-releases?page=5)
+- [Page 6](https://investors.coca-colacompany.com/news-events/press-releases?page=6)
+- [Page 7](https://investors.coca-colacompany.com/news-events/press-releases?page=7)
+- [Page 8](https://investors.coca-colacompany.com/news-events/press-releases?page=8)
+- [Page 9](https://investors.coca-colacompany.com/news-events/press-releases?page=9)
+- [Page 10](https://investors.coca-colacompany.com/news-events/press-releases?page=10)
+- …
+- [Page 116](https://investors.coca-colacompany.com/news-events/press-releases?page=116)
+- [Next Page arrow_forward](https://investors.coca-colacompany.com/news-events/press-releases?page=2)
+
+[rss_feed News RSS](https://investors.coca-colacompany.com/news-events/press-releases/rss)
+
+- [emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+- [rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)
+- [account_treeSitemap](https://investors.coca-colacompany.com/sitemap)
+
+This website may contain statements, estimates or projections that constitute "forward-looking statements" as defined under U.S. federal securities laws. Generally, the words "believe," "expect," "intend," "estimate," "anticipate," "project," "will" and similar expressions identify forward-looking statements, which generally are not historical in nature. Forward-looking statements are subject to certain risks and uncertainties that could cause The Coca-Cola Company’s actual results to differ materially from its historical experience and our present expectations or projections. For more information please see the risks discussed in our periodic reports filed with the Securities and Exchange Commission.
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [Contact Us](https://www.coca-colacompany.com/contact-us)
+- [Media Center](https://www.coca-colacompany.com/media-center)
+- [Investors](https://investors.coca-colacompany.com/ir-home)
+- [Policies](https://www.coca-colacompany.com/policies-and-practices)
+- [Leadership](https://www.coca-colacompany.com/company/leadership)
+- [History](https://www.coca-colacompany.com/company/history)
+- [FAQs](https://www.coca-colacompany.com/about-us/faq)
+- [International](https://www.coca-colacompany.com/country-selector)
+
+© 2026 (2026) [The Coca-Cola Company](https://investors.coca-colacompany.com/) . All Rights Reserved.
+
+- [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice)
+- [California Notice at Collection](https://www.coca-cola.com/us/en/legal/privacy-policy#privacy-rights-and-choices-for-specific-jurisdictions)
+- [Terms of Service](https://www.coca-cola.com/us/en/legal/terms-of-service)
+- [Do Not Sell or Share My Personal Information](https://www.coca-cola.com/us/en/legal/do-not-sell-or-share-my-personal-information)
+
+- [Opens in a new window](https://www.facebook.com/TheCocaColaCo)
+- [Opens in a new window](https://www.instagram.com/TheCocaColaCo/)
+- [Opens in a new window](https://www.linkedin.com/company/the-coca-cola-company/)
+- [Opens in a new window](https://x.com/CocaColaCo)
+- [Opens in a new window](https://www.youtube.com/user/CocaColaCo)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Leadership Transition for North America Operating Unit",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Selects New Global Chief People Officer",
+      "date": "",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=2",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=3",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=4",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=5",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=6",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=7",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=8",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=9",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=10",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=116",
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed",
+    "https://investors.coca-colacompany.com/sitemap"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Leadership Transition for North America Operating Unit",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Selects New Global Chief People Officer",
+      "date": "",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=2",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=3",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=4",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=5",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=6",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=7",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=8",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=9",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=10",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=116",
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed",
+    "https://investors.coca-colacompany.com/sitemap"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0007.txt -----------------
+=== REQUEST 7 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/news-events/press-releases
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: KO
+
+[Skip to main content](https://investors.coca-colacompany.com/news-events/press-releases#mainContent) [Skip to section navigation](https://investors.coca-colacompany.com/news-events/press-releases#sectionNav) [Skip to footer](https://investors.coca-colacompany.com/news-events/press-releases#footer)
+
+[chevron_leftBack to Coca-ColaCompany.com](https://www.coca-colacompany.com/)
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [IR Home](https://investors.coca-colacompany.com/)
+- [About](https://investors.coca-colacompany.com/about)
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Financial Information](https://investors.coca-colacompany.com/financial-information)
+- [Stock Information](https://investors.coca-colacompany.com/stock-info)
+- [Filings & Reports](https://investors.coca-colacompany.com/filings-reports)
+- [Corporate Governance](https://investors.coca-colacompany.com/corporate-governance)
+- [Shareowners](https://investors.coca-colacompany.com/shareowners)
+
+# Press Releases
+
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Press Releases](https://investors.coca-colacompany.com/news-events/press-releases)
+- [Earnings](https://investors.coca-colacompany.com/financial-information)
+- [Events](https://investors.coca-colacompany.com/news-events/events)
+- [Email Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+
+YearAll Years20262025202420232022202120202019201820172016201520142013201220112010200920082007
+
+Category All Releases Financial Releases
+
+Jul 16, 2026 4:15 pm EDT (2026-07-16T16:15:00)
+
+[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations](https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations)
+
+Jul 15, 2026 2:00 pm EDT (2026-07-15T14:00:00)
+
+[Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend](https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend)
+
+Jun 30, 2026 9:00 am EDT (2026-06-30T09:00:00)
+
+[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®](https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture)
+
+Jun 29, 2026 11:00 am EDT (2026-06-29T11:00:00)
+
+[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release](https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release)
+
+Jun 25, 2026 4:15 pm EDT (2026-06-25T16:15:00)
+
+[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit](https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit)
+
+Jun 1, 2026 7:00 pm EDT (2026-06-01T19:00:00)
+
+[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India](https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india)
+
+May 19, 2026 9:30 am EDT (2026-05-19T09:30:00)
+
+[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026](https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026)
+
+Apr 30, 2026 2:00 pm EDT (2026-04-30T14:00:00)
+
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend]",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®]",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release]",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit]",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India]",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026]",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2026",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2025",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2024",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2023",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2022",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2021",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2020",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2019",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2018",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2017",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2016",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2015",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2014",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2013",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2012",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2011",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2010",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2009",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2008",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2007"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "[The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations]",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "[Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend]",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "[Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®]",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release]",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Leadership Transition for North America Operating Unit]",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India]",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "[The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026]",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2026",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2025",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2024",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2023",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2022",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2021",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2020",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2019",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2018",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2017",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2016",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2015",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2014",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2013",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2012",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2011",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2010",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2009",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2008",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2007"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0008.txt -----------------
+=== REQUEST 8 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/filings-reports/all-sec-filings
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+06/25/26 | 8-K | [Form 8-K: Current report](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm) | [Download Raw XBRL Files published on 06/25/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip) | 15
+06/18/26 | 11-K | [Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm) | [Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip) | 14
+06/18/26 | 11-K | [Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm) | [Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip) | 16
+06/12/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html) | | 1
+06/11/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html) | | 2
+06/10/26 | 144 | [Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html) | | 2
+06/10/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000148/form4.html) | | 2
+06/09/26 | 144 | [Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005819/primary_doc.html) | | 2
+06/09/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000146/form4.html) | | 2
+
+[rss_feed Filing RSS](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/rss)
+
+- [Page 1](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=1)
+- [Page 2](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)
+- [Page 3](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=3)
+- [Page 4](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=4)
+- [Page 5](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=5)
+- [Page 6](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=6)
+- [Page 7](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=7)
+- [Page 8](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=8)
+- [Page 9](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=9)
+- [Page 10](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=10)
+- …
+- [Page 329](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=329)
+- [Next Page arrow_forward](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)
+
+- [emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)
+- [rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)
+- [account_treeSitemap](https://investors.coca-colacompany.com/sitemap)
+
+This website may contain statements, estimates or projections that constitute "forward-looking statements" as defined under U.S. federal securities laws. Generally, the words "believe," "expect," "intend," "estimate," "anticipate," "project," "will" and similar expressions identify forward-looking statements, which generally are not historical in nature. Forward-looking statements are subject to certain risks and uncertainties that could cause The Coca-Cola Company’s actual results to differ materially from its historical experience and our present expectations or projections. For more information please see the risks discussed in our periodic reports filed with the Securities and Exchange Commission.
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [Contact Us](https://www.coca-colacompany.com/contact-us)
+- [Media Center](https://www.coca-colacompany.com/media-center)
+- [Investors](https://investors.coca-colacompany.com/ir-home)
+- [Policies](https://www.coca-colacompany.com/policies-and-practices)
+- [Leadership](https://www.coca-colacompany.com/company/leadership)
+- [History](https://www.coca-colacompany.com/company/history)
+- [FAQs](https://www.coca-colacompany.com/about-us/faq)
+- [International](https://www.coca-colacompany.com/country-selector)
+
+© 2026 (2026) [The Coca-Cola Company](https://investors.coca-colacompany.com/) . All Rights Reserved.
+
+- [Privacy Policy](https://datatrust.coca-cola.com/us/en/notices/global-consumer-privacy-notice)
+- [California Notice at Collection](https://www.coca-cola.com/us/en/legal/privacy-policy#privacy-rights-and-choices-for-specific-jurisdictions)
+- [Terms of Service](https://www.coca-cola.com/us/en/legal/terms-of-service)
+- [Do Not Sell or Share My Personal Information](https://www.coca-cola.com/us/en/legal/do-not-sell-or-share-my-personal-information)
+
+- [Opens in a new window](https://www.facebook.com/TheCocaColaCo)
+- [Opens in a new window](https://www.instagram.com/TheCocaColaCo/)
+- [Opens in a new window](https://www.linkedin.com/company/the-coca-cola-company/)
+- [Opens in a new window](https://x.com/CocaColaCo)
+- [Opens in a new window](https://www.youtube.com/user/CocaColaCo)
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "Form 8-K: Current report",
+      "date": "2026-06-25",
+      "type": "filing",
+      "urls": [
+        "[Form 8-K: Current report](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm)",
+        "[Download Raw XBRL Files published on 06/25/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 11-K: Annual report of employee stock purchase, savings and similar plans",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "[Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm)",
+        "[Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 11-K: Annual report of employee stock purchase, savings and similar plans",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "[Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm)",
+        "[Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-12",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-11",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 144: Report of proposed sale of securities",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "[Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000148/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 144: Report of proposed sale of securities",
+      "date": "2026-06-09",
+      "type": "filing",
+      "urls": [
+        "[Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005819/primary_doc.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-09",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000146/form4.html)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Page 1](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=1)",
+    "[Page 2](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)",
+    "[Page 3](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=3)",
+    "[Page 4](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=4)",
+    "[Page 5](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=5)",
+    "[Page 6](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=6)",
+    "[Page 7](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=7)",
+    "[Page 8](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=8)",
+    "[Page 9](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=9)",
+    "[Page 10](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=10)",
+    "[Next Page arrow_forward](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)",
+    "[rss_feed Filing RSS](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/rss)",
+    "[emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)",
+    "[rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)",
+    "[account_treeSitemap](https://investors.coca-colacompany.com/sitemap)"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "Form 8-K: Current report",
+      "date": "2026-06-25",
+      "type": "filing",
+      "urls": [
+        "[Form 8-K: Current report](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm)",
+        "[Download Raw XBRL Files published on 06/25/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 11-K: Annual report of employee stock purchase, savings and similar plans",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "[Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm)",
+        "[Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 11-K: Annual report of employee stock purchase, savings and similar plans",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "[Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm)",
+        "[Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-12",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-11",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 144: Report of proposed sale of securities",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "[Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000148/form4.html)"
+      ]
+    },
+    {
+      "title": "Form 144: Report of proposed sale of securities",
+      "date": "2026-06-09",
+      "type": "filing",
+      "urls": [
+        "[Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005819/primary_doc.html)"
+      ]
+    },
+    {
+      "title": "Form 4: Statement of changes in beneficial ownership of securities",
+      "date": "2026-06-09",
+      "type": "filing",
+      "urls": [
+        "[Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000146/form4.html)"
+      ]
+    }
+  ],
+  "routes": [
+    "[Page 1](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=1)",
+    "[Page 2](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)",
+    "[Page 3](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=3)",
+    "[Page 4](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=4)",
+    "[Page 5](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=5)",
+    "[Page 6](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=6)",
+    "[Page 7](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=7)",
+    "[Page 8](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=8)",
+    "[Page 9](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=9)",
+    "[Page 10](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=10)",
+    "[Next Page arrow_forward](https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2)",
+    "[rss_feed Filing RSS](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/rss)",
+    "[emailEmail Alerts](https://investors.coca-colacompany.com/news-events/email-alerts)",
+    "[rss_feedRSS News Feed](https://investors.coca-colacompany.com/rss-news-feed)",
+    "[account_treeSitemap](https://investors.coca-colacompany.com/sitemap)"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+
+----------------- req_0009.txt -----------------
+=== REQUEST 9 ===
+model=qwen-vl  max_tokens=4096  temp=0.0
+image: present=False  b64_len=0
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/filings-reports/all-sec-filings
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+TICKER: NYSE: KO
+
+[Skip to main content](https://investors.coca-colacompany.com/filings-reports/all-sec-filings#mainContent) [Skip to section navigation](https://investors.coca-colacompany.com/filings-reports/all-sec-filings#sectionNav) [Skip to footer](https://investors.coca-colacompany.com/filings-reports/all-sec-filings#footer)
+
+[chevron_leftBack to Coca-ColaCompany.com](https://www.coca-colacompany.com/)
+
+[The Coca-Cola Company IR Overview](https://investors.coca-colacompany.com/)
+
+- [IR Home](https://investors.coca-colacompany.com/)
+- [About](https://investors.coca-colacompany.com/about)
+- [News & Events](https://investors.coca-colacompany.com/news-events)
+- [Financial Information](https://investors.coca-colacompany.com/financial-information)
+- [Stock Information](https://investors.coca-colacompany.com/stock-info)
+- [Filings & Reports](https://investors.coca-colacompany.com/filings-reports)
+- [Corporate Governance](https://investors.coca-colacompany.com/corporate-governance)
+- [Shareowners](https://investors.coca-colacompany.com/shareowners)
+
+# All SEC Filings
+
+- [All SEC Filings](https://investors.coca-colacompany.com/filings-reports/all-sec-filings)
+- [Annual Publications](https://investors.coca-colacompany.com/filings-reports/annual-publications)
+- [Annual Filings (10-K)](https://investors.coca-colacompany.com/filings-reports/annual-filings-10-k)
+- [Quarterly Filings (10-Q)](https://investors.coca-colacompany.com/filings-reports/quarterly-filings-10-q)
+
+Filing TypeView All10-K10-K/A10-K40510-Q10-Q/A11-K11-K/A14425-NSE33/A44/A424B2424B3424B542558-A12B8-K8-K/AARSCERTCERTNASCERTNYSCORRESPDEF 14ADEFA14AEFFECTFWPNO ACTNT 11-KPOS AMPOSASRPRE 14APX14A6GS-3S-3/AS-3ASRS-4S-8S-8 POSSC 13DSC 13D/ASC 13E3SC 13E3/ASC 13GSC 13G/ASC TO-TSC TO-T/ASCHEDULE 13D/ASCHEDULE 13GSCHEDULE 13G/AUPLOAD
+
+YearView All202620252024202320222021202020192018201720162015201420132012201120102009200820072006200520042003200220012000199919981997199619951994
+
+SEC Filings
+
+Date | Form | Description | XBRL | Pages
+
+07/16/26 | 8-K | [Form 8-K: Current report](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/ko-20260716.htm) | [Download Raw XBRL Files published on 07/16/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/0001628280-26-048466-xbrl.zip) | 4
+06/25/26 | 8-K | [Form 8-K: Current report](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm) | [Download Raw XBRL Files published on 06/25/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip) | 15
+06/18/26 | 11-K | [Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm) | [Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip) | 14
+06/18/26 | 11-K | [Form 11-K: Annual report of employee stock purchase, savings and similar plans](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm) | [Download Raw XBRL Files published on 06/18/26](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip) | 16
+06/12/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html) | | 1
+06/11/26 | 4 | [Form 4: Statement of changes in beneficial ownership of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html) | | 2
+06/10/26 | 144 | [Form 144: Report of proposed sale of securities](https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html) | | 2
+
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "[Form 8-K: Current report] on 07/16/26",
+      "date": "2026-07-16",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/ko-20260716.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/0001628280-26-048466-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 8-K: Current report] on 06/25/26",
+      "date": "2026-06-25",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/26",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/26",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 4: Statement of changes in beneficial ownership of securities] on 06/12/26",
+      "date": "2026-06-12",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html"
+      ]
+    },
+    {
+      "title": "[Form 4: Statement of changes in beneficial ownership of securities] on 06/11/26",
+      "date": "2026-06-11",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html"
+      ]
+    },
+    {
+      "title": "[Form 144: Report of proposed sale of securities] on 06/10/26",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/filings-reports/annual-publications",
+    "https://investors.coca-colacompany.com/filings-reports/annual-filings-10-K",
+    "https://investors.coca-colacompany.com/filings-reports/quarterly-filings-10-Q",
+    "https://investors.coca-colacompany.com/filings-reports/2026",
+    "https://investors.coca-colacompany.com/filings-reports/2025",
+    "https://investors.coca-colacompany.com/filings-reports/2024",
+    "https://investors.coca-colacompany.com/filings-reports/2023",
+    "https://investors.coca-colacompany.com/filings-reports/2022",
+    "https://investors.coca-colacompany.com/filings-reports/2021",
+    "https://investors.coca-colacompany.com/filings-reports/2020",
+    "https://investors.coca-colacompany.com/filings-reports/2019",
+    "https://investors.coca-colacompany.com/filings-reports/2018",
+    "https://investors.coca-colacompany.com/filings-reports/2017",
+    "https://investors.coca-colacompany.com/filings-reports/2016",
+    "https://investors.coca-colacompany.com/filings-reports/2015",
+    "https://investors.coca-colacompany.com/filings-reports/2014",
+    "https://investors.coca-colacompany.com/filings-reports/2013",
+    "https://investors.coca-colacompany.com/filings-reports/2012",
+    "https://investors.coca-colacompany.com/filings-reports/2011",
+    "https://investors.coca-colacompany.com/filings-reports/2010",
+    "https://investors.coca-colacompany.com/filings-reports/2009",
+    "https://investors.coca-colacompany.com/filings-reports/2008",
+    "https://investors.coca-colacompany.com/filings-reports/2007",
+    "https://investors.coca-colacompany.com/filings-reports/2006",
+    "https://investors.coca-colacompany.com/filings-reports/2005",
+    "https://investors.coca-colacompany.com/filings-reports/2004",
+    "https://investors.coca-colacompany.com/filings-reports/2003",
+    "https://investors.coca-colacompany.com/filings-reports/2002",
+    "https://investors.coca-colacompany.com/filings-reports/2001",
+    "https://investors.coca-colacompany.com/filings-reports/2000",
+    "https://investors.coca-colacompany.com/filings-reports/1999",
+    "https://investors.coca-colacompany.com/filings-reports/1998",
+    "https://investors.coca-colacompany.com/filings-reports/1997",
+    "https://investors.coca-colacompany.com/filings-reports/1996",
+    "https://investors.coca-colacompany.com/filings-reports/1995",
+    "https://investors.coca-colacompany.com/filings-reports/1994"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "[Form 8-K: Current report] on 07/16/26",
+      "date": "2026-07-16",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/ko-20260716.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-048466/0001628280-26-048466-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 8-K: Current report] on 06/25/26",
+      "date": "2026-06-25",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/e26287_ko-8k.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001552781-26-000366/0001552781-26-000366-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/26",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/ko-20251231.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044344/0001628280-26-044344-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 11-K: Annual report of employee stock purchase, savings and similar plans] on 06/18/26",
+      "date": "2026-06-18",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/ko-20251231.htm",
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001628280-26-044309/0001628280-26-044309-xbrl.zip"
+      ]
+    },
+    {
+      "title": "[Form 4: Statement of changes in beneficial ownership of securities] on 06/12/26",
+      "date": "2026-06-12",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000152/form4.html"
+      ]
+    },
+    {
+      "title": "[Form 4: Statement of changes in beneficial ownership of securities] on 06/11/26",
+      "date": "2026-06-11",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0000021344-26-000150/form4.html"
+      ]
+    },
+    {
+      "title": "[Form 144: Report of proposed sale of securities] on 06/10/26",
+      "date": "2026-06-10",
+      "type": "filing",
+      "urls": [
+        "https://investors.coca-colacompany.com/filings-reports/all-sec-filings/content/0001950047-26-005882/primary_doc.html"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/filings-reports/annual-publications",
+    "https://investors.coca-colacompany.com/filings-reports/annual-filings-10-K",
+    "https://investors.coca-colacompany.com/filings-reports/quarterly-filings-10-Q",
+    "https://investors.coca-colacompany.com/filings-reports/2026",
+    "https://investors.coca-colacompany.com/filings-reports/2025",
+    "https://investors.coca-colacompany.com/filings-reports/2024",
+    "https://investors.coca-colacompany.com/filings-reports/2023",
+    "https://investors.coca-colacompany.com/filings-reports/2022",
+    "https://investors.coca-colacompany.com/filings-reports/2021",
+    "https://investors.coca-colacompany.com/filings-reports/2020",
+    "https://investors.coca-colacompany.com/filings-reports/2019",
+    "https://investors.coca-colacompany.com/filings-reports/2018",
+    "https://investors.coca-colacompany.com/filings-reports/2017",
+    "https://investors.coca-colacompany.com/filings-reports/2016",
+    "https://investors.coca-colacompany.com/filings-reports/2015",
+    "https://investors.coca-colacompany.com/filings-reports/2014",
+    "https://investors.coca-colacompany.com/filings-reports/2013",
+    "https://investors.coca-colacompany.com/filings-reports/2012",
+    "https://investors.coca-colacompany.com/filings-reports/2011",
+    "https://investors.coca-colacompany.com/filings-reports/2010",
+    "https://investors.coca-colacompany.com/filings-reports/2009",
+    "https://investors.coca-colacompany.com/filings-reports/2008",
+    "https://investors.coca-colacompany.com/filings-reports/2007",
+    "https://investors.coca-colacompany.com/filings-reports/2006",
+    "https://investors.coca-colacompany.com/filings-reports/2005",
+    "https://investors.coca-colacompany.com/filings-reports/2004",
+    "https://investors.coca-colacompany.com/filings-reports/2003",
+    "https://investors.coca-colacompany.com/filings-reports/2002",
+    "https://investors.coca-colacompany.com/filings-reports/2001",
+    "https://investors.coca-colacompany.com/filings-reports/2000",
+    "https://investors.coca-colacompany.com/filings-reports/1999",
+    "https://investors.coca-colacompany.com/filings-reports/1998",
+    "https://investors.coca-colacompany.com/filings-reports/1997",
+    "https://investors.coca-colacompany.com/filings-reports/1996",
+    "https://investors.coca-colacompany.com/filings-reports/1995",
+    "https://investors.coca-colacompany.com/filings-reports/1994"
+  ],
+  "__finish__": "stop"
+}
+
+
+
+##########################################################################################
+# PER-PAGE TRACE META  (which watercrawl method won / go_deeper routes / counts)
+##########################################################################################
+
+pages/0001_https-www-coca-colacompany-com-investors/meta.json:
+{
+  "url": "https://www.coca-colacompany.com/investors",
+  "method": "render",
+  "ts": "2026-07-23T05:44:49",
+  "has_screenshot": true,
+  "n_links": 100,
+  "n_events": 9,
+  "n_routes": 5,
+  "go_deeper": [
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed"
+  ]
+}
+
+pages/0002_https-investors-coca-colacompany-com-news-events-events/meta.json:
+{
+  "url": "https://investors.coca-colacompany.com/news-events/events",
+  "method": "render",
+  "ts": "2026-07-23T05:46:00",
+  "has_screenshot": true,
+  "n_links": 70,
+  "n_events": 7,
+  "n_routes": 4,
+  "go_deeper": [
+    "https://investors.coca-colacompany.com/news-events/events/past",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/news-events/email-alerts"
+  ]
+}
+
+pages/0003_https-investors-coca-colacompany-com-news-events-press-relea/meta.json:
+{
+  "url": "https://investors.coca-colacompany.com/news-events/press-releases",
+  "method": "render",
+  "ts": "2026-07-23T05:46:00",
+  "has_screenshot": true,
+  "n_links": 85,
+  "n_events": 10,
+  "n_routes": 32,
+  "go_deeper": [
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2026",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2025",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2024",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2023",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2022",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2021",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2020",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2019",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2018",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2017",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2016",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2015",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2014",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2013",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2012",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2011",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2010",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2009",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2008",
+    "https://investors.coca-colacompany.com/news-events/press-releases?year=2007",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=2",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=3",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=4",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=5",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=6",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=7",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=8",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=9",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=10",
+    "https://investors.coca-colacompany.com/news-events/press-releases?page=116",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed"
+  ]
+}
+
+pages/0004_https-investors-coca-colacompany-com-filings-reports-all-sec/meta.json:
+{
+  "url": "https://investors.coca-colacompany.com/filings-reports/all-sec-filings",
+  "method": "render",
+  "ts": "2026-07-23T05:46:00",
+  "has_screenshot": true,
+  "n_links": 89,
+  "n_events": 16,
+  "n_routes": 48,
+  "go_deeper": [
+    "https://investors.coca-colacompany.com/filings-reports/annual-publications",
+    "https://investors.coca-colacompany.com/filings-reports/annual-filings-10-K",
+    "https://investors.coca-colacompany.com/filings-reports/quarterly-filings-10-Q",
+    "https://investors.coca-colacompany.com/filings-reports/2026",
+    "https://investors.coca-colacompany.com/filings-reports/2025",
+    "https://investors.coca-colacompany.com/filings-reports/2024",
+    "https://investors.coca-colacompany.com/filings-reports/2023",
+    "https://investors.coca-colacompany.com/filings-reports/2022",
+    "https://investors.coca-colacompany.com/filings-reports/2021",
+    "https://investors.coca-colacompany.com/filings-reports/2020",
+    "https://investors.coca-colacompany.com/filings-reports/2019",
+    "https://investors.coca-colacompany.com/filings-reports/2018",
+    "https://investors.coca-colacompany.com/filings-reports/2017",
+    "https://investors.coca-colacompany.com/filings-reports/2016",
+    "https://investors.coca-colacompany.com/filings-reports/2015",
+    "https://investors.coca-colacompany.com/filings-reports/2014",
+    "https://investors.coca-colacompany.com/filings-reports/2013",
+    "https://investors.coca-colacompany.com/filings-reports/2012",
+    "https://investors.coca-colacompany.com/filings-reports/2011",
+    "https://investors.coca-colacompany.com/filings-reports/2010",
+    "https://investors.coca-colacompany.com/filings-reports/2009",
+    "https://investors.coca-colacompany.com/filings-reports/2008",
+    "https://investors.coca-colacompany.com/filings-reports/2007",
+    "https://investors.coca-colacompany.com/filings-reports/2006",
+    "https://investors.coca-colacompany.com/filings-reports/2005",
+    "https://investors.coca-colacompany.com/filings-reports/2004",
+    "https://investors.coca-colacompany.com/filings-reports/2003",
+    "https://investors.coca-colacompany.com/filings-reports/2002",
+    "https://investors.coca-colacompany.com/filings-reports/2001",
+    "https://investors.coca-colacompany.com/filings-reports/2000",
+    "https://investors.coca-colacompany.com/filings-reports/1999",
+    "https://investors.coca-colacompany.com/filings-reports/1998",
+    "https://investors.coca-colacompany.com/filings-reports/1997",
+    "https://investors.coca-colacompany.com/filings-reports/1996",
+    "https://investors.coca-colacompany.com/filings-reports/1995",
+    "https://investors.coca-colacompany.com/filings-reports/1994",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=1",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=2",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=3",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=4",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=5",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=6",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=7",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=8",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=9",
+    "https://investors.coca-colacompany.com/filings-reports/all-sec-filings?page=10",
+    "https://investors.coca-colacompany.com/news-events/email-alerts",
+    "https://investors.coca-colacompany.com/rss-news-feed"
+  ]
+}
+
+pages/0005_https-investors-coca-colacompany-com-news-events-email-alert/meta.json:
+{
+  "url": "https://investors.coca-colacompany.com/news-events/email-alerts",
+  "method": "render",
+  "ts": "2026-07-23T05:46:00",
+  "has_screenshot": true,
+  "n_links": 65,
+  "n_events": 1,
+  "n_routes": 7,
+  "go_deeper": [
+    "https://investors.coca-colacompany.com/news-events",
+    "https://investors.coca-colacompany.com/news-events/press-releases",
+    "https://investors.coca-colacompany.com/news-events/events",
+    "https://investors.coca-colacompany.com/financial-information",
+    "https://investors.coca-colacompany.com/filings-reports",
+    "https://investors.coca-colacompany.com/corporate-governance",
+    "https://investors.coca-colacompany.com/shareowners"
+  ]
+}
+
+pages/0006_https-investors-coca-colacompany-com-rss-news-feed/meta.json:
+{
+  "url": "https://investors.coca-colacompany.com/rss-news-feed",
+  "method": "render",
+  "ts": "2026-07-23T05:46:00",
+  "has_screenshot": true,
+  "n_links": 0,
+  "n_events": 10,
+  "n_routes": 0,
+  "go_deeper": []
+}

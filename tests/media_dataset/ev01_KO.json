@@ -1,0 +1,83 @@
+{
+  "id": "ev01_KO",
+  "event_url": "https://investors.coca-colacompany.com/news-events/events/detail/20170209-4th-quarter-2016-earnings-call",
+  "known_event": {
+    "title": "4Th Quarter 2016 Earnings Call",
+    "date": "2017-02-09",
+    "type": "earnings",
+    "media_urls": [
+      "https://investors.coca-colacompany.com/news-events/events/detail/20170209-4th-quarter-2016-earnings-call"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-earnings-call",
+      "anchor": null,
+      "label": "webcast"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-earnings-release",
+      "anchor": null,
+      "label": "financials"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-non-gaap-financial-measures",
+      "anchor": null,
+      "label": "financials"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-non-gaap-financial-measures-for-earnings-conference-call",
+      "anchor": null,
+      "label": "financials"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-earnings-call-audio",
+      "anchor": null,
+      "label": "audio"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-earnings-call-transcript",
+      "anchor": null,
+      "label": "transcript"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-earnings-call-presentation",
+      "anchor": null,
+      "label": "slides"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-infographic",
+      "anchor": null,
+      "label": "slides"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-proxy",
+      "anchor": null,
+      "label": "filing"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-10-k",
+      "anchor": null,
+      "label": "filing"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-xbrl-zip",
+      "anchor": null,
+      "label": "filing"
+    },
+    {
+      "url": "https://www.coca-colacompany.com/4th-quarter-2016-annual-report",
+      "anchor": null,
+      "label": "filing"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "webcast": 1,
+    "financials": 3,
+    "audio": 1,
+    "transcript": 1,
+    "slides": 2,
+    "filing": 4
+  }
+}

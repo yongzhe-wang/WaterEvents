@@ -1,0 +1,47 @@
+{
+  "id": "ev10_VZ",
+  "event_url": "https://www.verizon.com/about/investors/quarterly-reports/2q-2024-earnings-conference-call-webcast",
+  "known_event": {
+    "title": "2Q 2024 Earnings Conference Call Webcast",
+    "date": "2024",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.verizon.com/about/investors/quarterly-reports/2q-2024-earnings-conference-call-webcast"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://www.verizon.com/about/news/2q-2024-earnings-conference-call-webcast",
+      "anchor": null,
+      "label": "webcast"
+    },
+    {
+      "url": "https://www.verizon.com/about/news/2q-2024-earnings-conference-call-webcast",
+      "anchor": null,
+      "label": "transcript"
+    },
+    {
+      "url": "https://www.verizon.com/about/news/2q-2024-earnings-conference-call-webcast",
+      "anchor": null,
+      "label": "slides"
+    },
+    {
+      "url": "https://www.verizon.com/about/news/2q-2024-earnings-conference-call-webcast",
+      "anchor": null,
+      "label": "financials"
+    },
+    {
+      "url": "https://www.verizon.com/about/news/2q-2024-earnings-conference-call-webcast",
+      "anchor": null,
+      "label": "filing"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "webcast": 1,
+    "transcript": 1,
+    "slides": 1,
+    "financials": 1,
+    "filing": 1
+  }
+}

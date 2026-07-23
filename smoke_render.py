@@ -16,7 +16,7 @@ import asyncio
 import sys
 
 from providers.qwen_llm import QwenClient
-from providers.watercrawl import pool
+from providers.watercrawl import render_shot
 
 # reuse the exact schema + anti-over-classification contract proven in smoke_vision (single source of truth)
 from smoke_vision import EVENT_SCHEMA, SYSTEM
@@ -28,7 +28,7 @@ DEFAULT_URL = "https://investors.coca-colacompany.com/news-events/events"
 async def main() -> None:
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
     print(f"rendering {url} ...")
-    r = pool.render_shot(url, wait_ms=3500)                 # headless chromium → full-page JPEG (fallback chain inside)
+    r = render_shot(url, wait_ms=3500)                      # headless chromium → full-page JPEG (fallback chain inside)
     shot = r.get("shot_b64", "")
     print(f"render method={r.get('method')!r}  text_len={len(r.get('text',''))}  "
           f"links={len(r.get('links',[]))}  shot_bytes~{int(len(shot) * 0.75)}")

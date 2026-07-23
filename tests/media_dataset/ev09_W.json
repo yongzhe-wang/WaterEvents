@@ -1,0 +1,47 @@
+{
+  "id": "ev09_W",
+  "event_url": "https://investor.wayfair.com/events-and-presentations/event-details/2019/Wayfair-Q3-2019-Earnings-Release-and-Conference-Call/default.aspx",
+  "known_event": {
+    "title": "Default.Aspx",
+    "date": "",
+    "type": "",
+    "media_urls": [
+      "https://investor.wayfair.com/events-and-presentations/event-details/2019/Wayfair-Q3-2019-Earnings-Release-and-Conference-Call/default.aspx"
+    ]
+  },
+  "ground_truth_media": [
+    {
+      "url": "https://event.on24.com/wcc/r/2084488/10810736AA663ED6BC1F8A955164DA9C",
+      "anchor": "Webcast",
+      "label": "webcast"
+    },
+    {
+      "url": "https://investor.wayfair.com//s24.q4cdn.com/589059658/files/doc_financials/quaterly/2019/q3/FINAL-9.30.2019-Press-Release.pdf",
+      "anchor": "Press Release (opens in new window) PDF",
+      "label": "financials"
+    },
+    {
+      "url": "https://investor.wayfair.com//s24.q4cdn.com/589059658/files/doc_financials/quaterly/2019/q3/Q3",
+      "anchor": "Presentation (opens in new window) PDF",
+      "label": "slides"
+    },
+    {
+      "url": "https://investor.wayfair.com//s24.q4cdn.com/589059658/files/doc_financials/quaterly/2019/q3/Q3-2019-Earnings-Call_Corrected-Transcript_2019-10-31-13-06-04.pdf",
+      "anchor": "Transcript (opens in new window) PDF",
+      "label": "transcript"
+    },
+    {
+      "url": "https://investor.wayfair.com//s24.q4cdn.com/589059658/files/doc_financials/quaterly/2019/q3/Wayfair-Q3-2019-10Q.pdf",
+      "anchor": "SEC Filing (opens in new window) PDF",
+      "label": "filing"
+    }
+  ],
+  "render_at_test_time": true,
+  "media_types": {
+    "webcast": 1,
+    "financials": 1,
+    "slides": 1,
+    "transcript": 1,
+    "filing": 1
+  }
+}

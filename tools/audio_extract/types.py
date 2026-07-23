@@ -1,4 +1,4 @@
-"""AudioResult — the single return shape for the whole audio_extract tool (mirrors pdf_extract.PdfResult).
+"""AudioResult — the single return shape for the whole audio_extract tool (mirrors officeall.DocResult).
 
 用一句话讲完: 一个音频(URL 或 bytes)进来 → detect → fetch → transcribe 三步 → 汇成这一个 AudioResult 出去。
 transcript 是拼好的全文,segments 是带时间戳的分段(方便对齐/引用),language 是检测到的语种。
@@ -26,6 +26,7 @@ class AudioResult:
     duration: float = 0.0
     n_bytes: int = 0
     source: str = ""
+    via: str = ""                                                  # which model produced it: 'whisper' | 'fallback:medium' | ''
     error: str = ""
 
     @property

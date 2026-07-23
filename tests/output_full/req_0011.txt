@@ -1,0 +1,213 @@
+=== REQUEST 11 ===
+model=qwen-vl  max_tokens=8192  temp=0.0
+image: present=True  b64_len=495044
+
+--- SYSTEM PROMPT ---
+You read a company Investor-Relations web page — its CONTENT in reading order with every link shown INLINE as [anchor text](url) right where it appears, plus (if given) a screenshot of it — and output TWO things as one JSON object: the EVENTS on the page, and ROUTES for the other links. Because links are inline, the links that sit NEXT TO an event's title/date in the text are that event's links; use that adjacency to group them.
+
+1) "events" — the individual IR events shown on this page. An EVENT is a specific corporate occurrence a company discloses to investors: earnings call / results release, press release, investor presentation, SEC or regulatory filing, webcast, conference appearance, annual or special shareholder meeting, dividend / capital action.
+   For EACH event output:
+     - "title": the event's headline. THREE cases, in order: (a) the page shows a title → use it verbatim; (b) NO explicit title, but there is enough context (a date, the type, and nearby text) to describe the event → write a short one-line title yourself that summarizes it (e.g. "Q1 2026 Earnings Conference Call"); (c) neither a title nor enough context to summarize → leave it "".
+     - "date":  record whatever date granularity the page actually shows — do NOT invent missing parts. Full day → "YYYY-MM-DD"; month only → "YYYY-MM"; year only → "YYYY"; a quarter/half → "YYYY-Q1".."YYYY-Q4" or "YYYY-H1"/"YYYY-H2" (e.g. "Q1 2026" → "2026-Q1"). If no date at all → "".
+     - "type":  one of [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other], else "".
+     - "urls":  a LIST of ALL links that belong to THIS ONE event — its detail page AND any files shown next to it (PDF/slides, MP3/audio, webcast link, transcript). These are exactly the inline [anchor](url) links sitting next to this event's title/date in the text. Put them ALL in the single list. Do NOT split one event into several, and do NOT try to label which link is which. One event = one item carrying all its links.
+   Only title/date/type may be empty; every event MUST have at least one url.
+
+2) "routes" — a plain LIST of the link urls the crawler should FOLLOW to discover MORE events. List ONLY the links WORTH following; OMIT every link you would skip — do NOT list it. A link is worth following when it leads to more events: a next page (pagination ?page=2), a year / archive (/events/2023), a sub-listing worth expanding (/press-releases, /news, /events).
+   Do NOT list (just omit): navigation / chrome (About, Contact, Careers, Home, Overview, Login, Search), an external or social host, a feed (.xml/.rss/.atom, /rss/, sitemap), an asset store (/content/dam/, /sites/*/files/, /media/documents/), or anything not leading to events. `routes` holds ONLY follow-worthy urls, so it stays small.
+
+HARD RULE — MUTUALLY EXCLUSIVE: a link that is part of an event (inside some event's "urls") must NEVER also appear in "routes". A link is EITHER an event url OR a route, never both. An event is a leaf — you never go deeper into it.
+
+When unsure whether something is a real dated event vs a hub/listing or boilerplate, prefer LEAVING it out of events (precision over recall); if it might lead to events, put it in routes instead.
+
+Output STRICT JSON only, no prose:
+{"events": [{"title": "", "date": "", "type": "", "urls": ["..."]}], "routes": ["...", "..."]}
+If the page has no events and no links worth following, return {"events": [], "routes": []}.
+
+--- USER PROMPT (text part) ---
+PAGE URL: https://investors.coca-colacompany.com/rss-news-feed
+
+PAGE CONTENT (reading order — every link shown inline as [anchor text](url) where it appears):
+This XML file does not appear to have any style information associated with it. The document tree is shown below.<!-- Generated on Wed, 22 Jul 2026 22:07:29 -0400 --><rssversion="2.0"><channel><title>The Coca-Cola Company (KO) Press Releases</title><link>https://investors.coca-colacompany.com/news-events/press-releases/rss</link><description/><language>en-us</language><image><url>https://d1io3yog0oux5.cloudfront.net/_70ea86a9ad011bdc44db90ba21af0f27/cocacolacompany/files/theme/images/logo-sm.png</url><title>The Coca-Cola Company Logo</title><link/></image><generator>Equisolve Investor Relations Suite</generator><item><title><![CDATA[ The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations</link><pubDate>Thu, 16 Jul 26 16:15:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations</guid></item><item><title><![CDATA[ Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend</link><pubDate>Wed, 15 Jul 26 14:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend</guid></item><item><title><![CDATA[ Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture® ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture</link><pubDate>Tue, 30 Jun 26 09:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release</link><pubDate>Mon, 29 Jun 26 11:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Leadership Transition for North America Operating Unit ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit</link><pubDate>Thu, 25 Jun 26 16:15:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit</guid></item><item><title><![CDATA[ The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india</link><pubDate>Mon, 01 Jun 26 19:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india</guid></item><item><title><![CDATA[ The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026 ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026</link><pubDate>Tue, 19 May 26 09:30:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026</guid></item><item><title><![CDATA[ Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend</link><pubDate>Thu, 30 Apr 26 14:00:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend</guid></item><item><title><![CDATA[ Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance</link><pubDate>Tue, 28 Apr 26 06:55:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance</guid></item><item><title><![CDATA[ The Coca-Cola Company Selects New Global Chief People Officer ]]></title><description><![CDATA[ ]]></description><link>https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer</link><pubDate>Tue, 14 Apr 26 06:55:00 -0400</pubDate><guid>https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer</guid></item></channel></rss>
+
+--- GUIDED_JSON SCHEMA ---
+{"type": "object", "properties": {"events": {"type": "array", "items": {"type": "object", "properties": {"title": {"type": "string"}, "date": {"type": "string"}, "type": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}}, "required": ["urls"]}}, "routes": {"type": "array", "items": {"type": "string"}}}, "required": ["events", "routes"]}
+
+=== RAW MODEL OUTPUT ===
+{
+  "events": [
+    {
+      "title": "The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Leadership Transition for North America Operating Unit",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Selects New Global Chief People Officer",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss"
+  ]
+}
+
+=== PARSED ===
+{
+  "events": [
+    {
+      "title": "The Coca-Cola Company Announces Technology Disruption Involving fairlife Operations",
+      "date": "2026-07-16",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1166/the-coca-cola-company-announces-technology-disruption-involving-fairlife-operations"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects New Officer and Declares Regular Quarterly Dividend",
+      "date": "2026-07-15",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1165/board-of-directors-of-the-coca-cola-company-elects-new-officer-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola® Announces All-Star Lineup and Cultural Experiences for the 2026 Essence Festival of Culture®",
+      "date": "2026-06-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1164/coca-cola-announces-all-star-lineup-and-cultural-experiences-for-the-2026-essence-festival-of-culture"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Timing of Second Quarter 2026 Earnings Release",
+      "date": "2026-06-29",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1163/the-coca-cola-company-announces-timing-of-second-quarter-2026-earnings-release"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Leadership Transition for North America Operating Unit",
+      "date": "2026-06-25",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1162/the-coca-cola-company-announces-leadership-transition-for-north-america-operating-unit"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Exploring Potential Public Listing in India for Hindustan Coca-Cola Holdings Pvt. Ltd., Parent Company of its Largest Bottler in India",
+      "date": "2026-06-01",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1161/the-coca-cola-company-exploring-potential-public-listing-in-india-for-hindustan-coca-cola-holdings-pvt-ltd-parent-company-of-its-largest-bottler-in-india"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Announces Participation in dbAccess Global Consumer Conference 2026",
+      "date": "2026-05-19",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1160/the-coca-cola-company-announces-participation-in-dbaccess-global-consumer-conference-2026"
+      ]
+    },
+    {
+      "title": "Board of Directors of The Coca-Cola Company Elects Two New Officers and Declares Regular Quarterly Dividend",
+      "date": "2026-04-30",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1159/board-of-directors-of-the-coca-cola-company-elects-two-new-officers-and-declares-regular-quarterly-dividend"
+      ]
+    },
+    {
+      "title": "Coca-Cola Reports First Quarter 2026 Results and Updates Full Year Guidance",
+      "date": "2026-04-28",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1158/coca-cola-reports-first-quarter-2026-results-and-updates-full-year-guidance"
+      ]
+    },
+    {
+      "title": "The Coca-Cola Company Selects New Global Chief People Officer",
+      "date": "2026-04-14",
+      "type": "press_release",
+      "urls": [
+        "https://investors.coca-colacompany.com/news-events/press-releases/detail/1157/the-coca-cola-company-selects-new-global-chief-people-officer"
+      ]
+    }
+  ],
+  "routes": [
+    "https://investors.coca-colacompany.com/news-events/press-releases/rss"
+  ]
+}
+

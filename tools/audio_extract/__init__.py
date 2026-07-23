@@ -25,26 +25,30 @@ __all__ = ["extract", "extract_bytes", "is_audio_url", "maybe_audio_url", "fetch
 
 
 def extract_bytes(data: bytes) -> AudioResult:
-    """Audio bytes → AudioResult (transcript + segments). Use when you already HAVE the bytes (no network)."""
+    """Audio bytes → AudioResult (transcript + segments). Runs the whisper large→medium OOM-fallback chain (see
+    transcribe); `via` names the winning model, `error` names the SPECIFIC failure reason when the chain fails
+    (never a silent empty). Use when you already HAVE the bytes (no network)."""
     if not data:
         return AudioResult(source="bytes", error="empty-bytes")
-    transcript, segments, language, duration = transcribe(data)
+    transcript, segments, language, duration, reason = transcribe(data)
+    via = "whisper" if (transcript and not reason) else (reason if reason.startswith("fallback") else "")
     res = AudioResult(transcript=transcript, segments=segments, language=language,
-                      duration=duration, n_bytes=len(data), source="bytes")
+                      duration=duration, n_bytes=len(data), source="bytes", via=via)
     if not res.ok:
-        res.error = "transcribe-failed"
+        res.error = reason or "transcribe-failed"               # loud: the specific reason (whisper-missing / OOM / …)
     return res
 
 
 def extract(url: str, proxy: str | None = None) -> AudioResult:
-    """A (maybe-)audio url → AudioResult. Flow: maybe_audio_url gate → fetch_bytes (Chrome fingerprint, media-verified)
-    → transcribe (local whisper on GPU). proxy: pass a residential proxy url when a host datacenter-blocks the GET.
-    Best-effort: a non-audio / unreachable / untranscribable url → AudioResult(ok=False) with an `error`."""
+    """A (maybe-)audio url → AudioResult. Flow: maybe_audio_url gate → fetch_bytes (Chrome fingerprint + residential-
+    proxy fallback, media-verified) → transcribe (local whisper, OOM fallback). proxy: residential proxy for fetch's
+    fallback leg. FAIL LOUDLY: a fetch failure carries the SPECIFIC reason (http-403 / ssrf-blocked / not-media / …)
+    into `error`, never a silent 'fetch-empty'."""
     if not maybe_audio_url(url):
         return AudioResult(source="url", error="not-audio-url")
-    data = fetch_bytes(url, proxy=proxy)
+    data, reason = fetch_bytes(url, proxy=proxy)
     if not data:
-        return AudioResult(source="url", error="fetch-empty")
+        return AudioResult(source="url", error=f"fetch-failed:{reason}")   # loud reason
     res = extract_bytes(data)
     res.source = "url"                                          # the bytes came from the network here
     return res

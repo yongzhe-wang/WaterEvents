@@ -8,8 +8,8 @@
     "text_chars": 46193,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.8,
-    "extract_s": 1.1
+    "fetch_s": 2.2,
+    "extract_s": 1.2
   },
   {
     "n": 2,
@@ -20,8 +20,8 @@
     "text_chars": 78124,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.6,
-    "extract_s": 0.8
+    "fetch_s": 1.7,
+    "extract_s": 0.9
   },
   {
     "n": 3,
@@ -32,8 +32,8 @@
     "text_chars": 80901,
     "tables": 2,
     "error": "",
-    "fetch_s": 2.1,
-    "extract_s": 1.7
+    "fetch_s": 1.8,
+    "extract_s": 1.8
   },
   {
     "n": 4,
@@ -44,7 +44,7 @@
     "text_chars": 232080,
     "tables": 0,
     "error": "",
-    "fetch_s": 2.9,
+    "fetch_s": 3.7,
     "extract_s": 1.2
   },
   {
@@ -57,7 +57,7 @@
     "tables": 0,
     "error": "",
     "fetch_s": 1.4,
-    "extract_s": 0.8
+    "extract_s": 0.9
   },
   {
     "n": 6,
@@ -68,8 +68,8 @@
     "text_chars": 21071,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.7,
-    "extract_s": 0.8
+    "fetch_s": 1.8,
+    "extract_s": 0.5
   },
   {
     "n": 7,
@@ -80,7 +80,7 @@
     "text_chars": 38605,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.8,
+    "fetch_s": 2.1,
     "extract_s": 0.6
   },
   {
@@ -92,7 +92,7 @@
     "text_chars": 2058,
     "tables": 2,
     "error": "",
-    "fetch_s": 1.4,
+    "fetch_s": 1.1,
     "extract_s": 0.1
   },
   {
@@ -104,7 +104,7 @@
     "text_chars": 4805,
     "tables": 4,
     "error": "",
-    "fetch_s": 1.5,
+    "fetch_s": 1.2,
     "extract_s": 0.2
   },
   {
@@ -116,7 +116,7 @@
     "text_chars": 534884,
     "tables": 1,
     "error": "",
-    "fetch_s": 2.0,
+    "fetch_s": 1.7,
     "extract_s": 2.6
   },
   {
@@ -128,8 +128,8 @@
     "text_chars": 0,
     "tables": 0,
     "error": "",
-    "fetch_s": 2.6,
-    "extract_s": 0.0
+    "fetch_s": 1.8,
+    "extract_s": 0.5
   },
   {
     "n": 12,
@@ -140,7 +140,7 @@
     "text_chars": 7743,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.2,
+    "fetch_s": 1.4,
     "extract_s": 0.2
   },
   {
@@ -152,7 +152,7 @@
     "text_chars": 1503,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.3,
+    "fetch_s": 1.2,
     "extract_s": 0.1
   },
   {
@@ -164,7 +164,7 @@
     "text_chars": 5511,
     "tables": 0,
     "error": "",
-    "fetch_s": 1.1,
+    "fetch_s": 1.3,
     "extract_s": 0.2
   },
   {
@@ -188,8 +188,8 @@
     "text_chars": 208097,
     "tables": 7,
     "error": "",
-    "fetch_s": 1.8,
-    "extract_s": 2.0
+    "fetch_s": 1.7,
+    "extract_s": 1.9
   },
   {
     "n": 17,
@@ -200,7 +200,7 @@
     "text_chars": 63764,
     "tables": 4,
     "error": "",
-    "fetch_s": 1.8,
+    "fetch_s": 1.9,
     "extract_s": 0.8
   },
   {
@@ -212,8 +212,8 @@
     "text_chars": 225158,
     "tables": 0,
     "error": "",
-    "fetch_s": 6.8,
-    "extract_s": 0.5
+    "fetch_s": 7.1,
+    "extract_s": 0.3
   },
   {
     "n": 19,
@@ -224,7 +224,7 @@
     "text_chars": 152466,
     "tables": 3,
     "error": "",
-    "fetch_s": 2.1,
+    "fetch_s": 1.7,
     "extract_s": 1.5
   },
   {
@@ -236,7 +236,7 @@
     "text_chars": 35385,
     "tables": 6,
     "error": "",
-    "fetch_s": 2.0,
+    "fetch_s": 1.3,
     "extract_s": 0.5
   }
 ]

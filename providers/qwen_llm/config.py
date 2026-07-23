@@ -25,10 +25,17 @@ MAX_RETRIES = int(os.environ.get("QWEN_RETRIES", "2"))
 
 # Generation — deterministic extraction (temp 0), bounded output. IR pages need a JSON event list, not prose.
 TEMPERATURE = float(os.environ.get("QWEN_TEMPERATURE", "0.0"))
-# 4096 output cap. VISION extraction emits ONLY an events array (no route list — the crawl's BFS handles link
-# discovery, not the model), so a few dozen events ≈ well under 4k tokens. Critically, max_tokens + input MUST fit
-# in the server's --max-model-len (16384): a full-page screenshot is ~1-1.5k image tokens + prompt, so 4096 output
-# leaves ample room. {SERVER 2026-07-23 400: "'max_tokens' ... too large: 16384 ... maximum context length is 16384"}
-# [CONFIDENCE: CONFIRMED 100% — vLLM rejects max_tokens>=max_model_len pre-flight; observed on the VL-7B smoke run].
-MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "4096"))
+# 16384 output cap. Truncated JSON = invalid = _parse_json→{}→0 events (silent data loss), so this MUST exceed the
+# largest real page's output. History: 4096 truncated on any normal IR page; 8192 still truncated on ~10% of pages —
+# the SEC-filings-archive / press-release mega-lists that emit hundreds of events (a full 128-page Coca-Cola crawl had
+# 13/128 pages come back {} with 18k-28k chars of *truncated* raw output, all at exactly the 8192-token wall). Vision
+# input is now bounded (image ~7-9k tok + 4000-char text + prompt ≈ 11k), and --max-model-len is 32768, so 16384 output
+# leaves ~5k headroom while covering those mega-list pages. {DUMPS req_0019/0020/0051/... 2026-07-23: raw_chars 18k-28k,
+# has_error=0 — pure length truncation, not a request error}. [CONFIDENCE: CONFIRMED 100% — 13 truncated dumps measured].
+MAX_TOKENS = int(os.environ.get("QWEN_MAX_TOKENS", "16384"))
 MAX_INPUT_CHARS = int(os.environ.get("QWEN_MAX_INPUT_CHARS", "48000"))   # ~12-16k tokens; truncate huge pages
+
+# DEBUG: when set, the client dumps EVERY request's full prompt (system + user + image info) and the model's RAW
+# output + parsed result + any error to one txt per request under this dir. For eyeballing exactly what the model
+# saw and returned. Off by default (empty). Set QWEN_DEBUG_DIR=tests/output to capture a run.
+DEBUG_DIR = os.environ.get("QWEN_DEBUG_DIR", "")
