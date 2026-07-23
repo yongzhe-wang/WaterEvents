@@ -22,9 +22,9 @@ from providers.qwen_llm import config as qcfg      # mutate DEBUG_DIR per-event 
 
 from .enrich import enrich_page
 
-_DATASET = os.environ.get("MEDIA_DATASET_DIR",
-                          os.path.join(os.path.dirname(__file__), "..", "..", "tests", "media_dataset"))
-_OUTDIR = os.environ.get("MEDIA_SMOKE_OUT",
+_DATASET = os.environ.get("MEDIA_DATASET_DIR",              # reusable oracle dataset (moved under tests/datasets/ 2026-07-23)
+                          os.path.join(os.path.dirname(__file__), "..", "..", "tests", "datasets", "ir_events_media_oracle"))
+_OUTDIR = os.environ.get("MEDIA_SMOKE_OUT",                 # regenerable smoke output (gitignored, NOT a dataset)
                          os.path.join(os.path.dirname(__file__), "..", "..", "tests", "media_output"))
 _LIMIT = int(os.environ.get("MEDIA_SMOKE_LIMIT", "0"))       # 0 = all
 _USE_IMAGE = os.environ.get("MEDIA_USE_IMAGE", "1") not in ("0", "false", "no")
@@ -129,16 +129,43 @@ async def main() -> None:
         enriched = await enrich_page(entry["known_event"], page, use_image=_USE_IMAGE)
         _write_trace(trace_path, entry, page, enriched)
         found, total, _ = _oracle(enriched["urls"], entry["ground_truth_media"])
-        trunc = enriched["output_truncated"]
-        print(f"  {'⚠️ ' if trunc else '✓ '}{entry['id']:13} media {found}/{total} | basic_info {len(enriched['basic_info'])}blk"
-              f" | transcript {len(enriched['transcript_segments'])}seg | {'TRUNCATED' if trunc else 'ok'}", flush=True)
-        summary.append((entry["id"], "ok", found, total, trunc))
+        # STATUS TAXONOMY — a rendered page can still come back DEGRADED two ways, and BOTH used to print "✓ ok" (silent
+        # degradation, exactly what the user's "fallback must NEVER silently degrade quality" directive forbids):
+        #   (1) output_truncated=True → enrich.py flagged a HARD FAILURE — either a VLM `_error` (connection/5xx, the
+        #       ev04_GILD case: render fine + image present but RAW empty + ERROR="Connection error.") or a mega-page
+        #       finish=length. Either way the record is NOT trustworthy. {ENRICH.PY:136 "acc['output_truncated']=True"}.
+        #   (2) not truncated but the page rendered WITH content yet the VLM returned ZERO basic_info AND ZERO transcript
+        #       AND matched ZERO oracle media → an empty enrichment on a non-empty page = a quality drop worth shouting,
+        #       distinct from a page that genuinely has nothing.
+        # {USER 2026-07-23 "fail loudly + fallback must NEVER silently degrade quality; a failed result must be
+        # distinguishable from a genuine empty and loudly reported"} [CONFIDENCE: CONFIRMED 100% — direct user directive].
+        n_blk, n_seg = len(enriched["basic_info"]), len(enriched["transcript_segments"])
+        if enriched["output_truncated"]:                      # hard fail (VLM _error / mega-page length) — flagged by enrich
+            status, mark, tag = "FAILED", "⛔", "FAILED(truncated/vlm-error)"
+        elif n_blk == 0 and n_seg == 0 and found == 0:        # page had content but enrichment produced nothing usable
+            status, mark, tag = "EMPTY", "⚠️ ", "EMPTY(rendered-but-0-content)"
+        else:
+            status, mark, tag = "ok", "✓ ", "ok"
+        print(f"  {mark}{entry['id']:13} media {found}/{total} | basic_info {n_blk}blk"
+              f" | transcript {n_seg}seg | {tag}", flush=True)
+        summary.append((entry["id"], status, found, total, enriched["output_truncated"]))
 
     print("\n===== SUMMARY =====")
     tot_found = sum(s[2] for s in summary); tot_media = sum(s[3] for s in summary)
     for sid, st, f, t, tr in summary:
-        print(f"  {sid:13} {st:12} media {f}/{t} {'⚠️TRUNC' if tr else ''}")
+        mark = "⛔" if st in ("FAILED", "render-empty") else ("⚠️" if st == "EMPTY" else "  ")
+        print(f"  {mark} {sid:13} {st:12} media {f}/{t}")
+    # LOUD run-level banner — a degraded run must be UNMISSABLE, never a quiet "10/10 done". Count every non-ok event so
+    # a connection-errored / empty enrichment can NEVER be mistaken for a complete one. {USER "fail loudly is the core"}.
+    degraded = [s for s in summary if s[1] != "ok"]
     print(f"\n媒体覆盖 {tot_found}/{tot_media} | traces → {_OUTDIR}/<id>/trace.txt (+ req_*.txt full prompt/output)")
+    if degraded:
+        ids = ", ".join(f"{s[0]}({s[1]})" for s in degraded)
+        print(f"⛔⛔ DEGRADED RUN — {len(degraded)}/{len(summary)} events NOT clean: {ids}\n"
+              f"   do NOT treat this run as complete — re-run after the VLM server is stable (retries ride out a blip, "
+              f"not a sustained outage).", flush=True)
+    else:
+        print(f"✅ CLEAN RUN — all {len(summary)} events enriched with usable content.", flush=True)
 
 
 if __name__ == "__main__":

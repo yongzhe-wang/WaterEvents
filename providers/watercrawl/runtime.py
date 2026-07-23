@@ -17,6 +17,7 @@ Design invariants (迁移自原 pool.py 文件头,逐条保留):
 from __future__ import annotations
 
 import asyncio
+import itertools
 import threading
 
 from . import config
@@ -25,7 +26,9 @@ from . import config
 _lock = threading.Lock()                                  # guards the lazy launch (one launch across N caller threads)
 _loop: asyncio.AbstractEventLoop | None = None            # the dedicated Playwright loop
 _loop_thread: threading.Thread | None = None
-_browser = None                                           # default headless Chromium (the fast path)
+_browser = None                                           # default headless Chromium (_browsers[0]; fallback code reads this)
+_browsers: list = []                                      # POOL of default Chromiums (config.RENDER_BROWSERS of them) — render pages round-robin over these separate PROCESSES so no ONE browser starves at high tab count
+_rr_browser = None                                        # itertools.cycle over _browsers (created on the loop in _launch)
 _browser_h1 = None                                        # HTTP/1.1-forced Chromium (ERR_HTTP2 retry lane)
 _browser_proxy = None                                     # patchright + webshare residential STEALTH browser (walls)
 _playwright = None                                        # the async_playwright driver for the two Chromiums
@@ -53,13 +56,20 @@ async def _launch() -> None:
     THREE browsers, layered by cost: (1) default headless Chromium — the fast path; (2) an HTTP/1.1-forced Chromium
     for the ERR_HTTP2 retry lane (Akamai deliberately breaks headless HTTP/2); (3) a patchright + webshare residential
     STEALTH browser for bot-walls (only if a webshare proxy is configured)."""
-    global _browser, _playwright, _sem, _browser_h1, _browser_proxy, _playwright_stealth
+    global _browser, _browsers, _rr_browser, _playwright, _sem, _browser_h1, _browser_proxy, _playwright_stealth
     from playwright.async_api import async_playwright
     _playwright = await async_playwright().start()
     # Container-safe flags (--disable-dev-shm-usage) + cache/GPU trims so peak render memory stays low.
     _shared_args = ["--disable-dev-shm-usage", "--disable-gpu", "--disable-software-rasterizer",
                     "--disable-extensions", "--disk-cache-size=1", "--media-cache-size=1"]
-    _browser = await _playwright.chromium.launch(headless=True, args=_shared_args)
+    # POOL of default Chromiums — config.RENDER_BROWSERS SEPARATE browser processes (min 1). render pages round-robin
+    # across them (next_browser) so N total tabs split into N/K tabs per browser → no single browser's main-thread/IPC
+    # starves. _browser stays = _browsers[0] so the fallback lanes (h1/residential) that read runtime._browser still work.
+    # {USER 2026-07-23 "you have multiple cpu right"} [CONFIDENCE: CONFIRMED — 1-browser@48 starved; K procs spread the load].
+    _browsers = [await _playwright.chromium.launch(headless=True, args=_shared_args)
+                 for _ in range(max(1, config.RENDER_BROWSERS))]
+    _rr_browser = itertools.cycle(_browsers)              # round-robin picker (consumed on the single loop thread → no lock needed)
+    _browser = _browsers[0]                               # fallback-lane compatibility: h1/residential code references _browser
     # HTTP/1.1 lane — a second Chromium with HTTP/2 disabled, used only when the default browser ERR_HTTP2s.
     _browser_h1 = await _playwright.chromium.launch(headless=True, args=_shared_args + ["--disable-http2"])
     # Residential STEALTH lane — patchright (source-patched Playwright) through the webshare rotating proxy. Only
@@ -97,12 +107,21 @@ def ensure_browser() -> bool:
             _ensure_loop()
             fut = asyncio.run_coroutine_threadsafe(_launch(), _loop)
             fut.result(timeout=90)
-            print(f"[watercrawl] resident Chromium launched (max_pages={config.MAX_PAGES}) — self-hosted render lane UP", flush=True)
+            print(f"[watercrawl] resident Chromium launched ({len(_browsers)} browser(s) × max_pages={config.MAX_PAGES} "
+                  f"total) — self-hosted render lane UP", flush=True)
             return True
         except Exception as error:                        # noqa: BLE001 — a broken env must disable render, not crash
             print(f"[watercrawl] launch failed, self-hosted render disabled this process: {error}", flush=True)
             _dead = True
             return False
+
+
+def next_browser():
+    """Round-robin the NEXT default browser from the pool (render.py's default render path calls this instead of reading
+    the single runtime._browser). Spreads consecutive render pages across the K separate browser processes so no one
+    browser accumulates all the tabs. Called ONLY from render coroutines on the single loop thread, so the itertools
+    cycle needs no lock. Falls back to _browser if the pool isn't built yet (defensive; ensure_browser runs first)."""
+    return next(_rr_browser) if _rr_browser is not None else _browser
 
 
 def browser_available() -> bool:

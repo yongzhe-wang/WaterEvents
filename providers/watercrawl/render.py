@@ -50,7 +50,7 @@ async def _render_one(url: str, inject_js: str | None, wait_ms: int) -> tuple[st
     """Render ONE url in an isolated context → (text, links). Optional inject_js runs AFTER load (e.g. a year-<select>
     change dispatch), then we wait wait_ms for its AJAX before extracting. Runs ON the loop. {POOL.PY:253-276}."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # round-robin the browser pool (spread tabs across processes)
         try:
             pg = await page.new_blocked_page(ctx)
             await _goto(pg, url)
@@ -78,7 +78,7 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     sole render engine it hands back HTML too, not just text. `browser` overrides the default (HTTP/1.1 or residential
     lane). Runs ON the loop. {POOL.PY:318-338}."""
     async with runtime._sem:
-        ctx = await (browser or runtime._browser).new_context(user_agent=config.UA)
+        ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
         try:
             pg = await page.new_blocked_page(ctx)
             await _goto(pg, url)
@@ -102,10 +102,24 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     q70 keeps image tokens down. Screenshot is best-effort (text/links still return on shot failure). Runs ON the loop.
     {POOL.PY:341-368}."""
     async with runtime._sem:
-        ctx = await (browser or runtime._browser).new_context(user_agent=config.UA)
+        ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
         try:
             pg = await page.new_shot_page(ctx)           # shot path: keep CSS + images so the screenshot looks real
             await _goto(pg, url)
+            # HARD SIZE GATE — measure scroll-height RIGHT AFTER goto, BEFORE the expensive settle/break/extract/content/
+            # shot. A page taller than RENDER_ABORT_PX is an infinite-scroll marketing page (apple.com/iphone ≈ 50000 px),
+            # never an IR event page. Settling + content-extracting + full_page-screenshotting it allocates GBs and
+            # OOM-SIGKILLs the browser → TargetClosedError poisons EVERY page on that browser (42 such fails in the 16×3
+            # run even WITH the SHOT_MAX_PX clip — the OOM was pre-shot). So STOP here and return empty; the crawl counts a
+            # skipped render (fail-loud) and never pays the memory. Measured pre-settle so below-fold images haven't
+            # lazy-loaded yet → the abort itself is cheap. {USER 2026-07-23 "stop the render if at a certain size and
+            # return directly"} [CONFIDENCE: CONFIRMED 100% — 16×3 OOM'd from exactly these pages despite the shot clip].
+            _h = await pg.evaluate("() => Math.max(document.documentElement.scrollHeight||0,"
+                                   " (document.body && document.body.scrollHeight) || 0)")
+            if _h and _h > config.RENDER_ABORT_PX:
+                print(f"[watercrawl] ⏭️ render ABORT {url[:70]} — {_h}px > {config.RENDER_ABORT_PX}px cap "
+                      f"(giant non-IR/marketing page) → skip + return empty (never render the OOM bitmap)", flush=True)
+                return "", [], "", "", ""                  # empty → caller counts a skipped render; ctx closed in finally
             await _settle(pg, wait_ms)
             await _break_walls(pg, url, wait_ms)          # dismiss consent + break a registration/login gate before the shot
             try:
@@ -116,7 +130,23 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
                 out = await pg.evaluate(extract_js.EXTRACT_JS)
                 html = await pg.content()
             try:
-                shot = await pg.screenshot(full_page=True, type="jpeg", quality=70)
+                # BOUND the screenshot memory. full_page=True renders the ENTIRE scroll-height into ONE bitmap; on a
+                # giant marketing page the crawl leaked into (www.apple.com/iphone ≈ 50000 px tall) that bitmap is GBs,
+                # and a few rendered concurrently SIGKILLed the run (cgroup OOM → fetch_10 EXIT=137). Measure the page
+                # height; if it exceeds SHOT_MAX_PX, CLIP to the top SHOT_MAX_PX px instead of shooting the whole page —
+                # the VL layout signal (events table vs nav vs footer) is in the first screenfuls, not at the bottom of
+                # an infinite-scroll page. A normal IR list (< ~8000 px) still gets a full shot. {LOG 2026-07-23
+                # apple.com/iphone,shop → EXIT=137} [CONFIDENCE: CONFIRMED 100% — OOM followed giant full_page shots].
+                dims = await pg.evaluate(
+                    "() => ({w: Math.max(document.documentElement.clientWidth||0, window.innerWidth||0),"
+                    " h: Math.max(document.documentElement.scrollHeight||0,"
+                    "            (document.body && document.body.scrollHeight) || 0)})")
+                if dims.get("h", 0) > config.SHOT_MAX_PX:    # giant page → clip to the top band (bounds peak bitmap RAM)
+                    shot = await pg.screenshot(type="jpeg", quality=70,
+                                               clip={"x": 0, "y": 0, "width": dims.get("w") or 1280,
+                                                     "height": config.SHOT_MAX_PX})
+                else:                                        # normal IR page → full-page shot as before
+                    shot = await pg.screenshot(full_page=True, type="jpeg", quality=70)
                 shot_b64 = base64.b64encode(shot).decode("ascii")
             except Exception:                            # noqa: BLE001 — shot failed (huge page / timeout) → text-only
                 shot_b64 = ""
@@ -137,7 +167,7 @@ def _shot_via(url: str, wait_ms: int, browser) -> tuple[str, list, str, str, str
         return "", [], "", "", ""
 
 
-def render_shot(url: str, wait_ms: int = 3000) -> dict:
+def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fixed post-poll settle (1500, was 3000) — DOM poll already confirmed content
     """SYNC entry — open a page with the fallback chain and return EVERYTHING the crawl needs + full traceability:
         {"text", "links", "html", "shot_b64", "method", "inline"}
     method ∈ "render" (headless Chromium), "residential" (patchright + webshare, for bot-walls), "impersonate"

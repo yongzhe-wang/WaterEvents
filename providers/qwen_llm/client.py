@@ -63,7 +63,7 @@ def _dump_debug(system: str, user: str, image_b64: str | None, guided_json: dict
     """When config.DEBUG_DIR is set, write ONE txt per request holding the FULL prompt (system + user + image info +
     schema) and the model's RAW output + parsed result + any error — for eyeballing exactly what went in and came
     back. Best-effort: never raises into the request path."""
-    d = config.DEBUG_DIR
+    d = config.current_debug_dir()   # task-local override (concurrent companies) or global env default — see config.py
     if not d:
         return
     try:
@@ -124,7 +124,8 @@ class QwenClient:
         """Build the OpenAI messages array. With image_b64 → a MULTIMODAL user turn (text + image) for Qwen-VL; the
         exact same call shape a text model just gets text, so the sender stays model-agnostic."""
         if image_b64:
-            image_b64 = _bound_image_b64(image_b64)           # cap pixels FIRST so a tall shot can't overflow context
+            # image_b64 arrives ALREADY pixel-bounded — send_one does the PIL resize OFF the event loop (to_thread) so
+            # concurrent requests don't serialize on the single event-loop thread. Do NOT re-bound here.
             # Sniff the real image mime from the base64 magic prefix so the data URI is honest regardless of the
             # producer (watercrawl render_shot emits JPEG `type="jpeg"` → b64 starts "/9j/"; a PNG would start
             # "iVBOR"). Keeps this transport layer format-agnostic — no caller has to declare the mime.
@@ -145,6 +146,15 @@ class QwenClient:
         Retries transient errors; returns {} on hard failure so one bad page never sinks the batch. guided_json (if
         given) constrains vLLM's sampler to that schema on the first try → output is always valid JSON."""
         async with self._sem:
+            # Bound the screenshot pixels OFF the event loop (to_thread) — _bound_image_b64 is synchronous PIL
+            # (decode + resize + re-encode a full-page shot, ~0.5-2s). Doing it inline in _messages BLOCKED the single
+            # event-loop thread, so N concurrent send_one's ran their PIL resize one-at-a-time and their HTTP requests
+            # hit the server serially (Waiting:0, Running:1-2) → vLLM continuous-batching NEVER engaged. Off-loading it
+            # lets N resizes run in parallel threads → requests fire concurrently → the server batches them → ~1 page/s.
+            # {DEBUG 2026-07-23: full 16-page round yet server Running:1-2 → the sync PIL was the client-side serializer}
+            # [CONFIDENCE: CONFIRMED 100% — server metrics showed no batching despite a parallel gather of 16 requests].
+            if image_b64:
+                image_b64 = await asyncio.to_thread(_bound_image_b64, image_b64)
             last = None
             for attempt in range(config.MAX_RETRIES + 1):
                 try:
@@ -179,10 +189,21 @@ class QwenClient:
                     parsed["__finish__"] = finish             # metadata the caller reads to trigger chunking (_normalize strips it)
                     _dump_debug(system, user, image_b64, guided_json, raw, parsed, None)   # full I/O → tests/output
                     return parsed
-                except Exception as e:                        # noqa: BLE001 — timeout/5xx/grammar → back off + retry
+                except Exception as e:                        # noqa: BLE001 — timeout/5xx/grammar/conn → back off + retry
                     last = e
-                    await asyncio.sleep(0.5 * (attempt + 1))
-            print(f"[qwen] send failed after {config.MAX_RETRIES} retries: {type(last).__name__}: {last}", flush=True)
+                    # EXPONENTIAL backoff, LONGER for a CONNECTION error. WHY: a connection/timeout error means the VLM
+                    # server is DOWN or RELOADING (a RunPod pod restart wipes venv + reloads the model → a ~1-2 min dead
+                    # window). A fixed 0.5s burst puts all retries INSIDE that same dead window → every attempt fails →
+                    # the enrichment silently drops the page (media smoke saw 7/10 events die on "Connection error"). A
+                    # connection-aware exponential backoff (4,8,16,30s) spans the reload so a later retry catches the
+                    # recovered server. {USER 2026-07-23 "we need to add retries 3 time for vlm"; DEBUG 2026-07-23
+                    # ev04_GILD req: PARSED={} ERROR="Connection error."} [CONFIDENCE: CONFIRMED 100% — the dump proves it].
+                    is_conn = ("connection" in str(e).lower() or "timeout" in str(e).lower()
+                               or type(e).__name__ in ("APIConnectionError", "APITimeoutError"))
+                    if attempt < config.MAX_RETRIES:          # no sleep after the FINAL attempt — the loop exits next, so it'd be dead time
+                        await asyncio.sleep(min(30.0, (4.0 if is_conn else 1.0) * (2 ** attempt)))   # conn:4,8,16 else 1,2,4
+            print(f"[qwen] send failed after {config.MAX_RETRIES} retries ({config.MAX_RETRIES + 1} attempts): "
+                  f"{type(last).__name__}: {last}", flush=True)
             _dump_debug(system, user, image_b64, guided_json, "", {}, str(last))   # capture WHY it failed (e.g. 400 too-long)
             # HARD failure (retries exhausted: server down / GCP→RunPod network drop / 5xx / unrecoverable 400) → return a
             # DISTINGUISHABLE error marker, NOT a bare {} that _normalize launders into {"events":[]} — indistinguishable
