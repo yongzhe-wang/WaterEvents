@@ -61,6 +61,45 @@ def _same_site(url: str, root: str) -> bool:
     return _reg(host(url)) == _reg(host(root))
 
 
+# Route-noise denylist — path SEGMENTS that are NEVER an IR event page. WHY it matters: a `route` returned by the VLM
+# becomes a RENDERED + EXTRACTED page next round (not just a hub-follow), so following legal / careers / account /
+# SEC-filing-hub links only explodes the frontier with pages that cannot yield an event — NVDA over-crawled to 61 pages
+# hitting terms-of-service + SEC filing lists. Only UNAMBIGUOUS non-event pages are listed; every event-adjacent hub
+# (events / calendar / webcasts / presentations / earnings / quarterly / annual-report(s) / annual-meeting / dividend(s)
+# / press / press-release / news / newsroom / media / results / financials) is DELIBERATELY absent so it stays
+# crawlable. SEC filing lists are excluded because filings arrive via the SEC-API channel, not the crawl.
+# {USER 2026-07-23 "route 过滤要挡掉 legal/hub/filing-list ... 页数从 20+ 降到 ~5-8 真事件页"}
+# [CONFIDENCE: CONFIRMED 95% — user named terms-of-service + SEC filing lists as the noise; the event-adjacent
+#  exclusions are my conservative call, validated by the first real NVDA crawl (blocked routes are logged, not silent)].
+_NOISE_SEGMENTS = frozenset({
+    # ── legal / policy ──
+    "terms", "terms-of-use", "terms-of-service", "termsofuse", "tos", "privacy", "privacy-policy",
+    "legal", "legal-notice", "legal-notices", "cookie", "cookies", "cookie-policy", "disclaimer",
+    "disclaimers", "accessibility", "safe-harbor", "sitemap", "site-map",
+    # ── corporate-info hubs (never an event) ──
+    "careers", "career", "jobs", "about", "about-us", "aboutus", "who-we-are", "our-company",
+    "company-overview", "contact", "contact-us", "contacts", "team", "our-team", "leadership",
+    "management-team", "executives", "board-of-directors", "our-people", "history", "our-history",
+    "mission", "values", "culture", "diversity", "supplier", "suppliers", "vendors",
+    # ── account / utility / nav ──
+    "login", "log-in", "signin", "sign-in", "register", "subscribe", "subscription", "newsletter",
+    "search", "rss", "feed", "feeds", "print", "share", "email-alerts", "alerts", "faq", "faqs",
+    "help", "support",
+    # ── SEC filing hubs — covered by the SEC-API channel, not the crawl ──
+    "sec-filings", "sec-filing", "secfilings", "sec", "edgar", "regulatory-filings",
+})
+
+
+def _is_noise_route(url: str) -> bool:
+    """True if this go-deeper url is a KNOWN non-event page (legal / careers / account / SEC-filing hub) → don't follow
+    it into the frontier. Segment-EXACT match (not substring), so `/newsroom` is NOT caught by `news` and
+    `/presentations` is caught by nothing — event-adjacent hubs stay crawlable. Applied ONLY to discovered routes; the
+    seed url is never filtered. {USER 2026-07-23 "挡掉 legal/hub/filing-list"} [CONFIDENCE: CONFIRMED 95%]."""
+    path = urlsplit(url if url.startswith("http") else "https://" + url).path.lower()   # scheme-safe path extract
+    segs = [s for s in path.split("/") if s]                 # non-empty path segments (drops the leading/trailing //)
+    return any(s in _NOISE_SEGMENTS for s in segs)           # any segment on the denylist → it's noise, skip it
+
+
 async def _render_one(url: str) -> dict | None:
     """Open ONE url with watercrawl (in a thread — render_shot is sync + marshals to the browser loop). Returns the
     render dict {url, text, links, html, shot_b64, method}, or None when the render came back empty (skip it)."""
@@ -119,21 +158,25 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
         if not round_urls:
             break
 
-        # render all in parallel (threads), drop empties, then LLM-extract all in parallel
-        rendered = await asyncio.gather(*(_render_one(u) for u in round_urls))
-        renders = [r for r in rendered if r]
-        n_render_fail = len(round_urls) - len(renders)        # dropped = render came back empty (walled/dead)
-        if n_render_fail:                                     # coverage loss — say it, don't swallow it
-            failed_render += n_render_fail
-            print(f"[crawl] ⚠️ {n_render_fail}/{len(round_urls)} pages FAILED to render (walled/dead/empty) — "
-                  f"their events are UNSEEN this run", flush=True)
-        if not renders:
-            continue
-        pages = [_to_page(r) for r in renders]
-        results = await extract_pages(pages, client=client, use_image=_USE_IMAGE)
+        # PIPELINE each page: render → the MOMENT it has content, fire its VLM extract — all pages of the round run
+        # concurrently. WHY not two-phase (gather ALL renders, THEN extract ALL): that serialises the whole ~11.5s
+        # render batch BEFORE the VLM batch even starts, so a round = render_time + vlm_time. Pipelining OVERLAPS them
+        # (page A's VLM decodes on the server's continuous batch while page B is still rendering) → round ≈
+        # max(render_time, vlm_time). {USER 2026-07-23 "BFS 一轮把 N 页的 render + VLM 全并发发 → server continuous
+        # batching → ~1 页/秒"} [CONFIDENCE: CONFIRMED 100% — direct user instruction to overlap the two stages].
+        async def _render_then_extract(url: str):
+            r = await _render_one(url)                         # browser render (resident-pool bounded)
+            if r is None:                                     # walled/dead/empty → nothing to extract
+                return url, None, None
+            res = (await extract_pages([_to_page(r)], client=client, use_image=_USE_IMAGE))[0]  # VLM fires as soon as render lands
+            return url, r, res
+        pipelined = await asyncio.gather(*(_render_then_extract(u) for u in round_urls))
 
-        new_events = new_routes = 0
-        for render, res in zip(renders, results):
+        new_events = new_routes = n_render_fail = n_route_blocked = 0
+        for url, render, res in pipelined:
+            if render is None:                                # render failed (walled/dead) — coverage loss, counted below
+                n_render_fail += 1
+                continue
             tracer.save_page(render["url"], render, res)      # <-- full audit trail: content/shot/html/links/result/method
             if res.get("_error"):                             # LLM hard-failed on this page → NOT '0 events', it FAILED
                 failed_extract += 1
@@ -150,15 +193,27 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
                 seen_event |= ekeys
                 events.append(e)
                 new_events += 1
-            # routes is now a FLAT list of go-deeper url strings (no per-route go_deeper flag) — every url in it is a
-            # follow target, so just scope-guard (same registrable site) + dedup against visited. {USER 2026-07-23
-            # "just keep a list of urls go deeper"} [CONFIDENCE: CONFIRMED 100% — direct user instruction].
+            # routes is a FLAT list of go-deeper url strings — every url is a follow target. Gate order: (1) same-site
+            # scope guard + dedup against visited, THEN (2) noise-route denylist (legal/careers/account/SEC-filing hub)
+            # so we don't render+extract a page that cannot hold an event. Blocked routes are COUNTED + printed (not a
+            # silent coverage cap) per the fail-loud directive. {USER 2026-07-23 "挡掉 legal/hub/filing-list"; "fail
+            # loudly is the core"} [CONFIDENCE: CONFIRMED 100% — direct user instruction + fail-loud principle].
             for u in res["routes"]:
-                if _same_site(u, start_url) and _canon(u) not in visited:
-                    frontier.append(u)
-                    new_routes += 1
-        print(f"[crawl] {start_url[:50]} | round: {len(renders)} pages → +{new_events} events, +{new_routes} to follow "
-              f"| total events={len(events)} visited={len(visited)} frontier={len(frontier)}", flush=True)
+                if not (_same_site(u, start_url) and _canon(u) not in visited):
+                    continue                                  # off-site or already-visited → normal skip (not "blocked")
+                if _is_noise_route(u):                         # legal/careers/account/SEC-filing hub → never an event page
+                    n_route_blocked += 1                       # fail-loud: count it, report below — never silently dropped
+                    print(f"[crawl] 🚧 route BLOCKED (noise) {u[:90]}", flush=True)
+                    continue
+                frontier.append(u)
+                new_routes += 1
+        if n_render_fail:                                     # coverage loss — say it, don't swallow it
+            failed_render += n_render_fail
+            print(f"[crawl] ⚠️ {n_render_fail}/{len(round_urls)} pages FAILED to render (walled/dead/empty) — "
+                  f"their events are UNSEEN this run", flush=True)
+        print(f"[crawl] {start_url[:50]} | round: {len(round_urls) - n_render_fail} pages → +{new_events} events, "
+              f"+{new_routes} to follow (blocked {n_route_blocked} noise) | total events={len(events)} "
+              f"visited={len(visited)} frontier={len(frontier)}", flush=True)
 
     tracer.save_summary(events, len(visited))
     # status = ok ONLY if nothing dropped. ANY render/extract failure → "incomplete" so the GCP caller can react
