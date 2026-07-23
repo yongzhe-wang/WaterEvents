@@ -31,6 +31,7 @@ _DSN = os.environ.get("WATEREVENTS_DB_DSN", "")
 LEASE_MIN = int(os.environ.get("WATEREVENTS_LEASE_MIN", "30"))          # soft lease minutes (heartbeat renews)
 LEASE_HARD_H = int(os.environ.get("WATEREVENTS_LEASE_HARD_H", "2"))     # absolute hold cap, hours
 FLUSH_BATCH = int(os.environ.get("WATEREVENTS_FLUSH_BATCH", "25"))      # events per batch INSERT {DESIGN "events 攒 25 行"}
+ENRICH_BATCH = int(os.environ.get("WATEREVENTS_ENRICH_BATCH", "16"))    # events an enrichment worker claims per round
 
 
 # WaterEvents lives in its OWN schema so it starts from scratch WITHOUT touching the decommissioned ir-pipeline's
@@ -187,5 +188,79 @@ async def reconcile(pool: asyncpg.Pool) -> int:
         tag = await conn.execute(
             "UPDATE companies SET status='queued', lease_owner=NULL, lease_until=NULL, updated_at=now() "
             "WHERE status='discovering' AND lease_until < now();"
+        )
+        return int(tag.split()[-1]) if tag.startswith("UPDATE") else 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENRICHMENT (stage-2, EVENT-level) — the media_agent worker claims `discovered` events from the SAME events table
+# (the seam), drills each event's detail page, fills basic_info, flips to `enriched`. Event-level claim (not company)
+# so a 10k-event company fans across many enrichment workers. Fencing via claim_token; fail-loud via fail_reason.
+# {DESIGN wlkrnxklp "enrichment 是 EVENT 级 flat map 从表里 claim"}.
+# ─────────────────────────────────────────────────────────────────────────────
+async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[asyncpg.Record]:
+    """Claim a BATCH of enrichable events (discovered, OR rendering-lease-expired, OR failed-and-retry-due) → flip to
+    `rendering` with a FRESH per-row claim_token + lease. SKIP LOCKED → N workers never fight over a row. Ordered by
+    next_retry_at so backed-off failures sink below fresh rows (anti-starvation). Returns the claimed rows to enrich."""
+    async with pool.acquire() as conn:
+        return await conn.fetch(
+            """
+            UPDATE events SET status='rendering', claim_token=gen_random_uuid(),
+                lease_until=now() + ($1 || ' minutes')::interval
+            WHERE id IN (
+                SELECT id FROM events
+                WHERE status='discovered'
+                   OR (status='rendering' AND lease_until < now())               -- reclaim a crashed enrichment worker
+                   OR (status='failed' AND (next_retry_at IS NULL OR next_retry_at < now()))
+                ORDER BY next_retry_at NULLS FIRST
+                FOR UPDATE SKIP LOCKED LIMIT $2
+            )
+            RETURNING id, claim_token, title, event_date, event_type, media_urls;
+            """,
+            str(LEASE_MIN), limit,
+        )
+
+
+async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: str, urls: list[str]) -> bool:
+    """Flip an event to `enriched` with its generative basic_info + merged urls. FENCED on claim_token: if the lease
+    expired and another worker re-claimed (new token), this UPDATE matches nothing → the stale result never clobbers.
+    Returns True if it landed (we still owned it)."""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE events SET status='enriched', basic_info=$3, media_urls=$4::jsonb, enriched_at=now(), claim_token=NULL
+            WHERE id=$1 AND claim_token=$2 RETURNING id;
+            """,
+            event_id, claim_token, basic_info, json.dumps(urls or []),
+        )
+        return row is not None
+
+
+async def fail_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) -> None:
+    """Enrichment FAILED on this event → fail-loud: record fail_reason, bump fail_count, and either requeue with
+    exponential backoff+jitter (fail_count<3) or send to dead_letter (≥3 — a persistently-failing event is human-review,
+    never silently 'enriched'). Content errors (schema_invalid / output_truncated / unrenderable) SHOULD pass a terminal
+    reason so the caller can dead_letter immediately; here we let the count decide. Fenced on claim_token."""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            UPDATE events SET
+                status = CASE WHEN fail_count + 1 >= 3 THEN 'dead_letter' ELSE 'failed' END,
+                fail_count = fail_count + 1, fail_reason = $3,
+                next_retry_at = now() + (interval '30 seconds' * power(2, fail_count)) + (random() * interval '10 seconds'),
+                claim_token = NULL
+            WHERE id=$1 AND claim_token=$2;
+            """,
+            event_id, claim_token, (reason or "")[:200],
+        )
+
+
+async def reconcile_events(pool: asyncpg.Pool) -> int:
+    """Sweeper: reclaim events stuck in `rendering` past their lease (crashed enrichment worker) → back to `discovered`
+    so the next claim retries. Returns rows reclaimed. {ADVERSARIAL "兜底扫非终态过期 lease 行"}."""
+    async with pool.acquire() as conn:
+        tag = await conn.execute(
+            "UPDATE events SET status='discovered', claim_token=NULL "
+            "WHERE status='rendering' AND lease_until < now();"
         )
         return int(tag.split()[-1]) if tag.startswith("UPDATE") else 0
