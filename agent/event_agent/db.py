@@ -33,13 +33,22 @@ LEASE_HARD_H = int(os.environ.get("WATEREVENTS_LEASE_HARD_H", "2"))     # absolu
 FLUSH_BATCH = int(os.environ.get("WATEREVENTS_FLUSH_BATCH", "25"))      # events per batch INSERT {DESIGN "events 攒 25 行"}
 
 
+# WaterEvents lives in its OWN schema so it starts from scratch WITHOUT touching the decommissioned ir-pipeline's
+# cluttered `public` (60+ tables incl. shared api_keys/api_jobs + dozens of *_arch_* snapshots). Old data stays
+# archived-in-place; WaterEvents gets a pristine namespace. Default 'public' so local throwaway-Postgres tests still
+# work; set WATEREVENTS_DB_SCHEMA=waterevents against the real Supabase. {USER 2026-07-23 "archive them all + start from
+# scratch"} [CONFIDENCE: CONFIRMED — a dedicated schema is the safe "start from scratch" that never breaks the shared DB].
+_SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "public")
+
+
 async def connect_pool(min_size: int = 1, max_size: int = 4) -> asyncpg.Pool:
     """Open the asyncpg pool against the Supavisor transaction pooler. statement_cache_size=0 is MANDATORY (transaction
     mode rotates the backend per tx, so a cached prepared statement points at the wrong session → 'prepared statement
-    does not exist')."""
+    does not exist'). search_path pins every connection to WaterEvents' schema so unqualified table names resolve there."""
     if not _DSN:
         raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
-    return await asyncpg.create_pool(_DSN, min_size=min_size, max_size=max_size, statement_cache_size=0)
+    return await asyncpg.create_pool(_DSN, min_size=min_size, max_size=max_size, statement_cache_size=0,
+                                     server_settings={"search_path": _SCHEMA})
 
 
 async def claim_company(pool: asyncpg.Pool, worker_id: str, run_id: str) -> asyncpg.Record | None:
