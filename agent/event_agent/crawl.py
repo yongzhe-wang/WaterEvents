@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import time
 from urllib.parse import urlsplit, urlunsplit
 
@@ -78,15 +79,19 @@ _NOISE_SEGMENTS = frozenset({
     "disclaimers", "accessibility", "safe-harbor", "sitemap", "site-map",
     # ── corporate-info hubs (never an event) ──
     "careers", "career", "jobs", "about", "about-us", "aboutus", "who-we-are", "our-company",
-    "company-overview", "contact", "contact-us", "contacts", "team", "our-team", "leadership",
-    "management-team", "executives", "board-of-directors", "our-people", "history", "our-history",
+    "company-overview", "contact", "contact-us", "contacts", "team", "our-team",
+    "our-people", "history", "our-history",
     "mission", "values", "culture", "diversity", "supplier", "suppliers", "vendors",
     # ── account / utility / nav ──
     "login", "log-in", "signin", "sign-in", "register", "subscribe", "subscription", "newsletter",
     "search", "rss", "feed", "feeds", "print", "share", "email-alerts", "alerts", "faq", "faqs",
     "help", "support",
-    # ── SEC filing hubs — covered by the SEC-API channel, not the crawl ──
-    "sec-filings", "sec-filing", "secfilings", "sec", "edgar", "regulatory-filings",
+    # NOTE: sec-filings / edgar / regulatory-filings AND governance / board-of-directors / leadership /
+    # management-team / executives were REMOVED from this hard denylist — they are NOT never-event pages: an
+    # SEC-filings hub carries filing EVENTS (10-K/8-K/proxy dates) and a governance/board page links to the annual
+    # MEETING + proxy. Now that routes carry a confidence SCORE, the model ranks these appropriately (low if they
+    # dead-end, followed if they lead to events) instead of a blanket block. {USER 2026-07-23 "sec-filings ... board-
+    # of-directors ... these should be kept"} [CONFIDENCE: CONFIRMED 100% — direct user instruction to keep them].
 })
 
 
@@ -98,6 +103,27 @@ def _is_noise_route(url: str) -> bool:
     path = urlsplit(url if url.startswith("http") else "https://" + url).path.lower()   # scheme-safe path extract
     segs = [s for s in path.split("/") if s]                 # non-empty path segments (drops the leading/trailing //)
     return any(s in _NOISE_SEGMENTS for s in segs)           # any segment on the denylist → it's noise, skip it
+
+
+# Binary / document / media file extensions. WHY a SEPARATE guard from _NONEVENT_URL_RE (extract.py): a url ending in
+# one of these (a PDF earnings release, a PPTX deck, an MP3/MP4, a ZIP) is an event LEAF — a MATERIAL of an event, so it
+# MUST stay in that event's urls[]. But it is NEVER a page to render + crawl: navigating a headless browser to a binary
+# file fires "Download is starting" and Chromium BUFFERS the (often huge) file in memory; with concurrency the stacked
+# download buffers exhausted the container cgroup (~46.5 GB) → OOM SIGKILL mid-run (fetch_10 EXIT=137) right after it
+# tried to render Apple's FY26 financial-statement PDFs + the ~200-page Environmental Report. So this regex gates ONLY
+# the crawl FRONTIER (go-deeper routes), never an event's material urls. {LOG 2026-07-23 "render_shot failed ... Download
+# is starting ... FY26_Q1_Consolidated_Financial_Statements.pdf" → "50095 Killed" → "EXIT=137"} [CONFIDENCE: CONFIRMED
+# 100% — the OOM immediately followed the PDF download-render attempts and exit 137 = 128+9 = SIGKILL, the OOM killer's signal].
+_BINARY_ROUTE_RE = re.compile(
+    r'\.(pdf|pptx?|docx?|xlsx?|csv|zip|rar|7z|gz|tgz|mp3|wav|m4a|aac|mp4|mov|avi|mkv|webm|ics|vcs|epub)(\?|#|$)', re.I)
+
+
+def _is_binary_route(url: str) -> bool:
+    """True if this go-deeper url points at a downloadable document/media FILE (pdf/pptx/xlsx/zip/mp3/mp4/…). Such a url
+    is an event LEAF — never RENDER it (the browser would buffer the download → the OOM that SIGKILLed the run). It stays
+    a valid EVENT material url via _clean_urls; this only excludes it from the crawl FRONTIER, never from an event."""
+    path = urlsplit(url if url.startswith("http") else "https://" + url).path   # query/fragment stripped for the ext test
+    return bool(_BINARY_ROUTE_RE.search(path))
 
 
 async def _render_one(url: str) -> dict | None:
@@ -133,7 +159,13 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     tracer = Tracer(run_dir)
     print(f"[crawl] {start_url} → tracing to {run_dir}", flush=True)
 
-    frontier: list[str] = [start_url]
+    # frontier is a PRIORITY QUEUE of (url, confidence-score): the seed gets max score 1.0; every discovered route
+    # carries the VLM's confidence that it leads to real events. Each round we sort highest-first, so event-section
+    # navs are crawled BEFORE low-score marketing / www-subdomain pages (which sink to the tail and get cut by
+    # max_pages instead of flooding the frontier). {USER 2026-07-23 "add a confidence field to each route ... frontier
+    # should always sort from highest to lowest" — fixes the investor.nvidia.com → www.nvidia.com marketing leak}
+    # [CONFIDENCE: CONFIRMED 100% — direct user instruction to rank the frontier by a per-route score].
+    frontier: list[tuple[str, float]] = [(start_url, 1.0)]
     visited: set[str] = set()
     events: list[dict] = []
     seen_event: set[str] = set()
@@ -145,11 +177,12 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     failed_extract = 0
 
     while frontier and len(visited) < max_pages:
+        frontier.sort(key=lambda t: -t[1])                    # PRIORITY: highest-confidence routes first each round
         round_urls: list[str] = []
         # visited already includes the urls added THIS round (added below), so the cap is len(visited) < max_pages —
         # NOT len(visited)+len(round_urls) which double-counts the round and trips the cap early. {AUDIT bug #4}.
         while frontier and len(round_urls) < batch and len(visited) < max_pages:
-            u = frontier.pop(0)
+            u, _score = frontier.pop(0)                        # take the top-scored url (frontier is (url, score))
             ck = _canon(u)
             if ck in visited:
                 continue
@@ -198,14 +231,19 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
             # so we don't render+extract a page that cannot hold an event. Blocked routes are COUNTED + printed (not a
             # silent coverage cap) per the fail-loud directive. {USER 2026-07-23 "挡掉 legal/hub/filing-list"; "fail
             # loudly is the core"} [CONFIDENCE: CONFIRMED 100% — direct user instruction + fail-loud principle].
-            for u in res["routes"]:
+            for rt in res["routes"]:                          # routes are now {url, score}
+                u, sc = rt["url"], rt.get("score", 0.5)
                 if not (_same_site(u, start_url) and _canon(u) not in visited):
                     continue                                  # off-site or already-visited → normal skip (not "blocked")
                 if _is_noise_route(u):                         # legal/careers/account/SEC-filing hub → never an event page
                     n_route_blocked += 1                       # fail-loud: count it, report below — never silently dropped
                     print(f"[crawl] 🚧 route BLOCKED (noise) {u[:90]}", flush=True)
                     continue
-                frontier.append(u)
+                if _is_binary_route(u):                        # PDF/deck/audio/video FILE = event leaf, NOT a page to render
+                    n_route_blocked += 1                       # (rendering it buffers the download → the OOM that killed the run)
+                    print(f"[crawl] 🚧 route BLOCKED (binary file, not a page) {u[:90]}", flush=True)
+                    continue
+                frontier.append((u, sc))                       # (url, confidence) → sorted highest-first next round
                 new_routes += 1
         if n_render_fail:                                     # coverage loss — say it, don't swallow it
             failed_render += n_render_fail

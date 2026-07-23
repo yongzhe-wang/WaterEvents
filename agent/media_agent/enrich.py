@@ -54,21 +54,27 @@ def _merge_urls(known_media: list, new_urls: list, page_url: str) -> list[str]:
     return out
 
 
-def _apply(reply: dict, acc: dict, known_event: dict, page_url: str) -> None:
-    """FILL-AND-APPEND one model reply into the accumulator acc (used by both the single-call and chunked paths so
-    they build the record identically). Metadata keeps the known non-empty value and only FILLS empties; basic_info
-    blocks + transcript_segments are appended; new_urls are collected into acc['_new'] for a single merge at the end."""
+def _apply(reply: dict, acc: dict, known_event: dict, page_url: str, tag_map: dict) -> None:
+    """FILL-AND-APPEND one model reply into the accumulator acc. Metadata keeps the known non-empty value and only
+    FILLS empties; basic_info blocks + transcript_segments are appended; new_urls (now REF IDs — Lnn) are resolved
+    back to real urls via tag_map and collected into acc['_new'] for a single merge at the end.
+    WHY the tag_map: the model outputs short ids (L7) not urls, so a basic_info md block still carries [anchor](L7) and
+    new_urls is ["L7",...] — both must be expanded here. {DEBUG 2026-07-23 model listed 12/28 media when asked for urls}
+    [CONFIDENCE: CONFIRMED 100% — req dump proved under-listing; ids make listing-all cheap so the drop disappears]."""
     for f in ("title", "date", "type"):                       # fill ONLY an empty field from the page (trust known)
         if not acc[f] and (reply.get(f) or "").strip():
             acc[f] = (reply.get(f) or "").strip()
     for b in (reply.get("basic_info") or []):                 # ordered content blocks (md / list / table)
         if isinstance(b, dict) and b.get("type"):
+            if b.get("md"):                                   # expand any [anchor](Lnn) refs the model kept back to real urls
+                b = {**b, "md": prompts.resolve_md(b["md"], tag_map)}
             acc["basic_info"].append(b)
     for s in (reply.get("transcript_segments") or []):        # inline transcript → its OWN slot, never basic_info
         if isinstance(s, dict) and (s.get("text") or "").strip():
             acc["transcript_segments"].append(
                 {"speaker": (str(s.get("speaker") or "").strip() or "SPEAKER_00"), "text": (s.get("text") or "").strip()})
-    acc["_new"].extend(u for u in (reply.get("new_urls") or []) if isinstance(u, str) and u.strip())
+    # new_urls are REF IDs → resolve to real urls (known id → url, bare http kept, unknown id dropped) before merge.
+    acc["_new"].extend(prompts.resolve_url_list(reply.get("new_urls"), tag_map))
 
 
 def _finalize(acc: dict, known_event: dict, page_url: str) -> dict:
@@ -114,7 +120,11 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
     img = page.get("image_b64") if use_image else None
     # Generous cap — a normal IR page is never trimmed; a pathological one is trimmed but the screenshot still carries it.
     cap = _VISION_TEXT_CHARS if (use_image and img) else _MAX_INPUT_CHARS
-    page_text = (page.get("page_text") or "")[:cap]
+    # TAG every inline [anchor](url) → [anchor](Lnn) BEFORE trimming: the ids (2-3 chars) are far shorter than the urls
+    # they replace, so MORE real content fits the cap AND the model echoes cheap ids instead of re-typing long urls
+    # (which it does lazily — dropped 16/28 media on Block's page). {DEBUG 2026-07-23 req dump} [CONFIDENCE: CONFIRMED 100%].
+    tagged_text, tag_map = prompts.tag_links(page.get("page_text") or "")
+    page_text = tagged_text[:cap]
     acc = _new_acc(known_event)
 
     reply = await _vlm(c, page_text, page_url, img, known_event)
@@ -133,7 +143,7 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
         print(f"[enrich] ⛔ OUTPUT TRUNCATED {page_url[:70]} — finish=length at MAX_TOKENS (mega page). REPORTED not chunked "
               f"— raise QWEN_MAX_TOKENS / --max-model-len. Partial content kept + flagged.", flush=True)
 
-    _apply(reply, acc, known_event, page_url)                # apply whatever came back (partial-but-flagged if truncated)
+    _apply(reply, acc, known_event, page_url, tag_map)       # apply whatever came back (partial-but-flagged if truncated)
     return _finalize(acc, known_event, page_url)
 
 

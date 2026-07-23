@@ -70,32 +70,63 @@ def _clean_urls(raw: list) -> list[str]:
     return out
 
 
-def _normalize(result: dict) -> dict:
+def _normalize(result: dict, tag_map: dict | None = None) -> dict:
     """Model reply → {"events":[...], "routes":[...]} with the guarantees the caller relies on: every event has ≥1
-    clean url; and `routes` is a FLAT list of go-deeper url strings — deduped, feed/asset urls dropped, and the HARD
-    exclusivity kept (a url inside some event's `urls` NEVER also appears in routes; an event is a leaf)."""
+    clean url; and `routes` is a list of {url, score} go-deeper entries (score = the model's 0.0-1.0 confidence the
+    link leads to real events; the crawl frontier is a priority queue on score) — deduped, feed/asset urls dropped, and
+    the HARD exclusivity kept (a url inside some event's `urls` NEVER also appears in routes; an event is a leaf).
+
+    The model emits Lnn REFERENCE IDS (not urls) for both event urls[] and routes — resolve_url_list maps each id back
+    to its real url via tag_map (a bare http url the model read off the screenshot is kept; an unknown/hallucinated id
+    is dropped). tag_map is None only for legacy/text-only callers; then items are treated as bare urls."""
+    tm = tag_map or {}
     events, event_urls = [], set()
     for e in (result.get("events") or []):
-        urls = _clean_urls(e.get("urls") or [])
+        urls = _clean_urls(prompts.resolve_url_list(e.get("urls") or [], tm))   # Lnn refs → real urls, then clean
         if not urls:                                          # an event must have at least one real url, else drop it
             continue
-        events.append({"title": (e.get("title") or "").strip()[:300],
-                       "date": (e.get("date") or "").strip(),
-                       "type": (e.get("type") or "").strip(),
-                       "urls": urls})
+        title = (e.get("title") or "").strip()[:300]
+        date = (e.get("date") or "").strip()
+        etype = (e.get("type") or "").strip()
+        # FOOTER-CHROME GUARD (deterministic backstop for the prompt's HARD GATE "an event has a DATE or a real TITLE"):
+        # a genuinely-disclosed IR event ALWAYS carries at least a DATE or a nameable TITLE. A global-footer / site-nav
+        # link cluster that the VL model mis-read as an event row arrives as {title:"", date:"", urls:[...]} — url
+        # present, no date, no title. On www.microsoft.com/investor the Microsoft global footer injects ~8 clusters /
+        # 161 links (Surface/Store, "Microsoft in Education", AI, Azure/Developer, Careers, "Follow us" social, Sitemap)
+        # and the model bagged the clusters as events — the reported "top events all footer junk" bug.
+        # WHY the condition dropped `not etype`: the prompts.py `type` rule was tightened to ALWAYS classify (fall back to
+        # "other" rather than leave type ""), so footer clusters now arrive typed "other" and the old title∧date∧type-empty
+        # test NEVER fired — the junk survived. The gate that matches the prompt's HARD GATE is date-or-title: with NO date
+        # AND NO title the row is chrome no matter what `type` says (a bare "other"/"press_release" link is still chrome).
+        # A legit case-(c) titleless event keeps its DATE, so it survives; a real event with a specific TITLE survives too.
+        # {PROMPTS.PY "Every event MUST have at least one url AND (a DATE or a specific TITLE)"} {USER 2026-07-23 "top
+        # events 全是 footer 导航被当成假 event ... untyped 无 title 无 date"} [CONFIDENCE: CONFIRMED 95% — a url-only row
+        # with no date and no title is nav chrome; the 5% is a pathological dateless+titleless real event the prompt itself
+        # already forbids emitting].
+        if not date and not title:
+            continue
+        events.append({"title": title, "date": date, "type": etype, "urls": urls})
         event_urls.update(urls)
     routes, seen = [], set()
     for r in (result.get("routes") or []):
-        # routes are now plain url strings (SCHEMA dropped the old {url,go_deeper} object). Stay defensive: a no-schema
-        # retry could still emit the old {"url":...} shape, so accept both. {USER 2026-07-23 "just keep a list of urls
-        # go deeper"} [CONFIDENCE: CONFIRMED 100% — direct user instruction to drop the go_deeper field].
-        u = _unwrap_url(r if isinstance(r, str) else (r.get("url") or ""))   # routes can be markdown-wrapped too
-        if not u.startswith("http") or u in seen or u in event_urls:   # EXCLUSIVE: an event's url is never a route
+        # each route is now {"ref": Lnn, "score": 0.0-1.0}. Stay defensive: a no-schema retry could emit a bare ref/url
+        # string → treat as mid-confidence. Resolve the ref → real url, keep the score (the crawl sorts frontier by it).
+        if isinstance(r, dict):
+            ref, score = (r.get("ref") or r.get("url") or ""), r.get("score", 0.5)
+        else:
+            ref, score = r, 0.5
+        resolved = prompts.resolve_url_list([ref], tm)        # Lnn ref → real url (drops an unknown/hallucinated ref)
+        if not resolved:
             continue
-        if _NONEVENT_URL_RE.search(u):                        # a feed/asset is never worth crawling deeper — drop it
+        u = resolved[0]
+        if u in seen or u in event_urls or _NONEVENT_URL_RE.search(u):   # EXCLUSIVE + feed/asset never a go-deeper target
             continue
         seen.add(u)
-        routes.append(u)                                      # every url in `routes` is a go-deeper target
+        try:
+            sc = max(0.0, min(1.0, float(score)))             # clamp confidence to [0,1]
+        except (TypeError, ValueError):
+            sc = 0.5
+        routes.append({"url": u, "score": sc})                # {url, score} — frontier is a priority queue on score
     out = {"events": events, "routes": routes}
     # Propagate a transport HARD-failure marker (server down / network drop / retries exhausted) so the crawl can tell
     # "extraction FAILED on this page" apart from "page genuinely had 0 events" — both otherwise collapse to events:[].
@@ -112,27 +143,30 @@ def _text_cap(page: dict, use_image: bool) -> int:
     return _VISION_TEXT_CHARS if has_img else MAX_INPUT_CHARS
 
 
-def _job(page: dict, use_image: bool) -> dict:
-    """Build ONE client job from a page dict {page_url, page_text, image_b64?, links_block?}. Attaches the screenshot
-    only when use_image (a Qwen-VL model is served)."""
+def _job(page: dict, use_image: bool) -> tuple[dict, dict]:
+    """Build ONE client job from a page dict {page_url, page_text, image_b64?, links_block?} + the per-page tag_map.
+    Attaches the screenshot only when use_image (a Qwen-VL model is served). Returns (job, tag_map)."""
     img = page.get("image_b64") if use_image else None
-    # WITH a screenshot the model READS the page visually, so we must NOT also dump the full page_text — a tall page's
-    # image tokens + 48k-char text blew past the VL context (E2E 2026-07-23: input 16982 > 16384). Send a SHORT text
-    # snippet + the links_block (the exact urls the model can't read off pixels). Text-only jobs keep the full budget.
     text_cap = _text_cap(page, use_image)
-    text = page.get("page_text") or ""
-    if len(text) > text_cap:                                  # SILENT-CUT GUARD: never trim page text without saying so.
-        # No chunking anymore — the cap is a high SAFETY bound (a normal IR page is well under it). Hitting it means a
-        # genuinely pathological page; log LOUDLY so it's visible, and the fix is to raise EVENT_VISION_TEXT_CHARS +
-        # --max-model-len, NOT to split (splitting drops the screenshot → junk). {USER 2026-07-23 "just scale ... if needed"}.
-        print(f"[extract] ⚠️ INPUT-CUT {page.get('page_url','')[:70]} — page_text {len(text)} chars > {text_cap} cap, "
-              f"dropping tail {len(text) - text_cap} chars — RAISE EVENT_VISION_TEXT_CHARS + --max-model-len", flush=True)
-    return {
+    # TAG every inline [anchor](url) → [anchor](Lnn) BEFORE trimming: the ids (2-3 chars) are far shorter than the urls
+    # they replace, so MORE real content fits the cap AND the model echoes cheap ids for ALL links instead of lazily
+    # re-typing / DROPPING long urls (it dropped 16/28 on Block; under-lists routes on overview pages). tag_map (all
+    # urls, even any past the cut — harmless) is threaded to _normalize to resolve the model's refs back to real urls.
+    # {DEBUG 2026-07-23} [CONFIDENCE: CONFIRMED 100% — short ids make "list them ALL" cheap → the under-listing stops].
+    tagged, tag_map = prompts.tag_links(page.get("page_text") or "")
+    if len(tagged) > text_cap:                                # SILENT-CUT GUARD: never trim page text without saying so.
+        # No chunking — the cap is a high SAFETY bound (a normal IR page is well under it). Hitting it = a pathological
+        # page; log LOUDLY, the fix is to raise EVENT_VISION_TEXT_CHARS + --max-model-len, NOT to split (splitting
+        # drops the screenshot → junk). {USER 2026-07-23 "just scale ... if needed"}.
+        print(f"[extract] ⚠️ INPUT-CUT {page.get('page_url','')[:70]} — tagged text {len(tagged)} chars > {text_cap} cap, "
+              f"dropping tail {len(tagged) - text_cap} chars — RAISE EVENT_VISION_TEXT_CHARS + --max-model-len", flush=True)
+    job = {
         "system": prompts.SYSTEM,
-        "user": prompts.build_user(text[:text_cap], page.get("page_url", ""), page.get("links_block", "")),
+        "user": prompts.build_user(tagged[:text_cap], page.get("page_url", ""), page.get("links_block", "")),
         "image_b64": img,
         "guided_json": prompts.SCHEMA,
     }
+    return job, tag_map
 
 
 # _split_blocks + _extract_chunked DELETED 2026-07-23 — the chunk fallback dropped the screenshot (text-only) and so
@@ -147,13 +181,14 @@ async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
     (finish_reason=length, only on an extreme mega-list page) → FAIL LOUD: mark _error so the crawl reports the page
     INCOMPLETE, never a silent partial. The fit strategy is SCALING (--max-model-len 32768 + QWEN_MAX_TOKENS), not
     splitting. {USER 2026-07-23 "remove the blocking logic and just scale the model output size if needed"}."""
-    res = (await c.send_many([_job(page, use_image)]))[0]
+    job, tag_map = _job(page, use_image)                     # tag_map: Lnn ref → real url, per page
+    res = (await c.send_many([job]))[0]
     if res.get("__finish__") == "length":                    # output cut → the output/context budget was too small here
         n = len(res.get("events") or [])
         print(f"[extract] ⛔ OUTPUT TRUNCATED {page.get('page_url','')[:70]} — finish_reason=length ({n} events before "
               f"cut). RAISE --max-model-len / QWEN_MAX_TOKENS. Marking INCOMPLETE (no silent partial).", flush=True)
         res["_error"] = "output_truncated: finish_reason=length — page needs a larger output budget"
-    return _normalize(res)
+    return _normalize(res, tag_map)
 
 
 async def extract_page(page: dict, client: QwenClient | None = None, use_image: bool = False) -> dict:

@@ -1,0 +1,52 @@
+[
+  {
+    "ticker": "NVDA",
+    "name": "NVIDIA Corporation",
+    "ir_url": "https://investor.nvidia.com/home/default.aspx"
+  },
+  {
+    "ticker": "AAPL",
+    "name": "Apple Inc.",
+    "ir_url": "https://investor.apple.com/investor-relations/default.aspx"
+  },
+  {
+    "ticker": "GOOGL",
+    "name": "Alphabet Inc.",
+    "ir_url": "https://abc.xyz/investor/"
+  },
+  {
+    "ticker": "MSFT",
+    "name": "Microsoft Corporation",
+    "ir_url": "https://www.microsoft.com/en-us/investor/default"
+  },
+  {
+    "ticker": "AMZN",
+    "name": "Amazon.com, Inc.",
+    "ir_url": "https://ir.aboutamazon.com/overview/default.aspx"
+  },
+  {
+    "ticker": "TSM",
+    "name": "Taiwan Semiconductor Manufacturing Company Limited",
+    "ir_url": "https://investor.tsmc.com/english"
+  },
+  {
+    "ticker": "AVGO",
+    "name": "Broadcom Inc.",
+    "ir_url": "https://investors.broadcom.com/"
+  },
+  {
+    "ticker": "FRCOF",
+    "name": "Fast Retailing Co., Ltd.",
+    "ir_url": "https://www.fastretailing.com/eng/ir/"
+  },
+  {
+    "ticker": "005930.KS",
+    "name": "Samsung Electronics Co., Ltd.",
+    "ir_url": "https://www.samsung.com/global/ir/"
+  },
+  {
+    "ticker": "META",
+    "name": "Meta Platforms, Inc.",
+    "ir_url": "https://investor.atmeta.com/home/default.aspx"
+  }
+]

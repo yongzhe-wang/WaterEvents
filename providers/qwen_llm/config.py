@@ -2,6 +2,7 @@
 locally or 8×H20 in prod without edits."""
 from __future__ import annotations
 
+import contextvars
 import os
 
 # Model — Qwen2.5-VL (VISION). The whole point of this project is layout-aware extraction: the model reads a
@@ -21,7 +22,12 @@ API_KEY = os.environ.get("QWEN_API_KEY", "EMPTY")            # vLLM ignores the 
 # the GPU, so this is the real throughput dial. 256 saturates a single 7B replica on an H20; raise with more replicas.
 MAX_CONCURRENCY = int(os.environ.get("QWEN_CONCURRENCY", "256"))
 REQUEST_TIMEOUT_S = int(os.environ.get("QWEN_TIMEOUT_S", "120"))
-MAX_RETRIES = int(os.environ.get("QWEN_RETRIES", "2"))
+# 3 retries (4 attempts total) — a 10-company crawl saw 6 pages come back with `APIConnectionError: Connection error.`
+# in the window right after a heavy company finished (server briefly unreachable/overloaded). 2 retries with a ~1.5s
+# window wasn't enough; 3 retries with exponential backoff (client.py: 1s/2s/4s ≈ 7s window) rides out a multi-second
+# server blip so a transient drop doesn't turn into 0 events. {CRAWL 2026-07-23: AAPL/GOOGL/MSFT/AMZN/TSM/FRCOF all
+# _error=APIConnectionError} [CONFIDENCE: CONFIRMED 100% — the 6 result.json _error markers measured on the pod].
+MAX_RETRIES = int(os.environ.get("QWEN_RETRIES", "3"))
 
 # Generation — deterministic extraction (temp 0), bounded output. IR pages need a JSON event list, not prose.
 TEMPERATURE = float(os.environ.get("QWEN_TEMPERATURE", "0.0"))
@@ -39,3 +45,26 @@ MAX_INPUT_CHARS = int(os.environ.get("QWEN_MAX_INPUT_CHARS", "48000"))   # ~12-1
 # output + parsed result + any error to one txt per request under this dir. For eyeballing exactly what the model
 # saw and returned. Off by default (empty). Set QWEN_DEBUG_DIR=tests/output to capture a run.
 DEBUG_DIR = os.environ.get("QWEN_DEBUG_DIR", "")
+
+# Per-TASK debug-dir override for CONCURRENT companies. WHY: fetch_10 mutated the module-global `DEBUG_DIR` per company
+# (`qcfg.DEBUG_DIR = pages_dir`) — fine when companies run SEQUENTIALLY, but the moment we crawl companies CONCURRENTLY
+# (asyncio.gather) every in-flight task reads the same global → all their req_*.txt dumps land in whichever company was
+# assigned LAST (a race). A ContextVar is asyncio-task-aware: `asyncio.create_task` snapshots the context at creation and
+# a `.set()` inside a task mutates only THAT task's copy — so each company's crawl subtree writes to its OWN dir with
+# zero cross-task leakage and no function-signature changes. {BENCH 2026-07-23 disabled dumps under concurrency exactly
+# because the global raced} [CONFIDENCE: CONFIRMED 100% — contextvars docs: Task copies context at creation, set() is
+# task-local; bench_parallel.py header literally notes "qcfg.DEBUG_DIR raced under concurrency"].
+_DEBUG_DIR_VAR: contextvars.ContextVar[str | None] = contextvars.ContextVar("qwen_debug_dir", default=None)
+
+
+def set_debug_dir(path: str | None) -> None:
+    """Set THIS asyncio task's debug-dump dir (task-local, no global race). Call at the top of a per-company coroutine so
+    its req_*.txt dumps land in that company's pages/ dir even when N companies crawl concurrently."""
+    _DEBUG_DIR_VAR.set(path or "")                            # "" = disabled for this task; None default = fall through
+
+
+def current_debug_dir() -> str:
+    """The EFFECTIVE debug dir for the calling task: its task-local ContextVar if one was set (concurrent path), else the
+    process-wide DEBUG_DIR env default (sequential / single-run path). One source of truth the client reads per request."""
+    v = _DEBUG_DIR_VAR.get()                                  # task-local override, or None if never set in this task
+    return v if v is not None else DEBUG_DIR                  # None → no per-task override → use the module global

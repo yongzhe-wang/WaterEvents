@@ -22,6 +22,18 @@ qwen_logs/
 *.pth
 hf_cache/
 
+# Test RUN OUTPUT (regenerable — harnesses recreate; reusable datasets live in tests/datasets/ and ARE tracked)
+tests/output/
+tests/output_full/
+tests/media_output/
+tests/media_results/
+tests/10event/
+tests/datasets/ir_pdfs/results/
+tests/datasets/ir_pdfs/results.json
+tests/**/traces/
+tests/**/_dbg_*/
+tests/**/_trace_*/
+
 # Secrets
 .env
 *.key

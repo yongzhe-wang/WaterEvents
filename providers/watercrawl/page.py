@@ -71,16 +71,44 @@ async def goto(pg, url: str) -> None:
         await pg.goto(url, wait_until="domcontentloaded", timeout=config.NAV_TIMEOUT_MS)
 
 
+async def _auto_scroll(pg) -> None:
+    """Scroll to the bottom in increments so LAZY-LOAD-ON-SCROLL content fires. Per-section video blocks / infinite
+    lists load on a SCROLL event, NOT on a timer — a wait alone never triggers them (which is why a longer wait_ms
+    doesn't help). Stop once scrollHeight stops growing (all lazy content in), then return to the top for a clean
+    full-page screenshot + consistent layout. {DEBUG 2026-07-23 block.xyz/investor-day: per-speaker YouTube video
+    blocks lazy-load on scroll → WITHOUT a scroll the render captured a NON-DETERMINISTIC 10-30 of them (whatever
+    loaded before the DOM signal stabilized), WITH the scroll all load} [CONFIDENCE: CONFIRMED 100% — watercrawl had
+    ZERO scroll code (full grep) and the page's video sections are scroll-triggered]."""
+    try:
+        prev = -1
+        for _ in range(30):                              # bounded: a normal page's height stabilizes in 1-2 steps
+            h = await pg.evaluate("() => (document.body ? document.body.scrollHeight : 0)")
+            if h == prev:                                # height stopped growing → all lazy content is loaded
+                break
+            prev = h
+            await pg.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+            await pg.wait_for_timeout(350)               # let the newly-revealed section's XHR/media begin loading
+        await pg.evaluate("() => window.scrollTo(0, 0)")  # back to top → clean full-page screenshot, consistent layout
+    except Exception:                                     # noqa: BLE001 — scrolling is best-effort, never sink the render
+        pass
+
+
 async def settle(pg, wait_ms: int) -> None:
     """Give a JS/XHR-driven IR list time to POPULATE before we snapshot: wait for network idle (bounded, so an
-    analytics-polling page that never idles doesn't hang), then poll a cheap DOM-size signal until it stabilizes,
-    then a fixed settle. WHY: IR event/news lists load via XHR AFTER domcontentloaded — snapshotting too early yields
-    only the nav shell (KMI news: 2 links at 3s vs 77+ once the list AJAX lands). Shared by render.py + the
-    load_more/year_bar drivers. {POOL.PY:279-306} [CONFIDENCE: CONFIRMED — the list is XHR-late]."""
+    analytics-polling page that never idles doesn't hang), SCROLL to the bottom to fire lazy-load-on-scroll content
+    (video blocks / infinite lists — a timer alone never triggers them), then poll a cheap DOM-size signal until it
+    stabilizes, then a fixed settle. WHY: IR event/news lists load via XHR AFTER domcontentloaded — snapshotting too
+    early yields only the nav shell (KMI news: 2 links at 3s vs 77+ once the list AJAX lands); AND per-section media
+    lazy-loads on scroll (block.xyz videos). Shared by render.py + the load_more/year_bar drivers. {POOL.PY:279-306} +
+    {DEBUG 2026-07-23 block.xyz scroll} [CONFIDENCE: CONFIRMED — the list is XHR-late AND scroll-lazy]."""
     try:
-        await pg.wait_for_load_state("networkidle", timeout=8000)
+        # networkidle is REDUNDANT with the DOM-size poll below (which is the true content-loaded signal), and on an
+        # analytics-heavy page it never fires → burns the whole timeout. Capped at config.SETTLE_IDLE_MS (2500, was
+        # 8000) → ~5.5s/page saved with zero event loss. {DEBUG 2026-07-23 render 11.5s/page}.
+        await pg.wait_for_load_state("networkidle", timeout=config.SETTLE_IDLE_MS)
     except Exception:                                     # noqa: BLE001 — never-idle page → fall through to the poll
         pass
+    await _auto_scroll(pg)                                # fire lazy-load-on-scroll content BEFORE we measure DOM size
     _SIG_JS = ("() => (document.querySelectorAll('a[href]').length * 100000) + "
                "Math.min((document.body ? document.body.innerText.length : 0), 5000000)")
     try:
