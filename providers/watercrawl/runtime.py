@@ -34,6 +34,7 @@ _browser_proxy = None                                     # patchright + webshar
 _playwright = None                                        # the async_playwright driver for the two Chromiums
 _playwright_stealth = None                                # the patchright driver for the residential browser
 _sem: asyncio.Semaphore | None = None                     # bounds concurrent pages (created on the loop in _launch)
+_shot_sem: asyncio.Semaphore | None = None                # bounds concurrent FULL-PAGE SCREENSHOTS (the RAM hog) — created in _launch
 _dead = False                                             # True once a launch failed → never retry a broken env
 
 
@@ -56,7 +57,7 @@ async def _launch() -> None:
     THREE browsers, layered by cost: (1) default headless Chromium — the fast path; (2) an HTTP/1.1-forced Chromium
     for the ERR_HTTP2 retry lane (Akamai deliberately breaks headless HTTP/2); (3) a patchright + webshare residential
     STEALTH browser for bot-walls (only if a webshare proxy is configured)."""
-    global _browser, _browsers, _rr_browser, _playwright, _sem, _browser_h1, _browser_proxy, _playwright_stealth
+    global _browser, _browsers, _rr_browser, _playwright, _sem, _shot_sem, _browser_h1, _browser_proxy, _playwright_stealth
     from playwright.async_api import async_playwright
     _playwright = await async_playwright().start()
     # Container-safe flags (--disable-dev-shm-usage) + cache/GPU trims so peak render memory stays low.
@@ -87,6 +88,7 @@ async def _launch() -> None:
             print(f"[watercrawl] webshare stealth browser launch failed ({_pxerr}) — FALLBACK 3 dormant", flush=True)
             _browser_proxy = None
     _sem = asyncio.Semaphore(config.MAX_PAGES)            # bound concurrent pages (created on THIS loop)
+    _shot_sem = asyncio.Semaphore(config.SHOT_CONCURRENCY)   # bound concurrent FULL-PAGE SHOTS (RAM hog) so 4 browsers don't OOM the cgroup
 
 
 def ensure_browser() -> bool:

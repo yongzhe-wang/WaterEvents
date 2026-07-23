@@ -1,0 +1,16 @@
+{
+  "id": "ev02_NVDA_gtc_keynote",
+  "event_url": "https://investor.nvidia.com/events-and-presentations/events-and-presentations/event-details/2026/GTC-2026-Keynote-2026-HhZOL0SIV4/default.aspx",
+  "known_event": {
+    "title": "GTC 2026 Keynote",
+    "date": "2026-03-16",
+    "type": "conference",
+    "media_urls": [
+      "https://investor.nvidia.com/events-and-presentations/events-and-presentations/event-details/2026/GTC-2026-Keynote-2026-HhZOL0SIV4/default.aspx",
+      "https://www.nvidia.com/gtc/keynote/",
+      "https://s201.q4cdn.com/141608511/files/doc_events/2026/Mar/16/GTC-2026-Keynote.pdf",
+      "https://s201.q4cdn.com/141608511/files/doc_events/2026/Mar/16/GTC-2026-Recommended-Sessions.pdf",
+      "https://s201.q4cdn.com/141608511/files/doc_events/2026/Mar/16/GTC26_San-Jose_Highlights_.pdf"
+    ]
+  }
+}

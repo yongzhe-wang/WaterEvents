@@ -1,0 +1,1222 @@
+/* ============================================================
+   Glass OS design system for the IR data viewer.
+   Dark, frosted-glass (glassmorphism) interface — near-black canvas with dim colored glows so the
+   backdrop-blur has something to refract; translucent panels with hairline white borders, large radii,
+   light monochrome typography, and uppercase mono labels. Left glass sidebar for nav (no top bar).
+   {USER 2026-06-19 "redesign the frontend ... use this glass feeling i want exactly, no top bar now"}
+   [CONFIDENCE: CONFIRMED 100% — direct redesign directive + reference screenshot (Nodum OS)].
+   ============================================================ */
+:root {
+  /* Canvas + glass surfaces. */
+  --bg: #0a0a0b;
+  --glass: rgba(255, 255, 255, 0.045);          /* default panel fill */
+  --glass-2: rgba(255, 255, 255, 0.06);         /* raised / nested */
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-active: rgba(255, 255, 255, 0.11);
+  --glass-border: rgba(255, 255, 255, 0.09);    /* hairline edge */
+  --glass-border-soft: rgba(255, 255, 255, 0.055);
+  --glass-blur: blur(24px) saturate(125%);
+
+  /* Ink — light on dark. */
+  --text: #ededee;
+  --text-secondary: #a2a2a9;
+  --text-muted: #6a6a72;
+  --text-faint: #4d4d54;
+
+  /* Accent — kept near-monochrome (the reference is grayscale); a soft green carries "captured/positive". */
+  --accent: #6fd3ab;
+  --accent-ink: #8ee0c0;
+  --accent-soft: rgba(111, 211, 171, 0.14);
+
+  /* Status hues (toned for dark glass). */
+  --amber: #e0b057;
+  --amber-soft: rgba(224, 176, 87, 0.14);
+  --red: #e0736b;
+  --red-soft: rgba(224, 115, 107, 0.15);
+  --gray-soft: rgba(255, 255, 255, 0.06);
+
+  /* Radii. */
+  --r-panel: 20px;
+  --r-card: 14px;
+  --r-sm: 10px;
+  --r-pill: 9999px;
+
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 24px 60px -24px rgba(0, 0, 0, 0.65);
+  --shadow-pop: 0 16px 44px -10px rgba(0, 0, 0, 0.7);
+
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  /* Near-black base + a few large, dim color glows so the frosted glass has something to refract. */
+  background:
+    radial-gradient(1000px 680px at 12% -12%, rgba(96, 116, 150, 0.12), transparent 60%),
+    radial-gradient(900px 760px at 112% 16%, rgba(126, 96, 150, 0.10), transparent 55%),
+    radial-gradient(820px 680px at 50% 124%, rgba(86, 146, 126, 0.09), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* Custom scrollbars to suit the dark glass. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.09); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- App shell: glass sidebar + stage, floating on the dark canvas ---- */
+.app {
+  display: flex;
+  /* height: 100dvh (dynamic viewport) so the shell is EXACTLY the visible area on mobile — 100vh there counts the
+     collapsed-URL-bar height, making the app taller than the screen so the whole page scrolls and the sidebar
+     scrolls away. overflow: hidden pins the shell to the viewport: NOTHING scrolls at the app level, so the
+     sidebar is always on screen; all scrolling happens INSIDE the panels (.detail/.rail-list/.sidebar). vh first
+     = fallback for browsers without dvh. {USER 2026-07-03 "sidebar doesn't persist as I scroll ... make it
+     persistent and always on the screen"} [CONFIDENCE: CONFIRMED — direct directive; the 100vh page-scroll was the cause]. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  gap: 14px;
+  padding: 14px;
+}
+
+/* Shared glass-panel treatment. */
+.sidebar,
+.rail,
+.detail,
+.tokens,
+.ir-co,
+.docs,
+.events-panel {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-panel);
+}
+
+/* ---- Left sidebar: brand chip + grouped vertical nav + telemetry ---- */
+.sidebar {
+  width: 256px;
+  flex: 0 0 256px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  min-height: 0;
+  /* If the nav + telemetry are taller than the viewport (short screen), the SIDEBAR scrolls internally instead
+     of pushing the page — combined with .app overflow:hidden this keeps the sidebar pinned + fully reachable.
+     {USER 2026-07-03 "always on the screen"} [CONFIDENCE: CONFIRMED — internal scroll, never a page scroll]. */
+  overflow-y: auto;
+}
+
+/* OS-style brand chip at the top of the sidebar. */
+.os-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft);
+  font-size: 12.5px;
+  margin-bottom: 18px;
+}
+.os-dot {
+  width: 7px; height: 7px; border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 10px 1px rgba(111, 211, 171, 0.6);
+}
+.os-name { font-weight: 600; color: var(--text); }
+.os-sep { color: var(--text-faint); }
+.os-ws { color: var(--text-secondary); }
+.os-ver {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Nav group label — uppercase mono, like the reference's KNOWLEDGE GRAPH / INTELLIGENCE. */
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-group-label {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  padding: 14px 10px 7px;
+}
+.nav-group-label:first-child { padding-top: 4px; }
+
+/* One nav row. */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.nav-item:hover { background: var(--glass-hover); color: var(--text); }
+.nav-item.active {
+  background: var(--glass-active);
+  border-color: var(--glass-border);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+.nav-ico { display: inline-flex; color: var(--text-muted); flex: 0 0 auto; }
+.nav-item:hover .nav-ico, .nav-item.active .nav-ico { color: var(--accent-ink); }
+.nav-label { white-space: nowrap; }
+
+/* Telemetry readouts pinned to the sidebar footer (live /api/stats counts). */
+.telemetry { margin-top: auto; padding-top: 8px; }
+.tele {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.tele-l { color: var(--text-muted); }
+.tele-v { font-family: var(--mono); font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
+.tele.accent .tele-v { color: var(--accent-ink); }
+
+/* ---- Stage: holds the active view ---- */
+.stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  min-height: 0;
+}
+/* Single-panel views fill the stage and scroll inside. */
+.tokens, .ir-co, .docs, .events-panel { flex: 1; min-width: 0; overflow-y: auto; }
+
+.banner-error {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 11px 18px;
+  border-radius: var(--r-pill);
+  background: var(--red-soft);
+  border: 1px solid rgba(224, 115, 107, 0.4);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--red);
+  font-size: 13px;
+}
+
+/* ---- Companies: rail (left) + detail (right), two floating glass panels ---- */
+.body { display: flex; flex: 1; min-width: 0; gap: 14px; }
+
+.rail {
+  width: 320px;
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.rail-head { padding: 16px 16px 10px; }
+.search {
+  width: 100%;
+  padding: 9px 15px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-2);
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.search:focus { border-color: rgba(111, 211, 171, 0.5); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--glass-hover); }
+.search::placeholder { color: var(--text-muted); }
+.rail-count {
+  padding: 8px 18px 4px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.rail-list { overflow-y: auto; padding: 4px 10px 16px; }
+
+.crow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.crow:hover { background: var(--glass-hover); }
+.crow.active { background: var(--glass-active); border-color: var(--glass-border); }
+.avatar {
+  flex: 0 0 36px;
+  width: 36px; height: 36px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border);
+  display: grid; place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.crow.active .avatar { border-color: rgba(111, 211, 171, 0.45); color: var(--accent-ink); }
+.crow-main { min-width: 0; flex: 1; }
+.crow-name { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crow-sub { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crow-count {
+  flex: 0 0 auto;
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft);
+  font-size: 11.5px; font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Detail pane ---- */
+.detail { flex: 1; min-width: 0; overflow-y: auto; padding: 26px 30px 60px; }
+.detail-empty { height: 100%; display: grid; place-items: center; color: var(--text-muted); font-size: 14px; }
+
+.chead { display: flex; align-items: flex-start; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--glass-border-soft); }
+.chead-avatar {
+  flex: 0 0 52px; width: 52px; height: 52px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border);
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: 14px; font-weight: 500;
+  color: var(--text);
+}
+.chead-main { flex: 1; min-width: 0; }
+.chead-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 8px; color: var(--text); }
+.chead-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* Generic pill / chip. */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 11px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.chip.mono { font-family: var(--mono); font-size: 11.5px; }
+.chip.green { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.chip.amber { background: var(--amber-soft); border-color: transparent; color: var(--amber); }
+.chip.red { background: var(--red-soft); border-color: transparent; color: var(--red); }
+.chip.gray { background: var(--gray-soft); border-color: transparent; color: var(--text-muted); }
+a.chip { text-decoration: none; transition: background 0.12s; }
+a.chip:hover { background: var(--glass-hover); }
+
+/* Event-type filter chips (clickable) above the event list — "on" = the active type; matches .chip's pill
+   look but interactive. {USER 2026-07-02 "add a filter for the type for the event list of both main agent
+   and company agent"}. */
+.type-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 14px; }
+.type-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  font-family: var(--mono); font-size: 11px; color: var(--text-secondary);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.type-chip:hover { background: var(--glass-hover); }
+.type-chip.on { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.type-chip .tc-n { opacity: 0.55; }
+/* ── Taggable event list — colored type TAGS (24 types → 6 categories) + media-presence BADGES. {USER 2026-07-15
+   "make everything clear and taggable"}. */
+:root { --purple: #b18bd9; --purple-soft: rgba(177, 139, 217, 0.15); --slate: #8a92a0; --slate-soft: rgba(138, 146, 160, 0.13); }
+/* type TAG on each event row — colored per typeCategory() so a scan reads type at a glance. */
+.type-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 8px; border-radius: 999px;
+  white-space: nowrap; border: 1px solid transparent; }
+.type-tag.tc-earn    { background: var(--accent-soft); color: var(--accent-ink); }   /* earnings — green */
+.type-tag.tc-filing  { background: var(--blue-soft);   color: var(--blue); }         /* filings — blue */
+.type-tag.tc-event   { background: var(--purple-soft); color: var(--purple); }       /* live events — purple */
+.type-tag.tc-capital { background: var(--amber-soft);  color: var(--amber); }        /* capital actions — amber */
+.type-tag.tc-news    { background: var(--gray-soft);   color: var(--text-muted); }   /* news — grey */
+.type-tag.tc-other   { background: var(--slate-soft);  color: var(--slate); }        /* other — slate */
+/* filter CHIP takes its category / media color when ACTIVE, matching the row tags' hue. */
+.type-chip.tc-earn.on    { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.type-chip.tc-filing.on  { background: var(--blue-soft);   border-color: transparent; color: var(--blue); }
+.type-chip.tc-event.on   { background: var(--purple-soft); border-color: transparent; color: var(--purple); }
+.type-chip.tc-capital.on { background: var(--amber-soft);  border-color: transparent; color: var(--amber); }
+.type-chip.tc-news.on    { background: var(--gray-soft);   border-color: transparent; color: var(--text-secondary); }
+.type-chip.tc-other.on   { background: var(--slate-soft);  border-color: transparent; color: var(--slate); }
+.type-chip.m-slides.on     { background: var(--blue-soft);   border-color: transparent; color: var(--blue); }
+.type-chip.m-transcript.on { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.type-chip.m-audio.on      { background: var(--amber-soft);  border-color: transparent; color: var(--amber); }
+.media-filter { margin-top: -8px; }   /* tuck the media chips just under the type chips as a 2nd filter row */
+/* MEDIA-presence badges on each event row — DIM (absent) → BRIGHT (present) so media reads without expanding. */
+.ev-media-badges { display: inline-flex; gap: 3px; align-items: center; }
+.mbadge { font-size: 12px; line-height: 1; padding: 3px 5px; border-radius: 6px; filter: grayscale(1); opacity: 0.28;
+  background: var(--gray-soft); transition: opacity 0.15s, filter 0.15s; }
+.mbadge.on { filter: none; opacity: 1; }
+.mbadge.on.m-slides     { background: var(--blue-soft); }
+.mbadge.on.m-transcript { background: var(--accent-soft); }
+.mbadge.on.m-audio      { background: var(--amber-soft); }
+
+/* Section label. */
+.section-label {
+  display: flex; align-items: center; gap: 10px;
+  margin: 24px 0 12px;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.section-label .rule { flex: 1; height: 1px; background: var(--glass-border-soft); }
+
+.loading { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+.artifacts-empty { padding: 6px 0 2px; font-size: 12.5px; color: var(--text-muted); }
+
+/* ---- Event links table (Companies detail) ---- */
+.links-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.links-table thead th {
+  text-align: left; padding: 9px 10px;
+  border-bottom: 1px solid var(--glass-border-soft);
+  color: var(--text-muted); font-weight: 500;
+  font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  position: sticky; top: 0; background: rgba(20, 20, 22, 0.7); backdrop-filter: var(--glass-blur);
+}
+.links-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--glass-border-soft); vertical-align: top; }
+.links-table tbody tr:hover { background: var(--glass-hover); }
+.links-table .lt-date { white-space: nowrap; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.links-table .lt-title { font-weight: 500; max-width: 360px; color: var(--text); }
+.links-table .lt-link { font-family: var(--mono); font-size: 12px; color: var(--accent-ink); word-break: break-all; text-decoration: none; }
+.links-table .lt-link:hover { text-decoration: underline; }
+
+/* ---- Token Usage page ---- */
+.tokens { padding: 28px 32px 60px; }
+.tok-cards { display: flex; flex-wrap: wrap; gap: 14px; }
+.tok-card {
+  flex: 1; min-width: 150px;
+  padding: 20px 22px;
+  border-radius: var(--r-card);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft);
+}
+.tok-card.big { flex: 1.6; }
+.tok-card .tok-n { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.tok-card.accent .tok-n { color: var(--accent-ink); }
+.tok-card .tok-l { margin-top: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.tok-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tok-table th {
+  text-align: left; padding: 8px 14px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+  border-bottom: 1px solid var(--glass-border-soft);
+}
+.tok-table td { padding: 9px 14px; border-bottom: 1px solid var(--glass-border-soft); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.tok-table tbody tr:hover { background: var(--glass-hover); }
+.tok-table td:first-child { font-weight: 500; color: var(--text); }
+
+/* ---- IR-Companies page ---- */
+.ir-co { padding: 26px 30px; }
+.ir-co-head h2 { margin: 0 0 4px; font-size: 19px; color: var(--text); }
+.ir-co-sub { margin: 0 0 16px; max-width: 720px; color: var(--text-secondary); font-size: 13px; }
+.ir-co-stats { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.ir-co-filter {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 6px 14px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  cursor: pointer; font: inherit; color: var(--text-secondary);
+  transition: border-color 0.12s, background 0.12s;
+}
+.ir-co-filter:hover { background: var(--glass-hover); }
+.ir-co-filter.active { border-color: rgba(111, 211, 171, 0.5); background: var(--accent-soft); }
+.ir-co-filter .stat-n { font-weight: 600; font-size: 13.5px; color: var(--text); }
+.ir-co-filter .stat-l { font-size: 12px; color: var(--text-muted); }
+.ir-co-filter.accent .stat-n { color: var(--accent-ink); }
+.ir-co-empty { padding: 28px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+.ir-co-table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 12.5px; }
+.ir-co-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-border-soft); color: var(--text-muted); font-weight: 500; }
+.ir-co-table td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border-soft); vertical-align: top; color: var(--text-secondary); }
+.ir-co-table tbody tr:hover { background: var(--glass-hover); }
+.ir-co-ticker { font-weight: 700; color: var(--text); }
+.ir-co-url { color: var(--accent-ink); word-break: break-all; }
+
+/* ---- Stat pill (shared, used by ir-co header etc.) ---- */
+.stat { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 14px; border-radius: var(--r-pill); background: var(--glass-2); border: 1px solid var(--glass-border-soft); }
+.stat .stat-n { font-weight: 600; font-size: 13.5px; color: var(--text); }
+.stat .stat-l { font-size: 12px; color: var(--text-muted); }
+.stat.accent .stat-n { color: var(--accent-ink); }
+
+/* ============================================================
+   Events page — company-agent detail (basic info + slides + transcript + audio).
+   Recolored from the old light theme to dark glass.
+   ============================================================ */
+.ev-list { display: flex; flex-direction: column; gap: 14px; padding: 8px 0; }
+.ev-card { border: 1px solid var(--glass-border-soft); border-radius: var(--r-card); padding: 14px 16px; background: var(--glass-2); min-width: 0; overflow: hidden; }
+.ev-card-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.ev-date { font-variant-numeric: tabular-nums; color: var(--text-secondary); font-size: 13px; }
+.ev-date-et { font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 12px; }
+.ev-title { font-weight: 600; color: var(--text); }
+.ev-basic { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border-soft); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 10px; }
+.ev-summary { margin: 0 0 6px; color: var(--text-secondary); line-height: 1.55; }
+.ev-bullets { margin: 4px 0; padding-left: 18px; color: var(--text-secondary); }
+.ev-bullets li { margin: 2px 0; line-height: 1.45; }
+.ev-none { color: var(--text-muted); font-size: 13px; padding: 4px 0; }
+/* Lazy-render footer: the load-more button + "showing N of M" count, rendered while more events remain.
+   {USER 2026-07-22 "loads 30 events at once"}. */
+.ev-more { display: flex; align-items: center; gap: 12px; padding: 10px 0 24px; }
+.ev-more-count { color: var(--text-muted); font-size: 12px; }
+.ev-art { border-top: 1px solid var(--glass-border-soft); padding: 8px 0; }
+.ev-art-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ev-art-meta { color: var(--text-muted); font-size: 12px; }
+.ev-art-src { color: var(--accent-ink); font-size: 12px; text-decoration: none; }
+/* full event URL — the reliable identifier when there's no basic_info title. mono + muted, ellipsis so a long URL
+   never breaks the row; the whole thing is the click target. {USER 2026-07-19 "display the full url here"}. */
+.ev-url { font-family: var(--mono); font-size: 11.5px; color: var(--text-muted); text-decoration: none; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-url:hover { color: var(--blue); text-decoration: underline; }
+.ev-toggle { margin-left: auto; border: 1px solid var(--glass-border); background: var(--glass-2); color: var(--text-secondary); border-radius: var(--r-sm); padding: 4px 11px; cursor: pointer; font-size: 12px; transition: background 0.12s; }
+.ev-toggle:hover { background: var(--glass-hover); color: var(--text); }
+.ev-slides { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.ev-slides-empty { margin-top: 8px; padding: 10px; font-size: 12px; color: var(--text-muted); background: rgba(255, 255, 255, 0.03); border-radius: var(--r-sm); }
+/* min-width:0 lets this flex item (in the .ev-slides flex column) SHRINK below its content's intrinsic
+   width, so a wide financial table inside falls to .ev-table-wrap's overflow-x:auto scroller instead of
+   forcing the slide — and the whole panel — past its border. {USER 2026-06-19 "bug with ui, exceed the
+   border"} [CONFIDENCE: CONFIRMED — flex items default to min-width:auto, the classic table-overflow cause]. */
+.ev-slide { border-left: 2px solid rgba(255, 255, 255, 0.12); padding-left: 10px; min-width: 0; }
+.ev-slide-h { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: var(--text); }
+.ev-transcript { margin-top: 8px; max-height: 360px; overflow-y: auto; }
+.ev-speakers { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.ev-seg { margin: 4px 0; line-height: 1.5; font-size: 13px; color: var(--text-secondary); }
+.ev-raw { white-space: pre-wrap; background: rgba(255, 255, 255, 0.03); padding: 10px; border-radius: var(--r-sm); font-size: 12px; max-height: 360px; overflow-y: auto; color: var(--text-secondary); }
+
+/* Conversation view for audio transcripts — one block per speaker turn. */
+.ev-loading { margin-top: 8px; padding: 14px; font-size: 13px; color: var(--text-muted); font-style: italic; }
+.ev-prose { margin-top: 8px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
+.ev-prose-p { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.ev-doc { margin-top: 8px; max-height: 460px; overflow-y: auto; padding-right: 4px; }
+.ev-doc-section { margin-bottom: 14px; }
+.ev-doc-h { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.ev-doc-p { margin: 0 0 8px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.ev-convo { margin-top: 8px; max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.ev-convo-pre { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: rgba(255, 255, 255, 0.03); border-radius: var(--r-sm); border: 1px solid var(--glass-border-soft); margin-bottom: 2px; }
+.ev-pre-line { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+.ev-pre-junk { font-size: 12px; color: var(--amber); background: var(--amber-soft); border-radius: 5px; padding: 1px 6px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.ev-turn { border-left: 2px solid var(--spk, rgba(255, 255, 255, 0.14)); padding: 4px 0 4px 10px; }
+.ev-turn-spk { font-weight: 600; font-size: 12px; color: var(--spk-ink, var(--text-secondary)); margin-bottom: 2px; letter-spacing: 0.01em; }
+.ev-turn-text { font-size: 13px; line-height: 1.55; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+/* 6 stable speaker color keys (brightened for dark). */
+.ev-turn.spk-0 { --spk: #6fd3ab; --spk-ink: #8ee0c0; }
+.ev-turn.spk-1 { --spk: #9d8bff; --spk-ink: #b6a8ff; }
+.ev-turn.spk-2 { --spk: #f0915a; --spk-ink: #f4ab7d; }
+.ev-turn.spk-3 { --spk: #5fa3f0; --spk-ink: #84bbf5; }
+.ev-turn.spk-4 { --spk: #e0736b; --spk-ink: #ea938c; }
+.ev-turn.spk-5 { --spk: #4fc4d8; --spk-ink: #78d4e4; }
+
+.ev-method { font-size: 12px; color: #b6a8ff; background: rgba(157, 139, 255, 0.14); border-radius: 6px; padding: 2px 8px; font-family: var(--mono); }
+.ev-updated { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
+.ev-table-wrap { margin: 10px 0; overflow-x: auto; max-width: 100%; }
+.ev-table-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: var(--text); }
+.ev-table { border-collapse: collapse; font-size: 12px; width: 100%; }
+.ev-table th, .ev-table td { border: 1px solid var(--glass-border-soft); padding: 4px 8px; text-align: left; white-space: nowrap; color: var(--text-secondary); }
+.ev-table th { background: rgba(255, 255, 255, 0.04); font-weight: 600; color: var(--text); }
+
+.ev-sort { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.ev-sort-label { font-size: 12px; color: var(--text-muted); }
+.ev-sort-btn { font-size: 12px; padding: 3px 11px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background: var(--glass-2); cursor: pointer; color: var(--text-secondary); transition: background 0.12s; }
+.ev-sort-btn:hover { background: var(--glass-hover); }
+.ev-sort-btn.active { background: var(--glass-active); color: var(--text); border-color: var(--glass-border); }
+
+.ev-page-content { white-space: pre-wrap; max-height: 360px; overflow-y: auto; font-size: 13px; line-height: 1.5; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border-soft); border-radius: var(--r-sm); padding: 12px; margin-bottom: 10px; color: var(--text-secondary); }
+
+.ev-resources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ev-resources-h { font-size: 12px; color: var(--text-muted); margin-right: 4px; }
+.ev-resource { font-size: 12px; padding: 2px 8px; border: 1px solid var(--glass-border); border-radius: var(--r-pill); background: var(--glass-2); color: var(--accent-ink); text-decoration: none; }
+.ev-resource:hover { background: var(--glass-hover); }
+.ev-test-badge { font-size: 11px; font-weight: 700; color: #06140d; background: var(--accent); border-radius: 6px; padding: 2px 8px; letter-spacing: 0.5px; }
+
+/* ============================================================
+   Docs page — getting-started guide. Dark glass.
+   ============================================================ */
+.docs { padding: 36px 36px 80px; }
+.docs > * { max-width: 880px; }
+.docs-hero h2 { font-size: 27px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px; color: var(--text); }
+.docs-lead { font-size: 15px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 16px; }
+.docs-lead strong { color: var(--text); font-weight: 600; }
+.docs-feature-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+
+.docs-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.docs-card { border: 1px solid var(--glass-border-soft); border-radius: var(--r-card); background: var(--glass-2); padding: 16px 18px; }
+.docs-card-h { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.docs-card p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.docs-card strong { color: var(--text); font-weight: 600; }
+
+.docs-p { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 12px; }
+.docs-p strong { color: var(--text); }
+.docs-muted { color: var(--text-muted); font-size: 13px; }
+.docs-h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 24px 0 8px; }
+.docs-ic { font-family: var(--mono); font-size: 12px; background: var(--glass-2); border: 1px solid var(--glass-border-soft); border-radius: 6px; padding: 1px 6px; color: var(--accent-ink); word-break: break-word; }
+
+.docs-list { margin: 0 0 14px; padding-left: 20px; }
+.docs-list li { font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin: 6px 0; }
+.docs-list strong { color: var(--text); }
+
+/* Fenced code block — darker glass surface. */
+.docs-code { position: relative; background: rgba(0, 0, 0, 0.32); border: 1px solid var(--glass-border-soft); border-radius: var(--r-sm); margin: 0 0 14px; overflow: hidden; }
+.docs-code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: #d4d4d8; white-space: pre; }
+.docs-copy { position: absolute; top: 8px; right: 8px; padding: 3px 10px; border-radius: var(--r-pill); border: 1px solid var(--glass-border); background: var(--glass-2); color: var(--text-secondary); font-family: var(--font); font-size: 11px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.docs-copy:hover { background: var(--accent); border-color: transparent; color: #06140d; }
+
+.docs-ep-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 4px; }
+.docs-ep-table th { text-align: left; padding: 8px 12px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--glass-border-soft); }
+.docs-ep-table td { padding: 10px 12px; border-bottom: 1px solid var(--glass-border-soft); vertical-align: top; }
+.docs-ep-path { font-family: var(--mono); font-size: 12px; color: var(--text); white-space: nowrap; }
+.docs-ep-desc { color: var(--text-secondary); }
+.docs-method { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-pill); letter-spacing: 0.03em; }
+.docs-method-get { background: var(--accent-soft); color: var(--accent-ink); }
+.docs-method-post { background: rgba(157, 139, 255, 0.16); color: #b6a8ff; }
+
+.docs-ep-detail { border: 1px solid var(--glass-border-soft); border-radius: var(--r-card); background: var(--glass-2); padding: 16px 18px; margin-bottom: 16px; }
+.docs-ep-sig { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.docs-ep-sig code { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
+.docs-resp-label { font-family: var(--mono); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 10px 0 6px; }
+
+/* Pricing tiers — 4 glass cards; the featured one gets an accent ring + badge. */
+.pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 6px 0 14px; }
+.price-card {
+  position: relative;
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--r-card);
+  background: var(--glass-2);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.price-card.featured {
+  border-color: rgba(111, 211, 171, 0.45);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px rgba(111, 211, 171, 0.22), 0 14px 32px -16px rgba(111, 211, 171, 0.3);
+}
+.price-badge {
+  position: absolute; top: -9px; left: 16px;
+  font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #06140d; background: var(--accent); padding: 2px 8px; border-radius: var(--r-pill);
+}
+.price-name { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+.price-amt { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; margin: 6px 0 2px; }
+.price-per { font-size: 13px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
+.price-tag { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; min-height: 16px; }
+.price-feats {
+  list-style: none; margin: 0; padding: 12px 0 0;
+  border-top: 1px solid var(--glass-border-soft);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.price-feats li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.price-k { color: var(--text-muted); }
+.price-v { color: var(--text); font-family: var(--mono); font-size: 11.5px; text-align: right; }
+@media (max-width: 900px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.docs-footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--glass-border-soft); }
+.docs-footer p { font-size: 13px; line-height: 1.65; color: var(--text-muted); margin: 0; }
+
+@media (max-width: 720px) { .docs-cards { grid-template-columns: 1fr; } }
+
+/* ── Company-level "last updated" stamp — top-right running-status signal on the Companies + Events
+      pages. {USER 2026-06-19 "last updated on the top right so i know the running status"}. ───────── */
+.chead-updated { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+  padding: 6px 12px; border-radius: var(--r-pill); background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft); white-space: nowrap; }
+.cu-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft); }
+.cu-text { font-family: var(--mono); font-size: 11px; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em; }
+/* Events page title row — page title left, the updated stamp pushed right. */
+.ir-co-titlerow { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+.ir-co-titlerow h2 { margin: 0; }
+
+/* ── Status page — live health of the system's external dependencies (Supabase / Firecrawl / DeepSeek /
+      OpenAI). {USER 2026-06-19 "a new page in the intelligence section, call it status ... firecrawl deepseek active"}. */
+.status { padding: 28px 32px 60px; flex: 1; min-width: 0; overflow-y: auto; }
+.status-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+.status-title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.status-sub { font-family: var(--mono); font-size: 11.5px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em; }
+.status-ts { color: var(--text-faint); }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.status-card { padding: 18px 20px; border-radius: var(--r-card); background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft); }
+.status-card.ok { border-color: var(--accent-soft); }
+.status-card.down { border-color: var(--red-soft); background: var(--red-soft); }
+/* idle = a worker that simply isn't running right now (NOT an error) — amber, not red. */
+.status-card.idle { border-color: var(--amber-soft); }
+.sc-top { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.sc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sc-dot.ok { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.sc-dot.down { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.sc-dot.idle { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.sc-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.sc-state { margin-left: auto; font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; }
+.sc-state.ok { color: var(--accent-ink); }
+.sc-state.down { color: var(--red); }
+.sc-state.idle { color: var(--amber); }
+/* tighten the section labels inside the status page so the two groups read as one page */
+.status .section-label { margin: 22px 0 12px; }
+.status .section-label:first-of-type { margin-top: 8px; }
+.sc-detail { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.sc-latency { font-family: var(--mono); font-size: 10.5px; color: var(--text-muted); }
+@media (max-width: 720px) { .status-grid { grid-template-columns: 1fr; } }
+
+/* ── Weekly auto-refresh headline + per-company coverage. {USER 2026-06-19 "the actual weekly jobs every
+      7 days ... if all companies are fetched"}. ─────────────────────────────────────────────────────── */
+.weekly-card { display: flex; align-items: center; gap: 28px; padding: 20px 24px; margin-bottom: 22px;
+  border-radius: var(--r-card); background: var(--glass-2); border: 1px solid var(--accent-soft); }
+.wk-main { display: flex; flex-direction: column; flex-shrink: 0; }
+.wk-big { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; color: var(--accent-ink);
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.wk-of { font-size: 20px; color: var(--text-muted); font-weight: 500; }
+.wk-lbl { margin-top: 5px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted); }
+.wk-meta { display: flex; flex-direction: column; gap: 5px; padding-left: 24px;
+  border-left: 1px solid var(--glass-border-soft); }
+.wk-m { font-size: 12.5px; color: var(--text-secondary); }
+.wk-k { display: inline-block; width: 92px; font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
+
+.cov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 8px; }
+.cov-chip { display: flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: var(--r-sm);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft); font-size: 12.5px; }
+.cov-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.cov-chip.ok .cov-dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cov-chip.stale .cov-dot, .cov-chip.partial .cov-dot { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.cov-chip.fail .cov-dot { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.cov-chip.fail { border-color: var(--red-soft); }
+.cov-tk { font-weight: 600; color: var(--text); }
+.cov-n { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .cov-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); } }
+
+/* ── Company progress LIST — one row per company: live progress bar + state badge. Replaces the coverage
+   chip grid. {USER 2026-06-22 "list view of progress bar for each ... whether it is running, in queue or
+   stopped ... dynamic progress"}. ─────────────────────────────────────────────────────────────────────── */
+.cov-list { display: flex; flex-direction: column; gap: 6px; }
+/* 9 cols: ticker(+updated time) · state · bar · count · DeepSeek$ · Firecrawl$ · Gemini$ · total$ · pct/ETA.
+   WHY 9 (was a stale 7): GEM + Σ(total) were added as row children but the template stayed at 7, so those two
+   wrapped onto an unwanted 2nd grid row UNDER the ticker. Matching the column count to the 9 children keeps the
+   whole row on ONE line, freeing the ticker cell's 2nd line for the last-updated time. {USER 2026-06-30 "add
+   last updated time for each of these progress bars"} [CONFIDENCE: CONFIRMED — 9 live children verified in DOM]. */
+.cov-row { display: grid; grid-template-columns: 72px 72px 1fr 48px 56px 56px 56px 58px 44px; align-items: center;
+  gap: 10px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft); }
+.cov-cost { text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* tiny DS/FC tag in front of each cost value so the two figures are self-labelling on the row. */
+.cov-cost-k { font-family: var(--sans, inherit); font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--text-faint); margin-right: 3px; }
+/* TOTAL (Σ) spend chip — brighter + bolder than the per-provider DS/FC/GEM chips so the at-a-glance
+   per-company sum stands out on the progress bar. {USER 2026-06-27 "add to the progress bar cost"}. */
+.cov-cost-total { color: var(--text); font-weight: 600; }
+.cov-cost-total .cov-cost-k { color: var(--text-muted); }
+/* Ticker cell is now a 2-line stack: bold symbol on top, the bar's last-updated time beneath. flex-column
+   so the two lines left-align; the row's align-items:center keeps neighbouring cells vertically centred against
+   this taller cell. {USER 2026-06-30 "add last updated time for each of these progress bars"}. */
+.cov-row .cov-tk { display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  font-weight: 600; color: var(--text); font-size: 13px; line-height: 1.15; }
+.cov-tk-sym { font-weight: 600; color: var(--text); font-size: 13px; }
+/* the last-updated relative time (fmtAgo) — small + faint so it reads as secondary meta under the ticker. */
+.cov-tk-ago { font-weight: 500; font-size: 9.5px; color: var(--text-faint); font-family: var(--mono);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cov-row .cov-n { margin: 0; text-align: right; font-family: var(--mono); font-size: 11px;
+  color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.cov-pct { text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+/* the bar: fetched (green) + other-processed (amber, doesnt_exist/failed) segments over an empty track */
+.cov-bar { position: relative; height: 8px; border-radius: 999px; background: var(--glass-border-soft);
+  overflow: hidden; display: flex; }
+.cov-bar-fetched { height: 100%; background: var(--accent); transition: width 0.6s ease; }
+.cov-bar-other { height: 100%; background: var(--amber); opacity: 0.5; transition: width 0.6s ease; }
+/* state badge — running/queued/stopped/idle/done */
+.cov-state { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: center; padding: 3px 0; border-radius: 999px; }
+.cov-state.st-running { color: var(--accent); background: var(--accent-soft); }
+.cov-state.st-queued  { color: var(--amber); background: var(--amber-soft); }
+.cov-state.st-processing { color: var(--accent); background: var(--accent-soft); }   /* in-flight between batches */
+.cov-state.st-stopped { color: var(--red); background: var(--red-soft); }
+.cov-state.st-idle    { color: var(--text-faint); background: var(--glass-border-soft); }
+.cov-state.st-done    { color: var(--text-muted); background: var(--glass-border-soft); }
+.cov-row.st-running, .cov-row.st-processing { border-color: var(--accent-soft); }
+/* mobile: drop the raw count, keep both costs (6 cols). */
+@media (max-width: 720px) { .cov-row { grid-template-columns: 50px 60px 1fr 56px 56px 42px; } .cov-row .cov-n { display: none; } }
+
+/* ── Agent Pipeline (merged event_agent crawl + company_agent media) — ONE colored bar per company, stage-colored.
+   5 stage colors reused by the bar fill + badge + legend dot: queued=grey, crawling=blue, media=amber, done=green,
+   failed=red. {USER 2026-07-15 "merge ... a progress bar with color that shows all the status"}. */
+:root { --blue: #6ba3e0; --blue-soft: rgba(107, 163, 224, 0.15); }   /* pipeline-local crawl-stage blue (none existed) */
+/* Per-worker stage palette (2026-07-19): blue=event · green=basic-info · red=media · purple=done · amber=failed. One
+   distinct hue per worker so a card's color says WHICH worker is on it; done (purple) reads apart from basic-info (green)
+   so "is basic_info finished?" is legible at a glance. {USER 2026-07-19 "different color for different worker, blue is
+   event, green is basic info, red is media ... if done should be a different color ... couldn't even tell if some basic
+   info are fully done"}. --green is the basic-info hue (distinct from the teal --accent). */
+:root { --green: #5fc97a; --green-soft: rgba(95, 201, 122, 0.16); }
+/* per-company row grid: ticker | badge | bar(flex) | counts | Σcost | pct — 6 cols (vs cov-row's 9). */
+.pl-row { display: grid; grid-template-columns: 66px 70px 1fr 50px 64px 76px 40px; align-items: center;
+  gap: 11px; padding: 9px 12px; border: 1px solid var(--glass-border-soft); border-radius: 10px;
+  background: var(--glass); margin-bottom: 6px; }
+.pl-row .cov-tk { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.pl-row .cov-n { margin: 0; text-align: right; }
+/* three HIGHLIGHTED per-company counts — big colored number + tiny uppercase label so events/basic-info/media each
+   read at a glance. {USER 2026-07-15 "only show how many events, media, basicinfo, and make them highlight more clear"}. */
+.pl-stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05; }
+.pl-stat b { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+.pl-stat b em { font-size: 10.5px; font-weight: 500; color: var(--text-faint); font-style: normal; }
+.pl-stat i { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-faint); font-style: normal; margin-top: 1px; }
+.pl-s-events b { color: var(--accent-ink); }   /* green — crawl output (events discovered) */
+.pl-s-basic b  { color: var(--blue); }          /* blue — basic-info extracted */
+.pl-s-media b  { color: var(--amber); }         /* amber — media fetched */
+/* stage badge — pill, colored per pipeline stage. */
+.pl-badge { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: center; padding: 3px 0; border-radius: 999px; }
+.pl-badge.st-queued    { color: var(--text-muted); background: var(--gray-soft); }
+.pl-badge.st-crawling  { color: var(--blue); background: var(--blue-soft); }       /* event worker */
+.pl-badge.st-basicinfo { color: var(--green); background: var(--green-soft); }     /* basic-info worker */
+.pl-badge.st-media     { color: var(--red); background: var(--red-soft); }         /* media worker */
+.pl-badge.st-done      { color: var(--purple); background: var(--purple-soft); }   /* fully finished */
+.pl-badge.st-failed    { color: var(--amber); background: var(--amber-soft); }
+/* the colored pipeline bar — fill width = pct, fill color = stage. */
+.pl-bar { position: relative; height: 8px; border-radius: 999px; background: var(--glass-border-soft); overflow: hidden; }
+.pl-fill { display: block; height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+.pl-bar.st-queued    .pl-fill { background: var(--text-faint); }
+.pl-bar.st-crawling  .pl-fill { background: var(--blue); animation: pl-pulse 1.2s ease-in-out infinite; }   /* event: indeterminate pulse */
+.pl-bar.st-basicinfo .pl-fill { background: var(--green); animation: pl-pulse 1.2s ease-in-out infinite; }  /* basic-info: pulse while filling */
+.pl-bar.st-media     .pl-fill { background: var(--red); }
+.pl-bar.st-done      .pl-fill { background: var(--purple); }
+.pl-bar.st-failed    .pl-fill { background: var(--amber); }
+@keyframes pl-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }   /* crawl has no fine %, pulse = "working" */
+.pl-row.st-crawling { border-color: var(--blue-soft); }
+.pl-row.st-media    { border-color: var(--amber-soft); }
+/* legend — the color key above the list. */
+.pl-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 4px 0 14px; padding: 10px 14px;
+  border: 1px solid var(--glass-border-soft); border-radius: 10px; background: var(--glass); }
+.pl-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
+.pl-dot { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
+.pl-dot.st-queued { background: var(--text-faint); }
+.pl-dot.st-crawling { background: var(--blue); }
+.pl-dot.st-basicinfo { background: var(--green); }
+.pl-dot.st-media { background: var(--red); }
+.pl-dot.st-done { background: var(--purple); }
+.pl-dot.st-failed { background: var(--amber); }
+.pl-legend-n { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-left: 2px; }
+@media (max-width: 720px) { .pl-row { grid-template-columns: 44px 54px 1fr 42px 54px 62px 34px; gap: 7px; } .pl-stat b { font-size: 13px; } }
+
+/* ── Health alert banners — stacked at the TOP of the status page; RED for crit, AMBER for warn.
+   Reuses the existing --red / --red-soft / --amber / --amber-soft color vars and the .glass idiom so
+   banners feel native to the dark glass design rather than bolted on.
+   {AUDIT 2026-06-23 "all 4 incidents were silent until human noticed — HIGH/MEDIUM — must surface alerts"}
+   [CONFIDENCE: CONFIRMED 100% — direct audit finding driving this entire block] ──────────────────── */
+.alert-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;   /* breathe before the health stats row below */
+}
+/* One alert row — glass card with a colored left accent stripe. */
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 16px;
+  border-radius: var(--r-sm);
+  border-left: 3px solid transparent;   /* accent stripe — overridden by level variants below */
+  font-size: 13.5px;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+/* CRIT level — red background + red stripe; impossible to miss. */
+.alert-item.alert-crit {
+  background: var(--red-soft);
+  border-color: var(--red);
+  border-left-width: 3px;
+}
+/* WARN level — amber background + amber stripe; noticeable but not alarming. */
+.alert-item.alert-warn {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  border-left-width: 3px;
+}
+.alert-icon {
+  flex: 0 0 auto;
+  font-size: 11px;   /* small filled circle / triangle — scannable at a glance */
+}
+.alert-item.alert-crit .alert-icon { color: var(--red); }
+.alert-item.alert-warn .alert-icon { color: var(--amber); }
+.alert-msg {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.alert-item.alert-crit .alert-msg { color: var(--red); }
+.alert-item.alert-warn .alert-msg { color: var(--amber); }
+/* Small CRIT / WARN badge pinned to the right — redundant with color but screen-reader friendly. */
+.alert-level {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.alert-item.alert-crit .alert-level {
+  background: rgba(224, 115, 107, 0.22);
+  color: var(--red);
+}
+.alert-item.alert-warn .alert-level {
+  background: rgba(224, 176, 87, 0.22);
+  color: var(--amber);
+}
+
+/* ── Health stats row — five compact readouts (queue age / worker last seen / dead letters /
+   DeepSeek / Firecrawl) always visible below the alert banners. Green when healthy, amber/red
+   when the value crosses the alert threshold (mirrors the server-side logic for at-a-glance
+   verification that the alert threshold was correctly computed).
+   {AUDIT 2026-06-23 "surface queue-age / heartbeat-staleness / dead-letter / balance"}
+   [CONFIDENCE: CONFIRMED 100%] ────────────────────────────────────────────────────────── */
+.health-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+/* One stat cell — same glass card idiom as .status-card / .tok-card. */
+.hs-item {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 16px;
+  border-radius: var(--r-card);
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Numeric / text value — large and mono for immediate readability. */
+.hs-val {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-ink);   /* default: green = healthy */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+/* Descriptive label — tiny mono uppercase, matching the existing .sc-latency idiom. */
+.hs-lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+/* WARN state — amber value + amber card border (matches .status-card.idle). */
+.hs-item.hs-warn {
+  border-color: var(--amber-soft);
+}
+.hs-item.hs-warn .hs-val { color: var(--amber); }
+/* CRIT state — red value + red card background (matches .status-card.down). */
+.hs-item.hs-crit {
+  border-color: var(--red-soft);
+  background: var(--red-soft);
+}
+.hs-item.hs-crit .hs-val { color: var(--red); }
+@media (max-width: 720px) { .health-stats { flex-direction: column; } }
+
+/* ── Admin login screen. {USER 2026-06-19 "simple login key on the page and remember the ip"}. ─────── */
+.login-screen { height: 100vh; display: grid; place-items: center; padding: 24px; }
+.login-card { width: 320px; display: flex; flex-direction: column; padding: 26px 24px;
+  border-radius: var(--r-panel); background: var(--glass); backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); box-shadow: var(--shadow-panel); }
+.login-chip { align-self: flex-start; margin-bottom: 20px; }
+.login-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); margin-bottom: 8px; }
+.login-input { padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--glass-border);
+  background: var(--glass-2); font-family: var(--font); font-size: 14px; color: var(--text); outline: none; }
+.login-input:focus { border-color: var(--accent-soft); }
+.login-err { margin-top: 8px; font-size: 12.5px; color: var(--red); }
+.login-btn { margin-top: 16px; padding: 10px; border-radius: var(--r-sm); border: 1px solid transparent;
+  background: var(--accent-soft); color: var(--accent-ink); font-family: var(--font); font-size: 13.5px;
+  font-weight: 600; cursor: pointer; transition: background 0.14s; }
+.login-btn:hover:not(:disabled) { background: rgba(111, 211, 171, 0.22); }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Discovery page — event_agent crawl progress: per-company event-URL discovery. Same dark/glass idiom
+   as the rest of the dashboard (reuses the palette vars). {USER 2026-06-24 "mainagent progress ... the urls"} */
+/* .disc-wrap scrolls INTERNALLY (mirrors the working .detail/.tokens pattern) so the tall company grid is
+   reachable now that .app is overflow:hidden (fixed-viewport shell). Before this, Discovery had no own scroll and
+   relied on PAGE scroll — which .app overflow:hidden removed, so the grid became unscrollable. flex:1 fills the
+   stage, min-height:0 lets it be bounded, overflow-y:auto scrolls its content. {USER 2026-07-03 "i cannot scroll
+   now"} [CONFIDENCE: CONFIRMED — regression from the sidebar-persistence overflow:hidden; internal scroll restores it]. */
+.disc-wrap { padding: 24px 28px; max-width: 1100px; flex: 1; min-height: 0; overflow-y: auto; }
+.disc-head { margin-bottom: 18px; }
+.disc-title { font-size: 18px; font-weight: 650; color: var(--text); margin: 0 0 4px; }
+.disc-muted { color: var(--text-muted); font-size: 12.5px; }
+.disc-err { color: var(--red); font-size: 13px; padding: 14px 16px; background: var(--red-soft);
+  border-radius: var(--r-sm); }
+.disc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.disc-table thead th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-faint); padding: 8px 12px; border-bottom: 1px solid var(--glass-border); }
+.disc-table th.disc-num, .disc-table td.disc-num { text-align: right; font-variant-numeric: tabular-nums; }
+.disc-row { cursor: pointer; transition: background 0.12s; }
+.disc-row:hover { background: var(--glass-hover); }
+.disc-row td { padding: 9px 12px; border-bottom: 1px solid var(--glass-border-soft); color: var(--text-secondary); }
+.disc-tk { font-weight: 650; color: var(--text); }
+.disc-caret { display: inline-block; width: 14px; color: var(--text-faint); }
+/* expanded per-company URL list */
+.disc-urls { padding: 6px 12px 14px 30px; background: var(--glass); border-radius: var(--r-sm); margin: 2px 0 6px; }
+
+/* ── LIVE crawl-run card: the bar + ETA + cost watched while event_agent crawls. {USER 2026-06-25 "bar and
+   estimate time and cost"}. ─────────────────────────────────────────────────────────────────────────── */
+.disc-run { margin: 4px 0 18px; padding: 13px 16px; border-radius: var(--r-sm);
+  border: 1px solid var(--glass-border-soft); background: var(--glass); }
+.disc-run.live { border-color: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-soft) inset; }
+.disc-run-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 9px; }
+.disc-run-title { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.disc-run.live .disc-run-title::before { content: ""; display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--accent); margin-right: 7px; animation: disc-pulse 1.4s ease-in-out infinite; }
+.disc-run-stat { font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
+.disc-run-cost { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-secondary); }
+.disc-cost-split { color: var(--text-faint); font-size: 10px; }
+.disc-run-bar { position: relative; height: 9px; border-radius: 999px; background: var(--glass-border-soft); overflow: hidden; }
+.disc-run-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); transition: width 0.6s ease; }
+.disc-run-legend { display: flex; gap: 8px; margin-top: 9px; }
+.disc-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 2px 8px; border-radius: 999px; }
+.disc-tag.t-running { color: var(--accent); background: var(--accent-soft); }
+.disc-tag.t-queued { color: #7fb0d8; background: rgba(127, 176, 216, 0.13); }
+.disc-tag.t-done { color: var(--text-muted); background: var(--glass-border-soft); }
+.disc-tag.t-error { color: var(--red); background: var(--red-soft); }
+@keyframes disc-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ── Per-company progress bars (mirrors Status' .cov-list): width = events found, colour = crawl state. ── */
+.disc-list { display: flex; flex-direction: column; gap: 5px; }
+
+/* ── GRID VIEW: each company as a compact status-colored BOX (ticker + num fetched) instead of a list row, so the
+   whole fleet reads at a glance. The box's left border + status dot + tag color encode the crawl state; clicking a
+   box drills into its URLs (full-width row below). {USER 2026-07-03 "each event as a small box name and num
+   fetched, different color showing the status, make it a grid like view"} [CONFIDENCE: CONFIRMED — direct directive]. */
+.disc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 9px; align-items: start; }
+.disc-cell {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 12px 9px; border-radius: var(--r-sm);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  border-left: 3px solid var(--text-faint);          /* status accent — overridden per state below */
+  cursor: pointer; transition: background 0.14s, transform 0.1s, box-shadow 0.14s;
+}
+.disc-cell:hover { background: var(--glass-hover); transform: translateY(-1px); }
+.disc-cell.open { background: var(--glass-hover); box-shadow: inset 0 0 0 1px var(--glass-border); }
+.disc-cell-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.disc-cell-tk { font-weight: 650; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.disc-cell-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--text-faint); flex: 0 0 auto; }
+.disc-cell-n { font-family: var(--mono); font-size: 21px; font-weight: 600; color: var(--text); line-height: 1; }
+.disc-cell-n-unit { font-size: 10px; font-weight: 400; color: var(--text-faint); letter-spacing: 0.02em; }
+.disc-cell-tag { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.disc-cell-bar { position: relative; height: 3px; background: var(--glass-border-soft); border-radius: 2px; overflow: hidden; }
+.disc-cell-bar-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); opacity: 0.7; border-radius: 2px; transition: width 0.6s ease; }
+/* per-state box color — left border + status dot + tag, matching the existing badge palette. */
+.disc-cell.st-in_progress { border-left-color: #7fb0d8; }
+.disc-cell.st-in_progress .disc-cell-dot { background: #7fb0d8; animation: disc-live 1.6s ease-in-out infinite; }
+.disc-cell.st-in_progress .disc-cell-tag { color: #7fb0d8; }
+.disc-cell.st-fresh { border-left-color: var(--accent); }
+.disc-cell.st-fresh .disc-cell-dot { background: var(--accent); }
+.disc-cell.st-fresh .disc-cell-tag { color: var(--accent); }
+.disc-cell.st-incomplete { border-left-color: var(--amber); }
+.disc-cell.st-incomplete .disc-cell-dot { background: var(--amber); }
+.disc-cell.st-incomplete .disc-cell-tag { color: var(--amber); }
+.disc-cell.st-old { border-left-color: var(--amber); }
+.disc-cell.st-old .disc-cell-dot { background: var(--amber); }
+.disc-cell.st-old .disc-cell-tag { color: var(--amber); }
+.disc-cell.st-stall { border-left-color: var(--red); }
+.disc-cell.st-stall .disc-cell-dot { background: var(--red); }
+.disc-cell.st-stall .disc-cell-tag { color: var(--red); }
+.disc-cell.st-queued { border-left-color: #9aa7b3; }
+.disc-cell.st-queued .disc-cell-dot { background: #9aa7b3; }
+.disc-cell.st-queued .disc-cell-tag { color: #9aa7b3; }
+/* the URL drill-down spans the full grid row, appearing just below the clicked box. */
+.disc-grid .disc-urls { grid-column: 1 / -1; margin: -1px 0 4px; }
+.disc-crow { display: grid; grid-template-columns: 14px 62px 64px 1fr 92px 60px; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; transition: background 0.12s; }
+.disc-crow:hover { background: var(--glass-hover); }
+.disc-crow .disc-tk { font-weight: 650; color: var(--text); font-size: 13px; }
+.disc-state { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  text-align: center; padding: 2px 0; border-radius: 5px; color: var(--text-faint); background: var(--glass-border-soft); }
+/* 4-state crawl badge palette (mainagent Discovery): in_progress = live now (blue, pulsing); fresh = done <7d
+   (green); old = crawled but >7d so a re-crawl is due (amber); stall = not done / failed / never crawled (red).
+   {USER 2026-07-01 "fresh is within 7days fetched and finished, stall is not done, in progress is doing right
+   now, and old is fetch but last time is over 7 days"; "this is for mainagent"}. */
+.disc-state.st-in_progress { color: #7fb0d8; background: rgba(127, 176, 216, 0.13);
+  animation: disc-live 1.6s ease-in-out infinite; }   /* subtle pulse = a crawl is running on it now */
+.disc-state.st-fresh { color: var(--accent); background: var(--accent-soft); }
+.disc-state.st-old   { color: var(--amber); background: var(--amber-soft); }
+.disc-state.st-stall { color: var(--red); background: var(--red-soft); }
+/* incomplete = crawl DONE but CUT SHORT (jina rate-limit / archive budget / page cap) → deep archive NOT
+   fully fetched, a re-crawl is needed. Amber on a bordered chip so it reads as "finished-but-not-complete",
+   distinct from plain `old` amber and `stall` red. {USER 2026-07-02 "show clearly the company is not
+   finished, not die silently"}. */
+.disc-state.st-incomplete { color: var(--amber); background: var(--amber-soft); box-shadow: inset 0 0 0 1px var(--amber); }
+/* queued = enqueued but a worker has NOT started it yet — NOT running. Muted slate, NO pulse, so it reads as
+   "waiting" and is visually distinct from the blue PULSING in_progress. {USER 2026-07-02 "everything is in
+   progress, but none is running" — queued was mislabeled/looked identical to running}. */
+.disc-state.st-queued { color: #9aa7b3; background: rgba(154, 167, 179, 0.12); }
+@keyframes disc-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+/* Relative-VOLUME gauge (NOT a progress bar): track-less + thin + muted + no state color + no pulse, so it
+   reads as "how much this company found vs the busiest", never as "% complete". Crawl has no known total, so
+   a progress bar would be a lie. State lives in the FRESH/STALE badge, not here. {USER 2026-07-01 "why is
+   this progress bar needed ... we dont even know how many events one company have"}. */
+.disc-vol { position: relative; height: 4px; background: transparent; }
+.disc-vol-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); opacity: 0.6; border-radius: 2px; transition: width 0.6s ease; }
+
+/* Knowledge → Dashboard — newest event_agent events grouped by first-seen day. {USER 2026-07-02 "a new tab
+   called dashboard ... newest results ... new is by time e.g. today yesterday"}. */
+.dash-controls { max-width: 360px; margin: 4px 0 14px; }
+/* the per-day count next to a section-label day header — override the label's uppercase so "12 new · 3
+   companies" reads naturally. */
+.dash-daycount { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); text-transform: none; letter-spacing: 0; margin-left: 2px; }
+.dash-ago { font-family: var(--mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; text-align: right; }
+.disc-n { text-align: right; font-family: var(--mono); font-size: 11.5px; color: var(--text-secondary); }
+.disc-n-sub { color: var(--text-faint); font-size: 10px; }
+.disc-when { text-align: right; font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); }
+.disc-url-row { display: flex; gap: 12px; align-items: baseline; padding: 4px 0;
+  border-bottom: 1px solid var(--glass-border-soft); }
+.disc-url-meta { flex: 0 0 150px; font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+.disc-url-link { color: var(--accent-ink); text-decoration: none; font-size: 12.5px;
+  overflow-wrap: anywhere; }
+.disc-url-link:hover { text-decoration: underline; }
+.disc-url-nolink { color: var(--text-muted); font-size: 12.5px; }
+.disc-url-nolink em { color: var(--text-faint); font-style: normal; }
+
+/* ── Intelligence → Export page — pick companies (checkbox list) and download event_agent companies/events as
+   CSV/JSON. Reuses .chead / .chip / .type-chip / .search; adds only the picker list + the export button.
+   {USER 2026-07-03 "build a export tab ... export all the companies and event from the mainagent ... choose
+   all or a selective few companies create this page under intelligences"}. */
+/* Views that render a natural-height block directly in .stage (no own scroll panel like .detail/.tokens) must
+   scroll INTERNALLY now that .app is overflow:hidden — otherwise their tall content is clipped + unreachable
+   (they used to rely on PAGE scroll, which the fixed-viewport shell removed). {USER 2026-07-03 "i cannot scroll
+   now"} [CONFIDENCE: CONFIRMED — same regression as .disc-wrap; internal scroll restores it]. */
+.dashboard-view { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; }
+/* (.export-view + .exp-* removed 2026-07-20 — the standalone Export page is gone; export now lives per-model on the
+   Data page as CSV/JSON buttons. {USER "remove the export page ... add an export button for each of the training data"}.) */
+
+/* COMPACT BLOCK GRID (2026-07-17) — replaces the per-company progress-bar rows with a dense tile grid so ALL 2000+
+   companies of the full run fit at a glance. One tile = ticker + event/basic-info counts; stage tints the border.
+   {USER 2026-07-17 "we dont need the progress bar just small blocks ... show all 2000+"}. */
+.pl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; margin-top: 8px; }
+.pl-block { display: flex; flex-direction: column; gap: 3px; padding: 7px 9px; border-radius: 8px;
+  background: var(--glass-border-soft); border: 1px solid transparent; min-width: 0; }
+.pl-block-tk { font-family: var(--mono); font-size: 11.5px; color: var(--text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.pl-block-nums { font-family: var(--mono); font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pl-block-nums b { color: var(--text-secondary); font-weight: 600; }
+.pl-block-nums i { font-style: normal; color: var(--text-faint); margin: 0 4px 0 1px; }
+/* stage tint — one hue per worker: blue=event · green=basic-info · red=media · purple=done · amber=failed.
+   The card BORDER + soft BG + its bold count numbers all take the stage color so the whole card reads as
+   "which worker is on it". {USER 2026-07-19 "different color for different worker ... if done should be a
+   different color ... couldn't even tell if some basic info are fully done"}. */
+.pl-block.st-queued    { border-color: var(--gray-soft); }
+.pl-block.st-crawling  { border-color: var(--blue); background: var(--blue-soft); }        /* event worker → blue */
+.pl-block.st-crawling .pl-block-nums b { color: var(--blue); }
+.pl-block.st-basicinfo { border-color: var(--green); background: var(--green-soft); }      /* basic-info worker → green */
+.pl-block.st-basicinfo .pl-block-nums b { color: var(--green); }
+.pl-block.st-media     { border-color: var(--red); background: var(--red-soft); }          /* media worker → red */
+.pl-block.st-media .pl-block-nums b { color: var(--red); }
+.pl-block.st-done      { border-color: var(--purple); background: var(--purple-soft); }     /* fully finished → purple */
+.pl-block.st-done .pl-block-nums b { color: var(--purple); }
+.pl-block.st-failed    { border-color: var(--amber); background: var(--amber-soft); }
+.pl-block.st-failed .pl-block-nums b { color: var(--amber); }
+
+/* ── Data page — raw row browser per model, 50/page. {USER 2026-07-19 "a new section called data ... list view"}. */
+.data-view { flex: 1; min-width: 0; padding: 22px 26px; overflow: auto; }
+.data-tabs { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.data-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 14px; border-radius: 9px;
+  border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-secondary); cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: background 0.12s, border-color 0.12s; }
+.data-tab:hover { background: var(--glass-hover); }
+.data-tab.active { border-color: var(--blue); background: var(--blue-soft); color: var(--text); }
+.data-tab-sub { font-family: var(--mono); font-size: 9.5px; font-weight: 500; color: var(--text-faint); text-transform: none; letter-spacing: 0; }
+/* Export controls — one row under the tabs: a label + CSV/JSON buttons + an inline progress/result line. Downloads the
+   CURRENT model's full training-data table client-side. {USER 2026-07-20 "add an export button for each of the training data"}. */
+.data-export { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.data-export-lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.data-export-btn { padding: 5px 14px; border-radius: var(--r-sm); border: 1px solid var(--glass-border);
+  background: var(--accent-soft); color: var(--accent-ink); font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background 0.14s; }
+.data-export-btn:hover:not(:disabled) { background: rgba(111, 211, 171, 0.22); }
+.data-export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.data-export-msg { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); }
+/* horizontally scrollable table wrapper so wide rows (many columns) don't break the layout. */
+.data-table-wrap { margin-top: 16px; overflow-x: auto; border: 1px solid var(--glass-border-soft); border-radius: 10px; }
+.data-table { border-collapse: collapse; width: 100%; font-size: 11.5px; font-family: var(--mono); }
+.data-table th { position: sticky; top: 0; background: var(--glass-2); color: var(--text-secondary); text-align: left;
+  padding: 7px 10px; font-weight: 700; white-space: nowrap; border-bottom: 1px solid var(--glass-border); text-transform: uppercase; letter-spacing: 0.03em; font-size: 10px; }
+.data-table td { padding: 6px 10px; color: var(--text-secondary); border-bottom: 1px solid var(--glass-border-soft);
+  max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
+.data-table tbody tr:hover td, .data-table tr:hover td { background: var(--glass-hover); }
+.data-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 16px 0 4px; }
+.data-pg-btn { padding: 6px 16px; border-radius: var(--r-sm); border: 1px solid var(--glass-border); background: var(--glass-2);
+  color: var(--text-secondary); cursor: pointer; font-size: 12px; font-weight: 600; }
+.data-pg-btn:hover:not(:disabled) { background: var(--glass-hover); color: var(--text); }
+.data-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.data-pg-label { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+
+
+/* SYSTEM STATUS panel (2026-07-21) — worker-side dependency health chips on the Agent Pipeline page. A DOWN dep
+   (red) is visible instantly instead of surfacing as FAILED companies hours later. {USER "show status ... or down"} */
+.health-panel { margin: 6px 0 18px; }
+.health-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.health-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 8px;
+  font-size: 12px; line-height: 1; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); }
+.health-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a8f98; flex: none; }
+.health-name { font-weight: 600; letter-spacing: 0.2px; }
+.health-state { opacity: 0.65; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.5px; }
+.hs-up .health-dot { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+.hs-up { border-color: rgba(34,197,94,0.30); }
+.hs-down .health-dot { background: #ef4444; box-shadow: 0 0 8px #ef4444aa; }
+.hs-down { border-color: rgba(239,68,68,0.55); background: rgba(239,68,68,0.10); }
+.hs-off .health-dot { background: #8a8f98; }
+.hs-off { opacity: 0.7; }
+.hs-stale .health-dot { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; }
+.hs-stale { border-color: rgba(245,158,11,0.35); }
+.hs-unknown .health-dot { background: #8a8f98; }
+
+/* --- WaterEvents 2-page viewer additions (Events + Media flat lists) --- */
+.body-full { padding: 22px 26px; overflow-y: auto; height: 100%; }
+.lt-company { color: var(--muted, #8a94a6); font-size: 12px; white-space: nowrap; }
+.lt-media { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip.media-pdf { background: #3a2a2a; color: #ff9a9a; }
+.chip.media-audio { background: #2a2f3a; color: #9ab8ff; }
+.chip.media-slides { background: #2a3a2f; color: #9affc0; }
+.chip.media-video { background: #3a2a3a; color: #e09aff; }
+.chip.media-page { background: #2c2f36; color: #b8c0cc; }
+.chip.media-pdf, .chip.media-audio, .chip.media-slides, .chip.media-video, .chip.media-page { text-decoration: none; cursor: pointer; }

@@ -25,7 +25,17 @@ MAX_PAGES = int(os.environ.get("IR_WATERCRAWL_MAX_PAGES", "24"))
 # BROWSERS=8 with MAX_PAGES=48 → 6 tabs/browser. Default 1 = the existing single-browser behavior (no change unless set).
 # {USER 2026-07-23 "you have multiple cpu right"; DEBUG render=48/1-browser: 9 events-page render TimeoutErrors, NVDA
 # yield 94→8} [CONFIDENCE: CONFIRMED 100% — single-browser starvation measured on the A5000 pod].
-RENDER_BROWSERS = int(os.environ.get("IR_WATERCRAWL_BROWSERS", "1"))
+RENDER_BROWSERS = int(os.environ.get("IR_WATERCRAWL_BROWSERS", "4"))
+
+# CAP on CONCURRENT full-page SCREENSHOTS — the memory-critical resource. WHY separate from MAX_PAGES: a full_page shot
+# renders the whole scroll-height into an in-memory bitmap; N of them at once is what spikes RAM and OOM-SIGKILLs a
+# browser (→ TargetClosedError poisons every page on it). The pod's cgroup is ~50GB and vLLM/AWQ already holds ~36GB, so
+# only ~14GB is left for the browser pool — 24 concurrent shots (MAX_PAGES) blew past it and crashed ALL renders. Bounding
+# concurrent SHOTS to 4 (≈ one per browser) keeps peak bitmap RAM ~4×~30MB and never OOMs, while text-only renders still
+# run at the full MAX_PAGES concurrency. {USER 2026-07-23 "we should have a cap and you prob can adjust the resolution";
+# POD /sys/fs/cgroup/memory.max=50GB, memory.current=36GB → ~14GB headroom} [CONFIDENCE: CONFIRMED 100% — OOM at 4
+# browsers × concurrent full-page shots measured; cgroup limit read live from the pod].
+SHOT_CONCURRENCY = int(os.environ.get("WATERCRAWL_SHOT_CONCURRENCY", "4"))
 
 # Per-navigation goto timeout (ms). 22s covers a slow SSR + first-paint; the render coroutines add their own settle
 # on top. {POOL.PY:19 "_NAV_TIMEOUT_MS ... '22000'"} [CONFIDENCE: CONFIRMED].
@@ -50,7 +60,7 @@ SETTLE_FIXED_MS = int(os.environ.get("WATERCRAWL_SETTLE_FIXED_MS", "1500"))     
 # bottom of an infinite-scroll marketing page. {LOG 2026-07-23 "INPUT-CUT apple.com/iphone 51708 chars" then "56990
 # Killed EXIT=137"} [CONFIDENCE: CONFIRMED 100% — the OOM followed the giant full_page screenshots; clipping bounds the
 # peak bitmap RAM regardless of how tall the page is]. 8000 px ≈ 5-6 screenfuls @ 1280×~1400 — covers any real IR list.
-SHOT_MAX_PX = int(os.environ.get("WATERCRAWL_SHOT_MAX_PX", "8000"))
+SHOT_MAX_PX = int(os.environ.get("WATERCRAWL_SHOT_MAX_PX", "6000"))   # 8000→6000: lower shot resolution ⇒ smaller bitmap ⇒ less peak RAM per concurrent shot (still 4-5 screenfuls, covers any IR list)
 
 # HARD render-abort height. A page TALLER than this is NOT an IR page — a real events/listing page is < ~8000 px; only
 # infinite-scroll MARKETING pages the crawl leaked into (www.apple.com/iphone ≈ 50000 px, /surface, /shop) get this tall.

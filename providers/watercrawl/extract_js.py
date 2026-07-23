@@ -123,6 +123,7 @@ EXTRACT_JS = """() => {
     if (!t) { const im = a.querySelector('img[alt]'); if (im) t = (im.getAttribute('alt')||'').replace(/\\s+/g, ' ').trim(); }
     return t.slice(0, 200);
   };
+  const _inlineSeen = new Set();                       // dedup links across the whole inline walk (hidden mobile nav + visible desktop nav emit the SAME hub href → keep one)
   const _walk = (node, out) => {
     for (const ch of node.childNodes) {
       if (ch.nodeType === 3) {                          // text node — keep visible text, collapse whitespace
@@ -133,10 +134,16 @@ EXTRACT_JS = """() => {
       if (ch.nodeType !== 1) continue;
       const tag = ch.tagName;
       if (tag==='SCRIPT'||tag==='STYLE'||tag==='NOSCRIPT'||tag==='SVG'||tag==='TEMPLATE') continue;
-      const st = getComputedStyle(ch);
-      if (st.display==='none' || st.visibility==='hidden') continue;    // skip hidden — matches innerText semantics
-      if (tag==='A' && ch.href && /^https?:/.test(ch.href)) {           // link → [anchor](url) INLINE (no recurse)
-        out.push(' [' + _anchorText(ch) + '](' + ch.href + ') ');
+      // SHOW EVERYTHING — do NOT skip hidden (display:none / visibility:hidden) subtrees. WHY the old hidden-skip was
+      // wrong: a SPA IR site keeps its section-hub nav (/earnings /news /events /sec-filings /annual-meeting) ONLY in a
+      // display:none MOBILE menu, so skipping hidden dropped every hub link from `inline` → the model saw no routes →
+      // the crawl STOPPED at ONE page (GOOGL abc.xyz: 9 events / 1 page, deeper archives unreached). We do NOT filter
+      // (filtering LOSES the hub links); we render all of it and DEDUP links (below) so a hub link present in BOTH the
+      // hidden mobile nav and the visible desktop nav appears exactly ONCE. {USER 2026-07-23 "you need to show everything
+      // just dedup those"} [CONFIDENCE: CONFIRMED 100% — page.html: the earnings hub <a> lived only in .nav--mobile--
+      // expand display:none; showing + deduping surfaces it with no duplication]. (script/style/svg are still skipped above.)
+      if (tag==='A' && ch.href && /^https?:/.test(ch.href)) {           // link → [anchor](url) INLINE (no recurse), deduped
+        if (!_inlineSeen.has(ch.href)) { _inlineSeen.add(ch.href); out.push(' [' + _anchorText(ch) + '](' + ch.href + ') '); }
       } else if (tag==='TIME') {                        // <time datetime> → keep the MACHINE-READABLE ISO date too
         const dt = (ch.getAttribute('datetime')||'').trim();
         const tx = (ch.innerText||ch.textContent||'').replace(/\\s+/g, ' ').trim();

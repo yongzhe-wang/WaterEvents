@@ -101,7 +101,10 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     Qwen-VL model so it reads the page's VISUAL layout (events table vs nav vs footer) that text alone loses. JPEG @
     q70 keeps image tokens down. Screenshot is best-effort (text/links still return on shot failure). Runs ON the loop.
     {POOL.PY:341-368}."""
-    async with runtime._sem:
+    # _shot_sem (OUTER) caps how many full-page SCREENSHOTS render at once — the RAM hog that OOM-SIGKILLs a browser under
+    # 4-browser concurrency (→ TargetClosedError). Acquire it BEFORE the page slot so excess shots wait WITHOUT holding a
+    # page. {USER 2026-07-23 "we should have a cap"} [CONFIDENCE: CONFIRMED 100% — 4×concurrent full-page shots OOM'd 50GB cgroup].
+    async with runtime._shot_sem, runtime._sem:
         ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
         try:
             pg = await page.new_shot_page(ctx)           # shot path: keep CSS + images so the screenshot looks real

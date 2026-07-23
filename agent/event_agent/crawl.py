@@ -126,14 +126,28 @@ def _is_binary_route(url: str) -> bool:
     return bool(_BINARY_ROUTE_RE.search(path))
 
 
+# How many times to (re)try a render before giving up on a url. WHY retry: under the concurrent multi-browser load a
+# heavy SPA hub page (abc.xyz/investor/earnings|news|events) that renders fine ALONE can TIME OUT — GOOGL lost 19/19
+# deep pages to TimeoutError in one run, so it under-crawled to 9 events despite routing to them. render_shot swallows
+# the timeout and returns empty; a retry (after a short backoff, when the browser pool has freed up) usually succeeds,
+# turning a transient timeout into a real page instead of a permanent coverage hole. {USER 2026-07-23 "we also want to
+# retry"; DEBUG GOOGL deep pages TimeoutError under load, render fine standalone} [CONFIDENCE: CONFIRMED 100%].
+_RENDER_TRIES = int(os.environ.get("EVENT_RENDER_TRIES", "3"))
+
+
 async def _render_one(url: str) -> dict | None:
-    """Open ONE url with watercrawl (in a thread — render_shot is sync + marshals to the browser loop). Returns the
-    render dict {url, text, links, html, shot_b64, method}, or None when the render came back empty (skip it)."""
-    r = await asyncio.to_thread(watercrawl.render_shot, url)
-    if not r.get("text") and not r.get("links"):            # walled / dead / empty → skip, don't feed the model junk
-        return None
-    r["url"] = url
-    return r
+    """Open ONE url with watercrawl (in a thread — render_shot is sync + marshals to the browser loop). RETRIES an empty
+    render up to _RENDER_TRIES times with a short backoff: a load-induced TimeoutError comes back empty, and a retry once
+    the browser pool has freed up usually lands the page. Returns the render dict {url, text, links, html, shot_b64,
+    method}, or None only after every attempt came back empty (genuinely walled / dead / persistently timing out)."""
+    for attempt in range(_RENDER_TRIES):
+        r = await asyncio.to_thread(watercrawl.render_shot, url)
+        if r.get("text") or r.get("links"):                  # got real content → done (no wasted extra attempts)
+            r["url"] = url
+            return r
+        if attempt < _RENDER_TRIES - 1:                      # empty (timeout/walled/thin) → back off, then retry
+            await asyncio.sleep(2.0 * (attempt + 1))         # 2s, 4s — let the browser pool drain before re-firing
+    return None                                              # every attempt empty → real skip (counted fail-loud upstream)
 
 
 def _to_page(render: dict) -> dict:

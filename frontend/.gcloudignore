@@ -1,0 +1,11 @@
+# What `gcloud builds submit` should NOT upload as the Cloud Build source context. The Docker build
+# reinstalls deps (npm ci) and rebuilds the bundle (npm run build), so node_modules/dist are dead weight;
+# excluding them keeps the upload to a few KB of source. Mirrors .dockerignore. {deploy 2026-06-18}.
+node_modules
+dist
+.vercel
+.git
+.claude
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store

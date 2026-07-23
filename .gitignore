@@ -37,3 +37,16 @@ tests/**/_trace_*/
 # Secrets
 .env
 *.key
+
+# build + deps (never commit)
+node_modules/
+dist/
+.vercel/
+*.tsbuildinfo
+frontend/node_modules/
+frontend/dist/
+frontend/.vercel/
+
+# large binary test fixtures (keep scripts, not the PDFs)
+tests/datasets/ir_pdfs/
+tests/**/*.pdf
