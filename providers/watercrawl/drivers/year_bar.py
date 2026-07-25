@@ -5,14 +5,14 @@
 (AJAX re-render 掉了 or 上次点击导航走了),就重新 goto hub 再试。WHY 再-goto 兜底(vs <select> 的纯单 session): 年份
 chip 可能"就地替换列表"也可能"导航到 per-year URL"——re-goto 让两种都成立,同时对常见的"替换"情形仍单 session 快。<2 个
 年份 chip 就自跳过(孤零零一个 '2026' 版权号不是过滤器)。{USER 2026-07-12 "year filter ... dropdown bar"} [CONFIDENCE:
-INFERRED 80% — 镜像已验证的 <select>/load-more 走法;exact-text chip 匹配仍需 live-site 复核]. {POOL.PY:615-716}.
+INFERRED 80% — 镜像已验证的 <select>/load-more 走法;exact-text chip 匹配仍需 live-site 复核].
 """
 from __future__ import annotations
 
 from .. import config, extract_js, page, runtime
 
 # Open any collapsed dropdown/combobox that might HOLD the year chips (aria-haspopup, dropdown-toggle, year-select
-# class…) so the chips become visible + clickable before discovery. {POOL.PY:615-626}.
+# class…) so the chips become visible + clickable before discovery.
 _DROPDOWN_OPEN_JS = """() => {
   let n = 0;
   const sel = '[aria-haspopup="listbox"],[aria-haspopup="menu"],[aria-haspopup="true"],[role="combobox"],'
@@ -28,7 +28,7 @@ _DROPDOWN_OPEN_JS = """() => {
 
 # Discover VISIBLE year chips (≤8 chars so an event title isn't mistaken for a year): Gregorian dedup by 4-digit,
 # era-year dedup by raw text; sort newest-first (era chips yr=0 trail). Returns RAW normalized chip text so the click
-# below matches it exactly. {POOL.PY:628-645}.
+# below matches it exactly.
 _YEARBAR_DISCOVER_JS = """() => {
   const nm = s => (s||'').replace(/[\\uFF10-\\uFF19]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).trim();
   const G = /^(fy[\\s'._-]?)?((19|20)\\d{2})\\s*(年|年度|년|년도)?$/i;               // Gregorian, opt CJK year suffix
@@ -48,7 +48,7 @@ _YEARBAR_DISCOVER_JS = """() => {
   return out.map(o => o.t);                                      // RAW normalized chip text → click matches it exactly
 }"""
 
-# Click the chip whose normalized text == the given year label. {POOL.PY:647-654}.
+# Click the chip whose normalized text == the given year label.
 _YEARBAR_CLICK_JS = """(chip) => {
   const nm = s => (s||'').replace(/[\\uFF10-\\uFF19]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).trim();
   for (const el of document.querySelectorAll('a,button,li,span,div,[role="tab"],[role="option"],[role="menuitem"],[role="button"]')) {
@@ -61,8 +61,7 @@ _YEARBAR_CLICK_JS = """(chip) => {
 
 async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
     """Discover year chips, then per year re-goto + open-dropdown + click chip + capture → merged (text, deduped links).
-    Self-skips ("", []) when <2 year chips exist (a lone '2026' copyright label is not a filter). Runs ON the loop.
-    {POOL.PY:657-700}."""
+    Self-skips ("", []) when <2 year chips exist (a lone '2026' copyright label is not a filter). Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -106,8 +105,7 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
 def drive_year_bar(url: str, max_years: int = 16, wait_ms: int = 5000) -> tuple[str, list]:
     """SYNC entry: drive a YEAR-BAR (clickable year tabs/buttons, not a <select>) → (merged_text, deduped_links).
     ('', []) when there is no year bar or the browser is unavailable — so callers invoke it UNCONDITIONALLY right
-    after drive_year_select and it self-skips pages whose year filter is a <select> (already driven) or absent.
-    {POOL.PY:703-715}."""
+    after drive_year_select and it self-skips pages whose year filter is a <select> (already driven) or absent."""
     if not runtime.ensure_browser():
         return "", []
     try:

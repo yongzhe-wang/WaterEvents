@@ -38,6 +38,28 @@ if ! /root/venv/bin/python -c "import vllm" 2>/dev/null; then
   fi
 fi
 
+# 3.5) Ensure the WaterEvents tools deps are present EVEN WHEN the venv survived the restart — step 3 only rebuilds when
+#      vllm is missing, but a venv WITH vllm and WITHOUT curl_cffi silently 0-links every Akamai/Q4 IR page (the exact
+#      state that made gcs-web/avnet/mcdonalds render fail with ERR_HTTP2 while impersonate.available()=False). Idempotent
+#      check-then-install: only pip-installs when curl_cffi is actually absent, reinstalling from /workspace/.pipcache in
+#      seconds. {DEBUG 2026-07-24: curl_cffi absent → impersonate lane dead → 15/28 URLs failing; installing it → 27/28 ok}
+#      [CONFIDENCE: CONFIRMED 100% — root cause was the missing dep, not any render-code bug].
+if ! /root/venv/bin/python -c "import curl_cffi" 2>/dev/null; then
+  echo "[onstart $(date -u +%FT%TZ)] curl_cffi missing — installing (render-critical impersonate lane)" >> /workspace/onstart.log
+  PIP_CACHE_DIR=/workspace/.pipcache /root/venv/bin/pip install curl_cffi >> /workspace/onstart.log 2>&1
+fi
+
+# 3b) SYSTEM libs for camoufox's Firefox (tier4 anti-Akamai). A pod rebuild/volume-reset ships WITHOUT libgtk-3.so.0 → the
+#     camoufox-bin (a Firefox fork) crashes at launch "Couldn't load XPCOM, exitCode=255" → tier4 SILENTLY dead → the 43
+#     Akamai/Incapsula-walled big-caps (tesla/homedepot/nestle) never recover (the 2668-run's whole failed tail). apt is
+#     idempotent — present libs skip in <1s. {AUDIT 2026-07-24 camoufox_libgtk_missing; rewall recovered 39/45 once
+#     installed} [CONFIDENCE: CONFIRMED — before: 45 walled; after: 39 recovered → ~99.8%].
+if ! ldconfig -p 2>/dev/null | grep -q "libgtk-3.so.0"; then
+  echo "[onstart $(date -u +%FT%TZ)] libgtk-3 missing — installing camoufox/Firefox libs (tier4 anti-Akamai lane)" >> /workspace/onstart.log
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libgtk-3-0 libasound2 libdbus-glib-1-2 libx11-xcb1 libxt6 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libpango-1.0-0 libcairo2 >> /workspace/onstart.log 2>&1
+fi
+
 # 4) Launch the supervised (flock-singleton, OOM-gated, auto-restarting) vLLM server.
 setsid nohup /workspace/supervise_vl.sh >> /workspace/supervisor.log 2>&1 < /dev/null &
 echo "[onstart $(date -u +%FT%TZ)] supervisor launched; venv OK; SSH+proxy via /start.sh" >> /workspace/onstart.log

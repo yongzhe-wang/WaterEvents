@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 
 # Resident-browser pool size: how many pages render CONCURRENTLY on the one browser. Peak mem ≈ MAX_PAGES×~60MB +
-# ~400MB browser, so 6 sits comfortably in a 4Gi worker. {POOL.PY:13 "6 并发 ≈ 760MB 舒服进 crawl worker 的 4Gi"}
+# ~400MB browser, so 6 sits comfortably in a 4Gi worker.
 # [CONFIDENCE: CONFIRMED — user's memory-budget note].
 # Raised 6→24 (default) to feed the 32-seq AWQ server — 6 starved it (server ran only 3-8 of 32 seqs, KV 9-18%, GPU
 # 39%). 24×~400MB ≈ 9.6GB browser RAM (fine on the RunPod pod; the old "6 in a 4Gi worker" budget was the GCP worker).
@@ -25,7 +25,7 @@ MAX_PAGES = int(os.environ.get("IR_WATERCRAWL_MAX_PAGES", "24"))
 # BROWSERS=8 with MAX_PAGES=48 → 6 tabs/browser. Default 1 = the existing single-browser behavior (no change unless set).
 # {USER 2026-07-23 "you have multiple cpu right"; DEBUG render=48/1-browser: 9 events-page render TimeoutErrors, NVDA
 # yield 94→8} [CONFIDENCE: CONFIRMED 100% — single-browser starvation measured on the A5000 pod].
-RENDER_BROWSERS = int(os.environ.get("IR_WATERCRAWL_BROWSERS", "4"))
+RENDER_BROWSERS = int(os.environ.get("IR_WATERCRAWL_BROWSERS", "3"))
 
 # CAP on CONCURRENT full-page SCREENSHOTS — the memory-critical resource. WHY separate from MAX_PAGES: a full_page shot
 # renders the whole scroll-height into an in-memory bitmap; N of them at once is what spikes RAM and OOM-SIGKILLs a
@@ -38,7 +38,7 @@ RENDER_BROWSERS = int(os.environ.get("IR_WATERCRAWL_BROWSERS", "4"))
 SHOT_CONCURRENCY = int(os.environ.get("WATERCRAWL_SHOT_CONCURRENCY", "4"))
 
 # Per-navigation goto timeout (ms). 22s covers a slow SSR + first-paint; the render coroutines add their own settle
-# on top. {POOL.PY:19 "_NAV_TIMEOUT_MS ... '22000'"} [CONFIDENCE: CONFIRMED].
+# on top. [CONFIDENCE: CONFIRMED].
 NAV_TIMEOUT_MS = int(os.environ.get("IR_WATERCRAWL_NAV_TIMEOUT_MS", "22000"))
 
 # settle() timing — the biggest per-page latency lever. WHY these values: a real IR list loads its event XHR within
@@ -72,19 +72,29 @@ SHOT_MAX_PX = int(os.environ.get("WATERCRAWL_SHOT_MAX_PX", "6000"))   # 8000→6
 # directly"; DEBUG 16×3: 42 TargetClosedError from OOM despite the shot clip} [CONFIDENCE: CONFIRMED — OOM was pre-shot].
 RENDER_ABORT_PX = int(os.environ.get("WATERCRAWL_RENDER_ABORT_PX", "20000"))
 
+# Skip the FULL-PAGE SCREENSHOT entirely — render text/links/html only, no shot. WHY: the full_page screenshot is the DOM→
+# pixel RASTERIZATION step, and on the software renderer (SwiftShader) that raster of a tall page is the ~16s that dominates
+# render time AND the RAM hog gated by SHOT_CONCURRENCY=4 (the shot-slot the SEM-QUEUE waits p50=13s for). When NO_SHOT is
+# on we (a) skip the screenshot capture AND (b) DO NOT hold _shot_sem, so render concurrency rises to MAX_PAGES (24) instead
+# of being throttled to 4 → this is the clean isolation test for "how much does the screenshot actually cost". Also the prod
+# lever IF the VL extraction proves it can work text/DOM-only (inline reading-order text already carries the anchor→url map).
+# {USER 2026-07-24 "i mean disable the screenshot ... don't even need to do that"} [CONFIDENCE: CONFIRMED — user directive;
+# render total p50=33.6s vs nav p50=17.6s ⇒ ~16s is settle+shot, screenshot is the removable half]. Default OFF (opt-in test).
+NO_SHOT = os.environ.get("WATERCRAWL_NO_SHOT", "1") in ("1", "true", "yes")   # DEFAULT ON (2026-07-24): NO_SHOT gave 0.47 vs 0.21 pages/s (2.2x). Set WATERCRAWL_NO_SHOT=0 to re-enable the screenshot (needed IF the recall A/B shows the VL model loses events without the layout image).
+
 # The UA every context sends — a real desktop Chrome string so a plain UA-sniff wall (the cheapest kind) passes.
-# {POOL.PY:20 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ... Chrome/120.0 Safari/537.36"} [CONFIDENCE: CONFIRMED].
+# [CONFIDENCE: CONFIRMED].
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
 # wait-retry ladder for JS/AJAX-late pages (detection._render_with_wait_retries): try WAIT_RETRIES times, each waiting
 # base_wait + attempt*WAIT_STEP_MS, stopping as soon as the page is no longer a thin nav shell. An SSR page passes
-# attempt 0 and never pays the extra waits. {POOL.PY:759-760, USER 2026-07-22 "retry ... each time the wait ms is
+# attempt 0 and never pays the extra waits. {USER 2026-07-22 "retry ... each time the wait ms is
 # longer"} [CONFIDENCE: CONFIRMED — Q4/Sitecore .aspx detail content is JS-loaded after the load event].
 WAIT_RETRIES = int(os.environ.get("WATERCRAWL_WAIT_RETRIES", "1"))
 WAIT_STEP_MS = int(os.environ.get("WATERCRAWL_WAIT_STEP_MS", "3000"))
 
 # Camoufox (FB4) launches a FULL Firefox per call; a burst of the hardest walled pages would OOM on N concurrent
-# Firefoxes. Bound concurrent launches. {POOL.PY:808-810 "camoufox launches a FULL Firefox per call ... Bound it"}
+# Firefoxes. Bound concurrent launches.
 # [CONFIDENCE: CONFIRMED — OOM guard].
 CAMOUFOX_CAP = int(os.environ.get("CAMOUFOX_CAP", "2"))

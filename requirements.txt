@@ -2,12 +2,14 @@
 # patchright=stealth browser render+screenshot (watercrawl.pool), openai=vLLM OpenAI-compat client (qwen_llm.client).
 playwright>=1.40          # DEFAULT headless render path (watercrawl.pool._launch line 94); needs `playwright install chromium`
 patchright>=1.40          # stealth fork for the residential/webshare fallback path only; `patchright install chromium`
+camoufox[geoip]>=0.4      # FB4 stealth Firefox tier (watercrawl.engines.camoufox) — beats Akamai/Incapsula sensor.js; needs `python -m camoufox fetch`. Was MISSING from requirements → the "render deps bug" (lazy-imported so watercrawl still imports, but the hardest-wall tier is silently dormant).
 openai>=1.40              # AsyncOpenAI → talks to the local vLLM Qwen-VL server (OpenAI-compatible API)
 asyncpg>=0.29             # discovery worker DB layer (event_agent.db) → Supabase Supavisor pooler; statement_cache_size=0
 curl_cffi>=0.7
 pypdf>=4.0
 pdfplumber>=0.11
 python-pptx>=1.0
+docling>=2.0           # media_agent tools/officeall: pdf/pptx/docx/xlsx → structured content (DocumentConverter). Was MISSING from requirements → the same "media deps bug" class as camoufox (officeall lazy-imports it, so import doesn't break, but the office handler silently fails). Heavy (pulls torch + layout models).
 faster-whisper>=1.0    # audio_extract; heavy — install when running audio tests
 
 pymupdf>=1.24    # pdf_extract VLM-OCR: render pages to images for the VLM

@@ -40,5 +40,16 @@ async def _c():
 asyncio.run(_c())
 PY
 
+# ── preflight 4: residential proxy armed? ── else tier-2 residential render is DORMANT → walled/tarpit hosts (the 7+
+# gcs-web.com / Q4 Inc. pages) are NEVER recovered. NOT fatal (non-walled hosts still crawl fine), but surface the gap
+# LOUD at launch instead of silently 0-eventing those companies one at a time. WHY :- guards: `set -u` (line 7) treats
+# an unset var as an error, and a sourced env file that omits WEBSHARE_* leaves them unset. {AUDIT 2026-07-24
+# residential_channel: tier2 gate is `if runtime._browser_proxy is not None`, None unless all three WEBSHARE_* set}.
+if [ -z "${WEBSHARE_USERNAME:-}" ] || [ -z "${WEBSHARE_PASSWORD:-}" ] || [ -z "${WEBSHARE_PROXIES:-}" ]; then
+  echo "[run] ⚠ WEBSHARE_* unset — residential tier DORMANT; walled/tarpit hosts (gcs-web/Q4) will NOT be recovered"
+else
+  echo "[run] ✓ residential tier armed (webshare rotating gateway)"
+fi
+
 echo "[run] all preflights passed → starting discovery worker"
 PYTHONPATH="$CODE" exec python3 -m agent.event_agent.worker

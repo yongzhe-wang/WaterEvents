@@ -3,7 +3,7 @@
 用一句话讲完: 自动找页面上的"加载更多"按钮(文案含 load/show/view more/older…)点它,没按钮就滚到底(无限滚动兜底),
 每轮重新数链接数,连续 2 轮不增长就判定走完(no-growth convergence = 完整性信号),或到 max_rounds。WHY 一个 session +
 重新计数: load-more/滚动是往同一个 DOM 追加行,所以保持页面重新测量 —— "不再增长"就是"抓全了",替代了脆弱的"<30 链接
-就算被墙"的猜测。对任意 hub 无脑调用安全:没 load-more 又不增长的页 ~2 轮收敛返回其渲染列表。{POOL.PY:486-548; USER
+就算被墙"的猜测。对任意 hub 无脑调用安全:没 load-more 又不增长的页 ~2 轮收敛返回其渲染列表。{USER
 2026-07-10 "also fix completeness"} [CONFIDENCE: INFERRED — 镜像 year_select 的 session 模式;收敛停止把不增长的页限在 ~2 轮].
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ from __future__ import annotations
 from .. import config, extract_js, page, runtime
 
 # Find a 'load more'/'older' control (button/link/role=button/pager class); click it. No control → scroll to bottom
-# (infinite-scroll fallback). {POOL.PY:486-495}.
+# (infinite-scroll fallback).
 _LOADMORE_JS = """() => {
   const RX = /(load|show|view|see)\\s*(more|older)|older\\s+(news|posts|results|releases|events|articles)|more\\s+(news|results|releases|events|articles)/i;
   const cands = document.querySelectorAll('button, a, [role="button"], [class*="more"], [class*="load"], [class*="pager"]');
@@ -26,8 +26,7 @@ _LOADMORE_JS = """() => {
 
 async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list]:
     """Click/scroll, wait, re-count links; stop when the count stops growing (2 stable rounds = complete) or max_rounds.
-    Returns ("", []) if the list never grew past ~5% of its initial size (no real load-more here). Runs ON the loop.
-    {POOL.PY:498-530}."""
+    Returns ("", []) if the list never grew past ~5% of its initial size (no real load-more here). Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -61,7 +60,7 @@ async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list]:
 def drive_load_more(url: str, max_rounds: int = 40, wait_ms: int = 1500) -> tuple[str, list]:
     """SYNC entry: AUTO-walk a load-more / infinite-scroll list to exhaustion → (accumulated_text, deduped_links).
     ("", []) on failure / no browser / no growth. Safe to call UNCONDITIONALLY on any hub — a page with no load-more
-    and no scroll-growth simply converges in ~2 rounds and self-skips. {POOL.PY:533-548}."""
+    and no scroll-growth simply converges in ~2 rounds and self-skips."""
     if not runtime.ensure_browser():
         return "", []
     try:

@@ -26,13 +26,21 @@ import uuid
 from providers import watercrawl
 from providers.qwen_llm import QwenClient
 
-from agent.event_agent import db                       # the SHARED WaterEvents DB layer (companies + events tables)
+from agent.event_agent import db                       # the SHARED WaterEvents DB layer (companies + events tables, claim/fail)
+from . import db_media                                 # media_agent's normalized-schema writer (content_blocks/transcript/url ledger)
 from .enrich import enrich_page                        # the stage-2 endpoint: (known_event + detail page) → enriched record
 
 _WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
 _EMPTY_BACKOFF_S = int(os.environ.get("WATEREVENTS_EMPTY_BACKOFF_S", "10"))
 _MAX_IDLE_ROUNDS = int(os.environ.get("WATEREVENTS_MAX_IDLE_ROUNDS", "6"))
-_USE_IMAGE = os.environ.get("EVENT_USE_IMAGE", "1") not in ("0", "false", "no")   # send the detail-page screenshot to the VL model
+# media wants VISION — the detail-page SCREENSHOT carries chart/table/transcript LAYOUT that text alone loses. But whether
+# render even PRODUCES a screenshot is decided by the SHARED WATERCRAWL_NO_SHOT switch (event_agent defaults it ON = no
+# shot). So couple use_image to that ONE switch: else use_image=True while render (NO_SHOT=1) hands back an EMPTY shot →
+# media SILENTLY degrades to text-only and never knows. To run media in vision mode, launch its worker with
+# WATERCRAWL_NO_SHOT=0 (render takes the shot → use_image=True). {port of event_agent's one-switch fix; media is vision-mode}
+# [CONFIDENCE: CONFIRMED — worker.py read EVENT_USE_IMAGE while render read WATERCRAWL_NO_SHOT → the disconnect this fixes].
+_NO_SHOT = os.environ.get("WATERCRAWL_NO_SHOT", "1") in ("1", "true", "yes")
+_USE_IMAGE = not _NO_SHOT                                                          # never claim vision when render gives no shot
 # a media ASSET (the thing itself), not the detail PAGE to render — we render the HTML detail page, not the pdf/audio.
 _ASSET_RE = re.compile(r"\.(pdf|mp3|wav|m4a|zip|xlsx?|docx?|pptx?)(\?|#|$)", re.I)
 
@@ -91,10 +99,12 @@ async def process_event(pool, client: QwenClient, ev) -> None:
             print(f"[enrich] ⛔ event {eid} VLM incomplete (hard-fail / truncated) {url[:60]} — fail, NOT enriched", flush=True)
             await db.fail_event(pool, eid, tok, "vlm_incomplete_or_truncated")
             return
-        # store basic_info + transcript as one JSON blob in the basic_info TEXT column; urls = enrich's merged known∪new
-        blob = json.dumps({"basic_info": enriched.get("basic_info"),
-                           "transcript_segments": enriched.get("transcript_segments")}, ensure_ascii=False)
-        ok = await db.mark_enriched(pool, eid, tok, blob, enriched.get("urls") or media)
+        # persist into the NORMALIZED media schema (event_content_blocks / event_transcript_segments / event_media_urls),
+        # fenced + transactional — replaces the old single-JSON-blob write to events.basic_info. {USER 2026-07-23 "建独立
+        # 规范化 media schema"} [CONFIDENCE: CONFIRMED 100% — the 5 tables live via migration 20260723145355].
+        ok = await db_media.mark_enriched_media(
+            pool, eid, tok, enriched.get("basic_info") or [], enriched.get("transcript_segments") or [],
+            enriched.get("urls") or media, source_url=url)
         n_blocks = len(enriched.get("basic_info") or [])
         print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} → {n_blocks} basic_info blocks, "
               f"{len(enriched.get('urls') or media)} urls", flush=True)

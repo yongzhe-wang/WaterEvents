@@ -56,9 +56,18 @@ async def process_company(pool, client: QwenClient, company) -> None:
     print(f"[worker] claimed company {cid} attempt={company['attempt']} → {url}", flush=True)
     hb = asyncio.create_task(_heartbeat(pool, cid))          # keep the lease alive during the (maybe ~20 min) crawl
     try:
+        # INCREMENTAL PERSIST — flush each page's events to the DB the MOMENT they're found, not once at the end. WHY: a
+        # company killed mid-crawl by the stall-watchdog never let crawl_company RETURN, so the old end-only flush never
+        # ran → every already-extracted event was lost (77% of companies showed 0 events + churned). The per-page callback
+        # persists as we go; flush_events is idempotent (ON CONFLICT merge) so the re-crawl of a killed company merges
+        # instead of duplicating. {USER 2026-07-23 "worker flush 只在最后一次性 ... 中途被杀 events 没落库 ... fix this"}.
+        async def _flush(evs, page=None):                    # per-page incremental flush callback (evs + the source page)
+            await db.flush_events(pool, cid, _RUN_ID, evs)
+            if page:                                         # persist the source page content → pages table (frontend "Source page")
+                await db.save_pages(pool, cid, _RUN_ID, [page])
         # reuse the shared QwenClient (keep-alive to RunPod); crawl_company reads EVENT_MAX_PAGES/EVENT_USE_IMAGE from env
-        result = await crawl_company(url, client=client)
-        n = await db.flush_events(pool, cid, _RUN_ID, result.get("events") or [])
+        result = await crawl_company(url, client=client, on_events=_flush)
+        n = await db.flush_events(pool, cid, _RUN_ID, result.get("events") or [])   # final idempotent flush (safety net)
         await db.mark_company(pool, cid, _WORKER_ID, result)
         # mirror crawl's fail-loud at the worker level so a degraded company is visible in the worker log too
         banner = "" if result.get("status") == "ok" else \
@@ -72,12 +81,23 @@ async def process_company(pool, client: QwenClient, company) -> None:
         hb.cancel()                                          # stop the heartbeat regardless of outcome
 
 
+# Optional cap on how many companies THIS worker processes before it exits — 0 = unbounded (drain the queue). WHY: a
+# controlled smoke test wants to validate the full claim→crawl→flush→mark path on a SMALL slice (e.g. 5 companies) of a
+# large queue WITHOUT draining all 1000; set WATEREVENTS_MAX_COMPANIES=5 for that. {USER 2026-07-23 "first test 5
+# companies"} [CONFIDENCE: CONFIRMED 100% — direct request to bound the smoke run before the full 1000 stress test].
+_MAX_COMPANIES = int(os.environ.get("WATEREVENTS_MAX_COMPANIES", "0"))
+
+
 async def worker_loop(pool) -> None:
-    """Claim-process-repeat until the queue is drained (N consecutive empty polls). One shared QwenClient for the whole
-    loop so the RunPod connection pool stays warm across companies."""
+    """Claim-process-repeat until the queue is drained (N consecutive empty polls) OR the optional _MAX_COMPANIES cap is
+    hit. One shared QwenClient for the whole loop so the RunPod connection pool stays warm across companies."""
     client = QwenClient()
     idle = 0
+    done = 0                                                  # companies this worker has fully processed (for the cap)
     while idle < _MAX_IDLE_ROUNDS:
+        if _MAX_COMPANIES and done >= _MAX_COMPANIES:         # hit the smoke-test cap → stop claiming, exit cleanly
+            print(f"[worker] {_WORKER_ID} reached MAX_COMPANIES={_MAX_COMPANIES} — exiting", flush=True)
+            return
         company = await db.claim_company(pool, _WORKER_ID, _RUN_ID)
         if company is None:                                  # queue empty (for now) → back off, count idle rounds
             idle += 1
@@ -86,6 +106,7 @@ async def worker_loop(pool) -> None:
             continue
         idle = 0                                             # got work → reset idle counter
         await process_company(pool, client, company)
+        done += 1                                            # count toward the optional cap
     print(f"[worker] {_WORKER_ID} exiting — queue drained after {_MAX_IDLE_ROUNDS} idle rounds", flush=True)
 
 

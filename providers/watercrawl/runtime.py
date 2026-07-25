@@ -8,7 +8,7 @@ WHY 一个模块独占状态: async_playwright 对象绑定创建它的 loop,cra
 god-module 的地基 —— 只有"状态单一持有者"才能让 render.py / drivers/*.py 安全地引用同一个 browser。
 {RESEARCH crawl4ai `browser_manager.py` 把浏览器生命周期独立成模块} [CONFIDENCE: CONFIRMED — Playwright loop-affinity 约束].
 
-Design invariants (迁移自原 pool.py 文件头,逐条保留):
+Design invariants:
   - ONE browser per worker process, launched lazily on first use, kept warm for the process lifetime.
   - ALL Playwright calls run on ONE dedicated event-loop thread (loop-affinity).
   - A Semaphore bounds CONCURRENT pages so peak memory stays inside the worker's limit.
@@ -87,14 +87,22 @@ async def _launch() -> None:
         except Exception as _pxerr:                       # noqa: BLE001 — residential lane is best-effort, never fatal
             print(f"[watercrawl] webshare stealth browser launch failed ({_pxerr}) — FALLBACK 3 dormant", flush=True)
             _browser_proxy = None
+    else:
+        # FAIL-LOUD at launch (not per-page) when NO residential proxy is configured → BOTH tier2 (residential) AND tier4
+        # (camoufox, which requires the proxy) are DORMANT. This is the silent gap that let the whole 2668-run's 43 bot-
+        # walled big-caps (tesla/homedepot/nestle Akamai) fail unrecovered without a trace. Surface it once, at browser
+        # launch, so "walled site 0-events" is traceable to a missing WEBSHARE_PROXY, not a mystery. {AUDIT 2026-07-24
+        # residential_dormant; rewall recovered 39/45 once WEBSHARE_PROXY set + libgtk installed} [CONFIDENCE: CONFIRMED].
+        print("[watercrawl] ⚠ NO webshare proxy configured — tier2 residential + tier4 camoufox DORMANT; "
+              "Akamai/Incapsula-walled hosts will NOT be recovered (set WEBSHARE_PROXY or WEBSHARE_USERNAME/PASSWORD/PROXIES)", flush=True)
     _sem = asyncio.Semaphore(config.MAX_PAGES)            # bound concurrent pages (created on THIS loop)
     _shot_sem = asyncio.Semaphore(config.SHOT_CONCURRENCY)   # bound concurrent FULL-PAGE SHOTS (RAM hog) so 4 browsers don't OOM the cgroup
 
 
 def ensure_browser() -> bool:
     """Lazily start loop + launch browsers, blocking the CALLER until ready. Returns True if the browser is usable,
-    False if launch failed (→ caller falls back to impersonate/jina). Thread-safe via _lock. (Was
-    pool._ensure_browser_blocking — same behavior, same _dead-latch so a broken env is never retried per call.)"""
+    False if launch failed (→ caller falls back to impersonate/jina). Thread-safe via _lock. The _dead-latch
+    means a broken env is never retried per call."""
     global _dead
     if _dead:
         return False

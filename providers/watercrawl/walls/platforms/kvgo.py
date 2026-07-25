@@ -18,14 +18,14 @@ NAME = "kvgo"
 
 
 def matches(url: str) -> bool:
-    # host-based dispatch — kvgo.com 或 knowledgevision 都路由到本 handler(逻辑与 sync 版一字不差)
+    # host-based dispatch — kvgo.com 或 knowledgevision 都路由到本 handler
     u = url or ""
     return "kvgo.com" in u or "knowledgevision" in u
 
 
 async def register(page, frames, reg, dbg, fill_in) -> bool:
     """Reach the KnowledgeVision player past its iframe registration form. Return True once we
-    submit the form (so _capture.py skips the generic fallback that races the late iframe).
+    submit the form (so the caller skips the generic fallback that races the late iframe).
 
     WHY: the kvgo.com event page is a thin shell; the real registration form lives in a
     view.knowledgevision.com IFRAME whose <iframe src> is only set ~3s in and whose form fields
@@ -42,7 +42,7 @@ async def register(page, frames, reg, dbg, fill_in) -> bool:
     import re  # match the KnowledgeVision view-frame host
 
     # The view frame may not exist yet when the handler runs (it navigates ~t=3-4s); poll for it.
-    # _capture already waited 3500ms before calling us, but we re-poll defensively up to ~22s.
+    # We re-poll defensively up to ~22s so a late-appearing iframe still gets caught.
     view = None
     for _ in range(22):                                            # ~22s budget for the SPA iframe to appear
         for f in page.frames:                                     # re-read frames each pass — the list grows late (property, 不 await)
@@ -123,7 +123,7 @@ async def register(page, frames, reg, dbg, fill_in) -> bool:
 
     # Give the player a moment to swap the registration view for the HLS player after submit.
     try:
-        await page.wait_for_timeout(2500)                     # post-submit grace; _capture then polls for m3u8 (async → await)
+        await page.wait_for_timeout(2500)                     # post-submit grace; the caller then polls for m3u8 (async → await)
     except Exception:
         pass
-    return True                                                # acted: reached/submitted → _capture skips generic
+    return True                                                # acted: reached/submitted → caller skips generic

@@ -7,13 +7,12 @@ SYSTEM + known 作 reference 注入 + 图 + 强制 SCHEMA)→ providers.qwen_llm
 把 model 的贡献 fill-and-append 成 enriched record(urls = known ∪ 页面新发现, basic_info 有序 block, 页面内联
 transcript 分流进 transcript_segments)。**model 只吐"新发现"不回吐已知(fill-and-append)。传输在 provider,不改。**
 
-NO CHUNKING (deleted 2026-07-23, mirror of event_agent/extract.py). The old chunk fallback went TEXT-ONLY and DROPPED
-the screenshot; without the layout image the VL model under-extracts AND bags nav links as junk (coca-cola 119 events
-WITH the shot → 32 without). Instead: send the FULL inline text + the screenshot in ONE call, sized to fit the server
-context (--max-model-len 32768 for the generous 24000 cap; the screenshot is ALWAYS sent so a text trim loses no
-layout). If output STILL truncates (finish_reason=='length', QwenClient透传为 __finish__) on an extreme mega-page →
-FAIL LOUD: mark output_truncated=True + REPORT, keep the partial, NEVER silently split-and-lose-the-shot. {USER
-2026-07-23 "remove the blocking logic and just scale the model output size if needed"}.
+CHUNKING lives in handlers.py (`_split_blocks` / `_chunked_html` — the OUTPUT-truncation fallback), NOT here: enrich_page
+sends the FULL inline text + the screenshot in ONE call, sized to fit the server context (--max-model-len 32768, generous
+24000 cap; the screenshot is ALWAYS sent so a text trim loses no layout). WHY enrich itself doesn't input-chunk: media is
+VISION-mode (the screenshot carries chart/table/transcript layout), so it is NOT subject to the ~15-row text-only collapse
+that made event_agent re-add input chunking. If output STILL truncates (finish_reason=='length', QwenClient 透传为
+__finish__) handlers.py splits + retries; an unrecoverable mega-page is marked output_truncated=True + REPORTED (fail loud).
 """
 from __future__ import annotations
 
@@ -26,9 +25,9 @@ from providers.qwen_llm import QwenClient          # generic parallel sender, no
 
 from . import prompts
 
-# Input char caps — NO chunking (the chunk fallback was DELETED; see enrich_page). A screenshot page uses a GENEROUS
-# text cap so a normal IR page is never trimmed, and the screenshot ALWAYS accompanies the text so any trim loses no
-# layout. {EXTRACT.PY same de-chunk fix} [CONFIDENCE: CONFIRMED 100% — chunking went text-only, dropped the shot, lost events].
+# Input char caps — enrich_page does NOT input-chunk (media is VISION-mode; the screenshot carries layout, so no text-only
+# collapse). A screenshot page uses a GENEROUS text cap so a normal IR page is never trimmed, and the screenshot ALWAYS
+# accompanies the text so any trim loses no layout. handlers.py holds the OUTPUT-truncation chunk fallback (`_chunked_html`).
 _MAX_INPUT_CHARS = int(os.environ.get("MEDIA_MAX_INPUT_CHARS", "48000"))
 _VISION_TEXT_CHARS = int(os.environ.get("MEDIA_VISION_TEXT_CHARS", "24000"))
 
@@ -106,14 +105,12 @@ async def _vlm(client: QwenClient, page_text: str, page_url: str, image_b64, kno
 async def enrich_page(known_event: dict, page: dict, client: QwenClient | None = None, use_image: bool = True) -> dict:
     """ONE (known event + its detail page) → enriched record. page = {page_url, page_text, image_b64?}.
 
-    NO CHUNKING (deleted 2026-07-23). The old chunk fallback went TEXT-ONLY and DROPPED the screenshot; without the
-    layout image the VL model under-extracts AND bags nav links as junk — mirror of event_agent.extract's fix (coca-cola
-    119 events WITH the shot → 32 without). Instead: send the FULL inline text + the screenshot in ONE call. page_text is
-    trimmed only for a pathological page — and because the SCREENSHOT is ALWAYS sent, a text trim loses nothing visual.
-    If output STILL truncates (finish=length) on an extreme mega-page → FAIL LOUD (mark output_truncated, report),
-    NEVER silently split-and-lose-the-shot. {USER 2026-07-23 "remove the blocking logic and just scale the model output
-    size if needed"} [CONFIDENCE: CONFIRMED 100% — extract.py req dumps proved the chunk path dropped the image + lost
-    events]. Needs the server at --max-model-len 32768 for the generous 24000 cap; on a 16384 server set
+    enrich_page does NOT input-chunk: media is VISION-mode (the screenshot carries chart/table/transcript layout), so it
+    is NOT subject to the text-only collapse that made event_agent re-add chunking. It sends the FULL inline text + the
+    screenshot in ONE call. page_text is trimmed only for a pathological page — and because the SCREENSHOT is ALWAYS sent,
+    a text trim loses nothing visual. If output STILL truncates (finish=length) on an extreme mega-page → handlers.py's
+    `_chunked_html` retries; an unrecoverable one is marked output_truncated + REPORTED (fail loud, never silent partial).
+    Needs the server at --max-model-len 32768 for the generous 24000 cap; on a 16384 server set
     MEDIA_VISION_TEXT_CHARS=8000 (the screenshot still carries the layout). For many pages use enrich_pages (parallel)."""
     c = client or QwenClient()
     page_url = page.get("page_url", "")

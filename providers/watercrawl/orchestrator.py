@@ -5,8 +5,7 @@
 HTTP1 重试)→ curl_cffi impersonate → webshare 住宅渲染 → camoufox FB4。WHY 两个独立函数而非一个 flag: firecrawl 的
 "升级决策"是显式判定函数;这里 render_full 的每级用"链接数变多"判成功、render_detail 用"not render_thin(真正 prose)"判
 成功 —— 判据不同就是两个函数、code-level 隔离,不是一个参数化入口。{USER 2026-07-22 "i want code level isolation not
-just a trigger"; RESEARCH firecrawl scrapeURLLoop + engineOptions score} [CONFIDENCE: CONFIRMED — verbatim 迁移自
-pool.py:855-956,唯一改动 = PDF 从 src.agents 硬编码换成自包含 engines.pdf].
+just a trigger"; RESEARCH firecrawl scrapeURLLoop + engineOptions score} [CONFIDENCE: CONFIRMED].
 """
 from __future__ import annotations
 
@@ -19,7 +18,7 @@ def _render_with_wait_retries(url: str, base_wait: int) -> tuple[str, list, str,
     time to appear — STOP as soon as the page is no longer a thin nav shell. Also runs the ERR_HTTP2 → HTTP/1.1 retry
     and marks a DEAD host. Returns (text, links, html, dead). WHY the ladder: a Q4/Sitecore .aspx DETAIL page loads its
     filing/release content AFTER the load event, so a single wait=0 capture returns only the nav menu. An SSR page (content
-    on first paint) passes attempt 0 and never pays the extra waits. {POOL.PY:774-805; USER 2026-07-22 "retry ... each
+    on first paint) passes attempt 0 and never pays the extra waits. {USER 2026-07-22 "retry ... each
     time the wait ms is longer"} [CONFIDENCE: CONFIRMED — the content is JS-loaded]."""
     text, links, html, dead = "", [], "", False
     for attempt in range(max(config.WAIT_RETRIES, 1)):
@@ -54,7 +53,7 @@ def render_full(url: str, wait_ms: int = 0) -> tuple[str, list, str]:
     its LINKS). Fallback chain: PDF → headless render (wait-retries) → curl_cffi impersonate (FALLBACK 1) → webshare
     residential render (FALLBACK 3) → camoufox (FALLBACK 4). Each fallback's success test is LINK COUNT (more links =
     a better discovery result) — that is what distinguishes render_full from render_detail (whose fallbacks test
-    CONTENT PRESENCE). ("", [], "") only when the whole chain yields nothing. {POOL.PY:855-909}
+    CONTENT PRESENCE). ("", [], "") only when the whole chain yields nothing.
 
     SITEMAP REMOVED (2026-07-22): the old FALLBACK 2 harvested sitemap.xml — deleted as context-less junk (65% of
     events landed empty-anchor). A walled LISTING now simply yields fewer links. {USER 2026-07-22 "remove the sitemap
@@ -102,7 +101,7 @@ def render_detail(url: str, wait_ms: int = 0) -> tuple[str, list, str]:
     CODE-LEVEL ISOLATION from render_full (a separate function, not a bool flag): render_full succeeds on LINK COUNT
     (discovery); render_detail succeeds on CONTENT PRESENCE (`not detection.render_thin(...)` — real prose = better
     page). Fallback chain: PDF → render (JS wait-retries) → impersonate → webshare residential → camoufox. Neither
-    function does sitemap-harvest (removed 2026-07-22). {POOL.PY:912-956; USER 2026-07-22 "i want code level isolation
+    function does sitemap-harvest (removed 2026-07-22). {USER 2026-07-22 "i want code level isolation
     not just a trigger"} [CONFIDENCE: CONFIRMED]."""
     if pdf.is_pdf_url(url):                               # PDF url → pypdf text directly
         pdf_text = pdf.fetch(url)

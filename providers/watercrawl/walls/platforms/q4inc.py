@@ -175,7 +175,6 @@ async def register(pg, frames, reg, dbg, fill_in) -> bool:
         # registration (and, for outcome A, the player loaded). Returning False would let the generic
         # flow greedily click 'Register' and walk back into the Q4-account login dead-end — strictly
         # worse. dbg['media'] / dbg['note'] / dbg['wall'] above tell the caller exactly what happened.
-        # {_capture.py: True → skip generic; generic would re-hit the Q4 login wall}
         return True                                              # guest path completed; player loaded or gated
     except Exception as e:
         # Never raise into _capture.py's dispatch (it only catches at the handler boundary loosely).

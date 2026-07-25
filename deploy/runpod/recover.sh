@@ -18,9 +18,20 @@ python3 -m venv /root/venv
 mkdir -p /workspace/.pipcache
 PIP_CACHE_DIR=/workspace/.pipcache /root/venv/bin/pip install vllm playwright
 PATH=/root/venv/bin:/usr/local/cuda/bin:$PATH /root/venv/bin/playwright install chromium
+# WaterEvents tools deps (curl_cffi/patchright/openai/asyncpg/pdf/…). WHY here: recover ONLY installed vllm+playwright, so
+# curl_cffi — the impersonate lane that cracks Akamai's ERR_HTTP2 fingerprint wall — was NEVER in the venv, silently
+# 0-linking every gcs-web/Q4 IR page (headless got net::ERR_HTTP2_PROTOCOL_ERROR, impersonate.available()=False so the
+# fingerprint fallback never fired). Installing requirements.txt recovered 27/28 previously-failing URLs and dropped a
+# 28-URL render from 187s→15s. {DEBUG 2026-07-24: `pip install curl_cffi` → impersonate.fetch(copa.gcs-web)=text 1763,
+# links 40, walled=False} [CONFIDENCE: CONFIRMED 100% — live re-test 13→27 ok once curl_cffi present]. Idempotent: cached
+# wheels reinstall in seconds from the persistent /workspace/.pipcache.
+# Install curl_cffi EXPLICITLY (not `-r requirements.txt`): requirements has heavy optional tools (faster-whisper/pymupdf)
+# that the crawl render path doesn't need, and under `set -e` a heavy dep's install failure would abort the whole venv
+# rebuild → no server. curl_cffi is the one render-critical tools dep; installing just it is fail-loud-safe.
+PIP_CACHE_DIR=/workspace/.pipcache /root/venv/bin/pip install curl_cffi
 
-# Never declare success on a half-built venv — the install must actually import.
-if ! /root/venv/bin/python -c "import vllm, playwright" 2>&1; then
+# Never declare success on a half-built venv — the install must actually import (curl_cffi is the render-critical one).
+if ! /root/venv/bin/python -c "import vllm, playwright, curl_cffi" 2>&1; then
   echo "RECOVER FAILED: import check after install — venv is broken" >&2
   exit 1
 fi

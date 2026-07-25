@@ -30,7 +30,13 @@ from .urls import _canon                                    # shared canonical d
 
 _USE_IMAGE = os.environ.get("EVENT_USE_IMAGE", "1") not in ("0", "false", "no")   # screenshot → needs a Qwen-VL model
 _MAX_PAGES = int(os.environ.get("EVENT_MAX_PAGES", "60"))     # BFS page cap per company (a real IR tree is ~10-60 pages)
-_BATCH = int(os.environ.get("EVENT_BATCH", "16"))            # pages rendered + sent to the LLM per round (parallel)
+_BATCH = int(os.environ.get("EVENT_BATCH", "5"))            # pages rendered + sent to the LLM per round (parallel)
+# Drop routes the model scored below this. The model scores a genuine IR event-section HIGH (0.8-1.0) and chrome
+# (about / business-unit / account / legal / alerts) LOW — so a cheap threshold cleans up the bulk-routed nav junk
+# that the exact-segment denylist misses (about_board, business_bank, ir_alert …). Root fix for "model dumps every nav
+# link at 0.6 on a no-event page". {USER 2026-07-24 "smarter way ... chrome 低分"} [CONFIDENCE: CONFIRMED — 290.com.hk
+# contact page bulk-routed 20 nav links; segment denylist leaked ~10 of them]. 0.35 keeps MID governance/hub routes.
+_ROUTE_MIN_SCORE = float(os.environ.get("EVENT_ROUTE_MIN_SCORE", "0.35"))
 _TRACE_ROOT = os.environ.get("EVENT_TRACE_DIR", os.path.join(os.path.dirname(__file__), "traces"))
 
 
@@ -105,6 +111,26 @@ def _is_noise_route(url: str) -> bool:
     return any(s in _NOISE_SEGMENTS for s in segs)           # any segment on the denylist → it's noise, skip it
 
 
+# Deterministic EVENTS-PAGE BOOST. WHY: the dated events almost always live on the events/presentations/webcasts hub, but
+# the VLM's route SCORE sometimes ranks a sec-filings/financials route ABOVE the events route — so under the per-company
+# budget the crawl renders filings pages and hits the cap BEFORE it ever reaches the events page. Investigation of the
+# 2668-run's zero-event companies found WRONG_SEED_PAGE (rendered SEC Form-4 lists, the events-calendar sitting in the
+# footer never crawled) was the #2 root cause after bot-walls: nationalfuelgas/lla/gamestop all had a clearly-named
+# events route one hop from the seed that was out-ranked. Bumping any events-pattern route to a high score forces the
+# frontier to crawl it FIRST. {INVESTIGATION 2026-07-24 zero-event root-cause: WRONG_SEED_PAGE} [CONFIDENCE: CONFIRMED —
+# 3 investigated companies rendered filings not events; the events URL was present in the page nav].
+_EVENTS_BOOST_RE = re.compile(
+    r'/(events?|events-and-presentations|events-calendar|ir-calendar|calendar|webcasts?|presentations?|'
+    r'news-and-events|upcoming-events?|investor-events?)(/|\?|#|$|-|\.)', re.I)
+
+
+def _events_boost(url: str, score: float) -> float:
+    """Raise a route's frontier score to ≥0.95 when its URL clearly points at the events/presentations hub, so the
+    frontier crawls it BEFORE sec-filings/financials under the per-company budget. Applied before the min-score gate so
+    an events route the VLM under-scored still survives + jumps the queue. Non-events routes keep their VLM score."""
+    return max(score, 0.95) if _EVENTS_BOOST_RE.search(urlsplit(url if url.startswith("http") else "https://" + url).path) else score
+
+
 # Binary / document / media file extensions. WHY a SEPARATE guard from _NONEVENT_URL_RE (extract.py): a url ending in
 # one of these (a PDF earnings release, a PPTX deck, an MP3/MP4, a ZIP) is an event LEAF — a MATERIAL of an event, so it
 # MUST stay in that event's urls[]. But it is NEVER a page to render + crawl: navigating a headless browser to a binary
@@ -117,13 +143,22 @@ def _is_noise_route(url: str) -> bool:
 _BINARY_ROUTE_RE = re.compile(
     r'\.(pdf|pptx?|docx?|xlsx?|csv|zip|rar|7z|gz|tgz|mp3|wav|m4a|aac|mp4|mov|avi|mkv|webm|ics|vcs|epub)(\?|#|$)', re.I)
 
+# EXTENSION-LESS document-server paths. WHY a SECOND regex: the ext regex above misses Q4/Sitecore document urls that
+# serve a FILE at a UUID with NO extension — the server sets content-type=application/pdf, so the browser STILL downloads
+# a huge doc. energytransfer.com/static-files/<uuid> rendered to 6,343,771 chars of extracted binary → the chunker split
+# ONE such doc into 3172 blocks = ~3172 VLM calls, and a single company had 4 of them (~12k calls). These are document
+# LEAVES, never IR pages — gate them from the FRONTIER (they stay valid event-material urls). {SMOKE 2026-07-24
+# energytransfer /static-files/<uuid> 6.3M chars → 3172 blocks} [CONFIDENCE: CONFIRMED 100% — a served doc, not a page].
+_DOC_PATH_RE = re.compile(r'/(static-files|content/dam|files/doc_financials|files/doc_downloads)/', re.I)
+
 
 def _is_binary_route(url: str) -> bool:
-    """True if this go-deeper url points at a downloadable document/media FILE (pdf/pptx/xlsx/zip/mp3/mp4/…). Such a url
-    is an event LEAF — never RENDER it (the browser would buffer the download → the OOM that SIGKILLed the run). It stays
+    """True if this go-deeper url points at a downloadable document/media FILE — either by extension (pdf/pptx/xlsx/zip/
+    mp3/mp4/…) OR by an extension-less document-server PATH (Q4 /static-files/<uuid>, /content/dam/). Such a url is an event
+    LEAF — never RENDER it (the browser buffers the download → OOM / a 6.3M-char doc → thousands of chunk blocks). It stays
     a valid EVENT material url via _clean_urls; this only excludes it from the crawl FRONTIER, never from an event."""
     path = urlsplit(url if url.startswith("http") else "https://" + url).path   # query/fragment stripped for the ext test
-    return bool(_BINARY_ROUTE_RE.search(path))
+    return bool(_BINARY_ROUTE_RE.search(path) or _DOC_PATH_RE.search(path))      # ext file OR extension-less doc path
 
 
 # How many times to (re)try a render before giving up on a url. WHY retry: under the concurrent multi-browser load a
@@ -133,6 +168,23 @@ def _is_binary_route(url: str) -> bool:
 # turning a transient timeout into a real page instead of a permanent coverage hole. {USER 2026-07-23 "we also want to
 # retry"; DEBUG GOOGL deep pages TimeoutError under load, render fine standalone} [CONFIDENCE: CONFIRMED 100%].
 _RENDER_TRIES = int(os.environ.get("EVENT_RENDER_TRIES", "3"))
+
+# BACKSTOP char cap on a rendered page before it goes to the VLM/chunker. WHY high (2M): a real IR page is < ~100k chars,
+# and even the biggest LEGIT archive we crawl (fbpinvestor SEC-filings, 9687 links) is ~1.4M — which the user confirmed is
+# worth chunking. But an extension-less DOCUMENT that slips the _DOC_PATH_RE frontier gate (a 6.3M-char PDF served as text)
+# is NEVER a page — chunking it = thousands of VLM calls for one doc. So a page ABOVE this ceiling is skipped (traced, 0
+# events, fail-loud) instead of chunked into oblivion. Set below the 6.3M doc, above the 1.4M legit archive. {SMOKE 2026-07-24
+# energytransfer 6.3M doc → 3172 blocks; fbpinvestor 1.4M archive = legit} [CONFIDENCE: CONFIRMED — doc vs page threshold].
+_MAX_PAGE_CHARS = int(os.environ.get("EVENT_MAX_PAGE_CHARS", "2000000"))
+
+# Per-company wall-clock SAFETY CAP (seconds). NOT a quality/depth compromise: it does NOT lower max_pages, tokens, or
+# input — it only stops a company that has run pathologically long (a browser-event-loop-deadlocked seed that render_shot
+# can't recover, or a frontier that exploded to hundreds of low-value routes). Such a company is either hung (0 progress)
+# or already past its real events (a large cap's disclosures are all found in the first rounds; rounds 20+ are marketing
+# tail). Hitting the cap returns what was collected so the WORKER is freed for the next company instead of wedging the
+# whole fleet on one pathological site. {USER 2026-07-23 12h-1000-run "build infra for parallelization ... this can work";
+# DEBUG abc.xyz seed deadlocked a worker for 8min+} [CONFIDENCE: CONFIRMED — the deadlock is real; the cap bounds fleet waste].
+_COMPANY_BUDGET_S = float(os.environ.get("EVENT_COMPANY_BUDGET_S", "600"))
 
 
 async def _render_one(url: str) -> dict | None:
@@ -145,6 +197,14 @@ async def _render_one(url: str) -> dict | None:
         if r.get("text") or r.get("links"):                  # got real content → done (no wasted extra attempts)
             r["url"] = url
             return r
+        # dim2: method=="walled" means a TRUE challenge body beat ALL 4 tiers (render→residential→impersonate→camoufox)
+        # INSIDE this single render_shot — an outer retry re-runs the exact same known-failed chain with zero new tactics,
+        # so exit now. STRICTLY method=="walled" only: a nav-timeout returns method=="" (indistinguishable from edrsilver's
+        # first two attempts, which revive on the 3rd), so method=="" KEEPS the full _RENDER_TRIES loop. NEVER widen to
+        # method=="" — that kills edrsilver on attempt 1. {AUDIT 2026-07-24 deadsite_retry; RENDER.PY:296 returns
+        # method="walled" only after every tier failed} [CONFIDENCE: CONFIRMED — walled is terminal within one attempt].
+        if r.get("method") == "walled":
+            return None
         if attempt < _RENDER_TRIES - 1:                      # empty (timeout/walled/thin) → back off, then retry
             await asyncio.sleep(2.0 * (attempt + 1))         # 2s, 4s — let the browser pool drain before re-firing
     return None                                              # every attempt empty → real skip (counted fail-loud upstream)
@@ -165,9 +225,17 @@ def _to_page(render: dict) -> dict:
 
 
 async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int = _BATCH,
-                        client: QwenClient | None = None, trace_dir: str | None = None) -> dict:
+                        client: QwenClient | None = None, trace_dir: str | None = None,
+                        on_events=None) -> dict:
     """company URL → {"events":[...], "pages": N, "trace_dir": ...}. BFS close-loop, every page fully traced to disk.
-    Events dedup by their first url; the frontier dedups by canonical url + stays on-site (routes only go_deeper)."""
+    Events dedup by their first url; the frontier dedups by canonical url + stays on-site (routes only go_deeper).
+
+    on_events: optional async callback (list[event]) -> awaitable, invoked with the NEW events found on EACH page as they
+    are discovered — for INCREMENTAL persistence. WHY it matters: without it the worker only flushed after crawl_company
+    RETURNED, so a company killed mid-crawl (a slow VLM page tripping the stall-watchdog) lost EVERY event it had already
+    extracted (they were in the trace but never hit the DB) → 77% of companies showed 0 events + churned on re-crawl.
+    Flushing per-page means a mid-crawl kill loses at most the one in-flight page; the idempotent ON CONFLICT flush makes
+    the re-crawl merge, not duplicate. {USER 2026-07-23 "worker flush 只在最后一次性 ... 中途被杀 events 没落库 ... fix this"}."""
     client = client or QwenClient()
     run_dir = trace_dir or os.path.join(_TRACE_ROOT, f"{_slug_host(start_url)}_{time.strftime('%Y%m%d_%H%M%S')}")
     tracer = Tracer(run_dir)
@@ -181,6 +249,10 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     # [CONFIDENCE: CONFIRMED 100% — direct user instruction to rank the frontier by a per-route score].
     frontier: list[tuple[str, float]] = [(start_url, 1.0)]
     visited: set[str] = set()
+    # ANTI-REVISIT guard = every canonical url EVER queued OR visited. Gating frontier-adds on `visited` ALONE let the
+    # SAME url (discovered on two different pages) get appended twice → rendered twice. `enqueued` makes a url enter the
+    # frontier AT MOST ONCE, ever. {USER 2026-07-24 "make sure we dont revisit pages"} [CONFIDENCE: CONFIRMED 100%].
+    enqueued: set[str] = {_canon(start_url)}
     events: list[dict] = []
     seen_event: set[str] = set()
     # FAIL-LOUD counters — a page can silently drop out two ways: render came back empty (walled/dead) or the LLM call
@@ -189,83 +261,120 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     # {USER 2026-07-23 "fail loudly is the core ... we dont want quality issue"} [CONFIDENCE: CONFIRMED 100% — directive].
     failed_render = 0
     failed_extract = 0
+    _t0 = time.time()                                         # per-company wall-clock start (for the safety cap below)
 
-    while frontier and len(visited) < max_pages:
-        frontier.sort(key=lambda t: -t[1])                    # PRIORITY: highest-confidence routes first each round
-        round_urls: list[str] = []
-        # visited already includes the urls added THIS round (added below), so the cap is len(visited) < max_pages —
-        # NOT len(visited)+len(round_urls) which double-counts the round and trips the cap early. {AUDIT bug #4}.
-        while frontier and len(round_urls) < batch and len(visited) < max_pages:
-            u, _score = frontier.pop(0)                        # take the top-scored url (frontier is (url, score))
+    # CONTINUOUS STREAMING (no round barrier). Keep `batch` page-tasks ALWAYS in flight per worker; the moment one
+    # finishes, harvest it and immediately start the next frontier url. WHY not the old round model (render a batch of
+    # `batch` → asyncio.gather WAITS for ALL of them render+VLM → next batch): ONE slow page (a heavy render or a slow
+    # full-quality VLM call) stalled the whole batch and left the browser's render slots IDLE, starving the single GPU
+    # (observed at 19% util). Streaming keeps the render pipeline FULL so it OVER-PRODUCES pages faster than the GPU
+    # consumes them → with N CPU-isolated workers each holding `batch` in flight, total in-flight = N×batch ≫ the GPU's
+    # ~8-12 concurrent full-quality VLM ceiling, so the GPU is the bottleneck (~100%), never the render. {USER 2026-07-23
+    # "we have to actually be faster than the gpu to fully utilization ... 20 workers each 5 page parallel, browser-level
+    # isolation"} [CONFIDENCE: CONFIRMED — the round-barrier gather was the GPU-starve].
+    async def _render_then_extract(url: str):
+        # render_shot self-times-out (run_on_loop total timeout = nav-timeout + settle + margin) and returns empty on
+        # overrun — NO asyncio.wait_for budget here (an earlier one deadlocked: cancelling the to_thread coroutine can't
+        # stop the underlying thread, which stayed blocked in render_shot; leaked threads drained the pool → frozen run).
+        r = await _render_one(url)                             # browser render (self-times-out; retries inside)
+        if r is None:                                          # walled/dead/empty → nothing to extract
+            return url, None, None
+        print(f"[crawl] · rendered {url[:60]} → VLM", flush=True)      # heartbeat: log advances so the stall-watchdog sees liveness
+        _pg = _to_page(r)                                      # build the extract page dict once (need its size before the VLM)
+        _n = len(_pg.get("page_text") or "")                  # rendered text length — a doc-sized page must NOT reach the chunker
+        if _n > _MAX_PAGE_CHARS:                              # runaway document that slipped the frontier gate → skip, fail-loud
+            print(f"[crawl] ⏭️ SKIP {url[:70]} — {_n} chars > {_MAX_PAGE_CHARS} cap (a served DOC, not an IR page) → 0 events", flush=True)
+            return url, r, {"events": [], "routes": []}        # traced by _harvest, but never chunked into thousands of VLM calls
+        res = (await extract_pages([_pg], client=client, use_image=_USE_IMAGE))[0]   # VLM fires as the render lands
+        print(f"[crawl] ✓ extracted {url[:55]} ({len(res.get('events') or [])} ev, {len(res.get('routes') or [])} rt)", flush=True)
+        return url, r, res
+
+    def _harvest(url, render, res) -> list:
+        """Fold ONE finished page's events + routes into the shared state. RETURNS the NEW events found on this page so
+        the caller can flush them to the DB incrementally (a mid-crawl kill then loses at most this one page)."""
+        # nonlocal MUST include seen_event: `seen_event |= ekeys` is an augmented assignment that REBINDS the name, so
+        # without this Python treats seen_event as a _harvest-local and every page raised UnboundLocalError → the crawl
+        # crashed → the company was marked failed with 0 events (even when the VLM had extracted plenty). {DEBUG 2026-07-23}.
+        nonlocal failed_render, failed_extract, seen_event
+        if render is None:                                     # render failed (walled/dead/empty) — coverage loss
+            failed_render += 1
+            return []
+        tracer.save_page(render["url"], render, res)           # full audit trail: content/shot/html/links/result/method
+        if res.get("_error"):                                  # LLM hard-failed → NOT '0 events', it FAILED (fail-loud)
+            failed_extract += 1
+            print(f"[crawl] ⛔ EXTRACT FAILED {render['url'][:70]} — {res['_error']} — page's events LOST", flush=True)
+            return []
+        new_ev: list = []
+        for e in res["events"]:                                # dedup by ANY overlapping url (same event can surface twice)
+            ekeys = {_canon(u) for u in e["urls"]}
+            if ekeys & seen_event:
+                continue
+            seen_event |= ekeys
+            e["source_url"] = render["url"]                    # the PAGE this event was extracted from → events.source_url → frontend "Source page"
+            events.append(e)
+            new_ev.append(e)
+        for rt in res["routes"]:                               # each route = {url, score}; gate then enqueue to frontier
+            u, sc = rt["url"], rt.get("score", 0.5)
+            ck = _canon(u)
+            if not _same_site(u, start_url) or ck in enqueued:  # off-site OR already seen (queued/visited) → no revisit
+                continue
+            sc = _events_boost(u, sc)                          # events/presentations hub → force ≥0.95 so it crawls FIRST (before the gate, so a VLM-under-scored events route survives)
+            if sc < _ROUTE_MIN_SCORE:                          # low-confidence chrome the model bulk-routed → drop it
+                print(f"[crawl] 🚧 route BLOCKED (low score {sc:.2f}) {u[:80]}", flush=True)
+                continue
+            if _is_noise_route(u):                             # legal/careers/account hub → never an event page
+                print(f"[crawl] 🚧 route BLOCKED (noise) {u[:90]}", flush=True)
+                continue
+            if _is_binary_route(u):                            # PDF/deck/audio FILE = event leaf, not a page to render
+                print(f"[crawl] 🚧 route BLOCKED (binary file, not a page) {u[:90]}", flush=True)
+                continue
+            enqueued.add(ck)                                   # mark seen → this url can never be queued again
+            frontier.append((u, sc))                           # (url, confidence) → picked highest-first on refill
+        return new_ev                                          # this page's NEW events → caller flushes them incrementally
+
+    in_flight: dict = {}                                       # asyncio.Task → url; kept FULL at `batch` per worker
+
+    def _refill() -> None:
+        # top up to `batch` in-flight page-tasks from the highest-confidence frontier urls (respecting max_pages)
+        while frontier and len(in_flight) < batch and len(visited) < max_pages:
+            frontier.sort(key=lambda t: -t[1])                 # PRIORITY: highest-confidence route first
+            u, _score = frontier.pop(0)
             ck = _canon(u)
             if ck in visited:
                 continue
             visited.add(ck)
-            round_urls.append(u)
-        if not round_urls:
+            in_flight[asyncio.ensure_future(_render_then_extract(u))] = u
+
+    _refill()
+    while in_flight:
+        if time.time() - _t0 > _COMPANY_BUDGET_S:              # pathological/hung company → stop, free the worker
+            print(f"[crawl] ⏱ COMPANY-BUDGET {_COMPANY_BUDGET_S:.0f}s hit for {start_url[:60]} — stopping at "
+                  f"{len(visited)} pages / {len(events)} events. Freeing worker.", flush=True)
+            for t in in_flight:
+                t.cancel()
             break
-
-        # PIPELINE each page: render → the MOMENT it has content, fire its VLM extract — all pages of the round run
-        # concurrently. WHY not two-phase (gather ALL renders, THEN extract ALL): that serialises the whole ~11.5s
-        # render batch BEFORE the VLM batch even starts, so a round = render_time + vlm_time. Pipelining OVERLAPS them
-        # (page A's VLM decodes on the server's continuous batch while page B is still rendering) → round ≈
-        # max(render_time, vlm_time). {USER 2026-07-23 "BFS 一轮把 N 页的 render + VLM 全并发发 → server continuous
-        # batching → ~1 页/秒"} [CONFIDENCE: CONFIRMED 100% — direct user instruction to overlap the two stages].
-        async def _render_then_extract(url: str):
-            r = await _render_one(url)                         # browser render (resident-pool bounded)
-            if r is None:                                     # walled/dead/empty → nothing to extract
-                return url, None, None
-            res = (await extract_pages([_to_page(r)], client=client, use_image=_USE_IMAGE))[0]  # VLM fires as soon as render lands
-            return url, r, res
-        pipelined = await asyncio.gather(*(_render_then_extract(u) for u in round_urls))
-
-        new_events = new_routes = n_render_fail = n_route_blocked = 0
-        for url, render, res in pipelined:
-            if render is None:                                # render failed (walled/dead) — coverage loss, counted below
-                n_render_fail += 1
-                continue
-            tracer.save_page(render["url"], render, res)      # <-- full audit trail: content/shot/html/links/result/method
-            if res.get("_error"):                             # LLM hard-failed on this page → NOT '0 events', it FAILED
-                failed_extract += 1
-                print(f"[crawl] ⛔ EXTRACT FAILED {render['url'][:70]} — {res['_error']} — this page's events are LOST "
-                      f"(distinct from a genuine 0-event page)", flush=True)
-                continue                                      # don't harvest events/routes from a failed page
-            for e in res["events"]:
-                # dedup by ANY overlapping url, not just urls[0] — the same event can surface on two pages with a
-                # different primary url (one lists the detail first, another the pdf first), so first-url-only would
-                # store it twice. If any of this event's urls was already seen, it's a duplicate. {AUDIT bug #3}.
-                ekeys = {_canon(u) for u in e["urls"]}
-                if ekeys & seen_event:
-                    continue
-                seen_event |= ekeys
-                events.append(e)
-                new_events += 1
-            # routes is a FLAT list of go-deeper url strings — every url is a follow target. Gate order: (1) same-site
-            # scope guard + dedup against visited, THEN (2) noise-route denylist (legal/careers/account/SEC-filing hub)
-            # so we don't render+extract a page that cannot hold an event. Blocked routes are COUNTED + printed (not a
-            # silent coverage cap) per the fail-loud directive. {USER 2026-07-23 "挡掉 legal/hub/filing-list"; "fail
-            # loudly is the core"} [CONFIDENCE: CONFIRMED 100% — direct user instruction + fail-loud principle].
-            for rt in res["routes"]:                          # routes are now {url, score}
-                u, sc = rt["url"], rt.get("score", 0.5)
-                if not (_same_site(u, start_url) and _canon(u) not in visited):
-                    continue                                  # off-site or already-visited → normal skip (not "blocked")
-                if _is_noise_route(u):                         # legal/careers/account/SEC-filing hub → never an event page
-                    n_route_blocked += 1                       # fail-loud: count it, report below — never silently dropped
-                    print(f"[crawl] 🚧 route BLOCKED (noise) {u[:90]}", flush=True)
-                    continue
-                if _is_binary_route(u):                        # PDF/deck/audio/video FILE = event leaf, NOT a page to render
-                    n_route_blocked += 1                       # (rendering it buffers the download → the OOM that killed the run)
-                    print(f"[crawl] 🚧 route BLOCKED (binary file, not a page) {u[:90]}", flush=True)
-                    continue
-                frontier.append((u, sc))                       # (url, confidence) → sorted highest-first next round
-                new_routes += 1
-        if n_render_fail:                                     # coverage loss — say it, don't swallow it
-            failed_render += n_render_fail
-            print(f"[crawl] ⚠️ {n_render_fail}/{len(round_urls)} pages FAILED to render (walled/dead/empty) — "
-                  f"their events are UNSEEN this run", flush=True)
-        print(f"[crawl] {start_url[:50]} | round: {len(round_urls) - n_render_fail} pages → +{new_events} events, "
-              f"+{new_routes} to follow (blocked {n_route_blocked} noise) | total events={len(events)} "
-              f"visited={len(visited)} frontier={len(frontier)}", flush=True)
+        # WAIT for the FIRST task to finish (NOT all — no barrier); 30s timeout keeps the budget check ticking if every
+        # in-flight page is momentarily slow.
+        done, _pending = await asyncio.wait(set(in_flight), return_when=asyncio.FIRST_COMPLETED, timeout=30)
+        for t in done:
+            url = in_flight.pop(t)
+            try:
+                _u, render, res = t.result()
+            except asyncio.CancelledError:
+                render, res = None, None
+            except Exception as e:                             # noqa: BLE001 — one page task crashing must not sink the crawl
+                print(f"[crawl] ⛔ page task error {url[:60]}: {type(e).__name__}: {e}", flush=True)
+                render, res = None, None
+            new_ev = _harvest(url, render, res)
+            if on_events and new_ev:                           # INCREMENTAL persist — flush this page's events NOW, not at
+                try:                                           # the end, so a mid-crawl kill can't lose them {USER "fix this"}
+                    # pass the SOURCE PAGE (url + reading-order content) alongside → callback persists it to the pages table
+                    # so the frontend's "Source page" view has the content each event was extracted from. {USER 2026-07-24 "no source page"}
+                    _page = {"url": render["url"], "content": render.get("inline") or render.get("text") or ""}
+                    await on_events(new_ev, _page)
+                except Exception as e:                         # noqa: BLE001 — a DB hiccup must not sink the crawl; events
+                    print(f"[crawl] ⚠️ incremental flush failed ({type(e).__name__}: {e}) — kept for final flush", flush=True)
+        _refill()                                              # immediately backfill the freed slot(s) — keep the pipe FULL
 
     tracer.save_summary(events, len(visited))
     # status = ok ONLY if nothing dropped. ANY render/extract failure → "incomplete" so the GCP caller can react

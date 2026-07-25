@@ -21,6 +21,10 @@ fi
 export HF_HOME=/workspace/hf
 export HF_HUB_DISABLE_XET=1
 export PATH=/root/venv/bin:/usr/local/cuda/bin:$PATH
+# Reduce CUDA allocator fragmentation — the OOM error explicitly recommended this. Lets PyTorch grow segments instead
+# of reserving fixed blocks, so the transient ViT vision-encoder activation spikes fit in the headroom.
+# {POD 2026-07-23 OOM: "try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation"}
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # OOM GATE (2026-07-23): a crashed/killed prior server can orphan its `VLLM::EngineCore` multiprocessing child, which
 # keeps ALL ~22.6GB VRAM → the new engine dies "Free memory 0.96 GiB < utilization 0.92" and the supervisor crash-loops.
@@ -45,16 +49,22 @@ exec /root/venv/bin/python -m vllm.entrypoints.openai.api_server \
   --api-key "$QWEN_API_KEY" \
   --quantization awq_marlin \
   --max-model-len 32768 \
-  --max-num-seqs 48 \
-  --gpu-memory-utilization 0.92 \
+  --max-num-seqs 24 \
+  --gpu-memory-utilization 0.82 \
   --scheduling-policy priority
-# MULTI-SOURCE POOL (2026-07-23): --scheduling-policy priority + --max-num-seqs 48. vLLM is ONE shared engine/queue/
-# KV-pool, so every service hitting :8000 auto-pools + continuous-batches together. `priority` scheduling lets a
-# latency-sensitive source (e.g. the always-ready incremental monitor) preempt a bulk discovery crawl — a client sets
-# a LOWER `priority` value per request to jump ahead (default 0 = bulk). max-num-seqs 32→48: AWQ freed ~10GB (weights
-# 16→6.5GB) → the KV pool is far larger, so 48 concurrent sequences fit and one source is less likely to starve
-# another. {USER 2026-07-23 "优先级最该加 ... max-num-seqs 32→48"} [CONFIDENCE: CONFIRMED — direct instruction; AWQ KV
-# headroom verified (pool held 105k tokens even at FP16 16GB weights, AWQ 6.5GB weights gives much more)].
+# MULTI-SOURCE POOL (2026-07-23): --scheduling-policy priority + --max-num-seqs 24 + --gpu-memory-utilization 0.82.
+# vLLM is ONE shared engine/queue/KV-pool, so every service hitting :8000 auto-pools + continuous-batches together.
+# `priority` scheduling lets a latency-sensitive source (e.g. the always-ready incremental monitor) preempt a bulk
+# discovery crawl — a client sets a LOWER `priority` value per request to jump ahead (default 0 = bulk).
+#
+# OOM POSTMORTEM: I first set max-num-seqs=48 (reasoning: AWQ freed KV → more room). WRONG for a VISION model — under
+# real load the server hit `torch.OutOfMemoryError` at num_running_reqs=17 while KV was only 34% used. The binding
+# constraint for Qwen-VL is NOT the KV pool, it's the TRANSIENT ViT vision-encoder ACTIVATION memory: N concurrent
+# image requests run N ViT forward passes whose activations spike OUTSIDE the KV pool, blowing the 8% headroom that
+# gpu-mem-util 0.92 left. Fix: cap concurrency at 24 AND drop gpu-mem-util to 0.82 (frees ~2.5GB more for those
+# activation spikes) AND expandable_segments (above). {POD 2026-07-23 23:50 "CUDA out of memory ... num_running_reqs=17
+# ... kv_cache_usage=0.347"} [CONFIDENCE: CONFIRMED — the OOM traceback shows KV at 34% while GPU had 51 MiB free →
+# activation-driven, not KV-driven]. If it OOMs again under heavier image load, drop to max-num-seqs 16 / util 0.80.
 #
 # NO server-side --mm-processor-kwargs max_pixels downscale (removed 2026-07-23 per USER "dont do this"): shrinking
 # the screenshot resolution trades READING ACCURACY for speed, and AWQ already gave the 3x speed — so we keep the

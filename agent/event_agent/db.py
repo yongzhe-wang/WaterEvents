@@ -116,7 +116,7 @@ async def flush_events(pool: asyncpg.Pool, company_id, run_id: str, events: list
     written = 0
     for i in range(0, len(events), FLUSH_BATCH):
         batch = events[i:i + FLUSH_BATCH]
-        keys, titles, dates, types, medias = [], [], [], [], []
+        keys, titles, dates, types, medias, srcs = [], [], [], [], [], []
         seen_in_batch = set()                                # ON CONFLICT can't catch dups WITHIN one INSERT → dedup here
         for e in batch:
             k = _dedup_key(e.get("urls") or [])
@@ -128,24 +128,50 @@ async def flush_events(pool: asyncpg.Pool, company_id, run_id: str, events: list
             dates.append(e.get("date") or "")
             types.append(e.get("type") or "")
             medias.append(json.dumps(e.get("urls") or []))   # jsonb array as text, cast below
+            srcs.append(e.get("source_url") or "")           # the page this event was extracted from → events.source_url
         if not keys:
             continue
         async with pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO events (company_id, run_id, dedup_key, title, event_date, event_type, media_urls)
-                SELECT $1, $2, k, t, d, ty, m::jsonb
-                FROM unnest($3::text[], $4::text[], $5::text[], $6::text[], $7::text[]) AS x(k, t, d, ty, m)
+                INSERT INTO events (company_id, run_id, dedup_key, title, event_date, event_type, media_urls, source_url)
+                SELECT $1, $2, k, t, d, ty, m::jsonb, s
+                FROM unnest($3::text[], $4::text[], $5::text[], $6::text[], $7::text[], $8::text[]) AS x(k, t, d, ty, m, s)
                 ON CONFLICT (company_id, dedup_key) DO UPDATE SET
                     media_urls = (
                         SELECT coalesce(jsonb_agg(DISTINCT u), '[]'::jsonb)      -- union existing + new, dedup
                         FROM jsonb_array_elements(events.media_urls || excluded.media_urls) AS u
-                    );
+                    ),
+                    source_url = COALESCE(NULLIF(events.source_url, ''), NULLIF(excluded.source_url, ''));   -- keep first non-empty
                 """,
-                company_id, run_id, keys, titles, dates, types, medias,
+                company_id, run_id, keys, titles, dates, types, medias, srcs,
             )
         written += len(keys)
     return written
+
+
+async def save_pages(pool: asyncpg.Pool, company_id, run_id: str, pages: list[dict]) -> int:
+    """Persist the SOURCE PAGES (url + reading-order content) each event was extracted from → the `pages` table the
+    frontend's "Source page" view reads. WHY: events.source_url points AT a page, but the page CONTENT lives here; without
+    it the UI shows "no source page stored". Idempotent per (company_id, url): re-crawl UPDATEs the content (freshest wins).
+    {USER 2026-07-24 "no source page" — the schema had pages+source_url but nothing wrote them}. Returns rows written."""
+    if not pages:
+        return 0
+    urls = [p.get("url") or "" for p in pages]
+    contents = [p.get("content") or "" for p in pages]
+    nchars = [len(c) for c in contents]
+    async with pool.acquire() as conn:                       # ON CONFLICT needs a unique index on (company_id, url) — see note
+        await conn.execute(
+            """
+            INSERT INTO pages (company_id, run_id, url, content, n_chars)
+            SELECT $1, $2, u, c, n
+            FROM unnest($3::text[], $4::text[], $5::int[]) AS x(u, c, n)
+            WHERE u <> ''
+            ON CONFLICT (company_id, url) DO UPDATE SET content = excluded.content, n_chars = excluded.n_chars;
+            """,
+            company_id, run_id, urls, contents, nchars,
+        )
+    return len(urls)
 
 
 async def mark_company(pool: asyncpg.Pool, company_id, worker_id: str, result: dict) -> None:

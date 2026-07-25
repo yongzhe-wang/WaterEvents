@@ -33,6 +33,17 @@ tests/datasets/ir_pdfs/results.json
 tests/**/traces/
 tests/**/_dbg_*/
 tests/**/_trace_*/
+# run-output dirs (regenerable traces/screenshots/HTML/JSONL — never in git; the .py harnesses ARE tracked)
+tests/*_out/
+tests/thekillerdeal/
+tests/ir_official_variants/
+tests/stress1000/
+tests/stress_txt/
+tests/par3/
+tests/edge_review/
+tests/lnn_out/
+tests/eval_set.jsonl
+tests/hstress_dataset.jsonl
 
 # Secrets
 .env

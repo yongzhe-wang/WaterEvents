@@ -3,7 +3,7 @@
 用一句话讲完: caller 给一段 click JS(点某个"加载更多"控件),我们在同一个 page session 里点 `times` 次,列表逐次
 APPEND 累积,最后抽取一次 → (text, links)。WHY 一个 session + 重复点击(vs years 的 replace): load-more 是往同一个 DOM
 追加行,所以必须保持同一页面反复点、不能 reload。这是 caller 已知 click JS 时的显式版;load_more 是自动发现按钮的版本。
-{POOL.PY:450-483} [CONFIDENCE: CONFIRMED — self-hosted 替代 firecrawl click_more action 链].
+[CONFIDENCE: CONFIRMED — self-hosted 替代 firecrawl click_more action 链].
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .. import config, extract_js, page, runtime
 
 async def _seq(url: str, click_js: str, times: int, wait_ms: int) -> tuple[str, list]:
     """Click click_js `times` times in ONE page session (list ACCUMULATES), then extract once → (text, links). Runs
-    ON the loop. {POOL.PY:450-468}."""
+    ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -32,7 +32,7 @@ async def _seq(url: str, click_js: str, times: int, wait_ms: int) -> tuple[str, 
 
 def drive_clicks(url: str, click_js: str, times: int, wait_ms: int = 2500) -> tuple[str, list]:
     """SYNC entry: 'load more' walk — click `click_js` `times` times in one session, accumulate, extract → (text, links).
-    ("", []) on failure / no browser / no click_js → caller falls back. {POOL.PY:471-483}."""
+    ("", []) on failure / no browser / no click_js → caller falls back."""
     if not click_js or not runtime.ensure_browser():
         return "", []
     try:

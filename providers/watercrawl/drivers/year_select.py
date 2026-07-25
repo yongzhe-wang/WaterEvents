@@ -5,7 +5,7 @@
 非 markdown: q4/Evergreen 的年份 <option> 是 XHR 加载的("Loading"然后才出年份),所以年份从来不在 jina 的 markdown 里 —
 从 TEXT 读年份的老办法找不到、整年归档被静默丢弃;Playwright 读 select.options 能拿到 markdown 拿不到的年份。{PROBE
 2026-07-04 KMI news select "_CTRL0_CTL64_SELECTEVERGREENNEWSYEAR:LOADING" — options AJAX-loaded} [CONFIDENCE: CONFIRMED
-— 驱动 DOM-read years 让 KMI news 7→63 detail links]. {POOL.PY:551-612}.
+— 驱动 DOM-read years 让 KMI news 7→63 detail links].
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from .. import config, extract_js, page, runtime
 
 # Discover the year <select>: for each <select>, keep options whose normalized text matches a year pattern (Gregorian
 # G with optional Q/FY/CJK-suffix, or era-year E); a select with ≥2 such options IS the year filter → return sorted
-# newest-first. Fullwidth digits are normalized to ASCII. {POOL.PY:565-575}.
+# newest-first. Fullwidth digits are normalized to ASCII.
 _DISCOVER_JS = """() => {
   const nm = s => (s||'').replace(/[\\uFF10-\\uFF19]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).trim();
   const G = /^(q[1-4][\\s'._-]*)?(fy[\\s'._-]?)?((19|20)\\d{2})([\\s'._-]*q[1-4])?\\s*(年|年度|년|년도)?$/i;
@@ -29,7 +29,7 @@ _DISCOVER_JS = """() => {
 
 def _select_year_js(y: str) -> str:
     """Build the JS that finds the <select> holding option text == y, sets it, and dispatches a bubbling 'change'.
-    y is embedded via repr() so any quotes/unicode in the year label are safely escaped. {POOL.PY:581-586}."""
+    y is embedded via repr() so any quotes/unicode in the year label are safely escaped."""
     return ("var nm=function(s){return (s||'').replace(/[\\uFF10-\\uFF19]/g,function(c){"
             "return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).trim();};"
             "var ss=document.querySelectorAll('select');var s=null;"
@@ -40,7 +40,7 @@ def _select_year_js(y: str) -> str:
 
 async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
     """Discover the year <select> from the DOM, then walk newest→oldest selecting each year + capturing its AJAX
-    listing → merged (text, deduped links). ("", []) when there is no year <select>. Runs ON the loop. {POOL.PY:551-597}."""
+    listing → merged (text, deduped links). ("", []) when there is no year <select>. Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -69,7 +69,7 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
 def drive_year_select(url: str, max_years: int = 16, wait_ms: int = 5000) -> tuple[str, list]:
     """SYNC entry: auto-find the year <select> on url (reading the LIVE DOM, not the markdown) and walk every year →
     (merged_text, deduped_links). ("", []) when there is no year select or the browser is unavailable — so callers can
-    invoke it UNCONDITIONALLY on any hub and it self-skips pages without a year filter. {POOL.PY:600-612}."""
+    invoke it UNCONDITIONALLY on any hub and it self-skips pages without a year filter."""
     if not runtime.ensure_browser():
         return "", []
     try:

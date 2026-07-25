@@ -411,6 +411,50 @@ a.chip:hover { background: var(--glass-hover); }
 .links-table .lt-link { font-family: var(--mono); font-size: 12px; color: var(--accent-ink); word-break: break-all; text-decoration: none; }
 .links-table .lt-link:hover { text-decoration: underline; }
 
+/* ---- Source-page button + modal (the original content the LLM extracted an event from) ---- */
+.src-btn {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  color: var(--accent-ink); cursor: pointer; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+.src-btn:hover { background: var(--accent-soft); border-color: rgba(111, 211, 171, 0.45); }
+.src-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(3px);
+  display: grid; place-items: center; padding: 40px;
+}
+.src-modal {
+  width: min(880px, 92vw); max-height: 82vh;
+  display: flex; flex-direction: column;
+  background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border); border-radius: var(--r-panel); box-shadow: var(--shadow-pop);
+  padding: 18px 20px;
+}
+.src-head { display: flex; align-items: center; gap: 12px; }
+.src-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.src-close {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft); color: var(--text-muted); cursor: pointer;
+}
+.src-close:hover { background: var(--glass-hover); color: var(--text); }
+.src-url { display: block; margin: 8px 0 4px; font-family: var(--mono); font-size: 11.5px; color: var(--accent-ink); word-break: break-all; text-decoration: none; }
+.src-url:hover { text-decoration: underline; }
+.src-body { margin-top: 10px; overflow-y: auto; color: var(--text-secondary); font-size: 13px; }
+.src-pre { white-space: pre-wrap; word-break: break-word; font-family: var(--font); font-size: 13px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+
+/* ---- Load-more (segment pagination) ---- */
+.load-more-wrap { display: flex; justify-content: center; padding: 18px 0 8px; }
+.load-more {
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  padding: 9px 22px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border); color: var(--text);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.load-more:hover:not(:disabled) { background: var(--accent-soft); border-color: rgba(111, 211, 171, 0.45); color: var(--accent-ink); }
+.load-more:disabled { opacity: 0.6; cursor: default; }
+
 /* ---- Token Usage page ---- */
 .tokens { padding: 28px 32px 60px; }
 .tok-cards { display: flex; flex-wrap: wrap; gap: 14px; }

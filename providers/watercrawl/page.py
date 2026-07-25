@@ -4,19 +4,19 @@
 each-page 的 OOM 修复);但**截图路径拦得更少** —— 它保留 CSS + 图片,因为 VL 模型要"看"页面版面判断这是事件表还是导航栏,
 没 CSS 的裸 DOM 截图对视觉判断毫无用。WHY 独立成文件: page 工厂是 render/drivers 每条路径开页的唯一入口,拦截策略只此
 两份(渲染档 vs 截图档),改拦截规则不用碰渲染逻辑。{RESEARCH crawl4ai/firecrawl 在 page 创建层做资源拦截省带宽/提速}
-[CONFIDENCE: CONFIRMED — verbatim 迁移自 pool.py:205-250].
+[CONFIDENCE: CONFIRMED].
 """
 from __future__ import annotations
 
 from . import config
 
 # RENDER path blocks HEAVY non-DOM sub-resources but LETS document/script/xhr/fetch through so the SPA's list-loading
-# JS/XHR still runs. {POOL.PY:205 "_BLOCK_TYPES = {image, media, font, stylesheet}"}.
+# JS/XHR still runs.
 _BLOCK_TYPES = {"image", "media", "font", "stylesheet"}
 
 # SCREENSHOT path blocks LESS: KEEP stylesheet + image (the page must LOOK right for the VL model to read its layout)
 # and drop only media/font (heavy + irrelevant to structure). A shot with no CSS is a bare-DOM page — useless for "is
-# this an events table or a nav bar" visual judgment, which is the whole point of the screenshot. {POOL.PY:229-232}.
+# this an events table or a nav bar" visual judgment, which is the whole point of the screenshot.
 _SHOT_BLOCK_TYPES = {"media", "font"}
 
 
@@ -64,7 +64,7 @@ async def new_shot_page(ctx):
 async def goto(pg, url: str) -> None:
     """goto with ONE retry on a transient net error (HTTP2/reset/timeout) — a first-try net::ERR is often transient;
     a bare failure would empty the render. Raises if the retry also fails (caller returns empty). Shared by render.py
-    + the load_more/year_bar drivers. {POOL.PY:309-315}."""
+    + the load_more/year_bar drivers."""
     try:
         await pg.goto(url, wait_until="domcontentloaded", timeout=config.NAV_TIMEOUT_MS)
     except Exception:                                     # noqa: BLE001 — one transient-error retry
@@ -99,7 +99,7 @@ async def settle(pg, wait_ms: int) -> None:
     (video blocks / infinite lists — a timer alone never triggers them), then poll a cheap DOM-size signal until it
     stabilizes, then a fixed settle. WHY: IR event/news lists load via XHR AFTER domcontentloaded — snapshotting too
     early yields only the nav shell (KMI news: 2 links at 3s vs 77+ once the list AJAX lands); AND per-section media
-    lazy-loads on scroll (block.xyz videos). Shared by render.py + the load_more/year_bar drivers. {POOL.PY:279-306} +
+    lazy-loads on scroll (block.xyz videos). Shared by render.py + the load_more/year_bar drivers.
     {DEBUG 2026-07-23 block.xyz scroll} [CONFIDENCE: CONFIRMED — the list is XHR-late AND scroll-lazy]."""
     try:
         # networkidle is REDUNDANT with the DOM-size poll below (which is the true content-loaded signal), and on an

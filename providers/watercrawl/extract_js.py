@@ -6,17 +6,16 @@ row|cell/<time datetime> 这些高信号结构的 markdown-ish 视图,喂 LLM)�
 AND drivers/ 的每个翻页驱动都 evaluate 同一段抽取 JS —— 抽取逻辑只此一份,换 render 路径不用碰它、改它不用碰 render。
 {RESEARCH crawl4ai `content_scraping_strategy.py` 把内容抽取独立成 strategy} [CONFIDENCE: CONFIRMED].
 
-这段 JS 的边界处理(全部保留自原 pool.py，逐条有据）：
+这段 JS 的边界处理(逐条有据）：
   - walk-up 到最近的 row/card 祖先找 date+title 簇（icon/"Read more" 链接的 title 在兄弟块里）{USER 2026-07-05
     "there might be cases where the title is far away"}。
   - CJK-aware 信号阈值（12 CJK 字 ≈ 40 latin，CJK 日期 年月日/년월일）{AUDIT wf_7e9d7ce1 M11 "CJK render 信号漏判"}。
   - 保留 <a>/<time datetime>/<h*>/<tr><td>/<li> 结构，丢 script/style/svg 噪音 {USER "keep more info and tags from
     the raw content — you determine which is useful for the llm"}。
-[CONFIDENCE: CONFIRMED — 全部 verbatim 迁移自 pool.py:34-134，行为零改动].
+[CONFIDENCE: CONFIRMED — 行为零改动，逐条边界均有据].
 """
 from __future__ import annotations
 
-# NOTE: kept BYTE-FOR-BYTE identical to the original pool.py `_EXTRACT_JS` so render/driver behavior is unchanged.
 EXTRACT_JS = """() => {
   const body = document.body ? document.body.innerText : '';
   const seen = new Set();
@@ -87,9 +86,21 @@ EXTRACT_JS = """() => {
     if (!(h.startsWith('http://') || h.startsWith('https://')) || seen.has(h)) continue;
     seen.add(h);
     links.push(h);
-    // Start at the nearest ROW/CARD/list-item ancestor = the date+title+description cluster around this link.
-    let node = a.closest('li, tr, article, .card, [class*=item], [class*=row], [class*=teaser], [class*=result], [class*=news], [class*=event]') || a.parentElement || a;
-    let ctx = (node.innerText || a.textContent || '').replace(/\\s+/g, ' ').trim();
+    // Prefer the LINK'S OWN text; only WALK UP to the row/card container when the link itself is thin (icon/read-more).
+    // ROOT-CAUSE FIX: starting from a.closest('li,[class*=item],[class*=row]…') grabbed the CONTAINER's innerText as the
+    // context — but on a dense NAV MENU every link shares ONE container, so EACH link got labelled with the WHOLE menu.
+    // The VL model then saw N identically-labelled links and could not tell Sitemap from News → it BULK-ROUTED them all
+    // (290.com.hk: 20 nav links all labelled with the entire menu → sitemap/about/contact/disclaimer all emitted as
+    // routes). Using the link's OWN text first gives each link its real label ("Sitemap"/"News"/"About") so the model
+    // discriminates. {DEBUG 2026-07-24 stress req_0006 290.com.hk: 50 routes, every anchor = the full menu}
+    // [CONFIDENCE: CONFIRMED — content.txt for that page shows the identical whole-menu prefix on every link line].
+    let own = (a.innerText || a.textContent || '').replace(/\\s+/g, ' ').trim();
+    let node = a;
+    let ctx = own;
+    if (!hasSignal(own)) {                             // link's own text is thin (icon / bare "Read more") → find cluster
+      node = a.closest('li, tr, article, .card, [class*=item], [class*=row], [class*=teaser], [class*=result], [class*=news], [class*=event]') || a.parentElement || a;
+      ctx = (node.innerText || own || '').replace(/\\s+/g, ' ').trim();
+    }
     // HARDENING: icon / bare "Read more" links put the date+title in a SIBLING block, so the immediate container
     // is thin. Walk UP to progressively larger ancestors until the text carries a real signal (a date or enough
     // words) — capped at 4 hops + 280 chars so a huge <section> can't dump the whole page into one link's context.

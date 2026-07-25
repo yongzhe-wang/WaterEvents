@@ -5,8 +5,7 @@
 consent 条(cheap+safe);②URL 命中已知 webcast 平台(Q4/veracast/kvgo/open-exchange)→ 跑该平台的 guest-path handler;
 ③否则若**检测到是注册墙**(有 email 输入 + register 按钮 + 内容稀薄)→ 跑 generic 填表兜底。WHY 这个门控顺序: consent 无害
 可无脑关;platform handler 按 host 匹配安全;但 generic register 会填表+提交,**绝不能对任意页盲跑**(会误填搜索/订阅框),
-所以只在注册墙 heuristic 命中时才 fire。{OLD _capture.py 的 handler_for + register_generic dispatch;移植 + sync→async +
-加 consent + 加 gate heuristic} [CONFIDENCE: CONFIRMED — 直接迁移 + 安全门控].
+所以只在注册墙 heuristic 命中时才 fire。[CONFIDENCE: CONFIRMED — 直接迁移 + 安全门控].
 
 Upstream: render.py 的渲染协程在 settle 后调 break_walls;若它 acted(点穿了一道墙)→ caller 再 settle 一次让真内容加载。
 Downstream: page 上真实内容露出 → EXTRACT_JS 抽到的是内容而非表单/banner。

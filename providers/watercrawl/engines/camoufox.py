@@ -15,20 +15,28 @@ import threading
 from .. import config, runtime
 
 # Camoufox launches a FULL Firefox per call; a burst of the hardest walled pages would OOM on N concurrent Firefoxes.
-# Bound concurrent launches. {POOL.PY:808-810} [CONFIDENCE: CONFIRMED — OOM guard].
+# Bound concurrent launches. [CONFIDENCE: CONFIRMED — OOM guard].
 _CAMOUFOX_SEM = threading.Semaphore(config.CAMOUFOX_CAP)
 
 
 async def _render_one(url: str, wait_ms: int) -> tuple[str, list, str]:
     """Render url with Camoufox through the residential ROTATING proxy → (text, links, html). Lazy camoufox import:
     absent camoufox → ImportError → the sync wrapper's except returns empty so the caller keeps its prior result.
-    Runs ON the shared Playwright loop. {POOL.PY:813-839}."""
+    Runs ON the shared Playwright loop."""
     from camoufox.async_api import AsyncCamoufox           # lazy: absent camoufox → import fails → caller skips FB4
     from ... import webshare                               # providers/webshare — the residential rotating gateway
     pxd = webshare.playwright_proxy()
     if not pxd:                                            # no residential proxy configured → FB4 dormant
+        # FAIL-LOUD (one line): a dormant FB4 is exactly what hid the dead camoufox for a whole 2668-run — surface it so a
+        # walled site's 0-events is traceable to "no proxy" not a mystery. {AUDIT 2026-07-24 tier4 silently dormant + Firefox
+        # launch-dead (libgtk-3 missing)} [CONFIDENCE: CONFIRMED — camoufox recovered 39/45 walls once proxy+libgtk fixed].
+        print(f"[watercrawl] camoufox FB4 DORMANT for {url[:60]} — no WEBSHARE proxy configured (tier4 anti-Akamai off)", flush=True)
         return "", [], ""
-    async with AsyncCamoufox(headless=True, proxy=pxd, geoip=False) as browser:   # C++-stealth Firefox on the rotating IP
+    # geoip=True: match the Firefox timezone/locale/WebGL to the residential proxy's IP geo → consistent fingerprint (a
+    # US-IP browser advertising a non-US locale is a bot tell Akamai flags). camoufox heavily recommends it with a proxy
+    # (LeakWarning otherwise). Verified it launches on the pod (geoip db present). {AUDIT 2026-07-24 geoip warning; probe
+    # "geoip=True OK content=559"} [CONFIDENCE: CONFIRMED — tested on the pod, tesla recovered with camoufox].
+    async with AsyncCamoufox(headless=True, proxy=pxd, geoip=True) as browser:   # C++-stealth Firefox on the residential IP
         page = await browser.new_page()
         await page.goto(url, timeout=config.NAV_TIMEOUT_MS + 20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(max(wait_ms, 6000))   # let Akamai/Incapsula sensor.js run → _abck cookie lands
@@ -47,7 +55,7 @@ async def _render_one(url: str, wait_ms: int) -> tuple[str, list, str]:
 def render(url: str, wait_ms: int) -> tuple[str, list, str]:
     """SYNC wrapper for FB4 — run _render_one on the shared loop, bounded by _CAMOUFOX_SEM. ('', [], '') on ANY
     failure (camoufox absent / launch error / wall unbeaten) so a caller keeps its prior result. WHY sync: the
-    orchestrator's render_full/render_detail are sync entry points into the one Playwright loop thread. {POOL.PY:842-852}."""
+    orchestrator's render_full/render_detail are sync entry points into the one Playwright loop thread."""
     with _CAMOUFOX_SEM:                                    # cap concurrent Firefox launches (OOM guard)
         try:
             # Firefox launch is slow → generous timeout on top of nav + wait.

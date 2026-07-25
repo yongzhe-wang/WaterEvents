@@ -168,20 +168,36 @@ class QwenClient:
                     rf = ({"type": "json_schema",
                            "json_schema": {"name": "schema", "schema": guided_json, "strict": True}}
                           if (guided_json and attempt == 0) else None)
-                    r = await self._next().chat.completions.create(
+                    # STREAM the completion (stream=True). WHY streaming, NOT one blocking response: a full-quality call
+                    # generates up to MAX_TOKENS and can take 30-60s under the server's continuous-batch load; a
+                    # non-streaming create() holds a BLIND long connection the whole time (fragile to idle-timeout / proxy
+                    # drops, zero liveness). Streaming pulls tokens as the server emits them → the connection stays alive
+                    # chunk-by-chunk and we accumulate the text. Crucially the CLIENT does NO batching/pooling — send_many
+                    # fires N INDEPENDENT streamed requests and the vLLM INFRA does the batching (continuous batching on the
+                    # GPU), not us. {USER 2026-07-24 "request to the llm is streaming no pooling, pool is done at the llm
+                    # infra not you"} [CONFIDENCE: CONFIRMED 100% — direct instruction].
+                    stream = await self._next().chat.completions.create(
                         model=config.SERVED_NAME,
                         messages=self._messages(system, user, image_b64),
                         temperature=config.TEMPERATURE,
                         max_tokens=config.MAX_TOKENS,
                         response_format=rf,                       # None on retries → free-form fallback
+                        stream=True,                              # server streams tokens; client accumulates (no client-side pool)
                     )
-                    raw = r.choices[0].message.content or ""
                     # finish_reason is the PRECISE truncation signal (OpenAI/vLLM contract): "length" ⇒ generation hit
                     # max_tokens and the JSON was cut mid-structure → _parse_json returns {}. We ESCALATE it loudly +
                     # pass it up as transport metadata so the caller SPLITS-and-retries this page — never silently
-                    # salvage a partial. Works regardless of response_format vs guided_json. {USER 2026-07-23 "if it
+                    # salvage a partial. In streaming mode it arrives on the LAST content chunk. {USER 2026-07-23 "if it
                     # happened to be cut you need to escalate the error and report right now"} [CONFIDENCE: CONFIRMED 100%].
-                    finish = getattr(r.choices[0], "finish_reason", "") or ""
+                    raw, finish = "", ""
+                    async for chunk in stream:                    # accumulate deltas as the server emits them
+                        if not chunk.choices:                     # a usage-only trailing chunk carries no choices
+                            continue
+                        ch0 = chunk.choices[0]
+                        if ch0.delta and ch0.delta.content:
+                            raw += ch0.delta.content
+                        if ch0.finish_reason:                     # last content chunk carries the finish reason
+                            finish = ch0.finish_reason
                     parsed = _parse_json(raw)
                     if finish == "length":                    # truncated → make noise NOW, never hide it
                         print(f"[qwen] ⚠️ TRUNCATED finish_reason=length — {len(raw)} chars emitted, JSON incomplete "

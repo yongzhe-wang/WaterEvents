@@ -5,18 +5,33 @@
 截图 b64+inline,自带 render→residential→impersonate 三级 fallback)。WHY 独立成层: render 只管"把一页抓下来"这件事,
 浏览器生命周期在 runtime、page 工厂在 page、抽取 JS 在 extract_js、wall 判定在 detection —— render 组合它们但不拥有它们。
 更重的 render_full/render_detail 多引擎链在 orchestrator。{RESEARCH firecrawl engines/playwright 只管渲染,升级决策在
-orchestrator} [CONFIDENCE: CONFIRMED — verbatim 迁移自 pool.py 渲染协程 + render_shot/render].
+orchestrator} [CONFIDENCE: CONFIRMED — render 只渲染、升级决策在 orchestrator 是当前分层].
 """
 from __future__ import annotations
 
 import base64
+import contextlib
 import os
 import re
+import time
 
 from . import config, detection, extract_js, html_inline, page, runtime, walls
 
+# RENDER STEP INSTRUMENTATION — when WATERCRAWL_RENDER_DEBUG=1, print a timestamped line at EVERY step of a browser
+# render (context → page → goto → size-gate → settle → break-walls → extract → screenshot) with the elapsed ms. WHY:
+# renders "fail" (return empty) or hang for reasons that are SILENTLY swallowed today (multiple `except: pass`), so we
+# never see WHICH step failed or how long each took. This makes the actual failure/hang location observable instead of
+# guessed. {USER 2026-07-23 "stop guessing add more print and verify ... find why the browser render failed"}.
+_RDEBUG = os.environ.get("WATERCRAWL_RENDER_DEBUG", "") in ("1", "true", "yes")
+
+
+def _rlog(url: str, step: str, t0: float, extra: str = "") -> None:
+    """Print one render-step line with elapsed-ms since t0 (monotonic), only when render-debug is on."""
+    if _RDEBUG:
+        print(f"[render] {int((time.monotonic()-t0)*1000):6d}ms {step:16} {url[:55]} {extra}", flush=True)
+
 # Shared navigation primitives live in page.py (render + the load_more/year_bar drivers all use them). Alias to keep
-# the render coroutines below reading `_goto` / `_settle` unchanged. {POOL.PY:279-315 moved to page.goto/page.settle}.
+# the render coroutines below reading `_goto` / `_settle` unchanged.
 _goto = page.goto
 _settle = page.settle
 
@@ -48,7 +63,7 @@ async def _break_walls(pg, url: str, wait_ms: int) -> None:
 
 async def _render_one(url: str, inject_js: str | None, wait_ms: int) -> tuple[str, list]:
     """Render ONE url in an isolated context → (text, links). Optional inject_js runs AFTER load (e.g. a year-<select>
-    change dispatch), then we wait wait_ms for its AJAX before extracting. Runs ON the loop. {POOL.PY:253-276}."""
+    change dispatch), then we wait wait_ms for its AJAX before extracting. Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # round-robin the browser pool (spread tabs across processes)
         try:
@@ -76,7 +91,7 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     """Like _render_one but ALSO returns the page's rendered HTML → (text, links, html). WHY: a discovery/read caller
     (orchestrator.render_full/render_detail) needs the HTML to find interactive controls, so when watercrawl is the
     sole render engine it hands back HTML too, not just text. `browser` overrides the default (HTTP/1.1 or residential
-    lane). Runs ON the loop. {POOL.PY:318-338}."""
+    lane). Runs ON the loop."""
     async with runtime._sem:
         ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
         try:
@@ -99,16 +114,26 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
 async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, list, str, str, str]:
     """Render url AND capture a FULL-PAGE screenshot → (text, links, html, shot_b64, inline). WHY the shot: it feeds a
     Qwen-VL model so it reads the page's VISUAL layout (events table vs nav vs footer) that text alone loses. JPEG @
-    q70 keeps image tokens down. Screenshot is best-effort (text/links still return on shot failure). Runs ON the loop.
-    {POOL.PY:341-368}."""
+    q70 keeps image tokens down. Screenshot is best-effort (text/links still return on shot failure). Runs ON the loop."""
     # _shot_sem (OUTER) caps how many full-page SCREENSHOTS render at once — the RAM hog that OOM-SIGKILLs a browser under
     # 4-browser concurrency (→ TargetClosedError). Acquire it BEFORE the page slot so excess shots wait WITHOUT holding a
     # page. {USER 2026-07-23 "we should have a cap"} [CONFIDENCE: CONFIRMED 100% — 4×concurrent full-page shots OOM'd 50GB cgroup].
-    async with runtime._shot_sem, runtime._sem:
+    t0 = time.monotonic()
+    _rlog(url, "want-sems", t0, f"(shot_sem+page_sem; browser={'proxy' if browser else 'pool'})")
+    # When NO_SHOT is set we won't take a screenshot, so DON'T hold _shot_sem (the shot-slot cap of 4) — otherwise text-only
+    # renders would be needlessly throttled to 4-wide and the isolation test couldn't show the real uplift. nullcontext() is
+    # an async-capable no-op on 3.11. {config.NO_SHOT} [CONFIDENCE: CONFIRMED — skipping the shot means the RAM/raster hog it
+    # gates is gone, so the cap it exists for no longer applies]. When shooting (default), acquire _shot_sem as before.
+    _shot_gate = contextlib.nullcontext() if config.NO_SHOT else runtime._shot_sem
+    async with _shot_gate, runtime._sem:
+        _rlog(url, "got-sems", t0)
         ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
+        _rlog(url, "new-context", t0)
         try:
             pg = await page.new_shot_page(ctx)           # shot path: keep CSS + images so the screenshot looks real
+            _rlog(url, "new-page", t0)
             await _goto(pg, url)
+            _rlog(url, "goto-done", t0)
             # HARD SIZE GATE — measure scroll-height RIGHT AFTER goto, BEFORE the expensive settle/break/extract/content/
             # shot. A page taller than RENDER_ABORT_PX is an infinite-scroll marketing page (apple.com/iphone ≈ 50000 px),
             # never an IR event page. Settling + content-extracting + full_page-screenshotting it allocates GBs and
@@ -119,20 +144,27 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
             # return directly"} [CONFIDENCE: CONFIRMED 100% — 16×3 OOM'd from exactly these pages despite the shot clip].
             _h = await pg.evaluate("() => Math.max(document.documentElement.scrollHeight||0,"
                                    " (document.body && document.body.scrollHeight) || 0)")
+            _rlog(url, "size-gate", t0, f"h={_h}px")
             if _h and _h > config.RENDER_ABORT_PX:
                 print(f"[watercrawl] ⏭️ render ABORT {url[:70]} — {_h}px > {config.RENDER_ABORT_PX}px cap "
                       f"(giant non-IR/marketing page) → skip + return empty (never render the OOM bitmap)", flush=True)
                 return "", [], "", "", ""                  # empty → caller counts a skipped render; ctx closed in finally
             await _settle(pg, wait_ms)
+            _rlog(url, "settle-done", t0)
             await _break_walls(pg, url, wait_ms)          # dismiss consent + break a registration/login gate before the shot
+            _rlog(url, "break-walls", t0)
             try:
                 out = await pg.evaluate(extract_js.EXTRACT_JS)
                 html = await pg.content()
+                _rlog(url, "extract-done", t0, f"text={len(out.get('text') or '')} links={len(out.get('links') or [])}")
             except Exception:                            # noqa: BLE001 — one more settle then retry the extract
                 await _settle(pg, wait_ms)
                 out = await pg.evaluate(extract_js.EXTRACT_JS)
                 html = await pg.content()
-            try:
+            if config.NO_SHOT:                               # text/DOM-only mode: skip the whole raster/screenshot path
+                shot_b64 = ""                                # no image — caller gets text+links+html+inline only
+            else:
+              try:
                 # BOUND the screenshot memory. full_page=True renders the ENTIRE scroll-height into ONE bitmap; on a
                 # giant marketing page the crawl leaked into (www.apple.com/iphone ≈ 50000 px tall) that bitmap is GBs,
                 # and a few rendered concurrently SIGKILLed the run (cgroup OOM → fetch_10 EXIT=137). Measure the page
@@ -151,7 +183,7 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
                 else:                                        # normal IR page → full-page shot as before
                     shot = await pg.screenshot(full_page=True, type="jpeg", quality=70)
                 shot_b64 = base64.b64encode(shot).decode("ascii")
-            except Exception:                            # noqa: BLE001 — shot failed (huge page / timeout) → text-only
+              except Exception:                          # noqa: BLE001 — shot failed (huge page / timeout) → text-only
                 shot_b64 = ""
             # 5th field = inline-linked reading-order text (links embedded as [anchor](url)) — the VL model's primary context
             return out.get("text") or "", list(out.get("links") or []), html, shot_b64, out.get("inline") or ""
@@ -161,12 +193,25 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
 
 def _shot_via(url: str, wait_ms: int, browser) -> tuple[str, list, str, str, str]:
     """Run _render_shot_one on the loop → (text, links, html, shot_b64, inline); ("", [], "", "", "") on any failure."""
+    _budget = (config.NAV_TIMEOUT_MS / 1000) + max(wait_ms, 0) / 1000 + 40
+    _t = time.monotonic()
+    _rlog(url, "shot_via-START", _t, f"budget={_budget:.0f}s lane={'residential' if browser else 'render'}")
     try:
-        return runtime.run_on_loop(_render_shot_one(url, wait_ms, browser=browser),
-                                   (config.NAV_TIMEOUT_MS / 1000) + max(wait_ms, 0) / 1000 + 40)
+        r = runtime.run_on_loop(_render_shot_one(url, wait_ms, browser=browser), _budget)
+        _rlog(url, "shot_via-OK", _t, f"text={len(r[0])} links={len(r[1])} shot={'y' if r[3] else 'n'}")
+        return r
     except Exception as e:                               # noqa: BLE001 — a render failure must not sink the crawl loop
-        print(f"[watercrawl] render_shot ({'residential' if browser else 'render'}) failed for {url[:70]}: "
-              f"{type(e).__name__}: {e}", flush=True)
+        # dim3: register a DEAD-host browser error (DNS/cert/SSL/aborted) so a LATER empty timeout on this same host can
+        # short-circuit the fallback chain instead of empty-walking residential/impersonate/camoufox. Only DNS/cert-class
+        # errors mark dead; a plain nav TIMEOUT does NOT (it may be transient / IP-specific → still deserves fallback).
+        # {AUDIT 2026-07-24 walled_falsesignal; DETECTION.PY:56 _DEAD_HOST_ERRORS; _shot_via previously NEVER called
+        # mark_dead so dead_host was always False on this path} [CONFIDENCE: CONFIRMED — mark_dead was written only by the orchestrator path].
+        if detection.is_dead_error(str(e)):
+            detection.mark_dead(url)
+        # ALWAYS print the failure reason (not gated) — this is exactly the "why did the render fail" signal we were blind
+        # to. Includes the elapsed time so a TIMEOUT (hit the ~66s budget) is distinguishable from a fast error.
+        print(f"[watercrawl] render_shot ({'residential' if browser else 'render'}) FAILED for {url[:70]} after "
+              f"{time.monotonic()-_t:.1f}s: {type(e).__name__}: {str(e)[:160]}", flush=True)
         return "", [], "", "", ""
 
 
@@ -177,7 +222,7 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
     (curl_cffi TLS bypass — NO browser so NO screenshot), "camoufox" (stealth Firefox FB4 — beats Akamai/Incapsula
     sensor.js, no screenshot), "walled" (a bot-challenge body that beat every tier → EMPTY, caller must count a render
     failure), or "" (all failed / no content). text+links feed the prompt; shot_b64 (JPEG base64) feeds a Qwen-VL model.
-    Best-effort: every field empty on total failure, never raises. {POOL.PY:382-423 + camoufox FB4 restored 2026-07-23}."""
+    Best-effort: every field empty on total failure, never raises."""
     from .engines import impersonate                      # lazy: the curl_cffi fingerprint-bypass engine (optional dep)
     empty = {"text": "", "links": [], "html": "", "shot_b64": "", "method": "", "inline": ""}
 
@@ -209,10 +254,22 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
 
     # 1) headless render + full-page screenshot (dynamic pages / events pages / thin-static HTTP-first didn't serve)
     text, links, html, shot, inline = _shot_via(url, wait_ms, browser=None)
-    if not detection.looks_walled(text, links):
+    _walled = detection.looks_walled(text, links)
+    if _RDEBUG:
+        print(f"[render] tier1-result {url[:55]} text={len(text)} links={len(links)} shot={'y' if shot else 'n'} "
+              f"walled={_walled} dead={walls.deadpage.looks_dead(text) if text else '?'}", flush=True)
+    if not _walled:
         return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render", "inline": inline}
     if walls.deadpage.looks_dead(text):                  # soft-404 / gone page → don't burn fallbacks resurrecting it
         return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render", "inline": inline}
+    # dim3: pure-empty render AND host proven DEAD (DNS/cert/aborted, registered by _shot_via's except above) → skip the
+    # residential/impersonate/camoufox fallback: none can revive a host that doesn't resolve / fails TLS, so the whole
+    # chain would just empty-walk ~90-150s. Triple guard (text=="" AND links==[] AND dead_host) protects a headless-
+    # walled-but-recoverable page (edrsilver/pepsico): those have a LIVE host → dead_host False → they still fall through
+    # to camoufox. {AUDIT 2026-07-24 walled_falsesignal; looks_walled('',[]) returns True at DETECTION.PY:27 BEFORE any
+    # marker check, so an empty timeout would otherwise walk the whole chain} [CONFIDENCE: CONFIRMED — dead_host gates it].
+    if not text and not links and detection.dead_host(url):
+        return dict(empty)
 
     # 2) walled → patchright residential render + screenshot (real browser from a residential IP, beats IP-reputation walls)
     if runtime._browser_proxy is not None:
@@ -235,7 +292,7 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
 
     # 4) STILL walled → camoufox (stealth Firefox — beats Akamai/Incapsula sensor.js). Content-only: no screenshot.
     # The tier the refactor dropped from render_shot (kept only in render_full/render_detail). inline rebuilt from html.
-    # {DEBUG 2026-07-23 pepsico Incapsula; OLD pool.py:736 "FALLBACK 4 — CAMOUFOX"} [CONFIDENCE: CONFIRMED 100%].
+    # {DEBUG 2026-07-23 pepsico Incapsula} [CONFIDENCE: CONFIRMED 100%].
     from .engines import camoufox                          # lazy: stealth Firefox, optional heavy dep
     try:
         c_text, c_links, c_html = camoufox.render(url, wait_ms)
@@ -260,7 +317,7 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
 def render(url: str, inject_js: str | None = None, wait_ms: int = 0) -> tuple[str, list]:
     """SYNC entry (safe from any crawl thread): render url via the resident browser → (text, links). Optional inject_js
     drives a control before extraction. ("", []) on any failure → caller falls back. Blocks the calling thread on the
-    loop's future (the loop still serves other pages concurrently). {POOL.PY:718-729}."""
+    loop's future (the loop still serves other pages concurrently)."""
     if not runtime.ensure_browser():
         return "", []
     try:
