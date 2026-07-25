@@ -24,9 +24,10 @@ _LOADMORE_JS = """() => {
 }"""
 
 
-async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list]:
+async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list, str]:
     """Click/scroll, wait, re-count links; stop when the count stops growing (2 stable rounds = complete) or max_rounds.
-    Returns ("", []) if the list never grew past ~5% of its initial size (no real load-more here). Runs ON the loop."""
+    Returns ("", [], "") if the list never grew past ~5% of its initial size (no real load-more here). The 3rd element is
+    the INLINE `[anchor](url)` reading-order text — the discovery event-extractor's primary context. Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -50,22 +51,23 @@ async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list]:
                     stable = 0
                 prev = n
             if prev <= initial * 1.05:                   # never grew >5% → no real load-more; let caller use plain render
-                return "", []
+                return "", [], ""
             out = await pg.evaluate(extract_js.EXTRACT_JS)
-            return out.get("text") or "", list(out.get("links") or [])
+            return out.get("text") or "", list(out.get("links") or []), out.get("inline") or ""
         finally:
             await ctx.close()
 
 
-def drive_load_more(url: str, max_rounds: int = 40, wait_ms: int = 1500) -> tuple[str, list]:
-    """SYNC entry: AUTO-walk a load-more / infinite-scroll list to exhaustion → (accumulated_text, deduped_links).
-    ("", []) on failure / no browser / no growth. Safe to call UNCONDITIONALLY on any hub — a page with no load-more
-    and no scroll-growth simply converges in ~2 rounds and self-skips."""
+def drive_load_more(url: str, max_rounds: int = 40, wait_ms: int = 1500) -> tuple[str, list, str]:
+    """SYNC entry: AUTO-walk a load-more / infinite-scroll list to exhaustion → (accumulated_text, deduped_links, inline).
+    ("", [], "") on failure / no browser / no growth. Safe to call UNCONDITIONALLY on any hub — a page with no load-more
+    and no scroll-growth simply converges in ~2 rounds and self-skips. The 3rd element (inline `[anchor](url)`) is what the
+    discovery event-extractor consumes."""
     if not runtime.ensure_browser():
-        return "", []
+        return "", [], ""
     try:
         budget_s = (config.NAV_TIMEOUT_MS / 1000) + max(max_rounds, 1) * (max(wait_ms, 0) / 1000 + 1) + 30
         return runtime.run_on_loop(_seq(url, max_rounds, wait_ms), budget_s)
     except Exception as error:                           # noqa: BLE001
         print(f"[watercrawl] drive_load_more failed for {url[:80]}: {error}", flush=True)
-        return "", []
+        return "", [], ""

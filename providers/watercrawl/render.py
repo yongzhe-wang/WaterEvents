@@ -50,6 +50,56 @@ def _force_vision(url: str) -> bool:
     return bool(_FORCE_VISION_RE.search(url or ""))
 
 
+# Events pages hide their history behind a year-filter / load-more / pagination. Match the ones worth EXPANDING (broader
+# than _FORCE_VISION_RE — includes /presentations, /events-and-presentations, /news-and-events). {INVESTIGATION 2026-07-24}.
+_EVENTS_EXPAND_RE = re.compile(
+    r'/(events?|events-and-presentations|events-calendar|ir-calendar|calendar|webcasts?|presentations?|'
+    r'news-and-events|upcoming-events?|investor-events?)(/|\?|#|$|-|\.)', re.I)
+
+
+def is_events_page(url: str) -> bool:
+    """True when this url is an events/presentations hub — the pages whose FULL history sits behind an interactive control."""
+    return bool(_EVENTS_EXPAND_RE.search(url or ""))
+
+
+def expand_events_page(url: str) -> str:
+    """Drive an EVENTS page's year-filter (year_bar) + load-more control to reveal the FULL historical events list — not
+    just the default-visible upcoming+recent 3-5 — and return the merged inline `[anchor](url)` text for extraction. WHY:
+    Q4/most IR events pages show only upcoming + a couple recent events by default; the past-events archive sits behind a
+    year dropdown / "Load More" / pagination that a STATIC render never clicks → discovery captured only 3-5 events for big
+    companies with years of history (51% of the low-event-count companies). Both drivers SELF-SKIP (return "") on a page
+    without their control, so this is safe to call on any events page. Runs the drivers (each marshals to the browser loop
+    via run_on_loop) — call it in a thread from the crawl, exactly like render_shot. {INVESTIGATION 2026-07-24 low-count:
+    events page reached but only default-visible few} [CONFIDENCE: CONFIRMED — airbnb events page content had 3 events;
+    the historical earnings calls are behind the year filter]. Returns deduped merged inline, or "" if nothing expanded."""
+    from .drivers.year_bar import drive_year_bar          # lazy import — drivers pull runtime/page; avoid import cycles
+    from .drivers.load_more import drive_load_more
+    # BOUNDED params — the drivers' defaults (year_bar max_years=16 × 5s waits ≈ 320s) would eat the whole per-company
+    # budget on ONE events page. Cap to ~6 recent years / ~8 load-more rounds with short waits so a full events-page
+    # expansion stays ~60-80s. And STOP after the first driver that expands (year_bar walks all years already; running
+    # load_more after would just re-render for nothing). {avoid blowing EVENT_COMPANY_BUDGET_S on one page}.
+    blocks: list = []
+    for drive, kw in ((drive_year_bar, {"max_years": 6, "wait_ms": 1500}),   # year filter first (Q4 past-events archive)
+                      (drive_load_more, {"max_rounds": 8, "wait_ms": 1200})):  # else load-more / infinite-scroll list
+        try:
+            _t, _l, inline = drive(url, **kw)              # (text, links, inline); "" when this control is absent → skip
+        except Exception:                                  # noqa: BLE001 — an expansion failure must never sink the render
+            inline = ""
+        if inline:
+            blocks.append(inline)
+            break                                          # first driver that expanded wins → no wasted second re-render
+    if not blocks:
+        return ""
+    seen, out = set(), []                                  # dedupe by line (the two drivers overlap on recent events)
+    for block in blocks:
+        for ln in block.split("\n"):
+            k = ln.strip()
+            if k and k not in seen:
+                seen.add(k)
+                out.append(ln)
+    return "\n".join(out)
+
+
 async def _break_walls(pg, url: str, wait_ms: int) -> None:
     """After the initial settle, dismiss a cookie/consent banner + break a webcast registration/login gate IN PLACE,
     then re-settle so the post-break real content loads before we extract/screenshot. Best-effort — walls.break_walls

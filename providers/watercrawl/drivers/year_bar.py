@@ -59,9 +59,11 @@ _YEARBAR_CLICK_JS = """(chip) => {
 }"""
 
 
-async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
-    """Discover year chips, then per year re-goto + open-dropdown + click chip + capture → merged (text, deduped links).
-    Self-skips ("", []) when <2 year chips exist (a lone '2026' copyright label is not a filter). Runs ON the loop."""
+async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list, str]:
+    """Discover year chips, then per year re-goto + open-dropdown + click chip + capture → merged (text, deduped links,
+    inline). Self-skips ("", [], "") when <2 year chips exist (a lone '2026' copyright label is not a filter). The 3rd
+    element is the concatenated INLINE `[anchor](url)` across ALL years — the discovery event-extractor's context so every
+    year's dated events (not just the default-visible ones) reach the model. Runs ON the loop."""
     async with runtime._sem:
         ctx = await runtime._browser.new_context(user_agent=config.UA)
         try:
@@ -75,9 +77,10 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
             await pg.wait_for_timeout(min(max(wait_ms, 0), 2500))
             years = list(await pg.evaluate(_YEARBAR_DISCOVER_JS))[:max_years]
             if len(years) < 2:                           # <2 chips ⇒ not a year filter → self-skip
-                return "", []
+                return "", [], ""
             merged_text: list = []
             merged_links: list = []
+            merged_inline: list = []                      # per-year inline [anchor](url) → concat so every year's events extract
             for y in years:
                 try:
                     # re-goto each year: a chip may REPLACE the list in place OR navigate to a per-year URL — re-goto
@@ -95,22 +98,23 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
                     out = await pg.evaluate(extract_js.EXTRACT_JS)
                     merged_text.append(out.get("text") or "")
                     merged_links += list(out.get("links") or [])
+                    merged_inline.append(out.get("inline") or "")
                 except Exception:                        # noqa: BLE001 — one year failing must not sink the rest
                     pass
-            return "\n".join(merged_text), list(dict.fromkeys(merged_links))
+            return "\n".join(merged_text), list(dict.fromkeys(merged_links)), "\n".join(merged_inline)
         finally:
             await ctx.close()
 
 
-def drive_year_bar(url: str, max_years: int = 16, wait_ms: int = 5000) -> tuple[str, list]:
-    """SYNC entry: drive a YEAR-BAR (clickable year tabs/buttons, not a <select>) → (merged_text, deduped_links).
-    ('', []) when there is no year bar or the browser is unavailable — so callers invoke it UNCONDITIONALLY right
+def drive_year_bar(url: str, max_years: int = 16, wait_ms: int = 5000) -> tuple[str, list, str]:
+    """SYNC entry: drive a YEAR-BAR (clickable year tabs/buttons, not a <select>) → (merged_text, deduped_links, inline).
+    ('', [], '') when there is no year bar or the browser is unavailable — so callers invoke it UNCONDITIONALLY right
     after drive_year_select and it self-skips pages whose year filter is a <select> (already driven) or absent."""
     if not runtime.ensure_browser():
-        return "", []
+        return "", [], ""
     try:
         budget_s = (config.NAV_TIMEOUT_MS / 1000) + (max_years + 1) * (config.NAV_TIMEOUT_MS / 1000 + max(wait_ms, 0) / 1000 + 5) + 30
         return runtime.run_on_loop(_seq(url, max_years, wait_ms), budget_s)
     except Exception as error:                           # noqa: BLE001
         print(f"[watercrawl] drive_year_bar failed for {url[:80]}: {error}", flush=True)
-        return "", []
+        return "", [], ""

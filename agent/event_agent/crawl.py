@@ -196,6 +196,20 @@ async def _render_one(url: str) -> dict | None:
         r = await asyncio.to_thread(watercrawl.render_shot, url)
         if r.get("text") or r.get("links"):                  # got real content → done (no wasted extra attempts)
             r["url"] = url
+            # EVENTS PAGE → reveal the FULL history. A static render of an IR events page captures only the default-visible
+            # upcoming+recent 3-5 events; the past-events archive sits behind a year-filter / "Load More" / pagination. For
+            # events-page urls, drive those controls (year_bar + load_more, each self-skips if absent) and MERGE the expanded
+            # inline so the extractor sees every year's dated events — not just the front page. Runs in a thread like
+            # render_shot (the drivers marshal to the browser loop). {INVESTIGATION 2026-07-24: 51% of low-event-count
+            # companies reached the events page but got only the default-visible few} [CONFIDENCE: CONFIRMED — airbnb events
+            # page had 3 events in content, the historical earnings calls are behind the year filter].
+            if watercrawl.is_events_page(url):
+                try:
+                    _expanded = await asyncio.to_thread(watercrawl.expand_events_page, url)
+                except Exception:                            # noqa: BLE001 — expansion is best-effort, never sink the page
+                    _expanded = ""
+                if _expanded and len(_expanded) > len(r.get("inline") or ""):
+                    r["inline"] = (r.get("inline") or "") + "\n" + _expanded   # static + expanded → extract sees ALL years
             return r
         # dim2: method=="walled" means a TRUE challenge body beat ALL 4 tiers (render→residential→impersonate→camoufox)
         # INSIDE this single render_shot — an outer retry re-runs the exact same known-failed chain with zero new tactics,
