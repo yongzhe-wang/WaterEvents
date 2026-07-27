@@ -55,6 +55,7 @@ const STATIC_ROUTES = {
   "/api/status": "./api/status.js",   // live health of Supabase / Firecrawl / DeepSeek / OpenAI
   "/api/discovery": "./api/discovery.js",   // event_agent crawl progress — event URLs found per company
   "/api/today": "./api/today.js",     // Today dashboard: work_queue state + newest events (this session)
+  "/api/usage": "./api/usage.js",     // day-level render/VLM usage history for the click-to-chart modal
   "/api/events": "./api/events.js",   // events list (EventsView) — was missing from the shim (prod-only)
   "/api/page": "./api/page.js",       // source-page content per event (EventsView modal)
   "/api/irurls": "./api/irurls.js",   // per-company IR entry urls (ir_url + ir_url_agent's event_hubs) — IR_URLS tab

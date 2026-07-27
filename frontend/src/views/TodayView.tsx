@@ -2,6 +2,7 @@
 // (2) the newest events, descending by date. Polls /api/today every 30s so the queue + feed stay live as workers run.
 // {USER 2026-07-25 "today page: current worker queue (full + deep=1 together) + new events descending by date"}.
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
 interface NextRow { company: string; url: string; due_at: string; }   // a next-up queued unit (company + url)
 interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; next: NextRow[]; }
@@ -11,7 +12,11 @@ interface Sched {
   c_r: number | null; c_v: number | null; hit_rate: number | null; eta_full_h: number | null;
   inc_hubs: number | null; note: string | null; updated_at: string | null;
 }
-interface Today { scheduler: Sched | null; queue: { full: QStat; incremental: QStat }; events: EvRow[]; }
+interface Res {
+  cpu: { cores: number; load: number; pct: number };
+  vlm: { running: number | null; waiting: number | null; kv_pct: number | null } | null;
+}
+interface Today { scheduler: Sched | null; resources: Res | null; queue: { full: QStat; incremental: QStat }; events: EvRow[]; }
 
 // event_date is varied-granularity TEXT — Date.parse handles ISO + "Month DD, YYYY"; a quarter won't parse (shown raw).
 function parseDate(s: string): number { const t = Date.parse((s || "").trim()); return isNaN(t) ? 0 : t; }
@@ -113,6 +118,64 @@ function SchedulerBar({ s }: { s: Sched }) {
   );
 }
 
+// The two BOTTLENECKS, live right now: CPU (render, on the host) + VLM (the GPU, in-flight requests). Colour the value
+// red when saturated so the binding resource jumps out. {USER 2026-07-27 "cpu bottleneck current + vlm parallel running"}.
+function ResourceCards({ r, onClick }: { r: Res; onClick: () => void }) {
+  const cpuHot = r.cpu.pct >= 85;
+  const kv = r.vlm?.kv_pct ?? null;
+  const vlmHot = kv != null && kv >= 85;
+  const card = (title: string, sub: string, big: ReactNode, hot: boolean, lines: string[]) => (
+    <div className="q-card" style={{ flex: 1, cursor: "pointer" }} onClick={onClick} title="click for the day's usage chart">
+      <div className="q-card-head"><span className="q-card-title">{title}</span><span className="q-card-sub">{sub}</span></div>
+      <div className="q-card-big" style={{ color: hot ? "#f87171" : undefined }}>{big}</div>
+      <div className="q-card-stats" style={{ flexWrap: "wrap" }}>
+        {lines.map((l, i) => <span key={i} className="q-stat">{l}</span>)}
+      </div>
+    </div>
+  );
+  return (
+    <div className="q-row" style={{ marginBottom: 14 }}>
+      {card("CPU · render", "this host · click for chart",
+        <>{r.cpu.pct}%<span className="q-card-big-sub"> load</span></>, cpuHot,
+        [`${r.cpu.cores} cores`, `load ${r.cpu.load}`])}
+      {card("VLM · GPU", "in flight now · click for chart",
+        <>{r.vlm?.running ?? "—"}<span className="q-card-big-sub"> running</span></>, vlmHot,
+        [`${r.vlm?.waiting ?? "—"} waiting`, `${kv ?? "—"}% KV cache`])}
+    </div>
+  );
+}
+
+// Simple hand-rolled SVG line chart (no chart lib): two lines — render pages/hr + VLM calls/hr — over hourly buckets.
+// Each series is normalized to its own max so both fit; the modal shows both scales in the legend. {USER 2026-07-27}.
+function UsageChart({ rows }: { rows: { ts: string; pages: number; calls: number }[] }) {
+  if (!rows.length) return <div className="artifacts-empty">No usage history yet — the fleet needs a bit of runtime.</div>;
+  const W = 640, H = 220, PAD = 30;
+  const maxP = Math.max(1, ...rows.map((r) => r.pages));
+  const maxC = Math.max(1, ...rows.map((r) => r.calls));
+  const x = (i: number) => PAD + (i / Math.max(1, rows.length - 1)) * (W - 2 * PAD);
+  const yP = (v: number) => H - PAD - (v / maxP) * (H - 2 * PAD);
+  const yC = (v: number) => H - PAD - (v / maxC) * (H - 2 * PAD);
+  const path = ( y: (v: number) => number, key: "pages" | "calls") =>
+    rows.map((r, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(r[key]).toFixed(1)}`).join(" ");
+  return (
+    <div>
+      <div className="q-card-stats" style={{ marginBottom: 8 }}>
+        <span className="q-stat"><b style={{ color: "#6ee7a8" }}>▬</b> VLM calls/hr (peak {maxC})</span>
+        <span className="q-stat"><b style={{ color: "#7aa2f7" }}>▬</b> render pages/hr (peak {maxP})</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }}>
+        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.15)" />
+        <path d={path(yP, "pages")} fill="none" stroke="#7aa2f7" strokeWidth="2" />
+        <path d={path(yC, "calls")} fill="none" stroke="#6ee7a8" strokeWidth="2" />
+        {rows.map((r, i) => (i % Math.ceil(rows.length / 6) === 0)
+          ? <text key={i} x={x(i)} y={H - 8} fontSize="10" fill="rgba(255,255,255,0.5)" textAnchor="middle">
+              {new Date(r.ts).toLocaleTimeString("en-US", { hour: "numeric" })}</text>
+          : null)}
+      </svg>
+    </div>
+  );
+}
+
 export default function TodayView() {
   const [data, setData] = useState<Today | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +187,16 @@ export default function TodayView() {
     fetch(`/api/page?event_id=${encodeURIComponent(e.id)}`).then((r) => r.json())
       .then((d) => setSrc({ title: e.title || e.company, url: d.url || null, content: d.content ?? null, prompt: d.system_prompt ?? null, loading: false }))
       .catch(() => setSrc({ title: e.title || e.company, url: null, content: null, prompt: null, loading: false }));
+  }
+
+  // click a resource card → fetch the day-level usage history (hourly render + VLM totals from scan_log) → chart modal.
+  // {USER 2026-07-27 "click to show a line chart for both usage at the day level"}.
+  const [usage, setUsage] = useState<{ open: boolean; loading: boolean; rows: { ts: string; pages: number; calls: number }[] } | null>(null);
+  function openUsage() {
+    setUsage({ open: true, loading: true, rows: [] });
+    fetch("/api/usage").then((r) => r.json())
+      .then((d) => setUsage({ open: true, loading: false, rows: Array.isArray(d.rows) ? d.rows : [] }))
+      .catch(() => setUsage({ open: true, loading: false, rows: [] }));
   }
 
   useEffect(() => {
@@ -146,6 +219,9 @@ export default function TodayView() {
         <div className="body-full">
           {/* SCHEDULER strip — the packing solver's live T* decision (dynamic rotation keeping VLM+CPU busy) */}
           {data?.scheduler && <SchedulerBar s={data.scheduler} />}
+
+          {/* LIVE BOTTLENECKS — CPU (render) + VLM (GPU) usage right now; click either → the day's usage chart */}
+          {data?.resources && <ResourceCards r={data.resources} onClick={openUsage} />}
 
           {/* PANEL 1 — the worker queue: full + incremental together */}
           <div className="section-label">Worker queue<span className="rule" /></div>
@@ -211,6 +287,21 @@ export default function TodayView() {
                     : <div className="artifacts-empty">No source page stored for this event yet (the crawler writes it on the next scan).</div>}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* USAGE CHART modal — the day's render + VLM usage over hourly buckets, opened by clicking a resource card */}
+      {usage?.open && (
+        <div className="src-overlay" onClick={() => setUsage(null)}>
+          <div className="src-modal" onClick={(ev) => ev.stopPropagation()}>
+            <div className="src-head">
+              <div className="src-title">Usage — last 24h (CPU render + VLM)</div>
+              <button className="src-close" onClick={() => setUsage(null)}>✕</button>
+            </div>
+            <div className="src-body">
+              {usage.loading ? "Loading…" : <UsageChart rows={usage.rows} />}
             </div>
           </div>
         </div>

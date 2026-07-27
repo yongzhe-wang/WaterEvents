@@ -3,6 +3,25 @@
 // .companies live from Supabase. {USER 2026-07-25 "today page: current worker queue (full runs + deep=1 together) +
 // new events descending by date"}.
 import { sbAll } from "../lib/_db.js";
+import os from "node:os";
+
+// LIVE resource usage — the two bottlenecks, right now. CPU (render, on THIS host: loadavg/cores) and VLM (the GPU, via
+// the vLLM Prometheus /metrics through the SSH tunnel at :8000). {USER 2026-07-27 "add two cards: cpu bottleneck current
+// usage + vlm usage current, like the parallel current running"}.
+async function liveResources() {
+  const cores = os.cpus().length;
+  const load1 = os.loadavg()[0];                              // 1-min load average of the render host
+  const cpu = { cores, load: +load1.toFixed(2), pct: Math.round((load1 / cores) * 100) };
+  let vlm = null;
+  try {                                                       // vLLM /metrics is unauth'd; :8000 is the RunPod tunnel
+    const txt = await (await fetch("http://127.0.0.1:8000/metrics", { signal: AbortSignal.timeout(3000) })).text();
+    const g = (k) => { const m = txt.match(new RegExp(k + "\\{[^}]*\\}\\s+([\\d.eE+-]+)")); return m ? +m[1] : null; };
+    const kv = g("vllm:kv_cache_usage_perc") ?? g("vllm:gpu_cache_usage_perc");
+    vlm = { running: g("vllm:num_requests_running"), waiting: g("vllm:num_requests_waiting"),
+            kv_pct: kv == null ? null : Math.round(kv * 100) };
+  } catch { vlm = null; }                                     // tunnel down / not self-hosted → card shows "—"
+  return { cpu, vlm };
+}
 
 function hostOf(u) { try { return new URL(u).host.replace(/^www\./, ""); } catch { return u || "—"; } }
 function primaryUrl(mediaUrls) {
@@ -87,7 +106,8 @@ export default async function handler(_req, res) {
       eta_full_h: s.eta_full_h, inc_hubs: s.inc_hubs, note: s.note, updated_at: s.updated_at,
     } : null;
 
-    res.json({ scheduler, queue: { full: summarize("full", weekAgo), incremental: summarize("incremental", cycleAgo) }, events: feed });
+    const resources = await liveResources();                 // live CPU (render) + VLM (GPU) usage right now
+    res.json({ scheduler, resources, queue: { full: summarize("full", weekAgo), incremental: summarize("incremental", cycleAgo) }, events: feed });
   } catch (_e) {
     res.status(500).json({ error: "failed to load today" });   // never leak the raw PostgREST error (nestjs-conventions)
   }
