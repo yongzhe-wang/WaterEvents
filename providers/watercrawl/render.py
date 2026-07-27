@@ -82,10 +82,14 @@ _LEAF_VETO_RE = re.compile(
 # CONTROL IN THE POST-JS DOM — `render_shot` returns html from `await pg.content()`, i.e. Playwright's SERIALIZED DOM
 # after settle + wall-break, so a JS-built year <select>/chip bar and a "Load more" button are present here even when the
 # reading-order text extraction drops them (tag-stripping loses <option> text). This is the signal the url guess was a
-# proxy for. {RENDER.PY:208 "html = await pg.content()"} [CONFIDENCE: INFERRED 80% — pg.content() is post-JS by
-# construction and the text-based half of this gate is measured, but the DOM half could NOT be validated offline: a plain
-# curl of investors.amneal.com/events-and-presentations/default.aspx returned 148k of html with 0 year <option>s because
-# its years arrive by XHR, so only a real renderer run can confirm the DOM carries them. Verify on the first live crawl].
+# proxy for. {RENDER.PY:208 "html = await pg.content()"}
+# [CONFIDENCE: CONFIRMED 100% — validated against the real renderer on ir-media-8 2026-07-27. A plain curl of
+# investors.amneal.com/events-and-presentations/default.aspx sees 0 year <option>s (its years arrive by XHR), but
+# render_shot's post-JS DOM carries 10 of them — curl was the wrong instrument, not the DOM. Two urls the old url gate
+# REJECTED now gate correctly on DOM evidence alone:
+#   {LIVE 2026-07-27 "RELX.COM/INVESTORS/ANNUAL-REPORTS  html=100k DOMMORE=TRUE  OLD=FALSE NEW=TRUE"}
+#   {LIVE 2026-07-27 "UNITEDHEALTHGROUP.COM/INVESTORS.HTML html=681k DOMMORE=TRUE OLD=FALSE NEW=TRUE"}
+#   {LIVE 2026-07-27 "INVESTORS.AMNEAL.COM/EVENTS-AND-PRESENTATIONS/DEFAULT.ASPX html=244k DOMYEARS=10"}].
 _DOM_YEAR_RE = re.compile(r'<option[^>]*>\s*(20[0-2][0-9])\s*<'
                           r'|<(?:option|button|a|li)[^>]*(?:value|data-year|data-filter)\s*=\s*["\']?(20[0-2][0-9])\b', re.I)
 _DOM_MORE_RE = re.compile(r'load[\s_-]*more|show[\s_-]*more|view[\s_-]*more|see[\s_-]*more|loadmore'
