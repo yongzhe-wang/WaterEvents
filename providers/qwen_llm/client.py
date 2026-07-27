@@ -141,10 +141,13 @@ class QwenClient:
         return [{"role": "system", "content": system}, {"role": "user", "content": user_content}]
 
     async def send_one(self, system: str, user: str, image_b64: str | None = None,
-                       guided_json: dict | None = None) -> dict:
+                       guided_json: dict | None = None, max_tokens: int | None = None) -> dict:
         """One chat completion → parsed JSON dict. Held under the global semaphore for the whole in-flight duration.
         Retries transient errors; returns {} on hard failure so one bad page never sinks the batch. guided_json (if
-        given) constrains vLLM's sampler to that schema on the first try → output is always valid JSON."""
+        given) constrains vLLM's sampler to that schema on the first try → output is always valid JSON.
+        max_tokens overrides config.MAX_TOKENS per-call: the media ROUTE path requests FEW output tokens (its output is
+        just metadata + url ids), so a big input page no longer trips the vLLM 400 `input+max_tokens > max_model_len`
+        pre-reject. {POD 2026-07-25 PDF-as-text: input 20769 + max 12000 > 32768 → 400} [CONFIDENCE: CONFIRMED 100% — the 400 body]."""
         async with self._sem:
             # Bound the screenshot pixels OFF the event loop (to_thread) — _bound_image_b64 is synchronous PIL
             # (decode + resize + re-encode a full-page shot, ~0.5-2s). Doing it inline in _messages BLOCKED the single
@@ -180,7 +183,7 @@ class QwenClient:
                         model=config.SERVED_NAME,
                         messages=self._messages(system, user, image_b64),
                         temperature=config.TEMPERATURE,
-                        max_tokens=config.MAX_TOKENS,
+                        max_tokens=max_tokens or config.MAX_TOKENS,   # per-call override (ROUTE requests few) → no input+max 400
                         response_format=rf,                       # None on retries → free-form fallback
                         stream=True,                              # server streams tokens; client accumulates (no client-side pool)
                     )

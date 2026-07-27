@@ -14,6 +14,35 @@
 
 import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
+import { readFile, stat } from "node:fs/promises";
+import { join, extname, normalize } from "node:path";
+
+// STATIC WEB APP serving (production self-host on the GCP VM): besides the /api/* shim, this same process serves the
+// built SPA from WEBAPP_DIST so ONE node process = the whole site (no nginx). /api/* → handlers; everything else → a
+// static file from dist/, falling back to index.html for client-side routes. {USER 2026-07-27 "move web app to GCP media vm"}.
+const DIST = process.env.WEBAPP_DIST || new URL("./dist", import.meta.url).pathname;
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css",
+  ".svg": "image/svg+xml", ".json": "application/json", ".ico": "image/x-icon", ".png": "image/png", ".jpg": "image/jpeg",
+  ".woff2": "font/woff2", ".woff": "font/woff", ".webmanifest": "application/manifest+json", ".map": "application/json" };
+
+async function serveStatic(pathname, rawRes) {
+  const rel = pathname === "/" ? "/index.html" : pathname;
+  let file = normalize(join(DIST, rel));
+  if (!file.startsWith(DIST)) { rawRes.writeHead(403); rawRes.end("forbidden"); return; }   // path-traversal guard
+  try {
+    const s = await stat(file);
+    if (s.isDirectory()) file = join(file, "index.html");
+    const buf = await readFile(file);
+    rawRes.writeHead(200, { "Content-Type": MIME[extname(file)] || "application/octet-stream" });
+    rawRes.end(buf);
+  } catch {
+    try {                                                    // SPA fallback: unknown path → index.html (client routing)
+      const buf = await readFile(join(DIST, "index.html"));
+      rawRes.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      rawRes.end(buf);
+    } catch { rawRes.writeHead(404); rawRes.end("not found"); }
+  }
+}
 
 // Static path -> handler module file. The vite proxy forwards every /api/* call
 // here; each Vercel handler is `export default async (req, res) => {}`.
@@ -25,6 +54,10 @@ const STATIC_ROUTES = {
   "/api/token-usage": "./api/token-usage.js",
   "/api/status": "./api/status.js",   // live health of Supabase / Firecrawl / DeepSeek / OpenAI
   "/api/discovery": "./api/discovery.js",   // event_agent crawl progress — event URLs found per company
+  "/api/today": "./api/today.js",     // Today dashboard: work_queue state + newest events (this session)
+  "/api/events": "./api/events.js",   // events list (EventsView) — was missing from the shim (prod-only)
+  "/api/page": "./api/page.js",       // source-page content per event (EventsView modal)
+  "/api/irurls": "./api/irurls.js",   // per-company IR entry urls (ir_url + ir_url_agent's event_hubs) — IR_URLS tab
 };
 
 // Cache the dynamically-imported handler modules so we hit disk once per route.
@@ -61,7 +94,12 @@ function route(pathname) {
 
 const server = createServer(async (rawReq, rawRes) => {
   // Parse pathname + querystring once; base is arbitrary (we only use path+query).
-  const url = new URL(rawReq.url, "http://localhost:8100");
+  const url = new URL(rawReq.url, "http://localhost");
+  // Non-API path → serve the static SPA (production self-host); /api/* falls through to the handler shim below.
+  if (!url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api?")) {
+    await serveStatic(url.pathname, rawRes);
+    return;
+  }
   const match = route(url.pathname);
 
   // Unknown path -> 404 JSON (mirrors Vercel's not-found behavior loosely).
@@ -100,6 +138,7 @@ const server = createServer(async (rawReq, rawRes) => {
   }
 });
 
-// :8490 is the port vite.config.ts proxies /api to. Moved off 8100 so parallel forks don't collide.
-// {USER 2026-06-09 "use a different localhost, this one might be used by others"}
-server.listen(8490, () => console.log("[dev-api] serverless api/*.js shim on http://localhost:8490"));
+// PORT: dev uses 8490 (vite proxies /api here). Production self-host on the VM sets PORT (e.g. 8080) + WEBAPP_DIST and
+// binds 0.0.0.0 so the VM's external IP can reach it. {USER 2026-06-09 "different localhost"; 2026-07-27 "web app on VM"}.
+const PORT = Number(process.env.PORT || 8490);
+server.listen(PORT, "0.0.0.0", () => console.log(`[web] app+api on http://0.0.0.0:${PORT}  (dist=${DIST})`));

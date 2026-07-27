@@ -9,7 +9,7 @@ set -uo pipefail
 NSLICES="${KD_NSLICES:-8}"                                   # how many parallel processes (default 8)
 CONC="${KD_CONC:-3}"                                         # companies in flight PER process (render-limited anyway)
 CODE=/workspace/WaterEvents
-OUT=$CODE/tests/thekillerdeal
+OUT="${KD_OUT:-$CODE/tests/thekillerdeal}"                    # respect KD_OUT (a rerun writes elsewhere → don't rm the huge prior full-run trace dir)
 DSN="postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
 KEY="sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78"
 
@@ -32,11 +32,10 @@ echo "[parallel] ${NCORES} cores, ${WIDTH} cores/slice for ${NSLICES} slices"
 PIDS=()
 for i in $(seq 0 $((NSLICES-1))); do
   lo=$((CORES_START + i*WIDTH)); hi=$((lo + WIDTH - 1)); [ "$hi" -ge "$NCORES" ] && hi=$((NCORES-1))
-  KD_NSLICES=$NSLICES KD_SLICE_IDX=$i KD_CONC=$CONC KD_RUN_ID=killerdeal \
-  KD_ALL="${KD_ALL:-}" KD_N="${KD_N:-0}" \
+  KD_NSLICES=$NSLICES KD_SLICE_IDX=$i KD_CONC=$CONC KD_RUN_ID="${KD_RUN_ID:-killerdeal}" \
+  KD_ALL="${KD_ALL:-}" KD_N="${KD_N:-0}" KD_URLS_FILE="${KD_URLS_FILE:-}" \
   WATERCRAWL_HTTP_FIRST=0 IR_WATERCRAWL_BROWSERS=1 \
   WEBSHARE_PROXY="${WEBSHARE_PROXY:-http://nknjgkpv:36oo15uctfhl@192.46.200.43:5713}" \
-  ${WEBSHARE_USERNAME:+WEBSHARE_USERNAME="$WEBSHARE_USERNAME"} ${WEBSHARE_PASSWORD:+WEBSHARE_PASSWORD="$WEBSHARE_PASSWORD"} ${WEBSHARE_PROXIES:+WEBSHARE_PROXIES="$WEBSHARE_PROXIES"} \
   WATEREVENTS_DB_DSN="$DSN" WATEREVENTS_DB_SCHEMA=waterevents \
   QWEN_API_KEY="$KEY" QWEN_BASE_URLS="http://127.0.0.1:8000/v1" PYTHONPATH="$CODE" \
     taskset -c ${lo}-${hi} /root/venv/bin/python "$CODE/tests/thekillerdeal.py" \

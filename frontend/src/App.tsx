@@ -4,8 +4,10 @@
 // view, simplest as possible ... use this [existing design] ... follow our current json and table design"}.
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import EventsView from "./EventsView";
-import MediaView from "./MediaView";
+import TodayView from "./views/TodayView";
+import EventsView from "./views/EventsView";
+import MediaView from "./views/MediaView";
+import IrUrlsView from "./views/IrUrlsView";
 
 // Minimal stroke icons (currentColor) matching the old glass nav.
 const svg = (inner: ReactNode): ReactNode => (
@@ -13,14 +15,23 @@ const svg = (inner: ReactNode): ReactNode => (
        strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round">{inner}</svg>
 );
 const ICONS = {
+  today: svg(<><circle cx="8" cy="8" r="3.1" /><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1" /></>),
   events: svg(<><rect x="2" y="3" width="12" height="11" rx="1.5" /><path d="M2 6.5h12M5 1.5v2.5M11 1.5v2.5" /></>),
   media: svg(<><rect x="2" y="3" width="12" height="10" rx="1.5" /><path d="M6.5 6l4 2.5-4 2.5V6z" /></>),
+  // link/chain glyph — this page is about the ENTRY URLS we crawl per company, so a link is the honest icon.
+  irurls: svg(<><path d="M6.5 9.5a2.8 2.8 0 004 0l2.2-2.2a2.8 2.8 0 00-4-4l-.9.9" /><path d="M9.5 6.5a2.8 2.8 0 00-4 0L3.3 8.7a2.8 2.8 0 004 4l.9-.9" /></>),
 };
 
-// Two real routes so each page is deep-linkable + back/forward works (a minimal history-API router, no react-router).
-type View = "events" | "media";
-const ROUTES: Record<View, string> = { events: "/events", media: "/media" };
-function pathToView(p: string): View { return p.replace(/\/+$/, "") === "/media" ? "media" : "events"; }
+// Real routes so each page is deep-linkable + back/forward works (a minimal history-API router, no react-router).
+type View = "today" | "events" | "media" | "irurls";
+const ROUTES: Record<View, string> = { today: "/today", events: "/events", media: "/media", irurls: "/ir-urls" };
+function pathToView(p: string): View {
+  const s = p.replace(/\/+$/, "");
+  if (s === "/events") return "events";
+  if (s === "/media") return "media";
+  if (s === "/ir-urls") return "irurls";
+  return "today";                                  // "/" and "/today" → Today is the default landing page
+}
 
 function NavItem({ label, icon, active, href, onClick }:
   { label: string; icon: ReactNode; active: boolean; href: string; onClick: () => void }) {
@@ -54,12 +65,17 @@ export default function App() {
           <span className="os-ver">live</span>
         </div>
         <nav className="nav">
+          <NavItem label="Today" icon={ICONS.today} active={view === "today"} href={ROUTES.today} onClick={() => setView("today")} />
           <NavItem label="Events" icon={ICONS.events} active={view === "events"} href={ROUTES.events} onClick={() => setView("events")} />
           <NavItem label="Media" icon={ICONS.media} active={view === "media"} href={ROUTES.media} onClick={() => setView("media")} />
+          <NavItem label="IR_URLS" icon={ICONS.irurls} active={view === "irurls"} href={ROUTES.irurls} onClick={() => setView("irurls")} />
         </nav>
       </aside>
       <main className="stage">
-        {view === "media" ? <MediaView /> : <EventsView />}
+        {view === "today" ? <TodayView />
+          : view === "media" ? <MediaView />
+          : view === "irurls" ? <IrUrlsView />
+          : <EventsView />}
       </main>
     </div>
   );

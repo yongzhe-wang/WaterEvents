@@ -15,6 +15,16 @@ const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1Ni
 // a bare read would hit public / a stale ir-pipeline table). {MIGRATION 20260723 "create schema waterevents"}.
 const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Accept-Profile": "waterevents" };
 
+// sbPublic() — kept as a thin alias of sb(). WHY it exists at all: pipeline_status / pipeline_health USED to live only in
+// the legacy `public` schema, so reading them under the waterevents-pinned HEADERS 404'd (PGRST205 "could not find the
+// table 'waterevents.pipeline_status'") → health panel + tracked-ticker scope silently empty in prod. Both tables have now
+// been MOVED into `waterevents` and the whole legacy `public` schema was dropped, so one profile serves everything; the
+// alias stays so callers don't churn. {SCAN whn86f4f7 E1 + 2026-07-26 legacy-public drop}
+// [CONFIDENCE: CONFIRMED — 404 reproduced by live curl pre-move; tables verified present in waterevents post-move].
+export async function sbPublic(path) {
+  return sb(path);                                             // single canonical schema now — waterevents
+}
+
 // getTrackedTickers() — the media-data scope SHARED by the two company_agent surfaces: the Company Agent
 // Table rail (/api/companies `tracked` flag → EventsView) AND the Company Agent progress bars (/api/status
 // coverage). Both surfaces MUST show the SAME companies, so both await THIS one function — a single source of
@@ -38,7 +48,7 @@ export async function getTrackedTickers() {
   // the user asked for). Supersedes the old "has media data" (company_event_stats/artifact_stats) scope that showed
   // the whole stale 379k-event backlog. {USER 2026-07-18 "clear the web app showing no companies ... mark each ticker
   // if finished so we dont rerun"} [CONFIDENCE: CONFIRMED — pipeline_status is the single run-tracker].
-  const rows = await sbAll("pipeline_status?select=ticker");
+  const rows = await sbPublic("pipeline_status?select=ticker");   // public schema (legacy monitoring table, ~100 rows < 1000 cap)
   const set = new Set();
   for (const r of rows) if (r.ticker) set.add(String(r.ticker).toUpperCase());
   return set;

@@ -4,7 +4,7 @@
 // this endpoint just reads that table. WHY it matters: the lxml>=5.2 split silently broke trafilatura and it only
 // surfaced as 50 FAILED companies hours later — a live panel turns that into an instant red light. {USER 2026-07-21
 // "show the status of all important endpoints like trafilatura and the tools apis ... correct all the time or down"}.
-import { sb } from "../lib/_db.js";                           // shared Supabase REST reader
+import { sbPublic } from "../lib/_db.js";                     // pipeline_health lives in LEGACY public schema (external writer) → read via public profile, else 404
 
 // Order the panel logically: the content pipeline deps first (the ones that broke), infra last.
 const ORDER = ["trafilatura", "lxml_html_clean", "lxml", "pypdf", "curl_cffi", "bct_title_model", "bct_type_model", "webshare", "db"];
@@ -12,7 +12,7 @@ const ORDER = ["trafilatura", "lxml_html_clean", "lxml", "pypdf", "curl_cffi", "
 export default async function handler(_req, res) {
   try {
     // Read every row; select the columns we render. pipeline_health is tiny (one row per component).
-    const rows = await sb("pipeline_health?select=component,status,detail,source,checked_at");
+    const rows = await sbPublic("pipeline_health?select=component,status,detail,source,checked_at");
     const byComp = new Map((rows || []).map((r) => [r.component, r]));
     // Emit in the fixed order (known deps first), then any extra components the worker reported.
     const known = ORDER.filter((c) => byComp.has(c));
