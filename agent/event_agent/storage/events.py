@@ -1,10 +1,22 @@
-"""event_agent.db — the DISCOVERY worker's Postgres layer: claim a company, batch-flush its events idempotently,
-renew the lease, mark it done, and reconcile crashed workers.
+"""event_agent.storage.events — the EVENT-level Postgres layer: batch-flush a scan's events idempotently, persist the
+source pages (+content_hash for the incremental hash-gate), log per-scan resource usage, and run the stage-2 enrichment
+claim/complete cycle.
 
-用一句话讲完: worker 从 companies 队列 SKIP-LOCKED 抢一家公司(拿 lease)→ crawl_company 内存跑完 → 把 events 用
-`INSERT ... SELECT unnest(...) ON CONFLICT DO UPDATE(合并 media)` 批量幂等落 events 表 → 翻 companies.status →
-崩溃的话 lease 过期被 reconcile 回收重认领。**这层只管"活怎么安全地领、落、收",不含任何 event 抽取逻辑**(那在
-extract.py)—— 换 DB / 换队列不动 crawl。
+用一句话讲完: scan_unit 跑完 → 把 events 用 `INSERT ... SELECT unnest(...) ON CONFLICT DO UPDATE(合并 media)` 批量幂等
+落 events 表 → 把来源页 content(+sha256) 落 pages 表供下轮 hash-gate 比对 → scan_log 记一行资源消耗喂 solver;之后
+media_agent 从同一张 events 表 claim `discovered` 事件做 enrichment。**这层只管"结果怎么安全地落、怎么被 claim",不含
+任何 event 抽取逻辑**(那在 crawl/extract.py)—— 换 DB 不动 crawl。
+
+WORK CLAIMING LIVES IN storage/queue.py, NOT HERE. The old company-level lease machinery (claim_company / renew_lease /
+mark_company / fail_company / reconcile, which owned companies.status + companies.event_count) was deleted 2026-07-27:
+the unified scheduler claims from `work_queue` and records per-unit results via queue.complete_work, so nothing had
+called those functions since the scheduler landed. They left companies.event_count frozen at 162 while the events table
+held 124,811 rows — a dead counter that silently contradicted reality and misled diagnosis.
+{MEASURED 2026-07-27 "SUM(COMPANIES.EVENT_COUNT) = 162 VS COUNT(*) FROM EVENTS = 124811"}
+{GREP 2026-07-27 "ONLY CALLER OF CLAIM_COMPANY/MARK_COMPANY WAS TESTS/EVENT/VERIFY/VERIFY_WORKER.PY, ITSELF BROKEN
+ (`FROM . IMPORT DB` WITH NO DB.PY IN THAT PACKAGE)"}
+[CONFIDENCE: CONFIRMED 100% — zero production callers; the frontend rail reads the event_companies VIEW, which is a real
+ count(e.id) join, so removing the counter changes no user-visible number].
 
 WHY asyncpg + Supavisor transaction pooler: 2000+ 公司 × N worker 会打爆 Postgres 直连;transaction-mode pooler 把
 连接 multiplex 收敛。transaction mode 不支持 server-side prepared statements → 必须 statement_cache_size=0。
@@ -26,13 +38,14 @@ from .urls import _canon, _event_key                        # _event_key = (titl
 # session-mode direct connection at 2000-company scale. {RESEARCH "全部走 Supavisor transaction-mode pooler ... 防连接耗尽"}.
 _DSN = os.environ.get("WATEREVENTS_DB_DSN", "")
 
-# lease knobs — the soft lease is renewed by a heartbeat during the (possibly ~20 min) crawl; the hard deadline is an
-# absolute cap so a wedged worker can't hold a company forever even if its heartbeat keeps firing.
-# {DESIGN wlkrnxklp "lease_hard_deadline ... 防单公司永久占 worker"}.
-LEASE_MIN = int(os.environ.get("WATEREVENTS_LEASE_MIN", "30"))          # soft lease minutes (heartbeat renews)
-LEASE_HARD_H = int(os.environ.get("WATEREVENTS_LEASE_HARD_H", "2"))     # absolute hold cap, hours
 FLUSH_BATCH = int(os.environ.get("WATEREVENTS_FLUSH_BATCH", "25"))      # events per batch INSERT {DESIGN "events 攒 25 行"}
 ENRICH_BATCH = int(os.environ.get("WATEREVENTS_ENRICH_BATCH", "16"))    # events an enrichment worker claims per round
+# Soft lease held on a claimed EVENT while the enrichment worker renders its detail page; a crashed worker's rows become
+# re-claimable once it lapses (see claim_events' `status='rendering' AND lease_until < now()` arm). Reads the same
+# WATEREVENTS_LEASE_MIN env var (same default 30) that the deleted company-level lease used, so this is behaviour-
+# preserving — only the NAME narrowed to the one path that still exists after the 2026-07-27 legacy removal.
+# [CONFIDENCE: CONFIRMED 100% — same env key + same default; claim_events is the sole remaining reader].
+ENRICH_LEASE_MIN = int(os.environ.get("WATEREVENTS_LEASE_MIN", "30"))
 
 
 # WaterEvents lives in its OWN schema so it starts from scratch WITHOUT touching the decommissioned ir-pipeline's
@@ -53,52 +66,6 @@ async def connect_pool(min_size: int = 1, max_size: int = 4) -> asyncpg.Pool:
         raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
     return await asyncpg.create_pool(_DSN, min_size=min_size, max_size=max_size, statement_cache_size=0,
                                      server_settings={"search_path": _SCHEMA})
-
-
-async def claim_company(pool: asyncpg.Pool, worker_id: str, run_id: str) -> asyncpg.Record | None:
-    """Atomically claim ONE claimable company (queued, OR discovering-but-lease-expired) and mark it `discovering` with
-    a fresh lease. SKIP LOCKED means N concurrent workers never fight over the same row — each gets a distinct company
-    or None. Returns the claimed row (id, ir_url, attempt), or None when the queue is drained.
-    {RESEARCH wv2d0n0v3 "batch-claim ... UPDATE ... SKIP LOCKED ... RETURNING"} — here LIMIT 1 (a worker owns one company)."""
-    async with pool.acquire() as conn:
-        return await conn.fetchrow(
-            """
-            UPDATE companies SET
-                status = 'discovering',
-                lease_owner = $1,
-                lease_until = now() + ($2 || ' minutes')::interval,
-                lease_hard_deadline = now() + ($3 || ' hours')::interval,
-                attempt = attempt + 1,
-                run_id = $4,
-                updated_at = now()
-            WHERE id = (
-                SELECT id FROM companies
-                WHERE status = 'queued'
-                   OR (status = 'discovering' AND lease_until < now())   -- reclaim a crashed worker's company
-                ORDER BY updated_at
-                FOR UPDATE SKIP LOCKED
-                LIMIT 1
-            )
-            RETURNING id, ir_url, attempt, event_hubs;
-            """,
-            worker_id, str(LEASE_MIN), str(LEASE_HARD_H), run_id,
-        )
-
-
-async def renew_lease(pool: asyncpg.Pool, company_id, worker_id: str) -> bool:
-    """Heartbeat: push the soft lease forward while the crawl runs — but ONLY if we still own it (lease_owner match) AND
-    we're inside the hard deadline. Returns False if we've lost the lease (someone reclaimed us / hit the hard cap) so
-    the worker can abort instead of writing into a company another worker now owns."""
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            """
-            UPDATE companies SET lease_until = now() + ($3 || ' minutes')::interval, updated_at = now()
-            WHERE id = $1 AND lease_owner = $2 AND now() < lease_hard_deadline
-            RETURNING id;
-            """,
-            company_id, worker_id, str(LEASE_MIN),
-        )
-        return row is not None
 
 
 def _dedup_key(urls: list[str]) -> str:
@@ -196,55 +163,6 @@ async def log_scan(pool: asyncpg.Pool, unit_type: str, url: str, stats: dict) ->
         )
 
 
-async def mark_company(pool: asyncpg.Pool, company_id, worker_id: str, result: dict) -> None:
-    """Flip the company to its terminal discovery status once the crawl finished + events are flushed. `discovered` only
-    when the crawl was clean; `discovered_partial` when fail-loud counters are nonzero (pages dropped) so downstream
-    NEVER mistakes a degraded run for the whole truth. Fencing on lease_owner: if we lost the lease mid-crawl this UPDATE
-    matches nothing (another worker owns it now) → we don't clobber their result. {CRAWL.PY status ok/incomplete}."""
-    status = "discovered" if result.get("status") == "ok" else "discovered_partial"
-    async with pool.acquire() as conn:
-        await conn.execute(
-            """
-            UPDATE companies SET
-                status = $3, lease_owner = NULL, lease_until = NULL,
-                event_count = $4, pages = $5, failed_render = $6, failed_extract = $7,
-                trace_dir = $8, updated_at = now()
-            WHERE id = $1 AND lease_owner = $2;
-            """,
-            company_id, worker_id, status,
-            len(result.get("events") or []), result.get("pages") or 0,
-            result.get("failed_render") or 0, result.get("failed_extract") or 0,
-            result.get("trace_dir") or "",
-        )
-
-
-async def fail_company(pool: asyncpg.Pool, company_id, worker_id: str, reason: str) -> None:
-    """Mark a company `failed` when the crawl itself raised (not a partial — a hard error). Fenced on lease_owner."""
-    async with pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE companies SET status='failed', lease_owner=NULL, lease_until=NULL, trace_dir=$3, updated_at=now() "
-            "WHERE id=$1 AND lease_owner=$2;",
-            company_id, worker_id, f"ERROR: {reason}"[:500],
-        )
-
-
-async def reconcile(pool: asyncpg.Pool) -> int:
-    """Sweeper (run by a cron): reclaim companies stuck in `discovering` whose lease expired (crashed worker). Flips them
-    back to `queued` so the next claim picks them up + re-crawls (idempotent via ON CONFLICT). Returns rows reclaimed.
-    {ADVERSARIAL "兜底扫描 ... 所有非终态且无活跃 lease 的行"} — for companies the only non-terminal state is `discovering`."""
-    async with pool.acquire() as conn:
-        # execute() returns the command tag "UPDATE N"; parse N so the caller gets the true reclaimed count (fetchrow
-        # would only surface the first row while the UPDATE still hits all matches — a misleading 1/0).
-        tag = await conn.execute(
-            "UPDATE companies SET status='queued', lease_owner=NULL, lease_until=NULL, updated_at=now() "
-            "WHERE status='discovering' AND lease_until < now();"
-        )
-        try:                                             # a malformed command tag must return 0, never crash the cron
-            return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
-        except (ValueError, IndexError):                 # {AUDIT 2026-07-23 MEDIUM: int(tag.split()) could raise}
-            return 0
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # ENRICHMENT (stage-2, EVENT-level) — the media_agent worker claims `discovered` events from the SAME events table
 # (the seam), drills each event's detail page, fills basic_info, flips to `enriched`. Event-level claim (not company)
@@ -270,7 +188,7 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
             )
             RETURNING id, claim_token, title, event_date, event_type, media_urls;
             """,
-            str(LEASE_MIN), limit,
+            str(ENRICH_LEASE_MIN), limit,
         )
 
 

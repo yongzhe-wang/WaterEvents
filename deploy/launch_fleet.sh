@@ -45,4 +45,8 @@ done
 nohup "$PY" -m agent.event_agent.scheduler.solver.pacer --loop > "$LOGD/pacer.log" 2>&1 &
 disown -a 2>/dev/null || true
 echo "[fleet]   pacer --loop (pid $!)"
-echo "[fleet] UP. logs $LOGD/  stop: pkill -f '[e]vent_agent.queue_worker'; pkill -f '[e]vent_agent.pacer'"
+# Stop patterns must track the POST-RESTRUCTURE module paths (scheduler.worker / scheduler.solver.pacer). The previous
+# hint named `queue_worker` and `event_agent.pacer`, neither of which exists since the 2026-07-26 package split — anyone
+# following it would have killed nothing and concluded the fleet was unstoppable. {PS 2026-07-27 "-m agent.event_agent
+# .scheduler.worker" ×6} [CONFIDENCE: CONFIRMED 100% — module paths read off the live process table].
+echo "[fleet] UP. logs $LOGD/  stop: pkill -f '[e]vent_agent.scheduler.worker'; pkill -f '[e]vent_agent.scheduler.solver.pacer'"

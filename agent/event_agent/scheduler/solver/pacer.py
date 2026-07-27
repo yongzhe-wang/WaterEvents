@@ -34,18 +34,41 @@ _EPS = 1e-6
 _DEFAULT_FULL_PAGES = float(os.environ.get("EVENTINC_DEFAULT_FULL_PAGES", "6"))
 _DEFAULT_FULL_CALLS = float(os.environ.get("EVENTINC_DEFAULT_FULL_CALLS", "6"))
 
+# Fraction of EVERY lane reserved for full when the weekly full sweep can't be packed (DEGRADED mode in solve()). full
+# then finishes in ~1/_FULL_SHARE weeks instead of never, and incremental stretches to fit the remainder. WHY a reserved
+# share rather than "run full as opportunistic backlog": the priority ladder gives incremental strict precedence, so
+# "opportunistic" resolves to "never" whenever the incremental pool is non-empty — which the floor cadence guaranteed.
+# 0.5 = an even split (full completes in ~2 weeks at the measured cost). {MEASURED 2026-07-27 "FULL SCANS YIELD 62.08
+# EV/SCAN VS INCREMENTAL 7.61; COMPANIES WITH A FULL SCAN AVG 91 EV VS 47 WITHOUT"}
+# [CONFIDENCE: CONFIRMED 95% — the split ratio is a policy choice; the need for a guaranteed (not opportunistic) share
+#  is proven by the 96.7% never-scanned figure. Tune with EVENTINC_FULL_SHARE without a code edit.]
+_FULL_SHARE = float(os.environ.get("EVENTINC_FULL_SHARE", "0.5"))
+
 
 def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rate: float,
-          n_full: int, full_pages: float, full_calls: float, full_gated: bool = False) -> dict:
+          n_full: int, full_pages: float, full_calls: float, full_gated: bool = False,
+          measured_c_r: float = 0.0, measured_c_v: float = 0.0) -> dict:
     """PURE packing solve → {t_star_s, binding, infeasible, ...}. Given the week budget and the two per-unit demands,
     solve T for each resource (T = week·inc_per_cycle / residual-after-full) and take the max (the binding resource sets
-    the achievable period). residual ≤ 0 → that resource can't even fit the weekly full sweep → infeasible flag (the
-    'full weekly = 446 VLM-hr' case until full-hash-gate lands). full_gated=False → full re-extracts every page (no
-    hash-gate yet) → full_vlm = n_full·full_calls; True → only the changed fraction (~hit_rate) hits the VLM.
+    the achievable period). residual ≤ 0 → that resource can't fit the weekly full sweep → DEGRADED mode (see below).
+    full_gated=False → full re-extracts every page (no hash-gate yet) → full_vlm = n_full·full_calls; True → only the
+    changed fraction (~hit_rate) hits the VLM.
     {PLAN §packing solver; USER 2026-07-26} [CONFIDENCE: CONFIRMED — the two-equation max is the derived T*]."""
     week = profile["week_hours"]
-    C_R = profile["render_pph"]
-    C_V = profile["vlm_cph"]
+    # CAPACITY = max(static profile ceiling, SUSTAINED MEASURED rate). WHY the max and not the ceiling alone: a rate the
+    # fleet actually sustained across the whole metric window is PROOF the lane carries at least that much, whereas the
+    # profile number is a hand-estimate that can be too LOW — and a too-low ceiling makes the packing solve falsely
+    # declare INFEASIBLE. That is exactly what happened: vlm_cph=250 (an estimate) vs 338.33 measured → vlm_resid =
+    # 250*168 - 42074 = -74 calls (0.18% short) → infeasible → T* slammed to the 1800s floor → incremental flooded the
+    # queue and full starved at 96.7% never-scanned. When measured < ceiling the fleet is merely demand-limited (not at
+    # capacity), so the ceiling correctly wins and max() is a no-op. This implements the behaviour profile.py already
+    # DOCUMENTED but which was never wired up — solve() read profile["vlm_cph"] unconditionally.
+    # {PROFILE.PY:19 "THE SOLVER PREFERS THE MEASURED C_V WHEN SCAN_LOG HAS ENOUGH DATA; THIS IS THE COLD-START FALLBACK"}
+    # {MEASURED 2026-07-27 6H WINDOW "C_V_MEASURED 338.33 | VLM_RESID -74 | T_STAR PUBLISHED 1800S = INC_FLOOR_S"}
+    # [CONFIDENCE: CONFIRMED 100% — the -74 shortfall was reproduced from live DB inputs and matches the published
+    #  scheduler_state.note verbatim; same failure class as the _DEFAULT_FULL_PAGES=40 bug fixed above].
+    C_R = max(profile["render_pph"], measured_c_r or 0.0)
+    C_V = max(profile["vlm_cph"], measured_c_v or 0.0)
     # per-CYCLE incremental demand: ALL hubs are rendered (to compute the hash), only the CHANGED fraction hits the VLM.
     inc_render_cycle = n_hub * inc_pages
     inc_vlm_cycle = n_hub * inc_calls * hit_rate
@@ -61,14 +84,26 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
     t_render_h = (week * inc_render_cycle / render_resid) if render_resid > _EPS else inf
     t_vlm_h = (week * inc_vlm_cycle / vlm_resid) if vlm_resid > _EPS else inf
     infeasible = (t_render_h == inf) or (t_vlm_h == inf)          # a resource can't fit full weekly at all
-    binding = "render" if t_render_h >= t_vlm_h else "vlm"        # the resource that sets the (larger) period
     floor_h = profile["inc_floor_s"] / 3600.0                     # politeness: never cycle faster than this
     if infeasible:
-        t_star_h = inf
-    else:
-        t_star_h = max(t_render_h, t_vlm_h, floor_h)             # binding resource, but not below the floor
+        # DEGRADED MODE — full's weekly sweep alone over-subscribes a lane, so a WEEKLY full cadence is off the table.
+        # The correct response is to slow full down while still GUARANTEEING it a fixed slice of every lane, and to
+        # stretch incremental over whatever is left. The previous behaviour did the exact opposite: it published
+        # t_star = inc_floor_s (the FASTEST cadence the politeness cap allows), which maximised incremental pressure
+        # precisely when there was no spare capacity. Because claim_work orders by `priority ASC` and incremental is
+        # priority 10 vs full 100, a permanently-due incremental pool means a worker can essentially never reach a full
+        # row → full starved at 2595/2683 (96.7%) never scanned, and companies never got their deep BFS.
+        # {QUEUE.PY claim_work "ORDER BY PRIORITY ASC, DUE_AT ASC"; DB 2026-07-27 "INCREMENTAL PRIORITY 10 / FULL 100"}
+        # {MEASURED 2026-07-27 "18/18 RUNNING WORKERS ON INCREMENTAL, 0 ON FULL; FULL NEVER_SCANNED 2595/2683 = 96.7%"}
+        # [CONFIDENCE: CONFIRMED 100% — starvation observed live; the floor fallback is the mechanism].
+        r_resid = C_R * week * (1.0 - _FULL_SHARE)                # incremental may only spend the non-reserved slice
+        v_resid = C_V * week * (1.0 - _FULL_SHARE)
+        t_render_h = (week * inc_render_cycle / r_resid) if r_resid > _EPS else inf
+        t_vlm_h = (week * inc_vlm_cycle / v_resid) if v_resid > _EPS else inf
+    binding = "render" if t_render_h >= t_vlm_h else "vlm"        # the resource that sets the (larger) period
+    t_star_h = max(t_render_h, t_vlm_h, floor_h)                  # binding resource, but not below the floor
     return {
-        "t_star_s": None if infeasible else t_star_h * 3600.0,
+        "t_star_s": t_star_h * 3600.0,
         "t_render_h": t_render_h, "t_vlm_h": t_vlm_h, "binding": binding, "infeasible": infeasible,
         "inc_render_cycle": inc_render_cycle, "inc_vlm_cycle": inc_vlm_cycle,
         "full_render_wk": full_render_wk, "full_vlm_wk": full_vlm_wk,
@@ -138,24 +173,32 @@ async def solve_and_apply(pool) -> dict:
 
     # full_gated=False: full is deep-BFS DISCOVERY and always fully extracts (NOT hash-gated) — hash-gate is incremental-
     # only. So full's weekly VLM demand = all pages. {USER 2026-07-26 "seed is for full bfs; hub[gate] is for incremental"}.
-    sol = solve(profile, n_hub, inc_pages, inc_calls, tp["hit_rate"], n_full, full_pages, full_calls, full_gated=False)
+    # measured_c_r/measured_c_v let solve() raise a too-low profile ceiling to the rate the fleet demonstrably sustains
+    # (see the capacity comment in solve()) — the "solver prefers the MEASURED C_V" behaviour profile.py documents.
+    sol = solve(profile, n_hub, inc_pages, inc_calls, tp["hit_rate"], n_full, full_pages, full_calls, full_gated=False,
+                measured_c_r=tp["C_R"], measured_c_v=tp["C_V"])
 
     # full ETA (Little's Law, serial-VLM upper bound): remaining full VLM demand ÷ measured C_V. None when no full/no rate.
     eta_full_h = None
     if n_full > 0 and tp["C_V"] > _EPS:
-        eta_full_h = sol["full_vlm_wk"] / tp["C_V"]
+        # In DEGRADED mode full only owns _FULL_SHARE of the lane, so dividing by the WHOLE C_V would under-report the
+        # sweep time (it read 136.7h while full was in fact making no progress at all). Scale by the share it actually
+        # holds. {MEASURED 2026-07-27 "ETA_FULL_H 136.68 PUBLISHED WHILE FULL NEVER_SCANNED = 96.7%"}
+        # [CONFIDENCE: CONFIRMED 100% — published ETA contradicted the observed zero progress].
+        share = _FULL_SHARE if sol["infeasible"] else 1.0
+        eta_full_h = sol["full_vlm_wk"] / (tp["C_V"] * share)
 
+    # solve() now ALWAYS returns a finite T* — feasible → packed against the residual after full's weekly slice;
+    # infeasible → DEGRADED, packed against the (1-_FULL_SHARE) slice with full holding a guaranteed reservation.
+    # Either way there is exactly one re-space call and one published cadence, so complete_work's re-arm and the Today
+    # page's "refresh cycle" always agree. {see solve() DEGRADED MODE comment for why the old floor fallback starved full}.
     if sol["infeasible"]:
-        note = (f"Full weekly sweep of {n_full} companies won't fit one GPU (needs full-hash-gate or more capacity); "
-                f"running incremental on a {profile['inc_floor_s']/3600:.1f}h cycle, full as opportunistic backlog.")
-        # can't pack a WEEKLY full sweep → keep incremental at the politeness floor so it still cycles at a known rate;
-        # publish t_star_s = floor so the UI's "refresh cycle" + complete_work re-arm both use the real 30-min cadence
-        # (not null → "—"). full still runs as backlog whenever a full row is due. {USER 2026-07-26 full 2683 un-gated}.
-        sol["t_star_s"] = profile["inc_floor_s"]
-        await _respace_incremental(pool, profile["inc_floor_s"])
+        note = (f"DEGRADED: weekly full sweep of {n_full} won't fit a lane → full reserved {_FULL_SHARE*100:.0f}% of "
+                f"capacity (≈{1.0/max(_FULL_SHARE,_EPS):.1f} weeks/sweep), incremental stretched to "
+                f"T*={sol['t_star_s']/3600:.2f}h ({sol['binding']}-bound).")
     else:
         note = f"T*={sol['t_star_s']/3600:.2f}h ({sol['binding']}-bound); full fills residual."
-        await _respace_incremental(pool, sol["t_star_s"])
+    await _respace_incremental(pool, sol["t_star_s"])
     await _publish(pool, profile, sol, tp, n_hub, eta_full_h, note)
     sol["_note"], sol["_tp"], sol["_n_hub"], sol["_n_full"], sol["_eta_full_h"] = note, tp, n_hub, n_full, eta_full_h
     return sol
@@ -163,7 +206,7 @@ async def solve_and_apply(pool) -> dict:
 
 def _fmt(sol: dict) -> str:
     tp = sol["_tp"]
-    t = "INFEASIBLE" if sol["infeasible"] else f"{sol['t_star_s']/3600:.2f}h"
+    t = f"{sol['t_star_s']/3600:.2f}h" + (" DEGRADED" if sol["infeasible"] else "")   # always a real cadence now
     return (f"[pacer] T*={t} binding={sol['binding']} | N_hub={sol['_n_hub']} N_full={sol['_n_full']} | "
             f"C_R={tp['C_R']:.0f}p/h C_V={tp['C_V']:.0f}c/h hit={tp['hit_rate']*100:.0f}% | "
             f"T_render={sol['t_render_h']:.2f}h T_vlm={sol['t_vlm_h']:.2f}h | {sol['_note']}")
