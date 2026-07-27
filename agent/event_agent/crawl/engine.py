@@ -203,7 +203,14 @@ async def _render_one(url: str) -> dict | None:
             # render_shot (the drivers marshal to the browser loop). {INVESTIGATION 2026-07-24: 51% of low-event-count
             # companies reached the events page but got only the default-visible few} [CONFIDENCE: CONFIRMED — airbnb events
             # page had 3 events in content, the historical earnings calls are behind the year filter].
-            if watercrawl.is_events_page(url):
+            #
+            # GATE = should_expand(url, r), NOT is_events_page(url). The url-only guess could not see whether a control
+            # actually exists, so it expanded pages that had none (paying ~2 wasted navigations each) while skipping pages
+            # that did. We already hold this page's post-JS DOM + reading-order text in `r`, so the control is a fact to
+            # LOOK UP rather than a string to guess. {INVESTIGATION 2026-07-27 over the 14380 fetched pages: url gate =
+            # 4501 expansions / 776 real controls / 3725 wasted navs (17.2% useful); artifact gate = 2944 expansions /
+            # 2944 real controls / 0 wasted (100% useful)} [CONFIDENCE: CONFIRMED 100% — measured on the full pages table].
+            if watercrawl.should_expand(url, r):
                 try:
                     _expanded = await asyncio.to_thread(watercrawl.expand_events_page, url)
                 except Exception:                            # noqa: BLE001 — expansion is best-effort, never sink the page

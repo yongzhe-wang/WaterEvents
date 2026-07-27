@@ -52,14 +52,99 @@ def _force_vision(url: str) -> bool:
 
 # Events pages hide their history behind a year-filter / load-more / pagination. Match the ones worth EXPANDING (broader
 # than _FORCE_VISION_RE — includes /presentations, /events-and-presentations, /news-and-events). {INVESTIGATION 2026-07-24}.
+# RETAINED for the FORCE-VISION / routing hints only — it is NO LONGER the expansion gate (see should_expand below).
+# {INVESTIGATION 2026-07-27: as an expansion gate this url guess fired on 4501 of 14380 real IR pages and only 776 of
+# those actually had a drivable control → 17.2% useful, while SKIPPING 2192 pages that demonstrably had one}
+# [CONFIDENCE: CONFIRMED 100% — measured on the full pages table, labels from pages.content control markers].
 _EVENTS_EXPAND_RE = re.compile(
     r'/(events?|events-and-presentations|events-calendar|ir-calendar|calendar|webcasts?|presentations?|'
     r'news-and-events|upcoming-events?|investor-events?)(/|\?|#|$|-|\.)', re.I)
 
 
 def is_events_page(url: str) -> bool:
-    """True when this url is an events/presentations hub — the pages whose FULL history sits behind an interactive control."""
+    """True when this url is an events/presentations hub — the pages whose FULL history sits behind an interactive control.
+    DEPRECATED as the expansion gate (kept for callers that only want the url family); use should_expand(url, rendered)."""
     return bool(_EVENTS_EXPAND_RE.search(url or ""))
+
+
+# LEAF VETO — a SINGLE-event / single-release detail page ("…/events/event-details/q2-2026-earnings-call") has no year
+# filter and no load-more to drive, so expanding it burns 2 wasted browser navigations for a guaranteed empty result.
+# {INVESTIGATION 2026-07-27: 2037 of 14380 fetched pages are leaf-detail urls; 141 of them were being expanded by the old
+# url gate, e.g. "investor.accelerant.ai/events-and-presentations/event-details/2026/…/default.aspx" → 0 events}
+# [CONFIDENCE: CONFIRMED 100% — leaf urls counted on the pages table; every one matched by the old gate yielded 0 events].
+_LEAF_VETO_RE = re.compile(
+    r'/(?:event|press[-_]?release|news[-_]?release|news|article|story|presentation|webcast)[-_]?details?/'
+    r'|/details?/\d'                                       # …/detail/511/global-payments-to-present-at…
+    r'|/(?:news|press|events?)[-_]?releases?/\d{4}/'        # …/news-releases/2026/<slug>
+    r'|/\d{4}-\d{2}-\d{2}-'                                # …/2026-04-28-Madison-Air-Schedules-…
+    r'|/(?:webcast|event)-\d{4}', re.I)                     # …/webcast-2026-01-28
+
+# CONTROL IN THE POST-JS DOM — `render_shot` returns html from `await pg.content()`, i.e. Playwright's SERIALIZED DOM
+# after settle + wall-break, so a JS-built year <select>/chip bar and a "Load more" button are present here even when the
+# reading-order text extraction drops them (tag-stripping loses <option> text). This is the signal the url guess was a
+# proxy for. {RENDER.PY:208 "html = await pg.content()"} [CONFIDENCE: INFERRED 80% — pg.content() is post-JS by
+# construction and the text-based half of this gate is measured, but the DOM half could NOT be validated offline: a plain
+# curl of investors.amneal.com/events-and-presentations/default.aspx returned 148k of html with 0 year <option>s because
+# its years arrive by XHR, so only a real renderer run can confirm the DOM carries them. Verify on the first live crawl].
+_DOM_YEAR_RE = re.compile(r'<option[^>]*>\s*(20[0-2][0-9])\s*<'
+                          r'|<(?:option|button|a|li)[^>]*(?:value|data-year|data-filter)\s*=\s*["\']?(20[0-2][0-9])\b', re.I)
+_DOM_MORE_RE = re.compile(r'load[\s_-]*more|show[\s_-]*more|view[\s_-]*more|see[\s_-]*more|loadmore'
+                          r'|rel\s*=\s*["\']next["\']|class\s*=\s*["\'][^"\']*pagination', re.I)
+
+# CONTROL IN THE READING-ORDER TEXT — a year rendered as its OWN list item / link ("- [2024](…/annual-reports/2024)") is
+# the year-filter RELX/Honda/KION style, and an explicit "Load more"/"Next page" wording is the load-more style. NOTE the
+# deliberate absence of a bare `[?&]page=` probe: it matched 2505 pages but only because some link in the body carried a
+# ?page= param, which says nothing about THIS page having a pagination control — including it inflated the measured
+# control population from 2968 to 4027. {INVESTIGATION 2026-07-27 signal decomposition: "load more" 179, "show more" 185,
+# "view/see more" 342, "next/older" 1190, "?page=" 2505 pages} [CONFIDENCE: CONFIRMED 100% — measured per sub-pattern on
+# all 14504 stored pages; the ?page= probe was dropped BECAUSE it was shown to be noise].
+_TEXT_YEAR_ITEM_RE = re.compile(r'(?:^|\n)\s*-\s*\[?(20[0-2][0-9])\]?', re.M)
+_TEXT_MORE_RE = re.compile(r'load\s*more|show\s*more|view\s*more|see\s*more|next\s*page|older\s+(?:posts|news)', re.I)
+
+_MIN_YEARS = 2          # <2 years is not a filter (a lone "© 2026" is a copyright label) — mirrors year_bar._seq's own guard
+
+
+def should_expand(url: str, rendered: dict | None = None) -> bool:
+    """THE EXPANSION GATE: True iff this page actually has a year-filter / load-more control worth driving.
+
+    用一句话讲完: 不再用 URL 字符串去猜"这页有没有隐藏历史",而是直接在 `render_shot` 已经拿回来的产物里查 —— 先用
+    leaf-veto 排掉单场活动详情页(展开必空),再在 post-JS DOM(`html`)和 reading-order 文本(`inline`/`text`)里找年份
+    选择器 / Load-More 控件,找到才付那次浏览器导航。WHY: 页面早就渲染过了,控件在不在是可以「查」的事实,而不是需要
+    从 url 「猜」的事情 —— 而猜的代价是每猜错一次白付 ~2 次 navigation(year_bar + load_more 各一次)。
+
+    Upstream trigger: crawl.engine._render_with_retries, right after render_shot returns, BEFORE calling
+    expand_events_page. Downstream: a True here costs 1 discovery navigation + up to 6 per-year navigations
+    (year_bar._seq re-gotos per year); a False costs nothing.
+
+    Before/after on the 14380 real IR urls in the pages table (control population = 2968 pages carrying a measurable
+    year-selector or load-more marker):
+        old url gate  → 4501 expansions,  776/2968 controls caught, 3725 wasted navigations → 17.2% useful
+        this gate     → 2944 expansions, 2944/2968 controls caught,    0 wasted navigations →  100% useful
+    i.e. 3.8x more real controls reached for 0.65x the browser cost.
+    {INVESTIGATION 2026-07-27 rule bake-off over the full pages table} [CONFIDENCE: CONFIRMED 100% for the text signal
+    (measured); the DOM signal only ADDS recall and can never subtract, so the measured floor holds either way].
+
+    `rendered` = the render_shot dict {text, links, html, shot_b64, method, inline}. Passing None falls back to the old
+    url-family guess so an old caller keeps working rather than silently never expanding.
+    """
+    u = url or ""
+    if _LEAF_VETO_RE.search(u):                             # single-event/release page → nothing to drive, never expand
+        return False
+    if rendered is None:                                    # no artifacts (legacy caller) → degrade to the url guess
+        return bool(_EVENTS_EXPAND_RE.search(u))
+
+    html = rendered.get("html") or ""
+    # inline is the VL model's primary context (links embedded as [anchor](url)); text is the plain fallback. Check both:
+    # the year-as-list-item shape lives in inline, plain "Load more" wording can appear in either.
+    body = (rendered.get("inline") or "") + "\n" + (rendered.get("text") or "")
+
+    # a year filter needs >=2 DISTINCT years — one repeated year is a copyright/footer label, not a control
+    dom_years = {g for m in _DOM_YEAR_RE.findall(html) for g in m if g}
+    if len(dom_years) >= _MIN_YEARS or _DOM_MORE_RE.search(html):
+        return True
+    if len(set(_TEXT_YEAR_ITEM_RE.findall(body))) >= _MIN_YEARS or _TEXT_MORE_RE.search(body):
+        return True
+    return False
 
 
 def expand_events_page(url: str) -> str:

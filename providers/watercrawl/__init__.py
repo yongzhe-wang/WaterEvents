@@ -33,7 +33,7 @@ container-safe (--disable-dev-shm-usage).
 """
 # render lane — render()/render_shot() live in render.py; the heavier render_full/render_detail fallback chains in
 # orchestrator.py. render_shot = open page + full-page screenshot (the VL project's sole entry).
-from .render import render, render_shot, is_events_page, expand_events_page
+from .render import render, render_shot, is_events_page, should_expand, expand_events_page
 from .orchestrator import render_full, render_detail
 
 # interaction drivers — each self-skips when its control is absent, so callers invoke them unconditionally on any hub.
