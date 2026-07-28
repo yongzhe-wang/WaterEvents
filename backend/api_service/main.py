@@ -1,8 +1,12 @@
-"""api_service — the PUBLIC read-only HTTP surface for WaterEvents. Today's pulse counter is its first endpoint.
+"""api_service — the PUBLIC read-only HTTP surface for WaterEvents: a pulse COUNTER and the event FEED behind it.
 
-用一句话讲完: 一个独立的 aiohttp 进程(:8090)对外开放 GET /today/pulse → 它不连 Postgres,而是转调 PostgREST 的
-`rpc/today_pulse` 函数,加上 10 秒进程内缓存和 per-IP 限流,把结果原样返回 → 所以无论这个公开端点被打多狠,爬虫
-fleet 的 Supavisor 连接一条都不会被占用。起停这个进程完全不影响 fleet 和 webapp。
+用一句话讲完: 一个独立的 aiohttp 进程(:8090)对外开放 GET /today/pulse(三个粒度的计数) 和 GET /today/events(同一批
+事件的实体 + metadata) → 它不连 Postgres,而是转调 PostgREST 的 `rpc/today_pulse` / `rpc/today_events` 函数,加上
+10 秒进程内缓存和 per-IP 限流,把结果原样返回 → 所以无论这两个公开端点被打多狠,爬虫 fleet 的 Supavisor 连接一条都
+不会被占用。起停这个进程完全不影响 fleet 和 webapp。
+
+两条 endpoint 共用同一个谓词(event_date 周期为当前 AND created_at 落在窗口内),所以 /today/events 的 `count` 恒等于
+/today/pulse 的 `buckets.<bucket>` —— 一个报数、一个报货,对不上就是 bug。
 
 WHY it talks to PostgREST instead of opening its own Postgres pool: the fleet reaches Postgres through Supavisor
 (transaction mode :6543); a public endpoint sharing that pool can starve the crawler just by being hammered. PostgREST
@@ -59,7 +63,22 @@ _BOOST_TOKEN = os.environ.get("QUEUE_BOOST_TOKEN", "")
 _ALLOWED_TZ = {"UTC", "America/New_York", "America/Los_Angeles", "America/Chicago",
                "Europe/London", "Europe/Paris", "Asia/Tokyo", "Asia/Shanghai", "Asia/Hong_Kong"}
 
-_cache: dict[str, tuple[float, dict]] = {}      # tz -> (fetched_at_monotonic, payload)
+# The three granularities /today/pulse already counts. Rejecting anything else here with a 400, rather than letting the
+# RPC quietly fall back to its default window, keeps the contract honest: a caller who typos `bucket=hourly` is told so
+# instead of silently receiving hour data and believing it asked for something else.
+# {20260728031746_waterevents_today_pulse_rpc.sql:73-76 "'BUCKETS', JSONB_BUILD_OBJECT('MINUTE', ... 'HOUR', ... 'DAY', ...)"}
+# [CONFIDENCE: CONFIRMED 100% — the same three labels the pulse function publishes, so the two endpoints stay comparable].
+_ALLOWED_BUCKETS = {"minute", "hour", "day"}
+# Row cap for the public event feed. The ceiling is enforced AGAIN in SQL (least/greatest inside today_events); this
+# copy only rejects an absurd `limit` before it costs an upstream round-trip. Two layers because the RPC is reachable
+# through PostgREST directly, so a Python-only check would not be a real bound.
+# {MEASURED 2026-07-28 "PERIOD-MATCHED DAY BUCKET = 237 ROWS; RAW 1-DAY WINDOW = 28420"} — 500 clears a normal day with
+# headroom while keeping the widest bucket far away from being a bulk-export path.
+# [CONFIDENCE: CONFIRMED 100% — both counts read off the live REST API with Prefer: count=exact].
+_EVENTS_MAX = int(os.environ.get("API_EVENTS_MAX", "500"))
+_EVENTS_DEFAULT = int(os.environ.get("API_EVENTS_DEFAULT", "100"))
+
+_cache: dict[str, tuple[float, dict]] = {}      # cache key -> (fetched_at_monotonic, payload)
 _hits: dict[str, deque] = {}                    # client ip -> timestamps inside the current window
 
 
@@ -123,6 +142,71 @@ async def today_pulse(request: web.Request) -> web.Response:
                                                "Access-Control-Allow-Origin": "*"})
 
 
+async def _fetch_events(tz: str, bucket: str, limit: int) -> dict:
+    """Call the today_events RPC through PostgREST and return its jsonb payload, serving a cached copy inside the TTL.
+
+    The cache key includes bucket and limit, not just tz: the three granularities are three different result sets, and
+    keying on tz alone (as the pulse does, because it returns all three buckets in one payload) would serve a caller
+    asking for `minute` whatever the previous caller's `day` request happened to leave behind."""
+    key = f"events:{tz}:{bucket}:{limit}"
+    hit = _cache.get(key)
+    if hit and (time.monotonic() - hit[0]) < _CACHE_TTL_S:
+        return hit[1]
+    headers = {"apikey": _REST_KEY, "Authorization": f"Bearer {_REST_KEY}",
+               "Content-Profile": "waterevents", "Content-Type": "application/json"}
+    async with ClientSession(timeout=ClientTimeout(total=_UPSTREAM_TIMEOUT_S)) as s:
+        # Body keys must match the SQL argument names (tz / bucket / lim) — PostgREST maps them positionally by NAME.
+        async with s.post(f"{_REST_URL}/rpc/today_events", headers=headers,
+                          data=json.dumps({"tz": tz, "bucket": bucket, "lim": limit})) as r:
+            r.raise_for_status()
+            payload = await r.json()
+    _cache[key] = (time.monotonic(), payload)
+    return payload
+
+
+async def today_events(request: web.Request) -> web.Response:
+    """GET /today/events?bucket=minute|hour|day&tz=UTC&limit=100 → the EVENTS behind /today/pulse's counters.
+
+    Returns each event's metadata — ticker, title, event_date, event_type, url, media_urls, source_url, discovered —
+    newest first, using the SAME predicate today_pulse counts with, so `count` here equals `buckets.<bucket>` there.
+
+    PUBLIC and unauthenticated on purpose: the selector is a TIME WINDOW, so the widest bucket returns "what we found
+    today" and can never be walked backwards into the 149k-row corpus the way /api/events' `offset` can. That is the
+    property that makes this safe to open and /api/events not. {USER 2026-07-28 "i want a open public endpoint for min
+    hour and day level that returns the event and each of its meta data title, et.c"}
+    {MEASURED 2026-07-28 "EVENTS TOTAL 149398 | PERIOD-MATCHED DAY BUCKET 237"}
+    [CONFIDENCE: CONFIRMED 100% — corpus size and day-bucket size both read off the live REST API].
+
+    EXPECT the minute bucket to be empty most of the time: over a sampled 24h only 132 of 1440 minutes (9.2%) had a
+    qualifying row. An empty `events` array there is data sparsity, not a fault — `fetched` tells the caller whether
+    the crawler was idle or merely found nothing whose period is current."""
+    ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (
+        request.remote or "?")
+    if not _rate_ok(ip):
+        return web.json_response({"error": "rate limited", "limit_per_window": _RATE_MAX,
+                                  "window_s": _RATE_WINDOW_S}, status=429)
+    tz = request.query.get("tz", "UTC")
+    if tz not in _ALLOWED_TZ:
+        return web.json_response({"error": "unsupported tz", "allowed": sorted(_ALLOWED_TZ)}, status=400)
+    bucket = request.query.get("bucket", "hour").strip().lower()
+    if bucket not in _ALLOWED_BUCKETS:
+        return web.json_response({"error": "unsupported bucket", "allowed": sorted(_ALLOWED_BUCKETS)}, status=400)
+    raw = request.query.get("limit", "").strip()
+    try:
+        limit = int(raw) if raw else _EVENTS_DEFAULT
+    except ValueError:                           # a non-numeric limit is a client mistake, not a reason to 500
+        return web.json_response({"error": "limit must be an integer", "max": _EVENTS_MAX}, status=400)
+    # Clamp rather than reject: a caller asking for 10000 wants "as many as you'll give me", and answering 500 rows is
+    # more useful than a 400. The response echoes `limit` and sets `truncated`, so the clamp is never invisible.
+    limit = max(1, min(limit, _EVENTS_MAX))
+    try:
+        payload = await _fetch_events(tz, bucket, limit)
+    except Exception as e:                       # noqa: BLE001 — never leak upstream/db text to a public caller
+        return web.json_response({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
+    return web.json_response(payload, headers={"Cache-Control": f"public, max-age={int(_CACHE_TTL_S)}",
+                                               "Access-Control-Allow-Origin": "*"})
+
+
 async def queue_boost(request: web.Request) -> web.Response:
     """POST /queue/boost — hand-steer which companies the full BFS scans next, WITHOUT stopping the fleet.
 
@@ -174,11 +258,13 @@ async def health(_request: web.Request) -> web.Response:
 def build_app() -> web.Application:
     app = web.Application()
     app.add_routes([web.get("/health", health), web.get("/today/pulse", today_pulse),
+                    web.get("/today/events", today_events),
                     web.post("/queue/boost", queue_boost)])
     return app
 
 
 if __name__ == "__main__":
-    print(f"[api_service] listening on :{_PORT} → {_REST_URL}/rpc/today_pulse "
-          f"(cache {_CACHE_TTL_S}s, rate {_RATE_MAX}/{_RATE_WINDOW_S}s)", flush=True)
+    print(f"[api_service] listening on :{_PORT} → {_REST_URL} "
+          f"(GET /today/pulse · GET /today/events · POST /queue/boost; "
+          f"cache {_CACHE_TTL_S}s, rate {_RATE_MAX}/{_RATE_WINDOW_S}s, events cap {_EVENTS_MAX})", flush=True)
     web.run_app(build_app(), port=_PORT, access_log=None)

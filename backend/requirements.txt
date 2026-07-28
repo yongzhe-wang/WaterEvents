@@ -5,6 +5,7 @@ patchright>=1.40          # stealth fork for the residential/webshare fallback p
 camoufox[geoip]>=0.4      # FB4 stealth Firefox tier (watercrawl.engines.camoufox) — beats Akamai/Incapsula sensor.js; needs `python -m camoufox fetch`. Was MISSING from requirements → the "render deps bug" (lazy-imported so watercrawl still imports, but the hardest-wall tier is silently dormant).
 openai>=1.40              # AsyncOpenAI → talks to the local vLLM Qwen-VL server (OpenAI-compatible API)
 asyncpg>=0.29             # discovery worker DB layer (event_agent.db) → Supabase Supavisor pooler; statement_cache_size=0
+aiohttp>=3.9              # api_service (:8090) — BOTH its web server and its PostgREST client. Was MISSING from requirements: the service ran only because the VM's venv happened to ship it, and a clean install would have started the public endpoint's process straight into ModuleNotFoundError. Same class as the camoufox/docling gaps below, except this one is NOT lazy-imported — it fails at module import, so the whole service dies rather than degrading quietly.
 curl_cffi>=0.7
 pypdf>=4.0
 pdfplumber>=0.11
