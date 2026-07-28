@@ -8,6 +8,7 @@ import TodayView from "./views/TodayView";
 import EventsView from "./views/EventsView";
 import MediaView from "./views/MediaView";
 import IrUrlsView from "./views/IrUrlsView";
+import ApiDocsView from "./views/ApiDocsView";
 
 // Minimal stroke icons (currentColor) matching the old glass nav.
 const svg = (inner: ReactNode): ReactNode => (
@@ -20,16 +21,19 @@ const ICONS = {
   media: svg(<><rect x="2" y="3" width="12" height="10" rx="1.5" /><path d="M6.5 6l4 2.5-4 2.5V6z" /></>),
   // link/chain glyph — this page is about the ENTRY URLS we crawl per company, so a link is the honest icon.
   irurls: svg(<><path d="M6.5 9.5a2.8 2.8 0 004 0l2.2-2.2a2.8 2.8 0 00-4-4l-.9.9" /><path d="M9.5 6.5a2.8 2.8 0 00-4 0L3.3 8.7a2.8 2.8 0 004 4l.9-.9" /></>),
+  // angle-brackets + slash — the page documents an HTTP surface for other programs, not another data view.
+  apidocs: svg(<><path d="M5.2 4.5L2 8l3.2 3.5M10.8 4.5L14 8l-3.2 3.5M9.3 3l-2.6 10" /></>),
 };
 
 // Real routes so each page is deep-linkable + back/forward works (a minimal history-API router, no react-router).
-type View = "today" | "events" | "media" | "irurls";
-const ROUTES: Record<View, string> = { today: "/today", events: "/events", media: "/media", irurls: "/ir-urls" };
+type View = "today" | "events" | "media" | "irurls" | "apidocs";
+const ROUTES: Record<View, string> = { today: "/today", events: "/events", media: "/media", irurls: "/ir-urls", apidocs: "/api-docs" };
 function pathToView(p: string): View {
   const s = p.replace(/\/+$/, "");
   if (s === "/events") return "events";
   if (s === "/media") return "media";
   if (s === "/ir-urls") return "irurls";
+  if (s === "/api-docs") return "apidocs";
   return "today";                                  // "/" and "/today" → Today is the default landing page
 }
 
@@ -69,12 +73,14 @@ export default function App() {
           <NavItem label="Events" icon={ICONS.events} active={view === "events"} href={ROUTES.events} onClick={() => setView("events")} />
           <NavItem label="Media" icon={ICONS.media} active={view === "media"} href={ROUTES.media} onClick={() => setView("media")} />
           <NavItem label="IR_URLS" icon={ICONS.irurls} active={view === "irurls"} href={ROUTES.irurls} onClick={() => setView("irurls")} />
+          <NavItem label="API" icon={ICONS.apidocs} active={view === "apidocs"} href={ROUTES.apidocs} onClick={() => setView("apidocs")} />
         </nav>
       </aside>
       <main className="stage">
         {view === "today" ? <TodayView />
           : view === "media" ? <MediaView />
           : view === "irurls" ? <IrUrlsView />
+          : view === "apidocs" ? <ApiDocsView />
           : <EventsView />}
       </main>
     </div>

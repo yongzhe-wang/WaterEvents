@@ -96,6 +96,27 @@ def _rate_ok(ip: str) -> bool:
     return True
 
 
+def _public_json(payload: dict, *, status: int = 200, cacheable: bool = False) -> web.Response:
+    """Every response from a PUBLIC read endpoint, success or failure, with CORS attached.
+
+    WHY a helper instead of the header on the success path only: that was the bug. `Access-Control-Allow-Origin` was
+    set on the 200 return and nowhere else, so a browser client that sent a bad bucket, tripped the rate limit or hit
+    an upstream outage got its response BLOCKED by CORS and saw `TypeError: Failed to fetch` with no status at all —
+    the documented 400/429/503 contract was unreachable from the one kind of client most likely to read the docs.
+    /health had no header on any path, so it was unreachable from a browser entirely.
+    {MEASURED 2026-07-28 from the docs page's live panel: "/today/pulse → {ok:true, status:200}; /health → BLOCKED:
+     Failed to fetch; /today/events → BLOCKED: Failed to fetch"}
+    [CONFIDENCE: CONFIRMED 100% — the three fetches were run side by side in the browser against the live service;
+     only the one path that sets the header was readable].
+
+    cacheable=True adds the shared Cache-Control. Errors are deliberately NOT cacheable: a cached 503 would keep a
+    client seeing an outage for 10s after it cleared."""
+    headers = {"Access-Control-Allow-Origin": "*"}
+    if cacheable:
+        headers["Cache-Control"] = f"public, max-age={int(_CACHE_TTL_S)}"
+    return web.json_response(payload, status=status, headers=headers)
+
+
 async def _fetch_pulse(tz: str) -> dict:
     """Call the today_pulse RPC through PostgREST and return its jsonb payload, serving a cached copy inside the TTL.
 
@@ -129,17 +150,16 @@ async def today_pulse(request: web.Request) -> web.Response:
     ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (
         request.remote or "?")
     if not _rate_ok(ip):
-        return web.json_response({"error": "rate limited", "limit_per_window": _RATE_MAX,
-                                  "window_s": _RATE_WINDOW_S}, status=429)
+        return _public_json({"error": "rate limited", "limit_per_window": _RATE_MAX,
+                             "window_s": _RATE_WINDOW_S}, status=429)
     tz = request.query.get("tz", "UTC")
     if tz not in _ALLOWED_TZ:
-        return web.json_response({"error": "unsupported tz", "allowed": sorted(_ALLOWED_TZ)}, status=400)
+        return _public_json({"error": "unsupported tz", "allowed": sorted(_ALLOWED_TZ)}, status=400)
     try:
         payload = await _fetch_pulse(tz)
     except Exception as e:                       # noqa: BLE001 — never leak upstream/db text to a public caller
-        return web.json_response({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
-    return web.json_response(payload, headers={"Cache-Control": f"public, max-age={int(_CACHE_TTL_S)}",
-                                               "Access-Control-Allow-Origin": "*"})
+        return _public_json({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
+    return _public_json(payload, cacheable=True)
 
 
 async def _fetch_events(tz: str, bucket: str, limit: int) -> dict:
@@ -183,28 +203,27 @@ async def today_events(request: web.Request) -> web.Response:
     ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (
         request.remote or "?")
     if not _rate_ok(ip):
-        return web.json_response({"error": "rate limited", "limit_per_window": _RATE_MAX,
-                                  "window_s": _RATE_WINDOW_S}, status=429)
+        return _public_json({"error": "rate limited", "limit_per_window": _RATE_MAX,
+                             "window_s": _RATE_WINDOW_S}, status=429)
     tz = request.query.get("tz", "UTC")
     if tz not in _ALLOWED_TZ:
-        return web.json_response({"error": "unsupported tz", "allowed": sorted(_ALLOWED_TZ)}, status=400)
+        return _public_json({"error": "unsupported tz", "allowed": sorted(_ALLOWED_TZ)}, status=400)
     bucket = request.query.get("bucket", "hour").strip().lower()
     if bucket not in _ALLOWED_BUCKETS:
-        return web.json_response({"error": "unsupported bucket", "allowed": sorted(_ALLOWED_BUCKETS)}, status=400)
+        return _public_json({"error": "unsupported bucket", "allowed": sorted(_ALLOWED_BUCKETS)}, status=400)
     raw = request.query.get("limit", "").strip()
     try:
         limit = int(raw) if raw else _EVENTS_DEFAULT
     except ValueError:                           # a non-numeric limit is a client mistake, not a reason to 500
-        return web.json_response({"error": "limit must be an integer", "max": _EVENTS_MAX}, status=400)
+        return _public_json({"error": "limit must be an integer", "max": _EVENTS_MAX}, status=400)
     # Clamp rather than reject: a caller asking for 10000 wants "as many as you'll give me", and answering 500 rows is
     # more useful than a 400. The response echoes `limit` and sets `truncated`, so the clamp is never invisible.
     limit = max(1, min(limit, _EVENTS_MAX))
     try:
         payload = await _fetch_events(tz, bucket, limit)
     except Exception as e:                       # noqa: BLE001 — never leak upstream/db text to a public caller
-        return web.json_response({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
-    return web.json_response(payload, headers={"Cache-Control": f"public, max-age={int(_CACHE_TTL_S)}",
-                                               "Access-Control-Allow-Origin": "*"})
+        return _public_json({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
+    return _public_json(payload, cacheable=True)
 
 
 async def queue_boost(request: web.Request) -> web.Response:
@@ -251,8 +270,11 @@ async def queue_boost(request: web.Request) -> web.Response:
 
 
 async def health(_request: web.Request) -> web.Response:
-    """Liveness only — deliberately does NOT touch the database, so a probe loop cannot add upstream load."""
-    return web.json_response({"ok": True, "service": "api_service", "cache_ttl_s": _CACHE_TTL_S})
+    """Liveness only — deliberately does NOT touch the database, so a probe loop cannot add upstream load.
+
+    CORS-enabled like the other public reads: the docs page lists /health as an endpoint, and a browser probing it was
+    getting `Failed to fetch` because this was the one handler with no header on any path."""
+    return _public_json({"ok": True, "service": "api_service", "cache_ttl_s": _CACHE_TTL_S})
 
 
 def build_app() -> web.Application:
