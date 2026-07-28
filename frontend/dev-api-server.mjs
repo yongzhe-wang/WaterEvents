@@ -47,13 +47,18 @@ async function serveStatic(pathname, rawRes) {
 // Static path -> handler module file. The vite proxy forwards every /api/* call
 // here; each Vercel handler is `export default async (req, res) => {}`.
 // {api/stats.js:4 "export default async function handler(_req, res)"}
+// Five entries here pointed at files that do not exist (stats / ir-companies / token-usage / status / discovery —
+// leftovers from the ir-pipeline this repo replaced). They were not harmless: a request to one of them fell through to
+// loadHandler's dynamic import(), which throws, and the catch-all replies with String(e) — i.e. it returned the
+// server's absolute filesystem paths to an unauthenticated caller on the public internet. Meanwhile the two handlers
+// that DO exist, media.js and health.js, had no entry at all, so /api/media 404'd under this shim even though
+// MediaView fetches it (production works only because Vercel routes by filename, not by this table).
+// {AUDIT 2026-07-28 — verified by listing api/ against every "./api/*.js" literal in this file}
+// [CONFIDENCE: CONFIRMED 100% — the five files are absent from api/ and the two present ones were unrouted].
 const STATIC_ROUTES = {
-  "/api/stats": "./api/stats.js",
   "/api/companies": "./api/companies.js",
-  "/api/ir-companies": "./api/ir-companies.js",
-  "/api/token-usage": "./api/token-usage.js",
-  "/api/status": "./api/status.js",   // live health of Supabase / Firecrawl / DeepSeek / OpenAI
-  "/api/discovery": "./api/discovery.js",   // event_agent crawl progress — event URLs found per company
+  "/api/media": "./api/media.js",     // Media tab — server-side paginated (was an unbounded full-table scan)
+  "/api/health": "./api/health.js",   // liveness probe
   "/api/today": "./api/today.js",     // Today dashboard: work_queue state + newest events (this session)
   "/api/usage": "./api/usage.js",     // day-level render/VLM usage history for the click-to-chart modal
   "/api/events": "./api/events.js",   // events list (EventsView) — was missing from the shim (prod-only)
@@ -157,8 +162,13 @@ const server = createServer(async (rawReq, rawRes) => {
     const handler = await loadHandler(match.relPath);
     await handler(req, res);
   } catch (e) {
+    // Log the real error server-side, return a generic body. String(e) on an import failure carries the server's
+    // absolute filesystem paths, and this process is reachable from the public internet with no authentication — every
+    // other handler already returns a fixed message ("failed to load media" etc.); this catch-all was the one that
+    // leaked. {AUDIT 2026-07-28} [CONFIDENCE: CONFIRMED 100% — a dead STATIC_ROUTES entry reached exactly this path].
+    console.error("[api] handler failed:", match.relPath, e);
     rawRes.writeHead(500, { "Content-Type": "application/json" });
-    rawRes.end(JSON.stringify({ error: String(e) }));
+    rawRes.end(JSON.stringify({ error: "internal error" }));
   }
 });
 
