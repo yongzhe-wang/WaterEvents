@@ -42,7 +42,7 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list]:
     """Discover the year <select> from the DOM, then walk newest→oldest selecting each year + capturing its AJAX
     listing → merged (text, deduped links). ("", []) when there is no year <select>. Runs ON the loop."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # POOL, not browsers[0] — see runtime.next_browser
         try:
             pg = await page.new_blocked_page(ctx)
             await pg.goto(url, wait_until="domcontentloaded", timeout=config.NAV_TIMEOUT_MS)

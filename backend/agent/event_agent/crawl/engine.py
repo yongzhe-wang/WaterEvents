@@ -359,6 +359,20 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
             vlm_calls += 1                                     # the VLM WAS invoked (it errored) → still a call for C_V accounting
             print(f"[crawl] ⛔ EXTRACT FAILED {render['url'][:70]} — {res['_error']} — page's events LOST", flush=True)
             return []
+        # PARTIAL / ROUTE-ONLY failures are NOT grounds to drop the page. `_partial` = some chunk blocks truncated but the
+        # rest returned real events; `_route_error` = the (independent) routing call failed, which costs us depth from this
+        # page but says nothing about the events already extracted. Both still count a failed_extract so the company ends
+        # up status='incomplete' — we stay fail-loud about coverage without throwing away what we actually got.
+        # {EXTRACT.PY _combine "THE RIGHT COST OF A ROUTING FAILURE IS "WE DON'T GO DEEPER FROM THIS PAGE", NEVER "THIS
+        #  PAGE'S EVENTS ARE LOST""} [CONFIDENCE: CONFIRMED 100% — the two LLM jobs are gathered independently].
+        if res.get("_partial"):
+            failed_extract += 1
+            print(f"[crawl] ⚠️ PARTIAL EXTRACT {render['url'][:70]} — {res['_partial']} — keeping "
+                  f"{len(res.get('events') or [])} event(s) from the blocks that succeeded", flush=True)
+        if res.get("_route_error"):
+            failed_extract += 1
+            print(f"[crawl] ⚠️ ROUTING FAILED {render['url'][:70]} — {res['_route_error']} — events kept, "
+                  f"no frontier expansion from this page", flush=True)
         vlm_calls += 1                                         # a real extract fired on this rendered page → 1 VLM call
         new_ev: list = []
         for e in res["events"]:                                # dedup by (title+date) identity — MATCHES the DB dedup_key

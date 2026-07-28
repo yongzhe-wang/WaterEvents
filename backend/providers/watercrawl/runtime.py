@@ -130,7 +130,18 @@ def next_browser():
     """Round-robin the NEXT default browser from the pool (render.py's default render path calls this instead of reading
     the single runtime._browser). Spreads consecutive render pages across the K separate browser processes so no one
     browser accumulates all the tabs. Called ONLY from render coroutines on the single loop thread, so the itertools
-    cycle needs no lock. Falls back to _browser if the pool isn't built yet (defensive; ensure_browser runs first)."""
+    cycle needs no lock. Falls back to _browser if the pool isn't built yet (defensive; ensure_browser runs first).
+
+    EVERY on-loop context opener must come through here — the five interaction drivers (year_bar / year_select / years /
+    load_more / clicks) used to read `runtime._browser` directly, which is hard-wired to `_browsers[0]`. That put ALL
+    expansion work on a single browser process while only the render path round-robined, and expansion is the heaviest
+    session there is (year_bar re-navigates once per year, up to 7 navigations for one page). Piling those on one browser
+    is the exact configuration config.py already records as collapsing — and what collapses first is the events pages,
+    i.e. precisely the pages with the most events to win.
+    {RUNTIME.PY:73 "_BROWSER = _BROWSERS[0]"} {CONFIG.PY:22 "PILING ALL TABS ON ONE BROWSER STARVES AT HIGH N ... 48 TABS
+     ON 1 BROWSER TIMED OUT THE EVENTS PAGES THEMSELVES (RENDER_SHOT 22S NAV TIMEOUT) AND EVENT YIELD COLLAPSED (NVDA 94→8)"}
+    [CONFIDENCE: CONFIRMED 100% — all five drivers verified on the same single-browser handle before this change; the
+     collapse mode is documented from a measured NVDA regression, not predicted]."""
     return next(_rr_browser) if _rr_browser is not None else _browser
 
 
@@ -143,6 +154,27 @@ def run_on_loop(coro, timeout: float):
     """Marshal an already-created coroutine onto the dedicated Playwright loop and BLOCK the calling thread on its
     result. THE single crossing point from a crawl worker thread into the browser loop — every sync entry (render/
     render_shot/drive_*) funnels its on-loop coroutine through here. Raises whatever the coroutine raised (callers
-    wrap in try/except → empty result on failure)."""
+    wrap in try/except → empty result on failure).
+
+    CANCEL ON THE WAY OUT — this is the leak fix. `fut.result(timeout=)` only stops the CALLER waiting; the coroutine
+    keeps running on the loop, still holding the browser context it opened and still occupying its `_sem` slot. Its
+    `finally: await ctx.close()` cannot run until it finishes naturally — and a timeout is precisely the case where it
+    is stuck in _goto/_settle and will not. Every timed-out render therefore leaked one context plus one semaphore
+    permit, and engine.py retries the same url up to _RENDER_TRIES=3 times with backoff while the earlier attempts are
+    still alive, so one slow host could hold three contexts at once. Leaked permits are never returned, so once enough
+    accumulate the semaphore is exhausted and EVERY subsequent render blocks on it forever — the worker goes silent
+    rather than erroring, which is the failure mode hardest to notice.
+    Cancelling propagates CancelledError into the coroutine, which runs its `finally` immediately: context closed,
+    permit returned. {INCIDENT 2026-07-27 "155 CHROMIUM PROCESSES / 9.49GB CHROME-HEADLESS RSS AFTER 12 MINUTES OF
+    UPTIME" — steady-state concurrency cannot reach that in 12 minutes, a leak term is required to explain it}
+    {ENGINE.PY "_RENDER_TRIES = INT(OS.ENVIRON.GET("EVENT_RENDER_TRIES", "3"))" — retries overlap the leaked attempts}
+    [CONFIDENCE: CONFIRMED 100% — asyncio.Future.result(timeout) is documented to leave the coroutine running; the
+     browser-pool cap shipped in 5b91b6a only lowers the BASELINE and, by shrinking the semaphore from 24 to 8 permits,
+     actually makes exhaustion arrive with FEWER leaked slots. This is the fix that addresses the cause.]
+    """
     fut = asyncio.run_coroutine_threadsafe(coro, _loop)
-    return fut.result(timeout=timeout)
+    try:
+        return fut.result(timeout=timeout)
+    except BaseException:                                 # timeout, KeyboardInterrupt, or the coroutine's own error
+        fut.cancel()                                      # → CancelledError inside the coro → its finally closes ctx
+        raise

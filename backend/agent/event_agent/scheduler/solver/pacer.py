@@ -134,6 +134,39 @@ async def _respace_incremental(pool, t_star_s: float) -> int:
         return 0
 
 
+async def _reap_failed(pool, cooloff_h: float = 6.0) -> int:
+    """Return 'failed' units to the queue once they have cooled off → the queue stops leaking rows permanently.
+
+    用一句话讲完: fail_work 在连续失败到达上限时把行标成 'failed',但 claim_work 只认领 'queued' 和 lease 过期的
+    'running' —— 'failed' 不在里面,而全仓库**没有任何代码**会把它改回去。所以那是个绝对终态:一个 url 因为一次运维重启
+    或一段网络抖动被判死,就永远退出队列,而 fail_work 的 docstring 却承诺 "a reconcile/monitor surfaces it"。这个
+    reconcile 从来不存在(events.py 的 reconcile_events 只管 events 表的 enrichment,不碰 work_queue)。
+    这里补上它:冷却 cooloff_h 之后把行放回 queued 并清零 attempt,让它有机会重新证明自己;真正永久坏掉的 url 会再次
+    失败并再次退出,所以这不会变成无限重试 —— 只是把「永久死刑」降级成「带冷却的重试」。
+
+    Upstream trigger: the pacer's hourly tick (it is the only always-on singleton, so no new process is needed).
+    Downstream: rows become claimable again on the next claim_work.
+    {QUEUE.PY fail_work "MARK 'FAILED' (FAIL-LOUD, A RECONCILE/MONITOR SURFACES IT) SO A PERMANENTLY-BROKEN URL DOESN'T
+     SPIN FOREVER" — the promised reconcile did not exist}
+    {QUEUE.PY claim_work "WHERE (STATUS = 'QUEUED' OR (STATUS = 'RUNNING' AND LEASE_UNTIL < NOW()))" — 'failed' excluded}
+    [CONFIDENCE: CONFIRMED 100% — grep over backend/ found exactly one writer of status='failed' and zero readers that
+     restore it; live work_queue had 0 failed rows at the time of writing, so this lands before any damage, not after].
+    """
+    async with pool.acquire() as conn:
+        tag = await conn.execute(
+            """
+            UPDATE work_queue SET status='queued', attempt=0, lease_owner=NULL, lease_until=NULL,
+                   due_at=now(), updated_at=now()
+            WHERE status='failed' AND updated_at < now() - ($1 || ' hours')::interval;
+            """,
+            str(cooloff_h),
+        )
+    try:
+        return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+    except (ValueError, IndexError):
+        return 0
+
+
 async def _publish(pool, profile, sol, tp, n_hub, eta_full_h, note) -> None:
     """Write the solved state to scheduler_state (single row) → complete_work reads t_star_s for re-arm, Today page reads
     the rest for the dashboard. {scheduler_state migration}."""
@@ -198,9 +231,17 @@ async def solve_and_apply(pool) -> dict:
                 f"T*={sol['t_star_s']/3600:.2f}h ({sol['binding']}-bound).")
     else:
         note = f"T*={sol['t_star_s']/3600:.2f}h ({sol['binding']}-bound); full fills residual."
-    await _respace_incremental(pool, sol["t_star_s"])
+    # Reap before re-spacing: a revived row goes back to 'queued' with due_at=now(), so letting the respace pass see it
+    # puts it in the rank order with everything else instead of leaving it bunched at now().
+    reaped = await _reap_failed(pool)
+    respaced = await _respace_incremental(pool, sol["t_star_s"])
     await _publish(pool, profile, sol, tp, n_hub, eta_full_h, note)
     sol["_note"], sol["_tp"], sol["_n_hub"], sol["_n_full"], sol["_eta_full_h"] = note, tp, n_hub, n_full, eta_full_h
+    # Surface both counts — "re-spaced 5000 rows" and "re-spaced 0 because everything is stuck in running" printed
+    # identically before, which is the silently-does-nothing shape this audit was looking for.
+    sol["_reaped"], sol["_respaced"] = reaped, respaced
+    if reaped:
+        print(f"[pacer] revived {reaped} failed unit(s) after cooloff", flush=True)
     return sol
 
 
@@ -209,7 +250,8 @@ def _fmt(sol: dict) -> str:
     t = f"{sol['t_star_s']/3600:.2f}h" + (" DEGRADED" if sol["infeasible"] else "")   # always a real cadence now
     return (f"[pacer] T*={t} binding={sol['binding']} | N_hub={sol['_n_hub']} N_full={sol['_n_full']} | "
             f"C_R={tp['C_R']:.0f}p/h C_V={tp['C_V']:.0f}c/h hit={tp['hit_rate']*100:.0f}% | "
-            f"T_render={sol['t_render_h']:.2f}h T_vlm={sol['t_vlm_h']:.2f}h | {sol['_note']}")
+            f"T_render={sol['t_render_h']:.2f}h T_vlm={sol['t_vlm_h']:.2f}h | "
+            f"respaced={sol.get('_respaced', 0)} reaped={sol.get('_reaped', 0)} | {sol['_note']}")
 
 
 async def run() -> None:

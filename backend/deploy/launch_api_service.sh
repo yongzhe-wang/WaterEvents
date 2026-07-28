@@ -25,6 +25,10 @@ export PORT="${PORT:-8090}"
 # Tunables — all optional, defaults live in api_service/main.py.
 export API_CACHE_TTL_S="${API_CACHE_TTL_S:-10}"
 export API_RATE_MAX="${API_RATE_MAX:-60}"
+# Shared secret for the WRITE endpoint (/queue/boost). Passed through from the caller's environment and NOT stored in
+# this file — leave it unset and the write endpoint stays disabled, so a routine restart can never silently re-arm a
+# queue-steering surface. Must equal waterevents.api_tokens.token WHERE name='queue_boost'.
+export QUEUE_BOOST_TOKEN="${QUEUE_BOOST_TOKEN:-}"
 
 # APPEND, never truncate: a restart must not destroy the log that explains why the previous run stopped. Same lesson as
 # launch_fleet.sh, where `>` wiped the crash-window worker logs during the 2026-07-27 22:11 incident recovery.

@@ -65,7 +65,7 @@ async def _seq(url: str, max_years: int, wait_ms: int) -> tuple[str, list, str]:
     element is the concatenated INLINE `[anchor](url)` across ALL years — the discovery event-extractor's context so every
     year's dated events (not just the default-visible ones) reach the model. Runs ON the loop."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # POOL, not browsers[0] — see runtime.next_browser
         try:
             pg = await page.new_blocked_page(ctx)
             await page.goto(pg, url)

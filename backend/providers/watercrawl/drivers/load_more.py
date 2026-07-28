@@ -29,7 +29,7 @@ async def _seq(url: str, max_rounds: int, wait_ms: int) -> tuple[str, list, str]
     Returns ("", [], "") if the list never grew past ~5% of its initial size (no real load-more here). The 3rd element is
     the INLINE `[anchor](url)` reading-order text — the discovery event-extractor's primary context. Runs ON the loop."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # POOL, not browsers[0] — see runtime.next_browser
         try:
             pg = await page.new_blocked_page(ctx)
             await page.goto(pg, url)                      # shared goto (1 transient retry)

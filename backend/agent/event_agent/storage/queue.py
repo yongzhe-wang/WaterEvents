@@ -64,7 +64,19 @@ async def complete_work(pool: asyncpg.Pool, wid, unit_type: str, event_count: in
     +30min), clear the lease, AND record this scan's resource usage (duration_s / last_render_pages / last_vlm_calls) for
     the finish-time EWMA + solver. The row cycles queued→running→queued forever = a recurring queue, no terminal 'done'.
     This is what makes 'every company weekly / every hub every cycle' automatic without a central scheduler. {self re-arm;
-    USER 2026-07-26 "estimation of finish time of each"} [CONFIDENCE: CONFIRMED — per-unit cost = finish-time raw material]."""
+    USER 2026-07-26 "estimation of finish time of each"} [CONFIDENCE: CONFIRMED — per-unit cost = finish-time raw material].
+
+    RESETS `attempt` — without this the counter is a one-way ratchet. claim_work does `attempt = attempt + 1` on EVERY
+    claim, including the routine ones and including a lease-expiry re-claim after a SIGKILL, but nothing ever decremented
+    it. In a RECURRING queue that means `attempt` measures "how many times has this unit ever been picked up", not
+    "how many times has it failed in a row" — which is what fail_work's cap actually tests. An incremental hub on a
+    30-minute rotation is claimed 48×/day, so it crosses the cap of 4 within ~2 hours, after which its next transient
+    hiccup (one nav timeout, one blip) marks it 'failed' permanently. Zeroing on success restores the intended
+    "consecutive failures" meaning. {QUEUE.PY claim_work "ATTEMPT = ATTEMPT + 1,"; fail_work "IF ROW AND
+    ROW["ATTEMPT"] >= MAX_ATTEMPTS"} {MEASURED 2026-07-28 live work_queue: "INCREMENTAL AVG_ATTEMPT 1.3, MAX 5, 56 UNITS
+    ALREADY AT OR PAST THE CAP OF 4" while status='failed' was still 0 — the ratchet was climbing but had not yet fired}
+    [CONFIDENCE: CONFIRMED 100% — the counter's climb was read off the live table; pairs with the pacer's failed-row
+     reaper, since without a reaper anything that does trip the cap is unreachable forever]."""
     async with pool.acquire() as conn:
         if unit_type == "full":                              # full stays weekly (its cadence isn't paced by the solver yet)
             interval = _FULL_INTERVAL_S
@@ -75,6 +87,7 @@ async def complete_work(pool: asyncpg.Pool, wid, unit_type: str, event_count: in
             """
             UPDATE work_queue SET
                 status = 'queued', lease_owner = NULL, lease_until = NULL,
+                attempt = 0,
                 due_at = now() + ($2 || ' seconds')::interval,
                 last_scanned_at = now(), last_event_count = $3,
                 duration_s = $4, last_render_pages = $5, last_vlm_calls = $6, updated_at = now()

@@ -14,7 +14,7 @@ async def _seq(url: str, js_list: list, wait_ms: int) -> list:
     """goto once, then per year evaluate(select-year JS)+wait+extract → list of (text, links), one per js. Runs ON
     the loop."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # POOL, not browsers[0] — see runtime.next_browser
         results: list = []
         try:
             pg = await page.new_blocked_page(ctx)

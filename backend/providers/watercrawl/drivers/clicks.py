@@ -14,7 +14,7 @@ async def _seq(url: str, click_js: str, times: int, wait_ms: int) -> tuple[str, 
     """Click click_js `times` times in ONE page session (list ACCUMULATES), then extract once → (text, links). Runs
     ON the loop."""
     async with runtime._sem:
-        ctx = await runtime._browser.new_context(user_agent=config.UA)
+        ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # POOL, not browsers[0] — see runtime.next_browser
         try:
             pg = await page.new_blocked_page(ctx)
             await pg.goto(url, wait_until="domcontentloaded", timeout=config.NAV_TIMEOUT_MS)

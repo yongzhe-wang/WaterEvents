@@ -29,6 +29,7 @@ _NO_SHOT = os.environ.get("WATERCRAWL_NO_SHOT", "1") in ("1", "true", "yes")   #
 from providers.qwen_llm import QwenClient          # the PROVIDER transport — generic parallel sender, no event logic
 
 from . import prompts                              # the EVENT logic — instruction + schema
+from ..storage.urls import _event_key              # (title+date) identity — the SAME key engine.py and db.py dedup on
 
 # 20000 (not 48000) is the CHUNK TRIGGER for text-only pages: a page over this is split into ~2000-char blocks instead
 # of extracted in ONE pass. WHY lowered: a large single pass is UNSTABLE — the model's per-row date/title extraction
@@ -208,16 +209,33 @@ def _normalize_routes(result: dict, tag_map: dict) -> list[dict]:
     return routes
 
 
-def _combine(events: list, event_urls: set, routes: list, error: str | None) -> dict:
+def _combine(events: list, event_urls: set, routes: list, error: str | None,
+             route_error: str | None = None, partial: str | None = None) -> dict:
     """Merge the EXTRACTION half (events) + the ROUTING half (routes) into the final page result, enforcing event⊥route
     EXCLUSIVITY across the two independent calls: a route whose resolved url is ALSO an event's url is DROPPED (an event
     is a leaf — never re-follow it). Propagates any hard error so the crawl can tell "FAILED" from "genuinely empty".
     {USER 2026-07-24 "separate the routing and the classification"} [CONFIDENCE: CONFIRMED 100% — post-hoc exclusivity is
-    what makes two separate calls safe]."""
+    what makes two separate calls safe].
+
+    THE TWO HALVES FAIL INDEPENDENTLY, so they must be reported independently. Routing and extraction are separate LLM
+    calls over separate inputs (link list vs body text) fired concurrently; they share nothing but the page. Folding both
+    into one `_error` meant a routing blip — a GPU hiccup on the link-list call, common under 6-worker concurrency —
+    made _harvest discard the events the extraction call had already returned successfully. The right cost of a routing
+    failure is "we don't go deeper from this page", never "this page's events are lost".
+    `_error` = extraction hard-failed → events untrustworthy, discard (unchanged).
+    `_route_error` = routing hard-failed → keep events, drop the frontier contribution.
+    `_partial` = extraction incomplete but what came back is real → keep events, mark the company incomplete.
+    {ENGINE.PY _harvest "IF RES.GET("_ERROR"): ... PAGE'S EVENTS LOST"}
+    [CONFIDENCE: CONFIRMED 100% — the two jobs are gathered independently in _extract_one; nothing couples their
+     validity, so the old `or` was strictly a loss of information]."""
     kept = [r for r in routes if r["url"] not in event_urls]   # exclusivity now lives here (two calls can't self-enforce it)
     out = {"events": events, "routes": kept}
     if error:
         out["_error"] = error
+    if route_error:
+        out["_route_error"] = route_error
+    if partial:
+        out["_partial"] = partial
     return out
 
 
@@ -296,23 +314,43 @@ async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_i
         jobs.append(_build_events_job(tg, page_url, None, False))   # text-only chunk (no image on the split path)
         maps.append(mp)
     results = await c.send_many(jobs)
-    merged_events, seen, event_urls, errs = [], set(), set(), ([cap_note] if cap_note else [])   # cap → fail-loud in _error
+    # PARTIAL is not ERROR. A truncated block or the block cap means "we got SOME of this page", and the events the other
+    # blocks DID return are real. Reporting them through `_error` made _harvest discard the whole page (it treats _error as
+    # "the LLM hard-failed → this page's events are lost"), so one bad block out of 150 threw away 149 good ones — the exact
+    # opposite of this branch's own comment, which says "accept partial". `_partial` keeps the fail-loud signal (the caller
+    # still counts a failed_extract so the company is marked incomplete) WITHOUT dropping the harvest.
+    # {EXTRACT.PY:301 "BLOCK STILL TRUNCATED AT THE LIMIT → ACCEPT PARTIAL, DON'T RE-SPLIT" — the stated intent}
+    # {ENGINE.PY _harvest "IF RES.GET("_ERROR"): ... PRINT(F"[CRAWL] ⛔ EXTRACT FAILED ... — PAGE'S EVENTS LOST") RETURN []"}
+    # [CONFIDENCE: CONFIRMED 100% — the discard path is unconditional on _error; chunking only runs on pages over
+    #  MAX_INPUT_CHARS, i.e. the event-densest archives, so this lost the most valuable pages first].
+    merged_events, seen, event_urls, partials = [], set(), set(), ([cap_note] if cap_note else [])
+    errs: list[str] = []
     for i, res in enumerate(results):
-        if res.get("__finish__") == "length":                # block still truncated at the limit → accept partial, DON'T re-split
-            errs.append(f"block {i} truncated at limit")
+        if res.get("__finish__") == "length":                # block hit the output limit → partial, keep what it gave us
+            partials.append(f"block {i} truncated at limit")
         ne = _normalize_events(res, maps[i], blocks[i])      # resolve THIS block's ids + ground evidence against THIS block's text
-        if ne.get("_error"):
+        if ne.get("_error"):                                  # a block that HARD-failed (transport/parse) → real error
             errs.append(ne["_error"])
-        for e in ne["events"]:                                # merge + dedup by ANY url overlap → overlap-region dupes drop
-            keys = {u for u in e["urls"]}
-            if keys & seen:
+        # DEDUP BY EVENT IDENTITY, not by url overlap. Sharing a url is normal on IR pages — one webcast/registration/
+        # "Investor Relations" link is attached to every earnings call on the page — so an any-url-overlap test made the
+        # first event swallow every later one that reused any of its links. engine.py and db.py both key on title+date
+        # already; this was the last place still on the old url semantics.
+        # {ENGINE.PY:365 "K = _EVENT_KEY(E.GET("TITLE"), E.GET("DATE"), E["URLS"])"}
+        # {URLS.PY _event_key "A URL-BASED KEY DUPLICATED ONE EVENT INTO MANY ROWS ... TITLE+DATE IS THE EVENT'S REAL IDENTITY"}
+        # [CONFIDENCE: CONFIRMED 100% — three dedup sites, this one was the outlier; url-overlap DROPS distinct events
+        #  whereas the title+date key only collapses genuine repeats].
+        for e in ne["events"]:
+            k = _event_key(e.get("title"), e.get("date"), e["urls"])
+            if not k or k in seen:
                 continue
-            seen |= keys
+            seen.add(k)
             merged_events.append(e)
-            event_urls |= keys
+            event_urls |= {u for u in e["urls"]}
     out = {"events": merged_events, "_event_urls": event_urls}
-    if errs:                                                  # some block truncated/failed → result is INCOMPLETE (fail loud)
+    if errs:                                                  # a block hard-failed → the page's extraction is untrustworthy
         out["_error"] = "; ".join(errs[:5])
+    if partials:                                              # incomplete but usable → surfaced, NOT discarded
+        out["_partial"] = "; ".join(partials[:5])
     return out
 
 
@@ -394,8 +432,10 @@ async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
         return _normalize_events(res, tag_map, tagged)         # ground evidence against the page the model read
 
     routes_r, ev = await asyncio.gather(_route(), _events())   # ROUTING + EXTRACTION concurrently on the GPU
-    err = ev.get("_error") or routes_r.get("_error")           # fail loud if EITHER half hard-failed
-    return _combine(ev["events"], ev.get("_event_urls") or set(), routes_r["routes"], err)
+    return _combine(ev["events"], ev.get("_event_urls") or set(), routes_r["routes"],
+                    ev.get("_error"),                          # extraction failed → events untrustworthy
+                    routes_r.get("_error"),                    # routing failed → only the frontier suffers
+                    ev.get("_partial"))                        # incomplete-but-real → keep the events, flag the company
 
 
 async def extract_page(page: dict, client: QwenClient | None = None, use_image: bool = False) -> dict:

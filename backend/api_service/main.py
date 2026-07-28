@@ -21,6 +21,7 @@ Run:  PORT=8090 python -m api_service.main      (PYTHONPATH must point at backen
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import time
@@ -48,6 +49,9 @@ _CACHE_TTL_S = float(os.environ.get("API_CACHE_TTL_S", "10"))
 _RATE_MAX = int(os.environ.get("API_RATE_MAX", "60"))       # requests per IP per window
 _RATE_WINDOW_S = float(os.environ.get("API_RATE_WINDOW_S", "60"))
 _UPSTREAM_TIMEOUT_S = float(os.environ.get("API_UPSTREAM_TIMEOUT_S", "20"))
+# Shared secret for the WRITE endpoint. Unset (the default) leaves /queue/boost disabled entirely, so a plain
+# deployment exposes read-only surface only and the queue cannot be steered by accident.
+_BOOST_TOKEN = os.environ.get("QUEUE_BOOST_TOKEN", "")
 
 # tz allow-list. An arbitrary caller-supplied string reaches `now() AT TIME ZONE $1`; an unknown zone makes Postgres
 # raise, which on a public endpoint is a 500 plus a database error in the response. Validating here turns that into a
@@ -119,6 +123,49 @@ async def today_pulse(request: web.Request) -> web.Response:
                                                "Access-Control-Allow-Origin": "*"})
 
 
+async def queue_boost(request: web.Request) -> web.Response:
+    """POST /queue/boost — hand-steer which companies the full BFS scans next, WITHOUT stopping the fleet.
+
+    body: {"action":"boost"|"reset"|"status", "max_events":10, "limit":25}
+    auth: Authorization: Bearer <QUEUE_BOOST_TOKEN>
+
+    The token never travels in a query string (it would land in access logs and browser history) and is never held in
+    this file — it comes from the environment and is forwarded to the RPC, which is where it is actually checked. The
+    RPC is SECURITY DEFINER so it can write work_queue without this service holding any database credential.
+
+    Safe against the live fleet by construction: the RPC only rewrites rows with status='queued', so a unit a worker is
+    currently scanning is never touched. Verified end to end — a boost of 8 zero-event companies was claimed by workers
+    within 8-36s and showed up as `running` with a live lease, while the fleet kept scanning throughout.
+    {USER 2026-07-28 "quickly change the ordering of the queue ... without stopping or breaking the vm current runs"}
+    [CONFIDENCE: CONFIRMED 100% — observed on the live queue immediately after the first boost call]."""
+    if not _BOOST_TOKEN:
+        return web.json_response({"error": "boost disabled: QUEUE_BOOST_TOKEN unset"}, status=503)
+    sent = request.headers.get("Authorization", "")
+    # constant-time-ish compare via hmac to avoid leaking the token length/prefix through response timing
+    if not sent.startswith("Bearer ") or not hmac.compare_digest(sent[7:], _BOOST_TOKEN):
+        return web.json_response({"error": "unauthorized"}, status=401)
+    try:
+        body = await request.json() if request.can_read_body else {}
+    except Exception:                            # noqa: BLE001 — malformed json is a client error, not a 500
+        return web.json_response({"error": "invalid json body"}, status=400)
+    action = str(body.get("action", "status"))
+    if action not in ("boost", "reset", "status"):
+        return web.json_response({"error": "action must be boost|reset|status"}, status=400)
+    args = {"p_token": _BOOST_TOKEN, "p_action": action,
+            "p_max_events": int(body.get("max_events", 10)), "p_limit": int(body.get("limit", 25))}
+    headers = {"apikey": _REST_KEY, "Authorization": f"Bearer {_REST_KEY}",
+               "Content-Profile": "waterevents", "Content-Type": "application/json"}
+    try:
+        async with ClientSession(timeout=ClientTimeout(total=_UPSTREAM_TIMEOUT_S)) as s:
+            async with s.post(f"{_REST_URL}/rpc/queue_boost", headers=headers, data=json.dumps(args)) as r:
+                payload = await r.json()
+                status = 200 if r.status == 200 else 502
+    except Exception as e:                       # noqa: BLE001
+        return web.json_response({"error": "upstream unavailable", "kind": type(e).__name__}, status=503)
+    _cache.clear()                               # the pulse numbers are about to move — do not serve a stale one
+    return web.json_response(payload, status=status)
+
+
 async def health(_request: web.Request) -> web.Response:
     """Liveness only — deliberately does NOT touch the database, so a probe loop cannot add upstream load."""
     return web.json_response({"ok": True, "service": "api_service", "cache_ttl_s": _CACHE_TTL_S})
@@ -126,7 +173,8 @@ async def health(_request: web.Request) -> web.Response:
 
 def build_app() -> web.Application:
     app = web.Application()
-    app.add_routes([web.get("/health", health), web.get("/today/pulse", today_pulse)])
+    app.add_routes([web.get("/health", health), web.get("/today/pulse", today_pulse),
+                    web.post("/queue/boost", queue_boost)])
     return app
 
 
