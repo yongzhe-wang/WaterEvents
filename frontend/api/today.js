@@ -54,14 +54,24 @@ export default async function handler(_req, res) {
     // label + url so you can SEE what's about to run, not just how many. {USER 2026-07-26 "show a list of next 5 urls or
     // companies waiting to be done"}.
     const now = Date.now();
-    // period windows for the "still-to-do this period" counts: full = a 7-day weekly sweep; incremental = one T* rotation
-    // (the pacer's current period, fallback 30min). A unit is "done this period" iff it was last_scanned within the window;
-    // else it still needs a scan to finish the period. {USER 2026-07-27 "full: this week we still have N not done; incremental:
-    // this cycle we still have N urls not finished"}.
+    // Staleness windows for the "not refreshed recently" counts. A unit is covered iff it was last_scanned inside the
+    // window; else it is behind. {USER 2026-07-27 "full: this week we still have N not done; incremental: this cycle we
+    // still have N urls not finished"}.
     const weekAgo = now - 7 * 24 * 3600 * 1000;
-    const tStarSec = (sched && sched[0] && sched[0].t_star_s) || 1800;
-    const cycleAgo = now - tStarSec * 1000;
-    const summarize = (t, staleBefore) => {
+    // FIXED window, deliberately NOT T*. This used to be `now - t_star_s`, which made the number self-certifying: the
+    // pacer re-spaces every queued hub across exactly one T*, so "scanned within the last T*" is true by construction
+    // whenever the fleet keeps its own cadence — and when the fleet SLOWS, the solver publishes a LARGER T*, the window
+    // widens with it, and the count stays 0. It could not report a problem in either direction. Measured while the card
+    // read 0: 997/1000 incremental rows scanned inside the 23.8h window, 0 stale — while 5754 sat queued and the real
+    // rotation was running slower than the published period (only 99/1000 scanned in the last 6h, against the ~252 a
+    // uniform 23.8h rotation implies). A constant window is what makes degradation visible: if T* drifts past 24h this
+    // number climbs, which is the whole point of showing it. full already used a fixed 7 days — this makes the two
+    // consistent instead of one honest and one self-referential.
+    // {MEASURED 2026-07-28 "INCREMENTAL: 997/1000 SCANNED WITHIN 23.8H, 0 STALE, 3 NEVER SCANNED, 5754 QUEUED, remaining=0"}
+    // [CONFIDENCE: CONFIRMED 100% — distribution counted directly off work_queue.last_scanned_at against the live T*].
+    const staleWindowH = Number(process.env.TODAY_STALE_WINDOW_H) || 24;
+    const cycleAgo = now - staleWindowH * 3600 * 1000;
+    const summarize = (t, staleBefore, windowH) => {
       const r = queue.filter((x) => x.type === t);
       const next = r.filter((x) => x.status === "queued")
         .sort((a, b) => Date.parse(a.due_at) - Date.parse(b.due_at))   // soonest-due = what claim_work grabs next
@@ -76,7 +86,11 @@ export default async function handler(_req, res) {
         failed: r.filter((x) => x.status === "failed").length,
         due_now: r.filter((x) => x.status === "queued" && Date.parse(x.due_at) <= now).length,   // due_now = coverage lag
         events_seen: r.reduce((s, x) => s + (x.last_event_count || 0), 0),
-        remaining,                                                     // still to scan to finish this period (week / cycle)
+        remaining,                                                     // units NOT refreshed inside stale_window_h
+        // Ship the window alongside the count so the UI labels it from data instead of a hardcoded string. Both are
+        // env-tunable; a label that says "24h" while the constant says something else is the same class of drift that
+        // made this number meaningless in the first place, so the number carries its own units.
+        stale_window_h: windowH,
         next,                                                          // the 5 next-up units (company + url)
       };
     };
@@ -107,7 +121,7 @@ export default async function handler(_req, res) {
     } : null;
 
     const resources = await liveResources();                 // live CPU (render) + VLM (GPU) usage right now
-    res.json({ scheduler, resources, queue: { full: summarize("full", weekAgo), incremental: summarize("incremental", cycleAgo) }, events: feed });
+    res.json({ scheduler, resources, queue: { full: summarize("full", weekAgo, 168), incremental: summarize("incremental", cycleAgo, staleWindowH) }, events: feed });
   } catch (_e) {
     res.status(500).json({ error: "failed to load today" });   // never leak the raw PostgREST error (nestjs-conventions)
   }

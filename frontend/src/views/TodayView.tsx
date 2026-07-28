@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 interface NextRow { company: string; url: string; due_at: string; }   // a next-up queued unit (company + url)
-interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; next: NextRow[]; }
+interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; stale_window_h: number; next: NextRow[]; }
 interface EvRow { id: string; company: string; date: string; discovered: string | null; type: string; title: string; url: string | null; }
 interface Sched {
   profile: string; t_star_h: number | null; binding: string | null;
@@ -43,17 +43,32 @@ function shortUrl(u: string): string {
   return (u || "").replace(/^https?:\/\//, "").replace(/\/+$/, "") || "—";
 }
 
+// Render a staleness window in the unit a human reads it in: 168 → "7d", 24 → "24h".
+// Guards a missing value because the UI and the API deploy separately: a new bundle talking to an API that predates
+// stale_window_h would otherwise render "in the last undefinedh". Falling back to 24 keeps the sentence true for the
+// incremental card (its default) and merely imprecise for full, which beats printing a broken string.
+function windowLabel(h: number | undefined) {
+  const n = Number.isFinite(h) ? (h as number) : 24;
+  return n >= 48 ? `${Math.round(n / 24)}d` : `${n}h`;
+}
+
 // One queue card: a work type (full / incremental) with its live counts AND the next-5 units a worker will claim.
-// `remainingLabel` phrases the still-to-do-this-period count ("to finish this week" / "left this cycle").
-function QueueCard({ title, sub, s, remainingLabel }: { title: string; sub: string; s: QStat; remainingLabel: string }) {
+// `remainingNoun` names WHAT is behind ("companies not crawled"); the window comes from the API, not this file.
+function QueueCard({ title, sub, s, remainingNoun }: { title: string; sub: string; s: QStat; remainingNoun: string }) {
   return (
     <div className="q-card">
       <div className="q-card-head"><span className="q-card-title">{title}</span><span className="q-card-sub">{sub}</span></div>
       <div className="q-card-big">{s.total}<span className="q-card-big-sub"> units</span></div>
-      {/* still-to-do THIS PERIOD — how many haven't been scanned yet this week (full) / this cycle (incremental).
-          {USER 2026-07-27 "full: this week we still have N not done; incremental: this cycle N urls not finished"}. */}
+      {/* COVERAGE GAP — units whose last scan is older than a FIXED window. Read it as "how far behind are we", not
+          "how much work is left"; `queued` below is the work-left number. The distinction matters: this used to be
+          measured against the live T*, which the pacer stretches whenever the fleet slows, so a degrading system kept
+          reporting 0 while 5,754 hubs sat queued. Now the window is fixed and shipped with the count, so the number
+          climbs when coverage actually slips. {USER 2026-07-28 "this is still buggy, 0 hours left what is going on"}
+          {MEASURED 2026-07-28 "997/1000 SCANNED WITHIN THE 23.8H T* WINDOW → remaining=0 WITH 5754 QUEUED"}
+          [CONFIDENCE: CONFIRMED 100% — counted off work_queue.last_scanned_at while the card displayed 0]. */}
       <div style={{ fontSize: 13, margin: "2px 0 8px" }}>
-        <b style={{ color: "#6ee7a8" }}>{s.remaining.toLocaleString()}</b> <span style={{ opacity: 0.7 }}>{remainingLabel}</span>
+        <b style={{ color: s.remaining > 0 ? "#f0b400" : "#6ee7a8" }}>{s.remaining.toLocaleString()}</b>{" "}
+        <span style={{ opacity: 0.7 }}>{remainingNoun} in the last {windowLabel(s.stale_window_h)}</span>
       </div>
       <div className="q-card-stats">
         <span className="q-stat"><b>{s.due_now}</b> due now</span>
@@ -335,11 +350,11 @@ export default function TodayView() {
           {q ? (
             <div className="q-row">
               <QueueCard title="Full run" sub="weekly · deep BFS (20+ pages/co)" s={q.full}
-                remainingLabel="companies still to crawl to finish this week" />
+                remainingNoun="companies not crawled" />
               <QueueCard title="Incremental"
                 sub={data?.scheduler?.t_star_h != null ? `every ${data.scheduler.t_star_h}h · deep=1 (hub page)` : "deep=1 (hub page)"}
                 s={q.incremental}
-                remainingLabel="hubs still to scan this cycle" />
+                remainingNoun="hubs not refreshed" />
             </div>
           ) : loading ? <div className="loading">Loading queue…</div> : <div className="artifacts-empty">Queue empty — nothing enqueued yet.</div>}
 
