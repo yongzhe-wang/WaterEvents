@@ -11,9 +11,16 @@
 # RunPod:   N=6 bash deploy/launch_fleet.sh
 # GCP VM:   EVENTINC_PY=~/venv/bin/python EVENTINC_HOME=~/WaterEvents EVENTINC_RESERVE=2 N=6 bash deploy/launch_fleet.sh
 set -u
-HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"
+HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"   # REPO ROOT — unchanged contract, callers still pass ~/WaterEvents
+# CODE_DIR = the python import root. Since the 2026-07-28 restructure the top level holds only frontend/ backend/ tests/,
+# so every python package (agent, providers, tools) sits one level down under backend/. Pointing cwd + PYTHONPATH HERE
+# instead of at the repo root is what keeps EVERY import in the tree unchanged — `-m agent.event_agent.scheduler.worker`
+# and `from providers import watercrawl` resolve exactly as before, so the restructure needed ZERO import rewrites.
+# {RESTRUCTURE 2026-07-28 "TOP LEVEL = frontend/ backend/ tests/; agent|providers|deploy|scripts|supabase|tools → backend/"}
+# [CONFIDENCE: CONFIRMED 100% — first-party import counts (agent 22 / providers 32 / tools 3) identical before and after].
+CODE_DIR="$HOME_DIR/backend"
 PY="${EVENTINC_PY:-/root/venv/bin/python}"
-cd "$HOME_DIR" || exit 2
+cd "$CODE_DIR" || exit 2
 N="${N:-4}"
 NPROC=$(nproc 2>/dev/null || echo 8)
 RESERVE="${EVENTINC_RESERVE:-8}"              # cores reserved for system + vLLM(+tunnel); workers pin to cores RESERVE.. (clamped)
@@ -33,7 +40,7 @@ export WEBSHARE_PROXY="${WEBSHARE_PROXY:-http://nknjgkpv:36oo15uctfhl@192.46.200
 export EVENT_MAX_PAGES="${EVENT_MAX_PAGES:-30}" EVENT_BATCH="${EVENT_BATCH:-5}" EVENT_COMPANY_BUDGET_S="600"
 export EVENTINC_WORKERS="${EVENTINC_WORKERS:-3}"
 export EVENTINC_TOP_K="3" EVENTINC_PROFILE="${EVENTINC_PROFILE:-runpod}"
-export PYTHONPATH="$HOME_DIR"
+export PYTHONPATH="$CODE_DIR"                        # backend/ is the import root (see CODE_DIR note above)
 
 echo "[fleet] launching $N queue_worker + 1 pacer on $(hostname) (${NPROC} cores, reserve ${RESERVE}) home=$HOME_DIR"
 for i in $(seq 1 "$N"); do

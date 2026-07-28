@@ -8,7 +8,7 @@ horizontally, use all existing ir page link from all companies, each company one
 
 Run ON THE POD:
   EVENT_FAKE_EXTRACT=1 IR_WATERCRAWL_BROWSERS=3 WATERCRAWL_SHOT_CONCURRENCY=4 HSTRESS_CONCURRENCY=12 \
-    WATEREVENTS_DB_DSN=<pooler dsn> PYTHONPATH=/workspace/WaterEvents /root/venv/bin/python /workspace/WaterEvents/tests/hstress.py
+    WATEREVENTS_DB_DSN=<pooler dsn> PYTHONPATH=/workspace/WaterEvents/backend /root/venv/bin/python /workspace/WaterEvents/tests/hstress.py
 """
 from __future__ import annotations
 

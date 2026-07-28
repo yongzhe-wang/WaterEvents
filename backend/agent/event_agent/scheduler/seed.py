@@ -6,7 +6,7 @@ now → 避免周一洪峰、负载平坦); incremental seed 从 waterevents.eve
 enqueue type='incremental', due_at=now(立即开始 30-min 循环)。都走 db_queue.enqueue 的幂等 UPSERT,所以可重复跑 / 全量 run
 发现新 hub 后再跑一次只会增量补。{USER 2026-07-25 "full spread across week; incremental hubs; ~6000+ pages"}.
 
-Run:  PYTHONPATH=/workspace/WaterEvents WATEREVENTS_DB_DSN=<dsn> python -m agent.event_agent.seed [full|incremental|both]
+Run:  PYTHONPATH=/workspace/WaterEvents/backend WATEREVENTS_DB_DSN=<dsn> python -m agent.event_agent.seed [full|incremental|both]
 """
 from __future__ import annotations
 

@@ -5,7 +5,7 @@ run_id=NULL 的公司、re-tag 成 killerdeal。这脚本把「killerdeal 里但
 run_id 恢复成 NULL、status 回 queued、清 lease → 生产队列复原;再删掉所有 killerdeal events(都是错公司的)。我的 100 家
 killerdeal 行保留(manifest-slice 会直接用)。{USER 2026-07-24 认可清理 + manifest-slice} [CONFIDENCE: CONFIRMED — 逆转自造污染].
 
-Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents WATEREVENTS_DB_DSN=<dsn> /root/venv/bin/python tests/cleanup_killerdeal.py
+Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents/backend WATEREVENTS_DB_DSN=<dsn> /root/venv/bin/python tests/cleanup_killerdeal.py
 """
 from __future__ import annotations
 

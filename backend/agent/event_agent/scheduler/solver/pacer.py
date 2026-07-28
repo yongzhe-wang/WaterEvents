@@ -9,8 +9,8 @@ incremental 的 due_at 均匀摊到 [now, now+T*] → full 用剩下的容量当
 GCP)→ 容量变 → 下一轮 T* 自动重解。{USER 2026-07-26 "best rotation T* so full fits perfectly; adjust dynamically;
 adjustable for GCP; estimation of finish time"} [CONFIDENCE: CONFIRMED — 双资源 packing 方程本 session 推导 + 用户批准].
 
-Run once (solve + print + apply):   PYTHONPATH=/workspace/WaterEvents python -m agent.event_agent.pacer
-Run as the resident controller:      PYTHONPATH=/workspace/WaterEvents python -m agent.event_agent.pacer --loop
+Run once (solve + print + apply):   PYTHONPATH=/workspace/WaterEvents/backend python -m agent.event_agent.pacer
+Run as the resident controller:      PYTHONPATH=/workspace/WaterEvents/backend python -m agent.event_agent.pacer --loop
 """
 from __future__ import annotations
 

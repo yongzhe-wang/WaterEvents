@@ -3,7 +3,7 @@
 用一句话讲完: 读一份公司清单(全是首页渲染失败、必然走 SERP 兜底的), 用修好的 discover_company 重跑, 打印每家发现的
 hub 明细 —— 直接回答"走 SERP 时质量会不会掉"。不落库(纯验证)。
 {PSQL 2026-07-26 "SERP-FALLBACK 32 家 AVG_HUBS=1.00 REAL_EVENT_PAGES=0" — 修复前 SERP 路径产出为零}
-Run ON THE POD: VERIFY_FILE=/tmp/verify10.json PYTHONPATH=/workspace/WaterEvents /root/venv/bin/python tests/verify_serp10.py
+Run ON THE POD: VERIFY_FILE=/tmp/verify10.json PYTHONPATH=/workspace/WaterEvents/backend /root/venv/bin/python tests/verify_serp10.py
 """
 from __future__ import annotations
 

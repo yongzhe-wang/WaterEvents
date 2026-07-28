@@ -21,5 +21,5 @@ DB schema: 一律 canonical `waterevents`(public 是 07-22 冻结的 legacy)。{
 跑法 (在 pod/GCP 上, 不在 Mac — MEMORY run-work-on-vm-not-mac):
   cd /workspace/WaterEvents && WATERCRAWL_NO_SHOT=1 WATERCRAWL_HTTP_FIRST=0 \
     WATEREVENTS_DB_DSN=... QWEN_API_KEY=... QWEN_BASE_URLS=http://127.0.0.1:8000/v1 \
-    PYTHONPATH=/workspace/WaterEvents nohup /root/venv/bin/python tests/run_irurl_all.py > /workspace/irurl_all.log 2>&1 &
+    PYTHONPATH=/workspace/WaterEvents/backend nohup /root/venv/bin/python tests/run_irurl_all.py > /workspace/irurl_all.log 2>&1 &
 """

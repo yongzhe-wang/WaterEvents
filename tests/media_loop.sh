@@ -5,7 +5,7 @@
 set -u
 cd /workspace/WaterEvents
 rm -rf tests/10media
-export PYTHONPATH=/workspace/WaterEvents
+export PYTHONPATH=/workspace/WaterEvents/backend
 export QWEN_BASE_URLS=http://127.0.0.1:8000/v1
 export QWEN_API_KEY=sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78
 export QWEN_MAX_TOKENS=12000 MEDIA_VISION_TEXT_CHARS=24000 QWEN_RETRIES=3

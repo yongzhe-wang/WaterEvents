@@ -8,7 +8,7 @@ vlm_calls/(vlm_calls+vlm_skipped) = hit_rate;从 work_queue 按 type 取 duratio
 worker 跑着它随时能查。{USER 2026-07-26 "calculate render and vlm usage for parallel; best rotation so full fits perfectly;
 estimation of finish time"} [CONFIDENCE: CONFIRMED — 双资源模型 + packing 方程的实测输入层].
 
-Run:  PYTHONPATH=/workspace/WaterEvents python -m agent.event_agent.metrics [window_hours]
+Run:  PYTHONPATH=/workspace/WaterEvents/backend python -m agent.event_agent.metrics [window_hours]
 """
 from __future__ import annotations
 

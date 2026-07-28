@@ -5,7 +5,7 @@
 这样 deploy/supervise_workers.sh 起的 N 个绑核 worker 进程能从队列 SKIP-LOCKED 各抢一片,真·多进程并行。
 {USER 2026-07-24 "yes" — 授权多进程重跑 + 清旧} [CONFIDENCE: CONFIRMED — 直接指令 + memory「archive & restart on code change」].
 
-Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents WATEREVENTS_DB_DSN=<dsn> /root/venv/bin/python tests/enqueue_killerdeal.py
+Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents/backend WATEREVENTS_DB_DSN=<dsn> /root/venv/bin/python tests/enqueue_killerdeal.py
 """
 from __future__ import annotations
 

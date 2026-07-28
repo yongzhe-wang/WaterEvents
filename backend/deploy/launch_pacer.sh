@@ -7,9 +7,10 @@
 #   RunPod:  bash deploy/launch_pacer.sh
 #   GCP VM:  EVENTINC_PY=~/venv/bin/python EVENTINC_HOME=~/WaterEvents bash deploy/launch_pacer.sh
 set -u
-HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"
+HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"   # REPO ROOT — unchanged contract
+CODE_DIR="$HOME_DIR/backend"                         # python import root since the 2026-07-28 restructure (see launch_fleet.sh)
 PY="${EVENTINC_PY:-/root/venv/bin/python}"
-cd "$HOME_DIR" || exit 2
+cd "$CODE_DIR" || exit 2
 LOGD="${EVENTINC_LOGD:-$HOME/eventinc_fleet}"
 mkdir -p "$LOGD"
 # Kill any prior pacer — ONLY ONE may run, because two pacers both _respace_incremental() and both publish
@@ -23,7 +24,7 @@ pkill -f 'event_agent[.]scheduler[.]solver[.]pacer' 2>/dev/null || true
 sleep 2
 export WATEREVENTS_DB_DSN="${WATEREVENTS_DB_DSN:-postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres}"
 export EVENTINC_PROFILE="${EVENTINC_PROFILE:-runpod}"
-export PYTHONPATH="$HOME_DIR"
+export PYTHONPATH="$CODE_DIR"                        # backend/ is the import root
 nohup "$PY" -m agent.event_agent.scheduler.solver.pacer --loop > "$LOGD/pacer.log" 2>&1 &
 disown
 echo "[pacer] launched (pid $!) → $LOGD/pacer.log"

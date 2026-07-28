@@ -9,7 +9,7 @@ basic_info + media urls + transcript)+ QWEN_DEBUG_DIR 落的 req_*.txt(完整 pr
 + all the trace"} [CONFIDENCE: CONFIRMED 100% — direct user directive].
 
 Run ON RUNPOD (browser + VLM co-located), INLINE env (NOT `env $E` — that ate QWEN_API_KEY → 401):
-  cd /workspace/WaterEvents && PYTHONPATH=/workspace/WaterEvents QWEN_BASE_URLS=http://127.0.0.1:8000/v1 \
+  cd /workspace/WaterEvents && PYTHONPATH=/workspace/WaterEvents/backend QWEN_BASE_URLS=http://127.0.0.1:8000/v1 \
   QWEN_API_KEY=<key> QWEN_MAX_TOKENS=12000 MEDIA_VISION_TEXT_CHARS=24000 QWEN_RETRIES=3 \
   MEDIA_RUN_DATASET=tests/datasets/pick_cross_platform MEDIA_RUN_OUT=tests/10media /root/venv/bin/python tests/media_run.py
 """

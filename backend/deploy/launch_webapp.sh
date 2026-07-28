@@ -3,7 +3,11 @@
 # so it survives the ssh session (nohup + </dev/null + disown + script-exit = clean channel close). {USER 2026-07-27 "web
 # app on GCP media vm, off Vercel"}. Run: PORT=8080 bash deploy/launch_webapp.sh
 set -u
-cd "$(dirname "$0")/../frontend" || exit 2
+# ../../frontend, not ../frontend: this script moved to backend/deploy/ in the 2026-07-28 restructure, so the repo root
+# is now TWO levels up. Left at one level it would resolve to backend/frontend — a path that does not exist — and the
+# webapp would refuse to start with "exit 2" while the fleet kept running, i.e. a silent site outage.
+# {RESTRUCTURE 2026-07-28 "deploy/ → backend/deploy/"} [CONFIDENCE: CONFIRMED 100% — frontend/ stayed at the repo root].
+cd "$(dirname "$0")/../../frontend" || exit 2
 pkill -f '[d]ev-api-server' 2>/dev/null || true
 sleep 1
 export PORT="${PORT:-8080}"

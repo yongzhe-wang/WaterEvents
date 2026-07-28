@@ -6,7 +6,7 @@ ir_official_variants/sample_{10,100,1000}/<slug>/,每份写 manifest.json(url �
 不处理、不发 VLM,就是渲染落盘的原始文件。{USER 2026-07-24 "create dataset 10 100 1000 non-overlap, ir_official_variants,
 keep raw unprocessed"} [CONFIDENCE: CONFIRMED — 直接指令].
 
-Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents /root/venv/bin/python /workspace/WaterEvents/tests/build_ir_variants.py
+Run ON THE POD:  PYTHONPATH=/workspace/WaterEvents/backend /root/venv/bin/python /workspace/WaterEvents/tests/build_ir_variants.py
 """
 from __future__ import annotations
 

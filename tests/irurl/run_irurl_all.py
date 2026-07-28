@@ -8,7 +8,7 @@ ir_url_source='ir_url_agent' 跳过(RESUME 默认开)。{USER 2026-07-26 "JUST R
 Run ON THE POD (vLLM 14B up):
   cd /workspace/WaterEvents && WATERCRAWL_NO_SHOT=1 WATERCRAWL_HTTP_FIRST=0 \
     WATEREVENTS_DB_DSN=... QWEN_API_KEY=... QWEN_BASE_URLS=http://127.0.0.1:8000/v1 \
-    PYTHONPATH=/workspace/WaterEvents nohup /root/venv/bin/python tests/run_irurl_all.py > /workspace/irurl_all.log 2>&1 &
+    PYTHONPATH=/workspace/WaterEvents/backend nohup /root/venv/bin/python tests/run_irurl_all.py > /workspace/irurl_all.log 2>&1 &
 """
 from __future__ import annotations
 

@@ -9,7 +9,7 @@ VLM 满载但不过饱和,保 routing 质量)。{USER 2026-07-24 "pick 100 compa
 results, all pages events in one folder, call it thekillerdeal"} [CONFIDENCE: CONFIRMED — 直接指令].
 
 Run ON THE POD (vLLM up):
-  KD_CONC=4 KD_N=100 QWEN_API_KEY=<key> PYTHONPATH=/workspace/WaterEvents /root/venv/bin/python tests/thekillerdeal.py
+  KD_CONC=4 KD_N=100 QWEN_API_KEY=<key> PYTHONPATH=/workspace/WaterEvents/backend /root/venv/bin/python tests/thekillerdeal.py
 """
 from __future__ import annotations
 

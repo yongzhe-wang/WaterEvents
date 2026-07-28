@@ -4,7 +4,11 @@
 # have a non-empty events.txt), so each attempt moves forward instead of re-crawling from scratch. Stops on "10event DONE"
 # or after MAX_TRIES. {USER 2026-07-23 "we need a way to auto restart or clean"}.
 set -u
-cd /workspace/WaterEvents || exit 2
+# cwd = REPO ROOT (log paths are root-relative, tests/ did not move); PYTHONPATH = backend/, the new import root.
+# Same pre-existing `python fetch_10.py` break repaired here as in run_fetch.sh. {RESTRUCTURE 2026-07-28}.
+WE_ROOT="${WE_ROOT:-/workspace/WaterEvents}"
+cd "$WE_ROOT" || exit 2
+export PYTHONPATH="$WE_ROOT/backend"
 LOG=tests/fetch_10.log
 MAX_TRIES="${SUPERVISE_MAX_TRIES:-8}"
 
@@ -34,7 +38,7 @@ mkdir -p tests/10event
 for try in $(seq 1 "$MAX_TRIES"); do
   echo "=== [supervise] attempt $try/$MAX_TRIES $(date -u +%H:%M:%S)UTC ===" >> "$LOG"
   clean_chromium; sleep 2
-  /root/venv/bin/python fetch_10.py >> "$LOG" 2>&1
+  /root/venv/bin/python backend/scripts/fetch/fetch_10.py >> "$LOG" 2>&1
   code=$?
   echo "=== [supervise] fetch_10 EXIT=$code (137=OOM/SIGKILL 139=SIGSEGV) attempt $try ===" >> "$LOG"
   if grep -q "10event DONE" "$LOG"; then

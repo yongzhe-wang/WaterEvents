@@ -7,7 +7,7 @@ WHY 用 saved html 而不 re-render: 输入固定、可复现、干净隔离 ext
 {USER 2026-07-24 "写 runner 用 extract.extract_page 跑真实页, 测 Lnn+chunk"} [CONFIDENCE: CONFIRMED — 直接指令].
 
 Run ON THE POD (vLLM at 127.0.0.1:8000):
-  LNN_N=100 LNN_CONC=12 PYTHONPATH=/workspace/WaterEvents /root/venv/bin/python /workspace/WaterEvents/tests/lnn_runner.py
+  LNN_N=100 LNN_CONC=12 PYTHONPATH=/workspace/WaterEvents/backend /root/venv/bin/python /workspace/WaterEvents/tests/lnn_runner.py
 """
 from __future__ import annotations
 
