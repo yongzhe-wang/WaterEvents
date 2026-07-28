@@ -39,17 +39,41 @@ export WATERCRAWL_HTTP_FIRST="0"
 export WEBSHARE_PROXY="${WEBSHARE_PROXY:-http://nknjgkpv:36oo15uctfhl@192.46.200.43:5713}"
 export EVENT_MAX_PAGES="${EVENT_MAX_PAGES:-30}" EVENT_BATCH="${EVENT_BATCH:-5}" EVENT_COMPANY_BUDGET_S="600"
 export EVENTINC_WORKERS="${EVENTINC_WORKERS:-3}"
+# ── BROWSER POOL CAP (post-incident). Each worker is its OWN python process and therefore builds its OWN watercrawl
+# runtime, so these knobs multiply by N: the defaults (BROWSERS=3, MAX_PAGES=24) meant 6 workers × 3 = 18 Chromium
+# processes and 6 × 24 = 144 concurrent pages ≈ 8.6GB of page memory alone (config.py:12 "Peak mem ≈ MAX_PAGES×~60MB"),
+# on a 32GB box with no swap. On 2026-07-27 22:11 that tipped the VM into a page-cache thrash livelock: disk reads pinned
+# at the 3600 IOPS / ~140-176 MB/s instance ceiling for 4.5h with writes starved to ~0, so journald, DHCP renewal and
+# every worker blocked — the box stayed up at ~17% CPU (pure iowait) but could do nothing, and the OOM killer never fired
+# because with no swap the kernel could always "successfully" reclaim more page cache.
+# WHY cutting this is nearly free: the pacer measures RENDER as the NON-binding lane, so render concurrency is not what
+# limits throughput — the GPU is. {PACER 2026-07-28 "T*=13.87h binding=vlm | C_R=609p/h C_V=412c/h | T_render=3.77h
+# T_vlm=13.87h"} → T_vlm is 3.7× T_render, so we can shed render concurrency without moving the bottleneck.
+# {MEASURED 2026-07-28 "155 chromium processes / 9.49GB chrome-headless RSS after only 12 minutes of fleet uptime"}
+# [CONFIDENCE: CONFIRMED 100% — disk metrics pinned at exactly 3600.0 read ops/s for 4h; binding=vlm read off the live
+#  scheduler_state, so the throughput cost of this cap is bounded by the render lane's 3.7× slack].
+export IR_WATERCRAWL_MAX_PAGES="${IR_WATERCRAWL_MAX_PAGES:-8}"   # per worker → 6×8 = 48 pages fleet-wide (was 144)
+export IR_WATERCRAWL_BROWSERS="${IR_WATERCRAWL_BROWSERS:-2}"     # per worker → 6×2 = 12 chromium procs (was 18)
 export EVENTINC_TOP_K="3" EVENTINC_PROFILE="${EVENTINC_PROFILE:-runpod}"
 export PYTHONPATH="$CODE_DIR"                        # backend/ is the import root (see CODE_DIR note above)
 
 echo "[fleet] launching $N queue_worker + 1 pacer on $(hostname) (${NPROC} cores, reserve ${RESERVE}) home=$HOME_DIR"
+# APPEND, never truncate. `>` destroyed the only copy of the crash-window worker logs during the 2026-07-27 22:11
+# incident recovery — the relaunch wiped exactly the evidence the post-mortem needed, so the RCA had to be rebuilt from
+# GCE disk metrics and the persistent journal instead. Logs are the incident record; a restart must never erase them.
+# Size is bounded by logrotate (deploy/waterevents-logrotate.conf) rather than by truncation-on-start.
+# {INCIDENT 2026-07-27 "launch_fleet.sh uses `> $LOGD/w$i.log` → the 16:04-22:11 worker logs were lost on relaunch"}
+# [CONFIDENCE: CONFIRMED 100% — the loss happened and directly blocked the memory half of the root-cause analysis].
+_stamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 for i in $(seq 1 "$N"); do
   core=$(( RESERVE + i - 1 )); [ "$core" -ge "$NPROC" ] && core=$(( NPROC - 1 ))   # clamp to a real core
-  nohup taskset -c "$core" "$PY" -m agent.event_agent.scheduler.worker > "$LOGD/w$i.log" 2>&1 &
+  echo "=== [fleet] worker $i start $_stamp ===" >> "$LOGD/w$i.log"
+  nohup taskset -c "$core" "$PY" -m agent.event_agent.scheduler.worker >> "$LOGD/w$i.log" 2>&1 &
   echo "[fleet]   worker $i → core $core (pid $!)"
   sleep 2
 done
-nohup "$PY" -m agent.event_agent.scheduler.solver.pacer --loop > "$LOGD/pacer.log" 2>&1 &
+echo "=== [fleet] pacer start $_stamp ===" >> "$LOGD/pacer.log"
+nohup "$PY" -m agent.event_agent.scheduler.solver.pacer --loop >> "$LOGD/pacer.log" 2>&1 &
 disown -a 2>/dev/null || true
 echo "[fleet]   pacer --loop (pid $!)"
 # Stop patterns must track the POST-RESTRUCTURE module paths (scheduler.worker / scheduler.solver.pacer). The previous
