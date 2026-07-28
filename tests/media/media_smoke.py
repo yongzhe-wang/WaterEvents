@@ -77,7 +77,7 @@ def _write_trace(path: str, entry: dict, page: dict | None, enriched: dict | Non
     L.append(f"===== EVENT {entry['id']} =====")
     L.append(f"event_url: {entry['event_url']}")
     L.append(f"\n--- KNOWN EVENT (input reference) ---\n{json.dumps(entry['known_event'], ensure_ascii=False, indent=2)}")
-    L.append(f"\n--- GROUND-TRUTH MEDIA (oracle, from old crawl) ---")
+    L.append("\n--- GROUND-TRUTH MEDIA (oracle, from old crawl) ---")
     for m in entry["ground_truth_media"]:
         L.append(f"  [{m.get('label','?'):11}] {m['url']}")
     if note:

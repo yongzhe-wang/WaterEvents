@@ -1,0 +1,19 @@
+[Unit]
+# 5-minute cadence. WHY 5 minutes and not 30: the timer period is the RESOLUTION of the wedge detector, while
+# watchdog.sh's own STALE_MIN + debounce decide how long a stall must persist before acting. A fast timer with a slow
+# debounce gives a tight bound on discovery latency without making the trigger itchy.
+# {COMMIT 5b91b6a "PLUS A PACER UNIT, A DAILY TRACE-RETENTION JANITOR AND A 5-MINUTE LIVENESS TIMER"}
+# [CONFIDENCE: CONFIRMED 100% — the 5-minute cadence is the one specified in the incident remediation].
+Description=Run the WaterEvents liveness watchdog every 5 minutes
+
+[Timer]
+# OnBootSec gives the fleet time to actually start before the first probe, so a cold boot never trips the detector.
+OnBootSec=10min
+OnUnitActiveSec=5min
+AccuracySec=30s
+# Persistent=false: a missed probe while the host was off is meaningless — there was no fleet to watch. Running a
+# catch-up probe at boot against a still-starting fleet would only produce a spurious restart.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -9,13 +9,18 @@ orchestrator} [CONFIDENCE: CONFIRMED — render 只渲染、升级决策在 orch
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import contextlib
+import ipaddress
 import os
 import re
+import socket
+import sys
 import time
+import urllib.parse
 
-from . import config, detection, extract_js, html_inline, page, runtime, walls
+from . import config, detection, extract_js, html_inline, page, politeness, runtime, walls
 
 # RENDER STEP INSTRUMENTATION — when WATERCRAWL_RENDER_DEBUG=1, print a timestamped line at EVERY step of a browser
 # render (context → page → goto → size-gate → settle → break-walls → extract → screenshot) with the elapsed ms. WHY:
@@ -29,6 +34,99 @@ def _rlog(url: str, step: str, t0: float, extra: str = "") -> None:
     """Print one render-step line with elapsed-ms since t0 (monotonic), only when render-debug is on."""
     if _RDEBUG:
         print(f"[render] {int((time.monotonic()-t0)*1000):6d}ms {step:16} {url[:55]} {extra}", flush=True)
+
+
+def _loud(msg: str) -> None:
+    """Emit a failure/diagnostic line to stderr — the 'fail loudly' channel, matching backend/tools/officeall/fetch.py.
+    Every non-success path that would otherwise be swallowed logs here so a quality problem is VISIBLE.
+    {OFFICEALL/FETCH.PY:26-29 "EMIT A FAILURE/FALLBACK LINE TO STDERR — THE 'FAIL LOUDLY' CHANNEL. EVERY NON-SUCCESS
+    PATH LOGS HERE SO A QUALITY PROBLEM IS VISIBLE, NEVER SWALLOWED"}
+    [CONFIDENCE: CONFIRMED 100% — copied deliberately from the existing in-repo standard so both tools log alike]."""
+    print(f"[watercrawl.render] {msg}", file=sys.stderr, flush=True)
+
+
+# ── SSRF GUARD ────────────────────────────────────────────────────────────────────────────────────────────────────
+# WHY: `page.goto` performed NO scheme or address validation, and the crawl frontier's only filter is
+# `absu.startswith("http")`. That rejects `file:` and `javascript:` but happily accepts `http://169.254.169.254/`
+# (the cloud instance-metadata endpoint), `http://127.0.0.1:*`, and any RFC1918 address. Because the crawler follows
+# links found ON crawled pages, ANY page it visits can steer it at the host's own metadata service or at internal
+# services on the VM's network — a blind SSRF with the crawler as the confused deputy. On GCE the metadata endpoint
+# serves service-account access tokens to any unauthenticated HTTP GET from the instance.
+# {IMPERSONATE.PY:103 "IF ABSU.STARTSWITH(\"HTTP\") AND ABSU NOT IN SEEN:" — the frontier's entire address filter}
+# [CONFIDENCE: CONFIRMED 100% — the frontier filter is that one line, and render.py had no address check of any kind
+#  (verified by reading every goto call site in this file). The officeall tool already guards this exact way, so the
+#  crawler was the inconsistent one.]
+# Mirrors backend/tools/officeall/fetch.py:_host_is_public so both entry points enforce ONE policy.
+_SSRF_CACHE: dict = {}                                    # host -> bool, bounded below; resolution is the expensive part
+_SSRF_CACHE_MAX = 4096                                    # hard cap so a link-spam page can't grow this without bound
+
+
+def host_is_public(host: str) -> bool:
+    """True only when `host` resolves EXCLUSIVELY to public IPs. Blocks localhost / loopback / RFC1918 private /
+    link-local (169.254.169.254 cloud metadata) / reserved / multicast. A resolution failure returns False (fail
+    CLOSED — an unresolvable host is not worth navigating to anyway).
+
+    Upstream trigger: `_guard_url` before every `page.goto` and before the impersonate lane's GET. Downstream: a False
+    means the url is never navigated, so a malicious link on a crawled page cannot reach internal infrastructure.
+    {OFFICEALL/FETCH.PY:32-45 "TRUE ONLY WHEN `HOST` RESOLVES TO A PUBLIC IP (SSRF GUARD). BLOCKS LOCALHOST / PRIVATE /
+    LOOPBACK / LINK-LOCAL (169.254.169.254 METADATA) / RESERVED"} [CONFIDENCE: CONFIRMED 100% — same policy, same
+    stdlib predicates, deliberately copied so the two fetchers cannot diverge]."""
+    h = (host or "").lower().strip()
+    if not h or h == "localhost" or h.endswith(".local") or h.endswith(".internal"):
+        return False
+    cached = _SSRF_CACHE.get(h)
+    if cached is not None:                                # resolution is the costly part — reuse the verdict
+        return cached
+    ok = True
+    try:
+        for info in socket.getaddrinfo(h, None):          # EVERY resolved address must be public, not just the first
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                ok = False
+                break
+    except Exception:                                     # noqa: BLE001 — unresolvable → fail closed, never navigate
+        ok = False
+    if len(_SSRF_CACHE) >= _SSRF_CACHE_MAX:               # bounded: drop the whole cache rather than grow unbounded
+        _SSRF_CACHE.clear()
+    _SSRF_CACHE[h] = ok
+    return ok
+
+
+def url_allowed(url: str) -> tuple[bool, str]:
+    """(allowed, reason) for a url about to be navigated: http(s) scheme AND a publicly-resolving host AND permitted by
+    robots.txt. `reason` is "" when allowed and a SPECIFIC token otherwise (bad-scheme / ssrf-blocked / robots-denied)
+    so the caller can log WHICH policy refused — never a silent drop.
+
+    Upstream: every render coroutine before `_goto`, and `render_shot` before the impersonate lane. Downstream: a
+    refusal returns an empty render with a loud stderr line, exactly like any other render failure."""
+    parsed = urllib.parse.urlparse(url or "")
+    if parsed.scheme not in ("http", "https"):            # blocks file: / javascript: / data: / gopher: …
+        return False, "bad-scheme"
+    if not host_is_public(parsed.hostname or ""):         # blocks metadata / loopback / RFC1918 / link-local
+        return False, "ssrf-blocked"
+    if not politeness.allowed(url):                       # robots.txt Disallow (env-gated escape hatch inside)
+        return False, "robots-denied"
+    return True, ""
+
+
+# Bound how long a context teardown may take. WHY: `finally: await ctx.close()` is correctly present on every render
+# coroutine in this file (verified: _render_one, _render_full_one and _render_shot_one each have it), which is what
+# returns the semaphore permit — but `close()` itself talks to the browser over the CDP transport, and when the browser
+# process is already dead that round-trip can hang. A hanging close in a `finally` block holds the permit exactly as
+# long as a hanging render would, so the teardown needs its own deadline or it re-creates the leak it exists to prevent.
+# [CONFIDENCE: INFERRED 80% — that close() round-trips to the browser is structural (CDP), but no hung-close incident is
+#  recorded in this repo; the bound is cheap insurance on a path whose whole job is releasing the permit.]
+_CTX_CLOSE_TIMEOUT_S = float(os.environ.get("WATERCRAWL_CTX_CLOSE_TIMEOUT_S", "10"))
+
+
+async def _close_ctx(ctx) -> None:
+    """Close a browser context with a bounded wait, swallowing a timeout. Called from EVERY render coroutine's
+    `finally`. Upstream: the render coroutines. Downstream: the `_sem` permit is released by the `async with` the moment
+    this returns, so bounding it bounds permit-hold time even when the browser is dead."""
+    try:
+        await asyncio.wait_for(ctx.close(), timeout=_CTX_CLOSE_TIMEOUT_S)
+    except Exception:                                     # noqa: BLE001 — timeout or dead transport: the permit matters more
+        pass
 
 # Shared navigation primitives live in page.py (render + the load_more/year_bar drivers all use them). Alias to keep
 # the render coroutines below reading `_goto` / `_settle` unchanged.
@@ -203,10 +301,18 @@ async def _break_walls(pg, url: str, wait_ms: int) -> None:
 async def _render_one(url: str, inject_js: str | None, wait_ms: int) -> tuple[str, list]:
     """Render ONE url in an isolated context → (text, links). Optional inject_js runs AFTER load (e.g. a year-<select>
     change dispatch), then we wait wait_ms for its AJAX before extracting. Runs ON the loop."""
+    # POLICY GATE, BEFORE the semaphore. A url we may not fetch must not consume one of the 8 `_sem` permits while we
+    # decide that — and the decision is a cached lookup, so gating here costs nothing and keeps a link-spam page from
+    # occupying the pool with urls that were never going to be fetched.
+    ok, why = url_allowed(url)
+    if not ok:
+        _loud(f"refused {url}: {why}")                    # never a silent drop — the reason token says WHICH policy refused
+        return "", []
     async with runtime._sem:
         ctx = await runtime.next_browser().new_context(user_agent=config.UA)   # round-robin the browser pool (spread tabs across processes)
         try:
             pg = await page.new_blocked_page(ctx)
+            await politeness.wait_turn_async(url)         # per-host pacing; async so it never stalls the shared loop
             await _goto(pg, url)
             if inject_js:
                 try:
@@ -223,7 +329,7 @@ async def _render_one(url: str, inject_js: str | None, wait_ms: int) -> tuple[st
                 out = await pg.evaluate(extract_js.EXTRACT_JS)
             return out.get("text") or "", list(out.get("links") or [])
         finally:
-            await ctx.close()
+            await _close_ctx(ctx)                         # bounded teardown: a hung close holds the permit as long as a hung render
 
 
 async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, list, str]:
@@ -231,10 +337,15 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     (orchestrator.render_full/render_detail) needs the HTML to find interactive controls, so when watercrawl is the
     sole render engine it hands back HTML too, not just text. `browser` overrides the default (HTTP/1.1 or residential
     lane). Runs ON the loop."""
+    ok, why = url_allowed(url)                            # same pre-semaphore policy gate as _render_one
+    if not ok:
+        _loud(f"refused {url}: {why}")
+        return "", [], ""
     async with runtime._sem:
         ctx = await (browser or runtime.next_browser()).new_context(user_agent=config.UA)   # default path round-robins the pool; fallback lanes pass explicit browser=
         try:
             pg = await page.new_blocked_page(ctx)
+            await politeness.wait_turn_async(url)         # per-host pacing
             await _goto(pg, url)
             await _settle(pg, wait_ms)
             await _break_walls(pg, url, wait_ms)          # dismiss consent + break a registration/login gate before extract
@@ -247,7 +358,7 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
                 html = await pg.content()
             return out.get("text") or "", list(out.get("links") or []), html
         finally:
-            await ctx.close()
+            await _close_ctx(ctx)                         # bounded teardown
 
 
 async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, list, str, str, str]:
@@ -258,6 +369,12 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     # 4-browser concurrency (→ TargetClosedError). Acquire it BEFORE the page slot so excess shots wait WITHOUT holding a
     # page. {USER 2026-07-23 "we should have a cap"} [CONFIDENCE: CONFIRMED 100% — 4×concurrent full-page shots OOM'd 50GB cgroup].
     t0 = time.monotonic()
+    # POLICY GATE before EITHER semaphore. This lane holds TWO permits (_shot_sem and _sem), so letting a disallowed url
+    # reach the acquire is twice as expensive here as in the other two coroutines.
+    ok, why = url_allowed(url)
+    if not ok:
+        _loud(f"refused {url}: {why}")
+        return "", [], "", "", ""
     _rlog(url, "want-sems", t0, f"(shot_sem+page_sem; browser={'proxy' if browser else 'pool'})")
     # When NO_SHOT is set we won't take a screenshot, so DON'T hold _shot_sem (the shot-slot cap of 4) — otherwise text-only
     # renders would be needlessly throttled to 4-wide and the isolation test couldn't show the real uplift. nullcontext() is
@@ -271,6 +388,7 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
         try:
             pg = await page.new_shot_page(ctx)           # shot path: keep CSS + images so the screenshot looks real
             _rlog(url, "new-page", t0)
+            await politeness.wait_turn_async(url)         # per-host pacing
             await _goto(pg, url)
             _rlog(url, "goto-done", t0)
             # HARD SIZE GATE — measure scroll-height RIGHT AFTER goto, BEFORE the expensive settle/break/extract/content/
@@ -327,13 +445,16 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
             # 5th field = inline-linked reading-order text (links embedded as [anchor](url)) — the VL model's primary context
             return out.get("text") or "", list(out.get("links") or []), html, shot_b64, out.get("inline") or ""
         finally:
-            await ctx.close()
+            await _close_ctx(ctx)                         # bounded teardown — the shot lane holds TWO permits, so a hung close costs double
 
 
 def _shot_via(url: str, wait_ms: int, browser) -> tuple[str, list, str, str, str]:
     """Run _render_shot_one on the loop → (text, links, html, shot_b64, inline); ("", [], "", "", "") on any failure."""
     _budget = (config.NAV_TIMEOUT_MS / 1000) + max(wait_ms, 0) / 1000 + 40
     _t = time.monotonic()
+    # Slot-exhaustion early warning. Called on EVERY render attempt (it rate-limits itself to one line/minute) because
+    # this is the one code path that runs on every page, so it is where a permit slide first becomes visible.
+    runtime.log_slots_if_low()
     _rlog(url, "shot_via-START", _t, f"budget={_budget:.0f}s lane={'residential' if browser else 'render'}")
     try:
         r = runtime.run_on_loop(_render_shot_one(url, wait_ms, browser=browser), _budget)

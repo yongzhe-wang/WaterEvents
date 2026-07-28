@@ -7,15 +7,33 @@
 from __future__ import annotations
 
 import asyncio
-import glob
 import os
-import re
 
 import asyncpg
 
-DSN = "postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
-LOG_GLOB = "/workspace/WaterEvents/tests/eventinc_p*.log"
-OUT_TXT = "/workspace/WaterEvents/tests/eventinc_events.txt"
+def _dsn() -> str:
+    """Resolve the DB DSN from the environment, failing loudly when absent.
+
+    WHY deferred into a function instead of a module-level constant: module-level `os.environ[...]` raises at IMPORT
+    time, and pytest collection imports every globbed module — one missing var would abort collection for the whole
+    suite. This keeps the module importable while still refusing to run against an unspecified database.
+    Upstream trigger: main(). Downstream: asyncpg.connect against the live waterevents schema (read-only reporting).
+    {EVENTS.PY:65-66 "IF NOT _DSN: RAISE RUNTIMEERROR(\"WATEREVENTS_DB_DSN NOT SET — POINT IT AT THE SUPABASE
+     SUPAVISOR POOLER (PORT 6543).\")"} [CONFIDENCE: CONFIRMED 100% — pattern copied from that production call site].
+    """
+    dsn = os.environ.get("WATEREVENTS_DB_DSN")
+    # Fail loud, never default — the removed literal was the live production credential committed in git.
+    # {GIT GREP 2026-07-28 "EVENTINC_REPORT.PY:16 DSN = \"POSTGRESQL://POSTGRES.EZUVMOLYFGSADKEHJNEF:FOCUSALPHA2026@
+    #  AWS-1-US-EAST-1.POOLER.SUPABASE.COM:6543/POSTGRES\""} [CONFIDENCE: CONFIRMED 100% — read at HEAD 9d3402f].
+    if not dsn:
+        raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
+    return dsn
+
+
+# Repo-relative default instead of the RunPod-only /workspace/... absolute path, so the report writes somewhere real
+# on any host. tests/ is two levels up from tests/event/ops/.
+_TESTS_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+OUT_TXT = os.environ.get("EVENTINC_REPORT_OUT", os.path.join(_TESTS_DIR, "eventinc_events.txt"))
 RUN_ID = "eventinc"
 
 
@@ -29,7 +47,7 @@ async def _found_raw(c) -> tuple[int, int]:
 
 
 async def main() -> None:
-    c = await asyncpg.connect(DSN, statement_cache_size=0, server_settings={"search_path": "waterevents"})
+    c = await asyncpg.connect(_dsn(), statement_cache_size=0, server_settings={"search_path": "waterevents"})
     found_raw, scans = await _found_raw(c)
     # net-new = events genuinely inserted under run_id=eventinc (deduped by title+date vs each other AND vs killerdeal via
     # the shared (company_id, dedup_key) unique constraint — an event already in killerdeal hit ON CONFLICT, not a new row)
@@ -53,7 +71,7 @@ async def main() -> None:
                     f"{(r['title'] or '(no title)')[:70]}\n    {primary(r['media_urls'])}\n")
 
     repeat = found_raw - net_new
-    print(f"=== INCREMENTAL 200-HUB CYCLE REPORT ===")
+    print("=== INCREMENTAL 200-HUB CYCLE REPORT ===")
     print(f"hubs scanned            : {hubs_done}")
     print(f"events FOUND (raw Σ)     : {found_raw}   (across {scans} hub-scans)")
     print(f"events NET-NEW (stored)  : {net_new}   (run_id=eventinc, deduped by title+date)")

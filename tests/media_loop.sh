@@ -7,7 +7,17 @@ cd /workspace/WaterEvents
 rm -rf tests/10media
 export PYTHONPATH=/workspace/WaterEvents/backend
 export QWEN_BASE_URLS=http://127.0.0.1:8000/v1
-export QWEN_API_KEY=sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78
+# NO KEY LITERAL — fourth copy of the same committed vLLM api-key. `${VAR:?msg}` aborts before the `rm -rf tests/10media`
+# above has any successor work, so a missing key fails immediately instead of after ten no-op per-event subprocesses.
+# {GIT GREP 2026-07-28 "MEDIA_LOOP.SH:10 EXPORT QWEN_API_KEY=SK-WATEREVENTS-0B1307FDF041607D7E55838C277320498BBEE722867CAD78"}
+# [CONFIDENCE: CONFIRMED 100% — read off the tracked file at HEAD 9d3402f].
+# NO APOSTROPHE IN THE MESSAGE. Bash parses the word of `${VAR:?word}` under quote rules EVEN inside double quotes, so
+# a lone `'` (the fix originally read "the pod's vLLM key") leaves the whole rest of the file inside an unterminated
+# single-quoted string — the script then cannot be parsed at all, let alone run.
+# {BASH -N 2026-07-28 "MEDIA_LOOP.SH: LINE 14: UNEXPECTED EOF WHILE LOOKING FOR MATCHING `''"}
+# [CONFIDENCE: CONFIRMED 100% — isolated repro: `x="${FOO:?the pod's key}"` fails bash -n; identical line without the
+#  apostrophe passes].
+export QWEN_API_KEY="${QWEN_API_KEY:?set QWEN_API_KEY (the vLLM --api-key of the pod) before running media_loop.sh}"
 export QWEN_MAX_TOKENS=12000 MEDIA_VISION_TEXT_CHARS=24000 QWEN_RETRIES=3
 export MEDIA_RUN_DATASET=tests/datasets/pickset MEDIA_RUN_OUT=tests/10media MEDIA_RUN_CLEAR=0
 for id in ev01 ev02 ev03 ev04 ev05 ev06 ev07 ev08 ev09 ev10; do

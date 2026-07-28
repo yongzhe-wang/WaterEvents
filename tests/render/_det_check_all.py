@@ -7,8 +7,12 @@ import glob
 import json
 import os
 
-from agent.media_agent import router
-from agent.media_agent.extract_html import extract_html
+# Paths repaired 2026-07-28. The a4542aa restructure moved both modules into the extract/ subpackage and this harness
+# kept the pre-restructure paths, so it raised ModuleNotFoundError on import and had not run since — silently, because
+# nothing in CI (there is no CI) or in any script invokes it.
+# {AST IMPORT SCAN 2026-07-28 "TESTS/RENDER/_DET_CHECK_ALL.PY — LEGACY IMPORT AGENT.MEDIA_AGENT.EXTRACT_HTML"}
+from agent.media_agent.extract import router
+from agent.media_agent.extract.extract_html import extract_html
 
 _DATASET = os.environ.get("DET_DATASET", "/home/thebigsun/10events_dataset")
 _OFFICE = (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX)

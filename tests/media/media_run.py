@@ -23,8 +23,13 @@ import shutil
 
 from providers.qwen_llm import config as qcfg          # mutate DEBUG_DIR per-event so each event's req_*.txt is separated
 
-from agent.media_agent.enrich import enrich_page
-from agent.media_agent import router                   # classify the event_url → route a .pdf/.pptx to Docling, html to the VLM
+# Paths repaired 2026-07-28: the a4542aa restructure split media_agent into extract/ and pipeline/ subpackages, and this
+# harness kept the flat pre-restructure paths — so it raised ModuleNotFoundError on import and had not run since.
+# `enrich_page` is also re-exported by the media_agent facade, but the explicit subpackage path is used here so the
+# harness breaks loudly at the real location if the module moves again rather than silently following a facade.
+# {AST IMPORT SCAN 2026-07-28 "TESTS/MEDIA/MEDIA_RUN.PY — LEGACY IMPORT AGENT.MEDIA_AGENT.ENRICH"}
+from agent.media_agent.pipeline.enrich import enrich_page
+from agent.media_agent.extract import router           # classify the event_url → route a .pdf/.pptx to Docling, html to the VLM
 
 # dataset = a dir of ev*.json, each {id, event_url, known_event:{title,date,type,media_urls[]}} — NO ground_truth_media.
 _DATASET = os.environ.get("MEDIA_RUN_DATASET",

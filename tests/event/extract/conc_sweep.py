@@ -1,7 +1,9 @@
 """Measure 14B-AWQ throughput on the A5000 at increasing concurrency. Fires N identical extraction requests (a
 median-size real IR page) concurrently, measures wall time → req/s, pages/hour, output tok/s, avg latency. Shows where
 the A5000 saturates (req/s stops rising = compute/KV bound). Run on runpod against the live :8000."""
-import os, sys, asyncio, time, json
+import sys
+import asyncio
+import time
 sys.path.insert(0, "/workspace/WaterEvents")
 from agent.event_agent.crawl import prompts
 from openai import AsyncOpenAI

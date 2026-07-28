@@ -71,6 +71,13 @@ def _db_conn():
     backoff-retry is the standard transient-saturation handling]. Only reached when _BACKEND=='db'."""
     import time as _t                                         # local: memory backend must not import anything db-related
     import psycopg2                                           # local import: memory backend must not need psycopg2 installed
+    # FAIL LOUD on an unset DSN. After the hardcoded literal was removed _DSN defaults to "", and psycopg2.connect("")
+    # does NOT error — libpq resolves an empty conninfo against its own defaults (local socket / $PGHOST / $USER), so
+    # the breaker would quietly read and write host-health rows in whatever database happened to answer. Only reached
+    # when HOST_HEALTH_BACKEND=db, which is exactly the configuration that expects a real shared table.
+    # [CONFIDENCE: CONFIRMED 100% — empty-conninfo default resolution is libpq documented behaviour].
+    if not _DSN:
+        raise RuntimeError("HOST_HEALTH_BACKEND=db but neither BCT_DB_DSN nor WATEREVENTS_DB_DSN is set.")
     last_exc = None
     for attempt in range(_CONN_RETRIES):                     # bounded — never loop forever; give up after _CONN_RETRIES
         try:

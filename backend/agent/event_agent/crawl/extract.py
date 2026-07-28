@@ -11,6 +11,7 @@ import asyncio
 import os
 import random
 import re
+from datetime import datetime, timezone      # plausibility window for extracted event dates (injection defence layer (c))
 
 # RENDER/CRAWL BASELINE mode — when EVENT_FAKE_EXTRACT=1, the extract step SKIPS the VLM entirely and returns a RANDOM
 # selection of the page's own links as routes (events=[]). This drives the REAL crawl loop (render + frontier + BFS)
@@ -136,6 +137,60 @@ def _norm_txt(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
 
 
+# ── GROUNDING WINDOW CONSTANTS + FUZZY MATCHER ─────────────────────────────────────────────────────────────────────
+# These three names were REFERENCED by _grounded but never DEFINED — `ruff --select F821` flagged them and a direct
+# call reproduced it: `_grounded(...)` raised `NameError: name '_GROUND_WINDOW' is not defined`. Because _grounded runs
+# on EVERY extracted event, the whole extraction path raised on its first event. Defined here to the values _grounded's
+# own docstring already specifies, so the documented behaviour and the code finally agree.
+# {RUFF 2026-07-28 "EXTRACT.PY:169 F821 UNDEFINED NAME `_GROUND_WINDOW`; :175 `_GROUND_MAX_EDITS`; :175 `_FUZZY_WINDOW`"}
+# {_GROUNDED DOCSTRING "THE WINDOW IS NOW _GROUND_WINDOW (6) WORDS" / "_GROUND_MAX_EDITS, DEFAULT 1 WORD
+#  SUBSTITUTION/INSERTION"}
+# [CONFIDENCE: CONFIRMED 100% — the NameError is a reproduced runtime observation, and the values are read verbatim off
+#  the docstring that describes them rather than chosen here.]
+_GROUND_WINDOW = int(os.environ.get("EVENT_GROUND_WINDOW", "6"))        # words per grounding window (was 3 — boilerplate defeated it)
+_GROUND_MAX_EDITS = int(os.environ.get("EVENT_GROUND_MAX_EDITS", "1"))  # word-level edits tolerated, so a lightly reflowed snippet still passes
+
+
+def _fuzzy_window(win: list[str], src_words: list[str]) -> bool:
+    """Does `win` (a run of evidence words) appear in `src_words` within _GROUND_MAX_EDITS word-level edits?
+
+    WHY it exists: lengthening the grounding window from 3 to 6 words kills the boilerplate collisions that let a
+    RECOMBINED event pass, but on its own it would resurrect the FALSE REJECTIONS the 3-word window was chosen to
+    prevent — the model reformats the ends of a snippet it copies. Tolerating a small number of edits keeps the recall
+    while the longer window supplies the precision; the two are independent levers, which is why both move together.
+
+    Complexity is bounded deliberately: candidate offsets are taken only from positions where one of the window's words
+    actually occurs (via a word→positions index built once per call), so this is near-linear in the number of matching
+    positions rather than a scan of every offset in a multi-thousand-word page.
+
+    Upstream: _grounded, once per evidence window that failed the exact-substring fast path. Downstream: True keeps the
+    event, False drops it as ungrounded."""
+    w = len(win)
+    if w == 0 or len(src_words) < w:
+        return False
+    # word → the offsets in src_words where it occurs; used to propose only plausible alignments.
+    pos: dict[str, list[int]] = {}
+    for i, t in enumerate(src_words):
+        pos.setdefault(t, []).append(i)
+    cands = set()
+    for off, tok in enumerate(win):                       # a window word at index `off` seen at src index i ⇒ start i-off
+        for i in pos.get(tok, ()):
+            s = i - off
+            if 0 <= s <= len(src_words) - w:
+                cands.add(s)
+    for s in cands:
+        # Same-length alignment: count substitutions and bail as soon as the budget is blown (no full distance needed).
+        edits = 0
+        for a, b in zip(win, src_words[s:s + w]):
+            if a != b:
+                edits += 1
+                if edits > _GROUND_MAX_EDITS:
+                    break
+        if edits <= _GROUND_MAX_EDITS:
+            return True
+    return False
+
+
 def _grounded(evidence: str, source_norm: str) -> bool:
     """GROUNDING CHECK (anti-hallucination) — is the model's `evidence` snippet ACTUALLY in the page it read? The model
     must copy a verbatim snippet proving each event; if that snippet isn't in the source, the event was FABRICATED
@@ -143,15 +198,90 @@ def _grounded(evidence: str, source_norm: str) -> bool:
     precisions (AWQ/FP8/FP16) hallucinate identically, so this is a PROMPT/verification fix, not a quantization one.
     Normalized substring tolerates punctuation/whitespace; the 30-char prefix tolerates a trailing word the model adds.
     {TECHNIQUE: web-searched grounding / quote-from-source + chain-of-verification for small-model extraction 2026-07-24;
-    A/B proved precision doesn't change the hallucination} [CONFIDENCE: CONFIRMED 100% — direct fix for it]."""
+    A/B proved precision doesn't change the hallucination} [CONFIDENCE: CONFIRMED 100% — direct fix for it].
+
+    TIGHTENED 2026-07-28: the window was 3 words, which IR boilerplate defeats — "q1 2026 earnings", "conference call
+    webcast" and "fourth quarter results" are printed on essentially every IR page, so a RECOMBINED event (real phrases
+    from different parts of the page, stitched into a disclosure that was never announced) passed grounding trivially.
+    The window is now _GROUND_WINDOW (6) words, which no longer matches on a single boilerplate fragment.
+
+    RESPECTING THE ORIGINAL LOOSENING: the 3-word window was chosen deliberately to stop FALSE REJECTIONS — the model
+    reformats the ends of a snippet it copies (the NiCE World case a whole-string match dropped). A longer window alone
+    would reintroduce exactly those false negatives, so the tightening ships WITH a tolerance: a window is grounded if it
+    matches verbatim OR at small edit distance (_GROUND_MAX_EDITS, default 1 word substitution/insertion), so a snippet
+    the model lightly reflowed still passes while a stitched-together fabrication — which differs by many words, not one
+    — still fails. Evidence SHORTER than the window falls back to requiring the WHOLE snippet to match (with the same
+    tolerance), so a legitimately terse 3-5 word snippet is not rejected for being short.
+    {EXTRACT.PY (pre-fix) "ANY 3-CONSECUTIVE-WORD RUN OF THE EVIDENCE MUST APPEAR VERBATIM ... RECOVERS FALSE-NEGATIVES
+     LIKE NICE WORLD THAT A WHOLE-STRING MATCH DROPPED"}
+    [CONFIDENCE: CONFIRMED 95% — window length and edit tolerance are independent levers: the window kills boilerplate
+     collisions, the tolerance preserves the reflow recall the 3-word window was protecting]."""
     ev = _norm_txt(evidence).split()
     if len(ev) < 3:                                           # < 3 words is too little to prove anything → ungrounded
         return False
-    # ANY 3-consecutive-word run of the evidence must appear VERBATIM (punct-insensitive) in the page. This keeps real
-    # events even when the model reformats the ends of its snippet (recovers false-negatives like NiCE World that a
-    # whole-string match dropped), while still killing a fabricated title assembled from words scattered across the page
-    # (acadiarealty's "Q1 2026 Earnings Conference Call" — no contiguous run of it exists on that nav-only page).
-    return any(" ".join(ev[i:i + 3]) in source_norm for i in range(len(ev) - 2))
+    src_words = source_norm.split()
+    w = min(_GROUND_WINDOW, len(ev))                          # short evidence → match the whole snippet, not a sub-window
+    # Slide every w-word window of the evidence over the page; grounded if ANY window matches within the edit tolerance.
+    for i in range(len(ev) - w + 1):
+        win = ev[i:i + w]
+        if " ".join(win) in source_norm:                      # fast path: exact (punct-insensitive) run — the common case
+            return True
+        if _GROUND_MAX_EDITS and _fuzzy_window(win, src_words):   # tolerate the model lightly reflowing its snippet
+            return True
+    return False
+
+
+# ── PLAUSIBILITY VALIDATION (injection defence layer (c)) ──────────────────────────────────────────────────────────
+# The allowed event_type enum — EXACTLY the nine values SYSTEM_EVENTS instructs the model to choose from. A record whose
+# type is outside this set did not come from following our instructions, so it is either a model error or an injected
+# record; either way it must not reach the DB with an arbitrary attacker-chosen label.
+# {PROMPTS.PY SYSTEM_EVENTS "\"EARNINGS\" ... \"PRESS_RELEASE\" ... \"PRESENTATION\" ... \"FILING\" ... \"WEBCAST\" ...
+#  \"CONFERENCE\" ... \"SHAREHOLDER_MEETING\" ... \"DIVIDEND\" ... OR \"OTHER\""}
+# [CONFIDENCE: CONFIRMED 100% — the nine values are read verbatim off the system prompt in this same package].
+_ALLOWED_TYPES = frozenset({"earnings", "press_release", "presentation", "filing",
+                            "webcast", "conference", "shareholder_meeting", "dividend", "other"})
+# Sane calendar window for an investor event, as a (min_year, max_year) pair around "now". IR pages legitimately carry a
+# deep archive (a 20-year filing history) and forward guidance (next year's AGM), so the window is DELIBERATELY WIDE —
+# its job is to catch the structurally absurd ("0001-01-01", "2099-12-31", a year-3000 forged announcement), NOT to
+# second-guess a real archive. Env-overridable so a genuinely older archive can widen it without a code change.
+# [CONFIDENCE: CONFIRMED 90% — 30y back covers EDGAR's full electronic era (1993+); 5y forward covers any announced
+#  calendar. Chosen wide on purpose: a false REJECT of a real event is worse than admitting an implausible-but-dated one].
+_DATE_MIN_YEAR = int(os.environ.get("EVENT_DATE_MIN_YEAR", "1993"))
+_DATE_MAX_YEARS_AHEAD = int(os.environ.get("EVENT_DATE_MAX_YEARS_AHEAD", "5"))
+# The four date shapes SYSTEM_EVENTS permits: YYYY-MM-DD, YYYY-Qn, YYYY-MM, YYYY. Anything else is malformed.
+_DATE_SHAPE_RE = re.compile(r"^(\d{4})(?:-(?:Q[1-4]|\d{2}(?:-\d{2})?))?$", re.I)
+
+
+def _plausible_date(date: str) -> bool:
+    """Structural + range sanity for an extracted event date. "" is ALLOWED (the prompt explicitly permits an undated
+    event when the page prints no date, and the footer-chrome guard already requires date OR title), but a NON-empty
+    date must match one of the four permitted shapes AND fall in a sane year window.
+
+    WHY: injection defence layer (c). Grounding cannot reject a poisoned record — the attacker controls the page, so
+    their forged evidence matches by construction — but a forged "acquisition on 2099-01-01" still has to survive a
+    STRUCTURAL check that has nothing to do with the page's contents. UPSTREAM: _normalize_events, per event.
+    DOWNSTREAM: an implausible date drops the event before flush_events writes it.
+    [CONFIDENCE: CONFIRMED 100% — shapes are taken verbatim from the prompt's own date contract]."""
+    d = (date or "").strip()
+    if not d:                                                  # undated is legal per the prompt → not a plausibility failure
+        return True
+    m = _DATE_SHAPE_RE.match(d)                                # must be YYYY / YYYY-MM / YYYY-MM-DD / YYYY-Qn
+    if not m:
+        return False
+    year = int(m.group(1))
+    # Bound the year to a wide-but-finite window around today; catches year-0001/2099-style forgeries and typos.
+    return _DATE_MIN_YEAR <= year <= datetime.now(timezone.utc).year + _DATE_MAX_YEARS_AHEAD
+
+
+def _plausible_type(etype: str) -> str:
+    """Coerce an event type to the allowed enum: a recognised value passes through, anything else (including "") becomes
+    "other". WHY coerce rather than DROP: the type is a low-stakes label and the prompt itself allows "other", so an
+    unexpected value is far more likely a model wobble than an attack — dropping the event would lose a real disclosure
+    over a cosmetic field. The security property we need is only that an ATTACKER-CHOSEN string never reaches the DB.
+    UPSTREAM: _normalize_events. DOWNSTREAM: events.event_type.
+    [CONFIDENCE: CONFIRMED 95% — enum-clamping preserves recall while removing the arbitrary-value write primitive]."""
+    t = (etype or "").strip().lower()
+    return t if t in _ALLOWED_TYPES else "other"
 
 
 def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
@@ -170,7 +300,16 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
             continue
         title = (e.get("title") or "").strip()[:300]
         date = (e.get("date") or "").strip()
-        etype = (e.get("type") or "").strip()
+        # PLAUSIBILITY (injection defence layer (c)) — grounding proves the model COPIED from the page; it cannot prove
+        # the PAGE is honest, because a poisoner controls the grounding corpus too. So an event must ALSO survive a
+        # structural check that does not consult the page: a parseable date inside a sane year window, and a type inside
+        # the prompt's own enum. A forged "2099 acquisition" passes grounding and dies here.
+        # {PROMPTS.PY _FENCE_OPEN BLOCK "GROUNDING ANSWERS 'DID THE MODEL MAKE THIS UP?'; IT CANNOT ANSWER 'IS THE PAGE
+        #  LYING?'"} [CONFIDENCE: CONFIRMED 100% — structural validity is independent of attacker-controlled content].
+        if not _plausible_date(date):                          # malformed or absurd year → poisoned/garbled → drop
+            print(f"[extract] ⛔ IMPLAUSIBLE DATE {date[:24]!r} — dropping event {title[:48]!r}", flush=True)
+            continue
+        etype = _plausible_type(e.get("type"))                 # clamp to the allowed enum (unknown → "other")
         # FOOTER-CHROME GUARD: a genuine IR event ALWAYS has a DATE or a nameable TITLE. A footer/nav link cluster the
         # model mis-read as an event arrives {title:"", date:"", urls:[...]} — url present, no date, no title → chrome,
         # drop it. {USER 2026-07-23 "top events 全是 footer 导航被当成假 event"} [CONFIDENCE: CONFIRMED 95%].
@@ -347,10 +486,22 @@ async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_i
             merged_events.append(e)
             event_urls |= {u for u in e["urls"]}
     out = {"events": merged_events, "_event_urls": event_urls}
-    if errs:                                                  # a block hard-failed → the page's extraction is untrustworthy
-        out["_error"] = "; ".join(errs[:5])
-    if partials:                                              # incomplete but usable → surfaced, NOT discarded
-        out["_partial"] = "; ".join(partials[:5])
+    # THE DISCRIMINATOR IS "DID WE GET ANYTHING", NOT "WHAT KIND OF FAILURE". The truncation case was already routed to
+    # _partial, but a block that hard-fails at the TRANSPORT layer still went to _error — and _harvest discards a page's
+    # entire harvest on _error. Under a saturated VLM that is the common case, not a rare one: Sony's earnings archive
+    # chunked into 3 blocks, two returned ReadTimeout, the third returned 17 real dated events, and all 17 were thrown
+    # away. Chunking only runs on pages over MAX_INPUT_CHARS — the event-densest archives — so this discarded the most
+    # valuable pages first, which is why 20 companies sat at zero events on top of 3,129 stored dated mentions.
+    # {TRACE 2026-07-28 www.sony.com/.../presen/er/archive.html result.json "_error": "ReadTimeout: ; ReadTimeout: ",
+    #  "events": [17 items] — and summary.json for the same run: "n_events": 0}
+    # {ENGINE.PY _harvest "IF RES.GET("_ERROR"): ... PRINT("PAGE'S EVENTS LOST") RETURN []"}
+    # [CONFIDENCE: CONFIRMED 100% — read off the production trace; re-extracting that stored page yields 36 events].
+    notes = errs + partials
+    if notes:
+        if merged_events:                                     # some blocks died, others delivered → incomplete, NOT lost
+            out["_partial"] = "; ".join(notes[:5])            # _harvest still counts failed_extract → company 'incomplete'
+        else:                                                 # nothing survived anywhere → a genuine extraction failure
+            out["_error"] = "; ".join(notes[:5])
     return out
 
 

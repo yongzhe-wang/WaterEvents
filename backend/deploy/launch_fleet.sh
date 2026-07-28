@@ -11,9 +11,13 @@
 # RunPod:   N=6 bash deploy/launch_fleet.sh
 # GCP VM:   EVENTINC_PY=~/venv/bin/python EVENTINC_HOME=~/WaterEvents EVENTINC_RESERVE=2 N=6 bash deploy/launch_fleet.sh
 set -u
-# OWNERSHIP GUARD — runs before anything here has a side effect. BOTH target names are checked because the repo ships
-# two installers that disagree on the name (systemd/install.sh writes waterevents-fleet.target, install_systemd.sh
-# writes waterevents.target) and BOTH are currently installed on the live host, so checking one would miss the other.
+# OWNERSHIP GUARD — runs before anything here has a side effect. BOTH target names are STILL checked even though the
+# repo now ships one installer: install_systemd.sh (which wrote waterevents.target) was deleted 2026-07-28, but a host
+# it previously ran on still has that unit file in /etc/systemd/system until someone removes it. Deleting a unit from
+# the REPO does not uninstall it from the HOST, and dropping this guard would let this script start a duplicate fleet
+# alongside the one the stale target is still managing. Retire the first guard only after
+# `systemctl list-units 'waterevents*'` on every host shows no bare waterevents.target.
+# [CONFIDENCE: CONFIRMED 100% — repo-vs-host divergence is structural; the stale unit outlives the file that wrote it].
 . "$(dirname "$0")/_owner_guard.sh"
 guard_owner waterevents.target        "sudo systemctl restart waterevents.target"
 guard_owner waterevents-fleet.target  "sudo systemctl restart waterevents-fleet.target"

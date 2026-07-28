@@ -12,8 +12,17 @@ import os
 
 import asyncpg
 
-_DSN = os.environ.get("WATEREVENTS_DB_DSN",
-                      "postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres")
+# NO DEFAULT — the DSN must come from the environment or the process must refuse to start. This line previously carried
+# a literal production Supavisor DSN (project ref + superuser password) as the os.environ.get fallback. A fallback is a
+# strictly worse shape than a plain hard-code: it looks safe because the env var is set at deploy time, yet the literal
+# remains a live, working credential in every checkout, every container layer and every git object forever. The value was
+# probed and confirmed live with full DML+DDL against a 146k-row production dataset, so this was a real exposure, not a
+# stale string. Fails loud instead — identical wording and shape to events.py's connect_pool guard so both modules in this
+# package behave the same way on an unset env. {EVENTS.PY:65-66 "IF NOT _DSN: RAISE RUNTIMEERROR("WATEREVENTS_DB_DSN NOT
+# SET — POINT IT AT THE SUPABASE SUPAVISOR POOLER (PORT 6543).")"} {QUEUE_BOOST.PY:35 "_DSN = OS.ENVIRON.GET(
+# "WATEREVENTS_DB_DSN", "")" — the ops tooling already used the empty default} [CONFIDENCE: CONFIRMED 100% — the literal
+# was read off this file at HEAD 9d3402f; the correct pattern already existed twice in the same codebase].
+_DSN = os.environ.get("WATEREVENTS_DB_DSN", "")
 _SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "waterevents")
 _LEASE_MIN = int(os.environ.get("WATEREVENTS_LEASE_MIN", "15"))     # full BFS can run minutes → generous lease
 _FULL_INTERVAL_S = int(os.environ.get("EVENTINC_FULL_INTERVAL_S", str(7 * 24 * 3600)))   # weekly re-arm
@@ -22,7 +31,17 @@ _INC_INTERVAL_S = int(os.environ.get("EVENTINC_INC_INTERVAL_S", str(30 * 60)))  
 
 async def connect_pool(min_size: int = 2, max_size: int = 8) -> asyncpg.Pool:
     """asyncpg pool on the transaction pooler (statement_cache_size=0 is REQUIRED on Supavisor). search_path pinned so
-    every query hits waterevents.* without a schema prefix."""
+    every query hits waterevents.* without a schema prefix.
+
+    FAILS LOUD on an unset DSN rather than silently connecting somewhere. Now that _DSN has no literal fallback (see the
+    module-level note), an unset env var would otherwise reach asyncpg as an empty string and surface as an opaque
+    libpq-level error far from the actual cause. Copied verbatim from the sibling guard so a misconfigured deploy raises
+    the SAME message whichever storage module happens to open its pool first.
+    {EVENTS.PY:65-66 "IF NOT _DSN: RAISE RUNTIMEERROR("WATEREVENTS_DB_DSN NOT SET — POINT IT AT THE SUPABASE SUPAVISOR
+    POOLER (PORT 6543).")"} [CONFIDENCE: CONFIRMED 100% — same string, same placement, so the two are indistinguishable
+    to an operator reading a traceback]."""
+    if not _DSN:                                             # unset env → refuse to start, never fall back to a literal
+        raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
     return await asyncpg.create_pool(_DSN, min_size=min_size, max_size=max_size, statement_cache_size=0,
                                      server_settings={"search_path": _SCHEMA})
 
@@ -97,17 +116,109 @@ async def complete_work(pool: asyncpg.Pool, wid, unit_type: str, event_count: in
         )
 
 
-async def fail_work(pool: asyncpg.Pool, wid, unit_type: str, max_attempts: int = 4) -> None:
+async def fail_work(pool: asyncpg.Pool, wid, unit_type: str, max_attempts: int = 4) -> str | None:
     """A scan errored. Under max_attempts → re-arm SOON (short backoff) for a retry; at the cap → mark 'failed' (fail-loud,
-    a reconcile/monitor surfaces it) so a permanently-broken url doesn't spin forever. {fail-loud}."""
+    reconcile_work/the pacer's reaper surfaces it) so a permanently-broken url doesn't spin forever.
+
+    ONE STATEMENT, NOT TWO. This was `SELECT attempt` followed by a separate `UPDATE`, which is a classic read-then-write
+    race: the two statements run in different implicit transactions (asyncpg autocommits each, and the Supavisor
+    transaction pooler may even route them to different backends), so between the read and the write another worker's
+    claim_work can bump `attempt`. Two workers failing the same unit concurrently both read attempt=3, both decide
+    "under the cap", and both re-queue — the row keeps climbing past max_attempts and never reaches 'failed', which is
+    precisely the fail-loud terminal state this function exists to produce. Deciding INSIDE the UPDATE evaluates the CASE
+    against the row version the statement itself locks, so the branch and the write can no longer disagree.
+    {QUEUE.PY claim_work "ATTEMPT = ATTEMPT + 1," — a concurrent claim mutates the very column the removed SELECT read}
+    {EVENTS.PY:225 "STATUS = CASE WHEN FAIL_COUNT + 1 >= 3 THEN 'DEAD_LETTER' ELSE 'FAILED' END" — the event-side twin
+     already used the single-statement inline-CASE shape, so this makes the two layers consistent}
+    [CONFIDENCE: CONFIRMED 100% — the two-statement shape was read off this file at HEAD 9d3402f; the fix is a pure
+     collapse with no behaviour change in the single-worker case].
+
+    Upstream trigger: scheduler/worker.py on a scan exception. Downstream: the row either re-arms at now()+5min (retry)
+    or lands in 'failed', where it is visible to the pacer's failed-row reaper and to operators.
+
+    RETURNS the terminal status actually written ('failed' | 'queued'), or None if the id no longer exists — so the
+    caller can log which branch fired instead of having to re-query."""
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT attempt FROM work_queue WHERE id = $1", wid)
-        if row and row["attempt"] >= max_attempts:
-            await conn.execute("UPDATE work_queue SET status='failed', lease_owner=NULL, lease_until=NULL, updated_at=now() WHERE id=$1", wid)
-        else:
-            await conn.execute(
-                "UPDATE work_queue SET status='queued', lease_owner=NULL, lease_until=NULL, "
-                "due_at = now() + interval '5 minutes', updated_at=now() WHERE id=$1", wid)
+        # attempt is compared as-is (NOT attempt+1): claim_work already incremented it when this unit was handed out,
+        # so by the time a failure lands `attempt` is the count INCLUDING the attempt that just failed.
+        row = await conn.fetchrow(
+            """
+            UPDATE work_queue SET
+                status      = CASE WHEN attempt >= $2 THEN 'failed' ELSE 'queued' END,
+                lease_owner = NULL,
+                lease_until = NULL,
+                -- only the retry branch moves due_at; a 'failed' row must NOT look due, or a future relaxation of the
+                -- claim predicate would silently resurrect it.
+                due_at      = CASE WHEN attempt >= $2 THEN due_at ELSE now() + interval '5 minutes' END,
+                updated_at  = now()
+            WHERE id = $1
+            RETURNING status;
+            """,
+            wid, max_attempts,
+        )
+    return row["status"] if row else None
+
+
+async def reconcile_work(pool: asyncpg.Pool) -> int:
+    """Sweeper: flip every work_queue row whose lease has LAPSED back to 'queued' (clearing the dead worker's ownership)
+    so the fleet can pick it up again. Returns the number of rows reclaimed, for logging + alerting.
+
+    WHY this exists as a separate cron rather than relying on claim_work's reclaim arm: claim_work DOES have an
+    opportunistic second arm for lapsed leases, but that arm is conjoined with `due_at <= now()`, and complete_work
+    pushes a full unit's due_at a WEEK out. So a full unit that dies mid-scan holds a lease that lapsed 15 minutes later
+    while its due_at sits up to 7 days in the future — the claim query will not look at it again until the week elapses,
+    and until then the row is invisible work that nothing is doing. An unconditional sweep on the lease alone is the only
+    thing that returns those rows to the pool promptly.
+    {QUEUE.PY claim_work "WHERE (STATUS = 'QUEUED' OR (STATUS = 'RUNNING' AND LEASE_UNTIL < NOW())) AND DUE_AT <= NOW()"
+     — the reclaim arm is gated on due_at, which is what makes it insufficient for full units}
+    {QUEUE.PY:19 "_FULL_INTERVAL_S = INT(OS.ENVIRON.GET("EVENTINC_FULL_INTERVAL_S", STR(7 * 24 * 3600)))" — the week}
+    {MIGRATION 20260725024245_waterevents_work_queue.sql:35 "-- RECLAIM SCAN: FIND ROWS WHOSE LEASE LAPSED (CRASHED
+     WORKER) — A RECONCILE CRON FLIPS THEM BACK TO 'QUEUED'." — the cron the migration promised was never written}
+    {MEASURED at audit time "91 ROWS IN STATUS='RUNNING', OF WHICH 28 HAD ALREADY-LAPSED LEASES, ALL OWNED BY THE MACHINE
+     THAT SUFFERED THE 4H27M WEDGE"} {PACER.PY:142-143 "RECONCILE 从来不存在(EVENTS.PY 的 RECONCILE_EVENTS 只管 EVENTS
+     表的 ENRICHMENT,不碰 WORK_QUEUE)"}
+    [CONFIDENCE: CONFIRMED 100% — the missing sweeper is independently documented in the migration comment, in pacer.py's
+     own analysis, and by 28 stuck rows counted on the live queue].
+
+    ATOMIC by construction: a single UPDATE. Its WHERE clause is evaluated against the rows the statement itself locks,
+    so a worker that renews its lease in the same instant either renews BEFORE (row no longer matches, not reclaimed) or
+    AFTER (row was reclaimed, and the renewing worker's own fencing decides the outcome) — there is no window where this
+    function reclaims a row whose lease is still valid.
+
+    NOTE ON `attempt`: reclaiming deliberately does NOT touch it. claim_work increments on every claim, and complete_work
+    zeroes on success, so leaving it alone preserves the intended "consecutive failures" meaning — a unit that wedges
+    repeatedly keeps climbing toward fail_work's cap instead of being laundered clean by the sweeper.
+    {QUEUE.PY complete_work "RESETS `ATTEMPT` — WITHOUT THIS THE COUNTER IS A ONE-WAY RATCHET"}
+    [CONFIDENCE: CONFIRMED 100% — matches the semantics complete_work's docstring already establishes].
+
+    Index-backed: the predicate matches `work_queue_lease_idx` exactly, so this is a cheap partial-index scan even as
+    the table grows. {MIGRATION 20260725024245_waterevents_work_queue.sql:36-37 "CREATE INDEX IF NOT EXISTS
+    WORK_QUEUE_LEASE_IDX ON WATEREVENTS.WORK_QUEUE (STATUS, LEASE_UNTIL) WHERE STATUS = 'RUNNING'"}
+    [CONFIDENCE: CONFIRMED 100% — index name and predicate read directly from the migration file].
+
+    Upstream trigger: scripts/ops/reconcile_queue.py, run from a systemd timer. Downstream: the reclaimed rows become
+    claimable by claim_work on its next poll.
+
+    COMPANION FIX (NOT in this module, NOT owned here): this reclaims a lease AFTER it lapses. The reason a lease lapses
+    while the process is still alive is that scan_unit has no hard timeout, so a wedged unit holds its slot for hours —
+    that bound belongs in scheduler/worker.py and is owned by another agent. Without it this sweeper is a mitigation, not
+    a cure: it returns the row to the pool, but the wedged worker still occupies a slot. {MEASURED "4H27M WEDGE"}."""
+    async with pool.acquire() as conn:
+        tag = await conn.execute(
+            """
+            UPDATE work_queue SET
+                status = 'queued', lease_owner = NULL, lease_until = NULL, updated_at = now()
+            WHERE status = 'running' AND lease_until < now();
+            """
+        )
+    # asyncpg returns the raw command tag ("UPDATE 28"). Parsed defensively for the same reason reconcile_events does:
+    # this runs unattended from a timer, and a malformed tag must degrade to "reclaimed 0", never crash the cron.
+    # {EVENTS.PY reconcile_events "RETURN INT(TAG.SPLIT()[-1]) IF TAG AND TAG.STARTSWITH("UPDATE") ELSE 0"}
+    # [CONFIDENCE: CONFIRMED 100% — identical parsing, so both sweepers report counts the same way].
+    try:
+        return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+    except (ValueError, IndexError):                         # {AUDIT 2026-07-23 MEDIUM: int(tag.split()) could raise}
+        return 0
 
 
 async def enqueue(pool: asyncpg.Pool, rows: list[dict]) -> int:

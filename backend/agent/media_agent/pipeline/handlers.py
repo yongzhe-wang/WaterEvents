@@ -20,8 +20,11 @@ import os
 import re
 from urllib.parse import urljoin, urlsplit
 
-from providers import watercrawl                     # html render (reused, unchanged)
 from providers.qwen_llm import QwenClient            # VLM transport (reused, unchanged)
+
+# html render — via the bounded-retry wrapper, NOT a bare watercrawl.render_shot. A single-shot render turns a transient
+# concurrency timeout into a permanent failure (see render_retry's module docstring for the measured event-side evidence).
+from .render_retry import render_with_retry
 
 from ..extract import prompts, router
 # DETERMINISTIC body + shared input-overflow guard — the production worker path (dispatch→handle_html) gets the SAME
@@ -213,10 +216,16 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
     dedups + enqueues them). Two paths by extract_html tier: ROUTE (deterministic body exists → shrunk VLM, no overflow) vs
     LEGACY (JS-shell/thin page, tier=='empty' → full-copy VLM with the two truncation twins). This is the only handler that
     grows the frontier."""
-    render = await asyncio.to_thread(watercrawl.render_shot, url)   # open + full-page screenshot, off the loop
-    if not render.get("text") and not render.get("links"):         # walled / dead / empty → nothing to contribute
+    # BOUNDED RETRY, not a bare single shot. Under fleet concurrency a heavy IR page comes back EMPTY from a load-induced
+    # TimeoutError while the SAME page renders fine when run alone, so treating attempt #1's empty as terminal converts a
+    # transient timeout into a permanent `failed:empty-render` — and, via the 3-strike counter, into a dead letter.
+    # {ENGINE.PY:191-194 "RETRIES AN EMPTY RENDER UP TO _RENDER_TRIES TIMES WITH A SHORT BACKOFF: A LOAD-INDUCED
+    # TIMEOUTERROR COMES BACK EMPTY, AND A RETRY ONCE THE BROWSER POOL HAS FREED UP USUALLY LANDS THE PAGE."}
+    # [CONFIDENCE: CONFIRMED 100% — event_agent hits the same hosts through the same render stack at the same concurrency.]
+    render = await render_with_retry(url)                          # open + full-page screenshot, off the loop, 3 tries
+    if not render.get("text") and not render.get("links"):         # STILL empty after every attempt → genuinely walled/dead
         chart.set_status(url, "failed:empty-render")
-        print(f"[media] ⛔ empty render {url[:70]} — walled/dead/no content", flush=True)
+        print(f"[media] ⛔ empty render {url[:70]} after retries — walled/dead/no content", flush=True)
         return []
     page_text = render.get("inline") or render.get("text", "")
     img = render.get("shot_b64", "") if use_image else None

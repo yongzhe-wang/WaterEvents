@@ -1,0 +1,20 @@
+[Unit]
+# Liveness guard: asks the DATABASE whether work is still being produced, and restarts the fleet when it is not.
+# WHY liveness-by-output and not by process presence: during the 2026-07-27 wedge all six worker processes were still
+# in ps with CPU at ~17% — a process check would have reported everything healthy for the full 4h27m. The only signal
+# that had actually stopped was rows landing in scan_log.
+# {COMMIT 5b91b6a "ALL SIX WORKER PROCESSES WERE STILL PRESENT IN PS. WHAT HAD STOPPED WAS THE DISK."}
+# [CONFIDENCE: CONFIRMED 100% — quoted from the incident commit message].
+Description=WaterEvents fleet liveness watchdog
+# Do not even try to probe if the network is not up — a boot-time false positive would restart a fleet that never started.
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Runs as root: the ExecStart calls `systemctl restart waterevents-fleet.target` and writes debounce state under
+# /var/lib/waterevents, both of which need privilege.
+EnvironmentFile=/etc/waterevents.env
+ExecStart=/usr/local/bin/waterevents-watchdog
+# A watchdog that hangs on an unreachable DB must not accumulate overlapping oneshot invocations every 5 minutes.
+# 120s is well above the psql connect+query cost and well below the 5-minute timer period.
+TimeoutStartSec=120

@@ -43,6 +43,76 @@ jobs:
           done
           exit $fail
 
+      # 1b — every FIRST-PARTY import must resolve to a file that actually exists. Parsing is not enough: on 2026-07-28
+      # backend/providers/watercrawl/render.py carried `from . import politeness` while politeness.py did not exist in
+      # the tree at all. That file parses perfectly — check 1 is GREEN on it — and the failure surfaces only when
+      # something imports the module, i.e. when a worker starts. The entire crawl path was unimportable and no syntax
+      # check could have said so. This closes that exact gap, and does it STATICALLY, so it needs none of the heavy
+      # third-party deps (playwright, torch, asyncpg) that a real `import` would drag onto the runner.
+      # {INCIDENT 2026-07-28 "RENDER.PY:23 `from . import politeness` — POLITENESS.PY DID NOT EXIST; ast.parse PASSED
+      #  WHILE importlib RAISED ModuleNotFoundError, SO THE WHOLE WATERCRAWL CHAIN WAS DEAD"}
+      # [CONFIDENCE: CONFIRMED 100% — reproduced both halves: the file parsed clean, importing it raised.]
+      - name: first-party imports resolve
+        run: |
+          python - <<'PY'
+          import ast, os, re, subprocess, sys
+          ROOTS = ("agent", "providers", "tools", "api_service")   # top-level packages that live under backend/
+          missing = []
+
+          def is_module(path):                                     # a module is either x.py or a package dir x/__init__.py
+              return os.path.exists(path + ".py") or os.path.exists(os.path.join(path, "__init__.py"))
+
+          def reexported(pkg_dir, name):
+              """Is `name` plausibly a symbol re-exported by pkg_dir/__init__.py rather than a submodule? A static check
+              cannot resolve symbols, so this is the deliberate false-positive escape valve: if __init__.py mentions the
+              name at all, we stay quiet. It must be checked ONLY after the submodule possibilities are exhausted —
+              an earlier version treated "the package exists" as sufficient, which made the whole check vacuously
+              green (it passed even with politeness.py deleted). Verified by deleting that file and re-running."""
+              init = os.path.join(pkg_dir, "__init__.py")
+              if not os.path.exists(init):
+                  return False
+              return re.search(r"\b%s\b" % re.escape(name), open(init, encoding="utf8").read()) is not None
+
+          for f in subprocess.run(["git", "ls-files", "*.py"], capture_output=True, text=True).stdout.split():
+              try:
+                  tree = ast.parse(open(f, encoding="utf8").read())
+              except SyntaxError:
+                  continue                                          # check 1 owns syntax — don't double-report it here
+              pkg = os.path.dirname(f)
+              for n in ast.walk(tree):
+                  if isinstance(n, ast.ImportFrom) and n.level:     # relative: `from . import x` / `from .y import z`
+                      base = pkg
+                      for _ in range(n.level - 1):
+                          base = os.path.dirname(base)
+                      sub = os.path.join(base, (n.module or "").replace(".", "/"))
+                      if n.module and not is_module(sub):           # the module part itself is missing → unambiguous
+                          missing.append(f"{f}:{n.lineno}  from {'.' * n.level}{n.module}")
+                          continue
+                      if n.module and os.path.exists(sub + ".py"):  # importing FROM a plain module → names are symbols
+                          continue
+                      for a in n.names:                             # `sub` is a package dir here
+                          if is_module(os.path.join(sub, a.name)):
+                              continue
+                          if reexported(sub, a.name):
+                              continue
+                          missing.append(f"{f}:{n.lineno}  from {'.' * n.level}{n.module or ''} import {a.name}")
+                      continue
+                  mods = []
+                  if isinstance(n, ast.ImportFrom) and n.module:    # absolute: `from agent.x.y import z`
+                      mods = [n.module]
+                  elif isinstance(n, ast.Import):
+                      mods = [a.name for a in n.names]
+                  for m in mods:
+                      if m.split(".")[0] not in ROOTS:              # third-party / stdlib is not this check's business
+                          continue
+                      if not is_module(os.path.join("backend", *m.split("."))):
+                          missing.append(f"{f}:{n.lineno}  {m}")
+          for m in sorted(set(missing)):
+              print(f"::error::unresolvable first-party import — {m}")
+          print("all first-party imports resolve" if not missing else f"{len(set(missing))} unresolvable import(s)")
+          sys.exit(1 if missing else 0)
+          PY
+
       # 2 — every tracked shell script must parse. `bash -n` would have caught the apostrophe in
       # ${QWEN_API_KEY:?... the pod's vLLM ...} that made launch_fleet.sh unrunnable — and that mattered beyond the one
       # script, because install_systemd.sh evals its `export` lines to build the systemd EnvironmentFile.

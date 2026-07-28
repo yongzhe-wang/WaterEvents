@@ -207,6 +207,15 @@ async def _main() -> None:
     n = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].lstrip("-").isdigit() else 0
     apply = "--apply" in sys.argv
     conc = int(os.environ.get("TITLE_CONC", "80"))
+    # FAIL LOUD on an unset DSN. Removing the hardcoded literal made `_DSN` default to "" — but an empty DSN is not an
+    # error to asyncpg: libpq resolves an empty conninfo against its OWN defaults (local socket / $PGHOST / $USER), so
+    # this CLI would connect SOMEWHERE and then run `UPDATE events SET title=...` against whatever answered. Half a
+    # credential fix — deleting the literal without adding the guard — converts a leak into a silent wrong-DB write.
+    # {EVENTS.PY:65-66 "IF NOT _DSN: RAISE RUNTIMEERROR(\"WATEREVENTS_DB_DSN NOT SET — POINT IT AT THE SUPABASE
+    #  SUPAVISOR POOLER (PORT 6543).\")" — the in-repo pattern this mirrors}
+    # [CONFIDENCE: CONFIRMED 100% — empty-conninfo default resolution is documented libpq behaviour, not inference].
+    if not _DSN:
+        raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
     pool = await asyncpg.create_pool(_DSN, min_size=1, max_size=4, statement_cache_size=0,
                                      server_settings={"search_path": _SCHEMA})
     async with pool.acquire() as conn:

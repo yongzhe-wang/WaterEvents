@@ -259,6 +259,25 @@ async def run() -> None:
     loop = "--loop" in sys.argv
     print(f"[pacer] profile={prof.active()['name']} tick={_TICK_S}s window={_METRIC_WINDOW_H}h loop={loop}", flush=True)
     while True:
+        # LEASE SWEEP — reclaim work_queue rows whose lease lapsed (a worker died / was restarted mid-unit). Runs HERE,
+        # in the pacer, because the pacer is the one SINGLE-INSTANCE service in the fleet (waterevents-pacer.service is a
+        # plain unit; the workers are a templated @-unit run N-up), so the sweep happens exactly once per tick instead of
+        # six times. Deliberately BEFORE solve_and_apply: reclaimed rows become 'queued' again and so are counted by the
+        # very next solve, rather than being invisible to it for another whole tick.
+        # WHY it is needed at all: complete_work pushes a full unit's due_at a week out, and claim_work's opportunistic
+        # reclaim arm is conjoined with `due_at <= now()` — so a full unit that dies mid-scan is invisible work for up to
+        # 7 days. An audit found 28 such rows already stuck in production, all owned by the host that wedged.
+        # {AUDIT 2026-07-28 "WORK_QUEUE STATUS=RUNNING -> 91, OF WHICH RUNNING ROWS WHOSE LEASE ALREADY LAPSED: 28"}
+        # {WORK_QUEUE.SQL:35 "A RECONCILE CRON FLIPS THEM BACK TO 'QUEUED'" — the migration promised this cron; it was
+        #  never written, and reconcile_work had zero callers until this line}
+        # [CONFIDENCE: CONFIRMED 100% — the stuck-row count is a live measurement and the missing caller was verified by
+        #  `git grep reconcile_work` returning only the definition.]
+        try:
+            reclaimed = await q.reconcile_work(pool)
+            if reclaimed:                                        # silent when there is nothing to reclaim (the normal case)
+                print(f"[pacer] reclaimed {reclaimed} lapsed lease(s) → queued", flush=True)
+        except Exception as e:                                   # noqa: BLE001 — a sweep error must not stop the solve
+            print(f"[pacer] ✗ reconcile error: {type(e).__name__}: {e}", flush=True)
         try:
             sol = await solve_and_apply(pool)
             print(_fmt(sol), flush=True)

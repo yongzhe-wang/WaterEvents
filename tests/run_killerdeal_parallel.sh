@@ -10,8 +10,18 @@ NSLICES="${KD_NSLICES:-8}"                                   # how many parallel
 CONC="${KD_CONC:-3}"                                         # companies in flight PER process (render-limited anyway)
 CODE=/workspace/WaterEvents
 OUT="${KD_OUT:-$CODE/tests/thekillerdeal}"                    # respect KD_OUT (a rerun writes elsewhere → don't rm the huge prior full-run trace dir)
-DSN="postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres"
-KEY="sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78"
+# NO SECRET LITERALS — this harness writes to the REAL waterevents schema, so a committed DSN here is both a leaked
+# production credential and a loaded gun: anyone running the script from a clone hits live data with no opt-in step.
+# `${VAR:?msg}` aborts before the clear-all-workers pkill block below, so a missing secret cannot leave the operator
+# with a killed fleet and no run to show for it — the failure happens first, not halfway through.
+# {GIT GREP 2026-07-28 "RUN_KILLERDEAL_PARALLEL.SH:13 DSN=\"POSTGRESQL://POSTGRES.EZUVMOLYFGSADKEHJNEF:FOCUSALPHA2026
+#  @AWS-1-US-EAST-1.POOLER.SUPABASE.COM:6543/POSTGRES\"; :14 KEY=\"SK-WATEREVENTS-0B1307FDF041607D7E55838C2773204...\""}
+# [CONFIDENCE: CONFIRMED 100% — read off the tracked file at HEAD 9d3402f].
+DSN="${WATEREVENTS_DB_DSN:?set WATEREVENTS_DB_DSN — this harness writes to the real waterevents schema, so it will not guess a target}"
+# No apostrophe — see media_loop.sh: bash applies quote rules to the word of `${VAR:?word}` even within double quotes,
+# so "pod's" left the remainder of this file inside an unterminated single-quoted string.
+# {BASH -N 2026-07-28 "RUN_KILLERDEAL_PARALLEL.SH: LINE 78: UNEXPECTED EOF WHILE LOOKING FOR MATCHING `''"}
+KEY="${QWEN_API_KEY:?set QWEN_API_KEY (the vLLM --api-key of the pod)}"
 
 # ── STANDING RULE: every launcher CLEARS ALL WORKERS first — no ghost fleet draining the queue / competing for the GPU ──
 echo "[parallel] clearing ALL workers/supervisors/chromium/old-thekillerdeal…"
@@ -29,13 +39,18 @@ CORES_START=8
 NCORES=$(nproc); AVAIL=$((NCORES - CORES_START))            # cores available for slices
 WIDTH=$((AVAIL / NSLICES)); [ "$WIDTH" -lt 1 ] && WIDTH=1    # cores per slice (≥1)
 echo "[parallel] ${NCORES} cores, ${WIDTH} cores/slice for ${NSLICES} slices"
+# WEBSHARE_PROXY passes through UNSET-as-empty rather than `:?`-required: the residential lane is an optional render
+# tier (empty → dormant, the run still completes on the datacenter path), so requiring it would block a legitimate
+# no-proxy run. The credential literal formerly defaulted here was the third committed secret in this file.
+# {GIT GREP 2026-07-28 "RUN_KILLERDEAL_PARALLEL.SH:38 WEBSHARE_PROXY=\"${WEBSHARE_PROXY:-HTTP://NKNJGKPV:36OO15UCTFHL
+#  @192.46.200.43:5713}\""} [CONFIDENCE: CONFIRMED 100% — read off the tracked file at HEAD 9d3402f].
 PIDS=()
 for i in $(seq 0 $((NSLICES-1))); do
   lo=$((CORES_START + i*WIDTH)); hi=$((lo + WIDTH - 1)); [ "$hi" -ge "$NCORES" ] && hi=$((NCORES-1))
   KD_NSLICES=$NSLICES KD_SLICE_IDX=$i KD_CONC=$CONC KD_RUN_ID="${KD_RUN_ID:-killerdeal}" \
   KD_ALL="${KD_ALL:-}" KD_N="${KD_N:-0}" KD_URLS_FILE="${KD_URLS_FILE:-}" \
   WATERCRAWL_HTTP_FIRST=0 IR_WATERCRAWL_BROWSERS=1 \
-  WEBSHARE_PROXY="${WEBSHARE_PROXY:-http://nknjgkpv:36oo15uctfhl@192.46.200.43:5713}" \
+  WEBSHARE_PROXY="${WEBSHARE_PROXY:-}" \
   WATEREVENTS_DB_DSN="$DSN" WATEREVENTS_DB_SCHEMA=waterevents \
   QWEN_API_KEY="$KEY" QWEN_BASE_URLS="http://127.0.0.1:8000/v1" PYTHONPATH="$CODE" \
     taskset -c ${lo}-${hi} /root/venv/bin/python "$CODE/tests/thekillerdeal.py" \

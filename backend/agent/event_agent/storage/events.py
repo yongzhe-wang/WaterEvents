@@ -32,7 +32,11 @@ import os
 
 import asyncpg
 
-from .urls import _canon, _event_key                        # _event_key = (title+date) identity dedup; _canon = url fallback (stdlib-only)
+# _event_key is the ONLY key builder this module uses: (title+date) identity, falling back to the primary url's canon
+# for a title-less event. The url-only `_dedup_key` that used to live here was deleted 2026-07-28 — it had zero callers
+# and described a scheme the data has not used since the title+date key landed.
+# {GIT GREP 2026-07-28 "_dedup_key → only its own def plus one stale migration comment; the live path is _event_key"}
+from .urls import _event_key
 
 # The Supavisor transaction-mode pooler DSN (port 6543), from env so no secret is hard-coded. The worker NEVER opens a
 # session-mode direct connection at 2000-company scale. {RESEARCH "全部走 Supavisor transaction-mode pooler ... 防连接耗尽"}.
@@ -66,13 +70,6 @@ async def connect_pool(min_size: int = 1, max_size: int = 4) -> asyncpg.Pool:
         raise RuntimeError("WATEREVENTS_DB_DSN not set — point it at the Supabase Supavisor pooler (port 6543).")
     return await asyncpg.create_pool(_DSN, min_size=min_size, max_size=max_size, statement_cache_size=0,
                                      server_settings={"search_path": _SCHEMA})
-
-
-def _dedup_key(urls: list[str]) -> str:
-    """An event's STABLE cross-recrawl identity = the canonical of its PRIMARY url (urls[0] = the detail page). NOT the
-    whole url set, which grows as media is discovered — a key that changed with media would defeat ON CONFLICT and
-    duplicate the event on re-crawl. {MIGRATION events.dedup_key comment}."""
-    return _canon(urls[0]) if urls else ""
 
 
 async def flush_events(pool: asyncpg.Pool, company_id, run_id: str, events: list[dict]) -> int:

@@ -14,7 +14,11 @@ MAX_TRIES="${SUPERVISE_MAX_TRIES:-8}"
 
 # run env (same as the old run_fetch.sh)
 export QWEN_BASE_URLS=http://127.0.0.1:8000/v1 QWEN_SERVED_NAME=qwen-vl
-export QWEN_API_KEY=sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78
+# NO KEY LITERAL — second copy of the same committed secret as run_fetch.sh:12, removed for the same reason. Fails
+# loudly here rather than after MAX_TRIES restart attempts that would each authenticate with a stale/absent key.
+# {GIT GREP 2026-07-28 "SUPERVISE_FETCH.SH:17 EXPORT QWEN_API_KEY=SK-WATEREVENTS-0B1307FDF041607D7E55838C277320498BBEE722867CAD78"}
+# [CONFIDENCE: CONFIRMED 100% — read off the tracked file at HEAD 9d3402f].
+export QWEN_API_KEY="${QWEN_API_KEY:?set QWEN_API_KEY before running supervise_fetch.sh (e.g. set -a; . /etc/waterevents.env; set +a)}"
 export QWEN_MAX_TOKENS=12000 EVENT_VISION_TEXT_CHARS=24000 EVENT_MAX_PAGES=40 EVENT_USE_IMAGE=1
 # PARALLELISM. Multiple SEPARATE Chromium PROCESSES (IR_WATERCRAWL_BROWSERS) spread the render tabs across cores so no
 # single browser's main-thread/IPC starves — the config default 1 browser × 24 tabs was the starvation case (NVDA yield

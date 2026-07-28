@@ -64,10 +64,19 @@ create table if not exists events (
     company_id        uuid not null references companies(id) on delete cascade,
     run_id            text,
     -- dedup_key = the STABLE identity of an event across re-crawls. It must NOT change as media_urls grows (a crash +
-    -- re-crawl re-discovers the same event, sometimes with more media), so it is derived from the event's PRIMARY url
-    -- (its detail page = urls[0], canonicalised) NOT from the whole url set. The UNIQUE(company_id, dedup_key) below +
+    -- re-crawl re-discovers the same event, sometimes with more media). The UNIQUE(company_id, dedup_key) below +
     -- ON CONFLICT DO UPDATE (merge media) is what makes a re-crawl idempotent instead of duplicating events.
-    -- {DB.PY "_dedup_key = _canon(urls[0])"} [CONFIDENCE: CONFIRMED 100% — primary-url identity survives media growth].
+    --
+    -- SUPERSEDED 2026-07-25, comment corrected 2026-07-28. This block used to describe a PRIMARY-URL key
+    -- ({DB.PY "_dedup_key = _canon(urls[0])"}) and stamped it [CONFIDENCE: CONFIRMED 100%]. That is no longer what the
+    -- code writes and had not been for some time: a url-based key duplicated ONE event into MANY rows because the model
+    -- attaches different urls to the same event across pages (AMD Q2 earnings → 13 rows keyed by x.com / linkedin /
+    -- youtube). The live key is normalized(title)+"|"+normalized(date), with the primary url's canon kept only as the
+    -- fallback for a title-less event. The SQL below is unchanged — only this description was wrong.
+    -- {URLS.PY _event_key "T = _NORM_TITLE(TITLE); IF T: RETURN T + \"|\" + _NORM_DATE(DATE); RETURN _CANON(URLS[0])"}
+    -- {LIVE 2026-07-28 sample dedup_key "TDKANDLGINNOTEKFORMASTRATEGICPARTNERSHIPINTHEFIELDOFPHYSICALAI|2026-07-28"}
+    -- [CONFIDENCE: CONFIRMED 100% — the live sample is title|date, not a url; a comment marked CONFIRMED while being
+    --  false is worse than no comment, which is why it is corrected in place rather than left for the next reader].
     dedup_key         text not null,
     title             text,                                  -- discovery metadata (enrichment may confirm/complete it)
     event_date        text,                                  -- kept as text: the model records whatever granularity the page shows (YYYY / YYYY-MM / YYYY-Q1 / YYYY-MM-DD)
