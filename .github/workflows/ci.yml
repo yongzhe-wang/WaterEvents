@@ -74,10 +74,14 @@ jobs:
       # This is the highest-value check in the file. The database password reached eight tracked files and three
       # commits, starting with the repo's very first one — and no edit can undo that, only rotation can. The point of
       # this check is that the NEXT one never gets that far.
+      # The proxy password is written :36oo15uctfh[l]@ rather than plainly: the other two patterns contain regex
+      # metacharacters and so cannot match themselves, but a bare literal would — this file would flag ITSELF and CI
+      # would be red from the first run for no real reason. The character class matches the real credential while the
+      # text stored here is not that credential.
       - name: no committed credentials
         run: |
           hits=$(git ls-files -z \
-            | xargs -0 grep -lE 'FocusAlpha20[0-9]{2}|sk-waterevents-[a-f0-9]{16,}|:36oo15uctfhl@' 2>/dev/null \
+            | xargs -0 grep -lE 'FocusAlpha20[0-9]{2}|sk-waterevents-[a-f0-9]{16,}|:36oo15uctfh[l]@' 2>/dev/null \
             | grep -v '\.example$' || true)
           if [ -n "$hits" ]; then
             echo "::error::live credential found in tracked files:"
