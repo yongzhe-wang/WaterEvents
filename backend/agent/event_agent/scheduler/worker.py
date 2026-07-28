@@ -27,6 +27,20 @@ from ..storage import queue as q
 from . import seed                                            # rederive_hubs_for_company — the updatable-hubs hook
 from .scan import scan_unit
 
+# HARD CEILING ON ONE SCAN, and it must sit BELOW the lease. claim_work stamps a 15-minute lease; a scan that runs past
+# it has its row silently re-claimed by another worker while the first is still going — two workers deep-crawling the
+# same company, double VLM spend, and the loser's stats thrown away. Every abandoned 'running' row the reaper cleans up
+# was created this way, so the reaper is the mop and this is the tap. 13 minutes leaves a 2-minute margin under the
+# lease and sits comfortably above EVENT_COMPANY_BUDGET_S (600s), which is the crawl's own internal budget — so this
+# only fires when that budget failed to hold, i.e. exactly the hung case.
+# On expiry asyncio.wait_for raises, the existing `except Exception` calls fail_work, and the unit gets a backoff retry
+# instead of a lease that nobody owns.
+# {QUEUE.PY "_LEASE_MIN = INT(OS.ENVIRON.GET("WATEREVENTS_LEASE_MIN", "15"))"}
+# {LAUNCH_FLEET.SH "EVENT_COMPANY_BUDGET_S=600"}
+# [CONFIDENCE: CONFIRMED 100% — 77 orphaned rows were reclaimed on 2026-07-28, every one of them a 'running' row whose
+#  lease_owner named a process that no longer existed].
+_SCAN_TIMEOUT_S = int(os.environ.get("EVENTINC_SCAN_TIMEOUT_S", "780"))
+
 _WORKERS = int(os.environ.get("EVENTINC_WORKERS", "4"))       # async tasks in THIS process (VLM-I/O overlap; render serializes)
 _BACKOFF_S = int(os.environ.get("EVENTINC_BACKOFF_S", "5"))  # nothing due → sleep this long before re-polling
 _MAX_ROUNDS = int(os.environ.get("EVENTINC_MAX_ROUNDS", "0"))   # 0 = run forever; >0 = exit after N empty polls (for tests)
@@ -49,7 +63,9 @@ async def _worker(idx: int, pool, client) -> None:
             continue
         empties = 0
         try:
-            s = await scan_unit(pool, client, unit["url"], unit["type"], unit["company_id"])   # stats dict (events + resource usage)
+            s = await asyncio.wait_for(
+                scan_unit(pool, client, unit["url"], unit["type"], unit["company_id"]),
+                timeout=_SCAN_TIMEOUT_S)   # stats dict (events + resource usage)
             await q.complete_work(pool, unit["id"], unit["type"], event_count=s["events"],     # self re-arm (full +7d / inc +T*)
                                   duration_s=s["duration_s"], render_pages=s["render_pages"], vlm_calls=s["vlm_calls"])
             # UPDATABLE HUBS — a full BFS may have surfaced new event-listing pages for this company → re-derive its hubs and

@@ -51,22 +51,43 @@ if [ -z "$n" ]; then
   exit 0                                         # our own blindness is not grounds to mutate anything
 fi
 
-if [ "$n" = "0" ]; then
-  echo "reaper: nothing to reclaim"
-  exit 0
-fi
-
 if [ "$APPLY" != "1" ]; then
-  echo "reaper: DRY RUN — $n row(s) would be returned to 'queued' (grace: $GRACE). Pass --apply to do it."
+  echo "reaper: DRY RUN — $n work_queue row(s) would be returned to 'queued' (grace: $GRACE). Pass --apply to do it."
   exit 0
 fi
 
+# STAGE 1 — work_queue. Guarded rather than early-returned: an earlier version exited here when the count was zero,
+# which meant the stage-2 reclaim below only ever ran on the rounds that happened to also have work_queue orphans.
+# Two independent cleanups must not be able to gate each other.
 # attempt is NOT reset here. A row abandoned by a crash has genuinely been attempted, and complete_work already zeroes
 # the counter on the next success, so the retry budget stays meaningful without this needing an opinion about it.
-out=$("$PSQL" "$DSN" -t -A -c \
-  "UPDATE waterevents.work_queue
-      SET status='queued', lease_owner=NULL, lease_until=NULL, updated_at=now()
-    WHERE $WHERE
-    RETURNING 1" 2>/dev/null | wc -l | tr -d ' ')
+out=0
+# COUNT IN SQL, never with `wc -l`. psql -t -A prints a trailing empty line even when the UPDATE matched nothing, so
+# piping RETURNING through wc -l reports 1 for a no-op — an off-by-one that inflates every report by exactly one and is
+# invisible precisely when nothing happened. A CTE + count(*) makes the database do the counting.
+# {MEASURED 2026-07-28 "a 0-match UPDATE ... RETURNING 1 | wc -l -> 1, while SELECT 1 WHERE false | wc -l -> 0"}
+# [CONFIDENCE: CONFIRMED 100% — reproduced against the live database; the first run of this script reported 77
+#  reclaimed when the dry run had counted 76 candidates, which is exactly this artifact].
+[ "$n" != "0" ] && out=$("$PSQL" "$DSN" -t -A -c \
+  "WITH u AS (UPDATE waterevents.work_queue
+                 SET status='queued', lease_owner=NULL, lease_until=NULL, updated_at=now()
+               WHERE $WHERE RETURNING 1)
+   SELECT count(*) FROM u" 2>/dev/null | tr -d ' ')
 
-echo "reaper: reclaimed $out abandoned unit(s) (lease dead > $GRACE)"
+[ "$out" != "0" ] && echo "reaper: reclaimed $out abandoned unit(s) (lease dead > $GRACE)" || true
+
+# STAGE-2 LEASES TOO. events.reconcile_events() exists in the codebase and does exactly this, but nothing calls it —
+# `grep -rn reconcile_events` returns the definition and one comment claiming a reconcile runs, which it does not. The
+# enrichment worker claims an event by flipping it to 'rendering' with a lease; if that worker dies the row stays
+# 'rendering' forever and no later claim can pick it up, because the claim predicate only matches 'discovered'.
+# It is the same orphan shape as the work_queue one, on the other half of the pipeline, so it belongs on the same timer
+# rather than in a second mechanism with its own cadence.
+# {EVENTS.PY:232 "RECLAIM EVENTS STUCK IN `RENDERING` PAST THEIR LEASE (CRASHED ENRICHMENT WORKER) → BACK TO `DISCOVERED`"}
+# [CONFIDENCE: CONFIRMED 100% — zero call sites at the time of writing; currently 0 rows are stuck, so this lands
+#  before it is needed rather than after].
+ev=$("$PSQL" "$DSN" -t -A -c \
+  "WITH u AS (UPDATE waterevents.events SET status='discovered', claim_token=NULL
+               WHERE status='rendering' AND lease_until < now() RETURNING 1)
+   SELECT count(*) FROM u" 2>/dev/null | tr -d ' ')
+[ "${ev:-0}" != "0" ] && echo "reaper: reclaimed $ev stalled event lease(s)" || true
+[ "$out" = "0" ] && [ "${ev:-0}" = "0" ] && echo "reaper: nothing to reclaim" || true

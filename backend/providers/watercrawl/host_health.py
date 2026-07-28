@@ -24,7 +24,6 @@ from __future__ import annotations
 import os
 import threading
 import time
-from urllib.parse import urlsplit
 
 # Consecutive-failure thresholds. WHY consecutive (not lifetime): a single failure is a transient blip, not a block —
 # only a RUN of failures proves a real datacenter-IP wall. A success resets the counter. {plan edge-case: transient ≠ blocked}.
@@ -48,8 +47,10 @@ _BACKEND = os.environ.get("HOST_HEALTH_BACKEND", "memory").strip().lower()
 # breaker table lives in the same Postgres as everything else and one env var configures both. {WORKER.PY:37-38
 # "_DSN = os.environ.get('BCT_DB_DSN') or ('postgresql://postgres.ezuvmolyfgsadkehjnef...pooler.supabase.com:5432/postgres')"}
 # [CONFIDENCE: CONFIRMED — copied verbatim from src/agents/event_agent/basic_info/worker.py so both point at one DB].
-_DSN = os.environ.get("BCT_DB_DSN") or (
-    "postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:5432/postgres")
+# NO LITERAL FALLBACK — see the note above. BCT_DB_DSN is this module's own name for the same database, so it
+# falls back to the fleet-wide WATEREVENTS_DB_DSN and then to empty; psycopg2.connect raises on an empty DSN,
+# which is the correct loud failure. {AUDIT 2026-07-28} [CONFIDENCE: CONFIRMED 100% — live credential].
+_DSN = os.environ.get("BCT_DB_DSN") or os.environ.get("WATEREVENTS_DB_DSN", "")
 
 
 _CONN_RETRIES = 4                                            # bounded retries when the pooler is momentarily saturated
@@ -82,14 +83,6 @@ def _db_conn():
                 raise
             _t.sleep(_CONN_BACKOFF_S * (attempt + 1))        # linear backoff: 0.25, 0.5, 0.75s — let the pool drain
     raise last_exc                                           # unreachable (loop either returns or raises) — satisfies type
-
-
-def host_of(url: str) -> str:
-    """netloc (host+optional port) of a url, scheme-tolerant. WHY full host incl subdomain: s21.q4cdn.com and
-    s203.q4cdn.com are DIFFERENT servers (a CDN serves many companies per host) — blocking the bare domain would
-    over-block. {plan edge-case: CDN one-domain-many-companies} [CONFIDENCE: CONFIRMED]."""
-    u = url if "://" in (url or "") else "https://" + (url or "")
-    return urlsplit(u).netloc.lower()
 
 
 def is_dead(host: str) -> bool:

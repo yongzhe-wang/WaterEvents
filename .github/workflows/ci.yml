@@ -1,0 +1,98 @@
+# CI — the thing that was missing while every one of these classes of bug shipped.
+#
+# 用一句话讲完: 五项检查,全部是「机器能抓、人反复漏」的那一类 —— 语法、凭据、部署脚本、跨文件命名一致性。
+# 这不是代码质量门禁,是**事故复现门禁**:下面每一条都对应一个真实发生过并且花了人力才发现的问题。
+#
+# WHY this exists, concretely. In a single day this repo shipped: two Python files with unclosed docstrings that made
+# the whole backend unimportable; a bash script broken by an apostrophe inside ${VAR:?...}, which also broke the systemd
+# installer that evals that file; a production database password left in eight tracked files; and a watchdog that named
+# a systemd target no installer created, so its failure mode was reporting success every five minutes while guarding
+# nothing. Each was found by a person reading code, hours later, one at a time. Every one of them is caught by a check
+# below in under a minute.
+#
+# The checks are deliberately cheap and dependency-free — no linter config to argue about, no formatter, no coverage
+# gate. A CI that is red on day one gets ignored, so this starts green: all five were verified against the tree before
+# it was committed.
+
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 1 — every tracked Python file must at least PARSE. Not linting, not typing: parsing. This is the check that
+      # catches a docstring left unclosed by an edit, which is how backend/agent/event_agent/crawl/extract.py and
+      # backend/providers/watercrawl/runtime.py both became unimportable on 2026-07-28. Both files sit on the fleet's
+      # import path, so the next worker restart would have been a crash loop under Restart=always.
+      - name: python parses
+        run: |
+          fail=0
+          for f in $(git ls-files '*.py'); do
+            python -m py_compile "$f" || { echo "::error file=$f::does not parse"; fail=1; }
+          done
+          exit $fail
+
+      # 2 — every tracked shell script must parse. `bash -n` would have caught the apostrophe in
+      # ${QWEN_API_KEY:?... the pod's vLLM ...} that made launch_fleet.sh unrunnable — and that mattered beyond the one
+      # script, because install_systemd.sh evals its `export` lines to build the systemd EnvironmentFile.
+      - name: shell parses
+        run: |
+          fail=0
+          for f in $(git ls-files '*.sh'); do
+            bash -n "$f" || { echo "::error file=$f::does not parse"; fail=1; }
+          done
+          exit $fail
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 3 — the serverless handlers and the self-host server must parse. These are deployed by file copy with no build
+      # step, so a syntax error reaches production directly.
+      - name: javascript parses
+        run: |
+          fail=0
+          for f in $(git ls-files 'frontend/*.mjs' 'frontend/api/*.js' 'frontend/lib/*.js'); do
+            node --check "$f" || { echo "::error file=$f::does not parse"; fail=1; }
+          done
+          exit $fail
+
+      # 4 — no live credential may enter a tracked file. The patterns are the three that were actually committed here:
+      # the Supabase password, the vLLM api-key and the Webshare proxy password. *.example is exempt because that file
+      # carries deliberate placeholders.
+      # This is the highest-value check in the file. The database password reached eight tracked files and three
+      # commits, starting with the repo's very first one — and no edit can undo that, only rotation can. The point of
+      # this check is that the NEXT one never gets that far.
+      - name: no committed credentials
+        run: |
+          hits=$(git ls-files -z \
+            | xargs -0 grep -lE 'FocusAlpha20[0-9]{2}|sk-waterevents-[a-f0-9]{16,}|:36oo15uctfhl@' 2>/dev/null \
+            | grep -v '\.example$' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::live credential found in tracked files:"
+            echo "$hits" | sed 's/^/  /'
+            exit 1
+          fi
+          echo "no credentials in tracked files"
+
+      # 5 — WARNING ONLY. Two installers in this repo disagree on the fleet target name, and a watchdog that hardcodes
+      # the wrong one stands down silently forever. watchdog.sh now resolves the name at runtime so the disagreement is
+      # survivable, which is why this reports rather than fails; it exists so the divergence stays visible instead of
+      # being rediscovered by an outage.
+      - name: one fleet target name (warning)
+        run: |
+          names=$(git ls-files 'backend/deploy/*' | xargs grep -ohE 'waterevents(-fleet)?\.target' 2>/dev/null | sort -u)
+          count=$(echo "$names" | grep -c . || true)
+          echo "fleet target names referenced: $(echo $names | tr '\n' ' ')"
+          [ "$count" -le 1 ] || echo "::warning::$count different fleet target names are referenced; a hardcoded watchdog would silently stand down"
