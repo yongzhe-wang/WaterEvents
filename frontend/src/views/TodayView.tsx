@@ -176,6 +176,113 @@ function UsageChart({ rows }: { rows: { ts: string; pages: number; calls: number
   );
 }
 
+interface BoostUnit { ticker: string | null; priority: number; status: string; url: string; events_now: number; last_scan_events: number | null; last_scanned_at: string | null; }
+
+// QUEUE BOOST — hand-reorder the full-BFS queue so known-underfetched companies get crawled NEXT instead of waiting
+// their turn in an essentially arbitrary due_at order.
+//
+// 用一句话讲完: 选出「event 数少 + full 从没跑过」的公司 → 调 /api/queue/boost 把 priority 降到 50 → 下一个空闲
+// worker 就先拿它们;面板同时显示每家「现在有多少 event」vs「上次扫描抓到多少」,所以插队之后到底多抓了没有,
+// 一眼就能看出来 —— 这才是它作为调试工具的价值,而不只是改个顺序。
+//
+// WHY the token box: these are the only WRITE routes on a webapp reachable from the public internet, so they sit
+// behind a fail-closed X-Queue-Token. The token lives in localStorage — this is an operator tool, and baking it into
+// the bundle would be worse. {lib/_queue_admin.js denied()} [CONFIDENCE: CONFIRMED 100% — 401 verified from off-box
+// with no token and with a wrong token; 405 verified on a GET to a POST route].
+function QueueBoostPanel() {
+  const [token, setToken] = useState<string>(() => localStorage.getItem("queueToken") || "");
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string>("");
+  const [state, setState] = useState<{ total: number; scanned: number; pending: number; units: BoostUnit[] } | null>(null);
+
+  const auth = (): Record<string, string> => ({ "X-Queue-Token": token, "Content-Type": "application/json" });
+
+  function refresh() {
+    if (!token) { setMsg("enter the admin token first"); return; }
+    setBusy(true);
+    fetch("/api/queue/boosted", { headers: auth() })
+      .then((r) => r.json())
+      .then((d) => { if (d.error) { setMsg(d.error); setState(null); } else { setState(d); setMsg(""); } })
+      .catch((e) => setMsg(String(e)))
+      .finally(() => setBusy(false));
+  }
+
+  // dry === true only reports what WOULD change. The endpoint ALSO defaults to dry-run, so a mis-click cannot write.
+  function boost(dry: boolean) {
+    if (!token) { setMsg("enter the admin token first"); return; }
+    setBusy(true);
+    fetch("/api/queue/boost", {
+      method: "POST", headers: auth(),
+      body: JSON.stringify({ select: { max_events: 10, never_full_scanned: true }, priority: 50, limit: 500, dry_run: dry }),
+    }).then((r) => r.json())
+      .then((d) => {
+        setMsg(d.error ? d.error
+          : `${dry ? "would boost" : "boosted"} ${d.matched} unit(s) — ${d.zero_event_companies} with zero events${dry ? " (dry run)" : ""}`);
+        if (!dry) refresh();
+      })
+      .catch((e) => setMsg(String(e)))
+      .finally(() => setBusy(false));
+  }
+
+  function reset() {
+    if (!token) { setMsg("enter the admin token first"); return; }
+    setBusy(true);
+    fetch("/api/queue/unboost", { method: "POST", headers: auth(), body: JSON.stringify({ all: true }) })
+      .then((r) => r.json())
+      .then((d) => { setMsg(d.error ? d.error : `reset ${d.updated} unit(s) to the default priority`); refresh(); })
+      .catch((e) => setMsg(String(e)))
+      .finally(() => setBusy(false));
+  }
+
+  const btn = { padding: "5px 11px", fontSize: 12, borderRadius: 6, border: "1px solid rgba(255,255,255,0.16)",
+                background: "rgba(255,255,255,0.05)", color: "inherit", cursor: "pointer" } as const;
+
+  return (
+    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 14px", marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <button style={btn} onClick={() => { const n = !open; setOpen(n); if (n) refresh(); }}>{open ? "▾" : "▸"} Queue boost</button>
+        <span style={{ opacity: 0.6, fontSize: 12 }}>
+          {state ? `${state.total} boosted · ${state.scanned} re-scanned · ${state.pending} pending`
+                 : "push underfetched companies to the front of the full queue"}
+        </span>
+        {busy && <span style={{ opacity: 0.5, fontSize: 12 }}>working…</span>}
+      </div>
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input type="password" placeholder="X-Queue-Token" value={token}
+              onChange={(e) => { setToken(e.target.value); localStorage.setItem("queueToken", e.target.value); }}
+              style={{ ...btn, cursor: "text", minWidth: 220 }} />
+            <button style={btn} disabled={busy} onClick={() => boost(true)}>Preview</button>
+            <button style={btn} disabled={busy} onClick={() => boost(false)}>Boost &lt;10-event companies</button>
+            <button style={btn} disabled={busy} onClick={reset}>Reset all</button>
+            <button style={btn} disabled={busy} onClick={refresh}>Refresh</button>
+          </div>
+          {msg && <div style={{ marginTop: 8, fontSize: 12, color: "#6ee7a8" }}>{msg}</div>}
+          {state && state.units.length > 0 && (
+            <table className="links-table" style={{ marginTop: 10 }}>
+              <thead><tr><th>Company</th><th>Pri</th><th>Status</th><th>Events now</th><th>Last scan</th><th>Scanned</th></tr></thead>
+              <tbody>
+                {state.units.slice(0, 25).map((u) => (
+                  <tr key={u.url}>
+                    <td>{u.ticker || shortUrl(u.url)}</td>
+                    <td>{u.priority}</td>
+                    <td>{u.status}</td>
+                    <td><b>{u.events_now}</b></td>
+                    <td>{u.last_scan_events ?? "—"}</td>
+                    <td className="lt-date">{u.last_scanned_at ? relTime(u.last_scanned_at) : "not yet"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TodayView() {
   const [data, setData] = useState<Today | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,6 +342,9 @@ export default function TodayView() {
                 remainingLabel="hubs still to scan this cycle" />
             </div>
           ) : loading ? <div className="loading">Loading queue…</div> : <div className="artifacts-empty">Queue empty — nothing enqueued yet.</div>}
+
+          {/* Operator control: reorder the full queue so the companies we KNOW are underfetched are crawled next. */}
+          <QueueBoostPanel />
 
           {/* PANEL 2 — newest events by DISCOVERY time (order = created_at desc); the Date column is display-only */}
           <div className="section-label" style={{ marginTop: 26 }}>New events — newest discovered<span className="rule" /></div>

@@ -59,6 +59,12 @@ const STATIC_ROUTES = {
   "/api/events": "./api/events.js",   // events list (EventsView) — was missing from the shim (prod-only)
   "/api/page": "./api/page.js",       // source-page content per event (EventsView modal)
   "/api/irurls": "./api/irurls.js",   // per-company IR entry urls (ir_url + ir_url_agent's event_hubs) — IR_URLS tab
+  // QUEUE ADMIN — the only WRITE routes in this server. All three are token-gated (fail-closed) and go through a
+  // column-scoped Postgres role, never the anon key (which is read-only) and never service_role. They change only
+  // work_queue.priority/due_at on `queued` rows, so a live crawl is never interrupted. {lib/_queue_admin.js}.
+  "/api/queue/boost": "./api/queue-boost.js",       // POST — move chosen full units to the front
+  "/api/queue/unboost": "./api/queue-unboost.js",   // POST — put them back at the default priority
+  "/api/queue/boosted": "./api/queue-boosted.js",   // GET  — what is boosted + what it has produced so far
 };
 
 // Cache the dynamically-imported handler modules so we hit disk once per route.
@@ -111,10 +117,27 @@ const server = createServer(async (rawReq, rawRes) => {
   }
 
   // Build the Vercel-shaped `req`: query merges ?params with any dynamic path param
-  // (e.g. ticker). The handlers only ever read req.query, so this is sufficient.
+  // (e.g. ticker). Read-only handlers only ever touch req.query, but the queue-admin routes need the JSON body
+  // and the auth header too — Vercel gives handlers both (req.body pre-parsed, req.headers always populated), so
+  // supplying them here makes the shim MORE faithful to production, not less. Body is read only for methods that
+  // can carry one, is size-capped, and a malformed payload yields body=null instead of throwing.
+  // {api/queue-boost.js reads req.body + req.headers["x-queue-token"]}
+  // [CONFIDENCE: CONFIRMED 100% — Vercel's Node runtime parses application/json into req.body].
   const query = Object.fromEntries(url.searchParams.entries());
   Object.assign(query, match.params);
-  const req = { query, method: rawReq.method, url: rawReq.url };
+  let body = null;
+  if (rawReq.method !== "GET" && rawReq.method !== "HEAD") {
+    const chunks = [];
+    let bytes = 0;
+    for await (const c of rawReq) {
+      bytes += c.length;
+      if (bytes > 1_000_000) break;      // an admin payload is a few hundred bytes; refuse to buffer more
+      chunks.push(c);
+    }
+    const raw = Buffer.concat(chunks).toString("utf8");
+    if (raw) { try { body = JSON.parse(raw); } catch { body = null; } }
+  }
+  const req = { query, method: rawReq.method, url: rawReq.url, headers: rawReq.headers, body };
 
   // Minimal `res` shim covering the only three methods the handlers call:
   // setHeader / status / json. {grep "res.json | res.setHeader | res.status"}
