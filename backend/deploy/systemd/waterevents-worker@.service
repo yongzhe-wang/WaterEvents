@@ -1,0 +1,34 @@
+[Unit]
+# One crawl worker. Templated so `systemctl enable waterevents-worker@{1..6}` scales the fleet.
+# WHY this exists at all: the fleet used to be launched with nohup INSIDE an ssh session, which left every
+# worker in that session's systemd scope. When the session was reaped the whole tree died with it.
+# {JOURNAL 2026-07-28 03:00:29 "session-3.scope: Deactivated successfully. Consumed 11min 45.319s CPU time."}
+# [CONFIDENCE: CONFIRMED 100% — the worker pids in work_queue.lease_owner were exactly the children of that scope].
+Description=WaterEvents crawl worker %i
+After=network-online.target
+Wants=network-online.target
+PartOf=waterevents-fleet.target
+
+[Service]
+Type=simple
+User=thebigsun
+Group=thebigsun
+WorkingDirectory=/home/thebigsun/WaterEvents/backend
+EnvironmentFile=/etc/waterevents.env
+ExecStart=/home/thebigsun/venv/bin/python -m agent.event_agent.scheduler.worker
+Restart=always
+RestartSec=15
+# Per-worker cgroup memory ceiling. WHY: with no swap the 2026-07-27 22:11 outage was an unrecoverable
+# page-cache thrash livelock — the kernel evicted executable pages and re-faulted them forever, pegging the
+# disk at the instance read ceiling for 4.5h while the OOM killer never fired (reclaim always "succeeded").
+# A cgroup limit converts that into "one worker is killed and restarted", which is recoverable.
+# {METRICS 2026-07-27 "READ OPS PINNED AT 3600.0/S AND 140-176 MB/S FOR 4.5H WHILE WRITES FELL TO 0.0-0.6/S"}
+# [CONFIDENCE: CONFIRMED 100% — disk metrics measured; memory itself is INFERRED, no Ops Agent installed].
+MemoryHigh=2500M
+MemoryMax=3G
+# a worker owns a chromium tree; kill the whole cgroup so no browser outlives a restart
+KillMode=control-group
+TimeoutStopSec=30
+
+[Install]
+WantedBy=waterevents-fleet.target

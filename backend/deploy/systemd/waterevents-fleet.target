@@ -1,0 +1,8 @@
+[Unit]
+# Group handle: `systemctl start/stop waterevents-fleet.target` moves the whole crawl fleet at once.
+Description=WaterEvents crawl fleet (workers + pacer)
+Wants=waterevents-pacer.service
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+[Unit]
+# The dashboard + /api/* shim. Deliberately NOT PartOf the fleet target: restarting the webapp to pick up a new
+# route must never disturb the crawl workers (they are separate processes and separate units).
+Description=WaterEvents webapp (dashboard + api)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=thebigsun
+Group=thebigsun
+WorkingDirectory=/home/thebigsun/WaterEvents/frontend
+EnvironmentFile=/etc/waterevents.env
+Environment=PORT=8080
+Environment=WEBAPP_DIST=/home/thebigsun/WaterEvents/frontend/dist
+ExecStart=/usr/bin/node dev-api-server.mjs
+Restart=always
+RestartSec=10
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

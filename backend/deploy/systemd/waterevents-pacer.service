@@ -1,0 +1,20 @@
+[Unit]
+# The packing solver — re-solves T* and re-spaces incremental due_at hourly. Exactly one instance.
+Description=WaterEvents pacer (packing solver)
+After=network-online.target
+Wants=network-online.target
+PartOf=waterevents-fleet.target
+
+[Service]
+Type=simple
+User=thebigsun
+Group=thebigsun
+WorkingDirectory=/home/thebigsun/WaterEvents/backend
+EnvironmentFile=/etc/waterevents.env
+ExecStart=/home/thebigsun/venv/bin/python -m agent.event_agent.scheduler.solver.pacer --loop
+Restart=always
+RestartSec=30
+MemoryMax=1G
+
+[Install]
+WantedBy=waterevents-fleet.target
