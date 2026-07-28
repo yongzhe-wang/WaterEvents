@@ -9,6 +9,10 @@
 #
 # Run: EVENTINC_HOME=~/WaterEvents EVENTINC_PY=~/venv/bin/python PORT=8090 bash backend/deploy/launch_api_service.sh
 set -u
+# OWNERSHIP GUARD — api_service is not under systemd yet; this call is a no-op until the unit exists, and becomes
+# protection the moment it does. Guarding now means the unit can be added without also having to remember this file.
+. "$(dirname "$0")/_owner_guard.sh"
+guard_owner waterevents-api.service "sudo systemctl restart waterevents-api.service"
 HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"   # REPO ROOT — same contract as launch_fleet.sh
 CODE_DIR="$HOME_DIR/backend"                          # python import root since the 2026-07-28 restructure
 PY="${EVENTINC_PY:-/root/venv/bin/python}"

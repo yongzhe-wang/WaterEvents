@@ -3,6 +3,10 @@
 # so it survives the ssh session (nohup + </dev/null + disown + script-exit = clean channel close). {USER 2026-07-27 "web
 # app on GCP media vm, off Vercel"}. Run: PORT=8080 bash deploy/launch_webapp.sh
 set -u
+# OWNERSHIP GUARD — the webapp collision is quieter but just as real: a hand-started process holds :8080, so the
+# systemd unit can never bind and sits in a restart loop reporting status=1/FAILURE forever.
+. "$(dirname "$0")/_owner_guard.sh"
+guard_owner waterevents-webapp.service "sudo systemctl restart waterevents-webapp.service"
 # ../../frontend, not ../frontend: this script moved to backend/deploy/ in the 2026-07-28 restructure, so the repo root
 # is now TWO levels up. Left at one level it would resolve to backend/frontend — a path that does not exist — and the
 # webapp would refuse to start with "exit 2" while the fleet kept running, i.e. a silent site outage.

@@ -11,6 +11,12 @@
 # RunPod:   N=6 bash deploy/launch_fleet.sh
 # GCP VM:   EVENTINC_PY=~/venv/bin/python EVENTINC_HOME=~/WaterEvents EVENTINC_RESERVE=2 N=6 bash deploy/launch_fleet.sh
 set -u
+# OWNERSHIP GUARD — runs before anything here has a side effect. BOTH target names are checked because the repo ships
+# two installers that disagree on the name (systemd/install.sh writes waterevents-fleet.target, install_systemd.sh
+# writes waterevents.target) and BOTH are currently installed on the live host, so checking one would miss the other.
+. "$(dirname "$0")/_owner_guard.sh"
+guard_owner waterevents.target        "sudo systemctl restart waterevents.target"
+guard_owner waterevents-fleet.target  "sudo systemctl restart waterevents-fleet.target"
 HOME_DIR="${EVENTINC_HOME:-/workspace/WaterEvents}"   # REPO ROOT — unchanged contract, callers still pass ~/WaterEvents
 # CODE_DIR = the python import root. Since the 2026-07-28 restructure the top level holds only frontend/ backend/ tests/,
 # so every python package (agent, providers, tools) sits one level down under backend/. Pointing cwd + PYTHONPATH HERE
@@ -28,15 +34,34 @@ LOGD="${EVENTINC_LOGD:-$HOME/eventinc_fleet}"
 mkdir -p "$LOGD"
 
 # ── run env (14B TEXT-ONLY — the hard constraint) ──
-export WATEREVENTS_DB_DSN="${WATEREVENTS_DB_DSN:-postgresql://postgres.ezuvmolyfgsadkehjnef:FocusAlpha2026@aws-1-us-east-1.pooler.supabase.com:6543/postgres}"
+# SECRETS ARE NOT DEFAULTED HERE. Each credential uses `${VAR:?msg}` — bash aborts with that message when the var is
+# unset or empty, so a missing secret is a LOUD startup failure instead of a silent connect to the wrong place.
+# WHY the literals are gone: this file is tracked in git, so a `${VAR:-<literal>}` default published the production
+# Supabase DSN, the vLLM api-key and the Webshare proxy credentials to every clone and fork of the repo, permanently.
+# A default is also WORSE than useless operationally — a typo'd env var silently falls back to PRODUCTION instead of
+# failing, which is exactly how a test run ends up writing to the live database.
+# Provision these out-of-band in /etc/waterevents.env; backend/deploy/systemd/install.sh now REQUIRES that file to
+# pre-exist and validates each key, rather than sed-scraping the literals back out of this script.
+# {GIT GREP 2026-07-28 "LAUNCH_FLEET.SH:31 EXPORT WATEREVENTS_DB_DSN=\"${WATEREVENTS_DB_DSN:-POSTGRESQL://POSTGRES.
+#  EZUVMOLYFGSADKEHJNEF:FOCUSALPHA2026@AWS-1-US-EAST-1.POOLER.SUPABASE.COM:6543/POSTGRES}\" — A LIVE PRODUCTION
+#  CREDENTIAL COMMITTED IN PLAINTEXT"} [CONFIDENCE: CONFIRMED 100% — read off the tracked file at HEAD 9d3402f].
+export WATEREVENTS_DB_DSN="${WATEREVENTS_DB_DSN:?set WATEREVENTS_DB_DSN (Supabase Supavisor pooler DSN, port 6543) — provision in /etc/waterevents.env, never in this file}"
 export WATEREVENTS_DB_SCHEMA="waterevents"
 export WATEREVENTS_RUN_ID="eventinc"
 export QWEN_BASE_URLS="http://127.0.0.1:8000/v1" QWEN_SERVED_NAME="qwen-vl"
-export QWEN_API_KEY="${QWEN_API_KEY:-sk-waterevents-0b1307fdf041607d7e55838c277320498bbee722867cad78}"
+export QWEN_API_KEY="${QWEN_API_KEY:?set QWEN_API_KEY (the --api-key the vLLM on the pod was launched with) — provision in /etc/waterevents.env}"
 # 14B Qwen2.5-Instruct-AWQ has NO vision encoder → NEVER send a screenshot. NO_SHOT forces DOM/text-only; USE_IMAGE=0 too.
 export WATERCRAWL_NO_SHOT="1" EVENT_USE_IMAGE="0"
 export WATERCRAWL_HTTP_FIRST="0"
-export WEBSHARE_PROXY="${WEBSHARE_PROXY:-http://nknjgkpv:36oo15uctfhl@192.46.200.43:5713}"
+# WEBSHARE_PROXY is OPTIONAL, so it is passed through rather than `:?`-required: unset simply leaves the tier-2
+# residential render lane dormant (webshare.playwright_proxy() returns None and the `if runtime._browser_proxy is not
+# None` gate stays False), which degrades bot-walled hosts to 0 events but does NOT stop the fleet. Requiring it would
+# turn an optional capability into a hard startup failure. The credential literal that used to be the default here is
+# removed for the same reason as the DSN and the api-key: it was a live secret in a tracked file.
+# {WATEREVENTS.ENV.EXAMPLE:33-35 "UNSET = TIER DORMANT: EVERY BOT-WALLED / IP-TARPITTED HOST ... IS NEVER RETRIED
+#  THROUGH A RESIDENTIAL IP → PERMANENT 0-EVENTS FOR THOSE COMPANIES"}
+# [CONFIDENCE: CONFIRMED 100% — the dormancy semantics are documented in the repo's own env example].
+export WEBSHARE_PROXY="${WEBSHARE_PROXY:-}"
 export EVENT_MAX_PAGES="${EVENT_MAX_PAGES:-30}" EVENT_BATCH="${EVENT_BATCH:-5}" EVENT_COMPANY_BUDGET_S="600"
 export EVENTINC_WORKERS="${EVENTINC_WORKERS:-3}"
 # ── BROWSER POOL CAP (post-incident). Each worker is its OWN python process and therefore builds its OWN watercrawl
