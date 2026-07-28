@@ -18,6 +18,11 @@ import pg from "pg";
 // 50 is the bulk default: first among full, still yields to incremental. {claim_work "ORDER BY priority ASC, due_at ASC";
 // DB 2026-07-28 "incremental priority 10 / full 100"} [CONFIDENCE: CONFIRMED — read off the claim query and the table].
 export const FULL_DEFAULT_PRIORITY = 100;
+// The weekly window a boost must never reopen. MUST track queue._FULL_INTERVAL_S on the worker side —
+// complete_work re-arms a finished full unit to last_scan + this, and a boost may reorder that slot but not
+// cancel it. {QUEUE.PY:19 "_FULL_INTERVAL_S = INT(OS.ENVIRON.GET("EVENTINC_FULL_INTERVAL_S", STR(7*24*3600)))"}
+// [CONFIDENCE: CONFIRMED 100% — read off the worker's re-arm path].
+export const FULL_INTERVAL_S = Number(process.env.EVENTINC_FULL_INTERVAL_S || 7 * 24 * 3600);
 export const MAX_LIMIT = 2000;                 // a typo must not be able to re-prioritise the whole queue
 
 let _pool = null;

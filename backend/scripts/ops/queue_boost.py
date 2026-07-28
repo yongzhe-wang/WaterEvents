@@ -36,6 +36,8 @@ _DSN = os.environ.get("WATEREVENTS_DB_DSN", "")
 _SCHEMA = os.environ.get("WATEREVENTS_DB_SCHEMA", "waterevents")
 _SNAP_DIR = os.environ.get("QUEUE_BOOST_SNAPSHOT_DIR", "/tmp")
 _MAX_LIMIT = 2000                                   # hard ceiling: a typo must not re-prioritise the entire queue
+# MUST track queue._FULL_INTERVAL_S — it defines the weekly window a boost is forbidden to reopen (see cmd_boost).
+_FULL_INTERVAL_S = int(os.environ.get("EVENTINC_FULL_INTERVAL_S", str(7 * 24 * 3600)))
 
 
 async def _pool() -> asyncpg.Pool:
@@ -104,9 +106,25 @@ async def cmd_boost(pool, a) -> None:
             wtr.writerow([r["id"], r["ticker"] or "", r["old_priority"], r["events"]])
     ids = [r["id"] for r in rows]
     async with pool.acquire() as conn:
-        n = await conn.execute("UPDATE work_queue SET priority=$1, due_at=now(), updated_at=now() "
-                               "WHERE id = ANY($2::uuid[]) AND status='queued'", a.priority, ids)
+        # A boost changes the ORDER a unit is claimed in — it must NEVER make a unit eligible again inside its own
+        # week. complete_work re-arms full to last_scan + _FULL_INTERVAL_S (7d), so pulling due_at to now() on a unit
+        # already crawled this week forces a duplicate full BFS: ~400s of render plus a fresh VLM pass for data we
+        # already hold. An unconditional due_at=now() did exactly that on 2026-07-28 — 21 units were made due again
+        # and 7 were re-crawled before it was caught. So advance due_at ONLY when the weekly window has elapsed;
+        # otherwise leave the slot alone and let the higher priority put the unit at the FRONT of next week's sweep.
+        # {QUEUE.PY:19 "_FULL_INTERVAL_S = INT(OS.ENVIRON.GET("EVENTINC_FULL_INTERVAL_S", STR(7 * 24 * 3600)))"}
+        # {USER 2026-07-28 "EVENTS IF FETCHED THIS WEEK WILL NEVER REFETCH THIS WEEK, EVEN IF PRIORITY IS HIGH BUT
+        #  LEAVE TO FIRST AS NEXT WEEK"} [CONFIDENCE: CONFIRMED 100% — direct instruction + 7 observed duplicates].
+        n = await conn.execute(
+            "UPDATE work_queue SET priority=$1, updated_at=now(), "
+            "       due_at = CASE WHEN last_scanned_at IS NULL "
+            "                       OR last_scanned_at <= now() - make_interval(secs => $3) "
+            "                     THEN now() ELSE due_at END "
+            "WHERE id = ANY($2::uuid[]) AND status='queued'",
+            a.priority, ids, float(_FULL_INTERVAL_S))
     print(f"\n{n} — snapshot {snap}")
+    print("note: units already crawled inside the current weekly window keep their slot — the boost puts them at "
+          "the front of NEXT week's sweep instead of re-crawling them now.")
 
 
 async def cmd_undo(pool, a) -> None:
