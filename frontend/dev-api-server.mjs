@@ -16,6 +16,43 @@ import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { readFile, stat } from "node:fs/promises";
 import { join, extname, normalize } from "node:path";
+import { timingSafeEqual } from "node:crypto";
+
+// ── HTTP BASIC AUTH over the WHOLE surface ──────────────────────────────────────────────────────────────────────────
+// 用一句话讲完: 这个进程既 serve React SPA 又 serve /api/*,而它监听 0.0.0.0:8080 且防火墙对 0.0.0.0/0 开放 —— 在此之前
+// 任何人都能直接看到全部爬取数据和队列状态。把 gate 放在请求入口(静态和 API 分叉之前)意味着一处生效、覆盖全部,
+// 浏览器原生弹框,前端一行都不用改。
+//
+// FAIL-CLOSED, matching lib/_queue_admin.js: an unset password denies everything rather than defaulting to open,
+// because the opposite default means a deploy that forgets the env var silently re-exposes the dashboard and the
+// failure mode is invisible. The 503 body says exactly which variable to set so that failure is self-explaining.
+//
+// The credential is read from the environment and MUST NOT be written into this repo. This codebase already carries a
+// production Postgres password, a vLLM key and a proxy credential in tracked files and in git history — adding another
+// literal here would repeat the exact finding two independent audits ranked as their #1.
+// {AUDIT 2026-07-28 "PRODUCTION POSTGRES PASSWORD COMMITTED IN PLAINTEXT ACROSS 8 FILES, 3 COMMITS"}
+//
+// HONEST LIMIT: port 8080 is plain HTTP with no TLS, so Basic Auth sends base64(user:pass) on every request and anyone
+// on the network path can read it. This raises the bar from "no authentication at all" to "needs a credential"; it does
+// NOT make the channel confidential. Put this behind TLS (or an SSH tunnel / IAP) before treating the password as a
+// real secret. [CONFIDENCE: CONFIRMED 100% — `ss -tlnp` shows 0.0.0.0:8080 and the firewall rule allow-webapp-8080 is
+//  sourced 0.0.0.0/0; there is no TLS terminator in front of this process].
+const AUTH_USER = process.env.WEBAPP_USER || "focusalpha";
+const AUTH_PASS = process.env.WEBAPP_PASSWORD || "";
+
+function authFailure(req) {
+  if (!AUTH_PASS) return { code: 503, msg: "WEBAPP_PASSWORD not configured — the dashboard is disabled" };
+  const hdr = req.headers?.authorization || "";
+  if (!hdr.startsWith("Basic ")) return { code: 401, msg: "authentication required" };
+  let got = "";
+  try { got = Buffer.from(hdr.slice(6), "base64").toString("utf8"); } catch { return { code: 401, msg: "bad credentials" }; }
+  const want = `${AUTH_USER}:${AUTH_PASS}`;
+  // Length check first so a wrong-length guess cannot leak timing, then a constant-time compare on equal-length buffers
+  // (timingSafeEqual throws on a length mismatch, which is why the guard has to come first).
+  const a = Buffer.from(got), b = Buffer.from(want);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return { code: 401, msg: "bad credentials" };
+  return null;
+}
 
 // STATIC WEB APP serving (production self-host on the GCP VM): besides the /api/* shim, this same process serves the
 // built SPA from WEBAPP_DIST so ONE node process = the whole site (no nginx). /api/* → handlers; everything else → a
@@ -107,6 +144,20 @@ function route(pathname) {
 const server = createServer(async (rawReq, rawRes) => {
   // Parse pathname + querystring once; base is arbitrary (we only use path+query).
   const url = new URL(rawReq.url, "http://localhost");
+
+  // AUTH GATE — before the static/API fork, so ONE check covers the SPA, every /api/* route and every 404. Placing it
+  // after the fork would have left whichever branch was edited later unprotected.
+  const fail = authFailure(rawReq);
+  if (fail) {
+    // WWW-Authenticate is what makes the browser show its native login prompt instead of rendering a bare 401 body.
+    // Only sent on 401 — a 503 means misconfiguration, and prompting for a password that cannot possibly work would
+    // send the operator hunting for a bad credential instead of reading the message.
+    const headers = { "Content-Type": "application/json" };
+    if (fail.code === 401) headers["WWW-Authenticate"] = 'Basic realm="WaterEvents", charset="UTF-8"';
+    rawRes.writeHead(fail.code, headers);
+    rawRes.end(JSON.stringify({ error: fail.msg }));
+    return;
+  }
   // Non-API path → serve the static SPA (production self-host); /api/* falls through to the handler shim below.
   if (!url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api?")) {
     await serveStatic(url.pathname, rawRes);
