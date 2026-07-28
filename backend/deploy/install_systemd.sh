@@ -142,6 +142,34 @@ AccuracySec=30s
 WantedBy=timers.target
 EOF
 
+# ── reaper (abandoned work_queue rows — the orphans a crash or a restart leaves behind) ────────────────────────────
+# Runs far more often than the janitor because its subject is live scheduling state, not disk. claim_work already
+# reclaims lazily, but only when a worker happens to reach the row; until then the row reads as in-flight and every
+# count built on `status='running'` is wrong. On 2026-07-28 that showed 82 full running on a six-worker fleet.
+install -m 755 "$DEPLOY_DIR/reaper.sh" /usr/local/bin/waterevents-reaper
+cat > /etc/systemd/system/waterevents-reaper.service <<EOF
+[Unit]
+Description=WaterEvents abandoned-lease reaper
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/waterevents/fleet.env
+Environment=PSQL_BIN=$(command -v psql || echo /usr/bin/psql)
+ExecStart=/usr/local/bin/waterevents-reaper --apply
+EOF
+cat > /etc/systemd/system/waterevents-reaper.timer <<EOF
+[Unit]
+Description=Reclaim abandoned WaterEvents work_queue rows every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target
+EOF
+
 # ── janitor (traces grew to 6,314 dirs / 56,665 files / 2.4GB before the first manual prune) ────────────────────────
 cat > /etc/systemd/system/waterevents-janitor.service <<EOF
 [Unit]
@@ -180,7 +208,7 @@ EOF
 systemctl daemon-reload
 systemctl enable waterevents.target waterevents-pacer.service >/dev/null 2>&1 || true
 for i in $(seq 1 "$N"); do systemctl enable "waterevents-worker@$i.service" >/dev/null 2>&1 || true; done
-systemctl enable --now waterevents-watchdog.timer waterevents-janitor.timer >/dev/null 2>&1 || true
+systemctl enable --now waterevents-watchdog.timer waterevents-janitor.timer waterevents-reaper.timer >/dev/null 2>&1 || true
 
 echo "[install] units installed. N=$N workers, MemoryMax=$WORKER_MEM each"
 echo "[install] start:  sudo systemctl start waterevents.target"
