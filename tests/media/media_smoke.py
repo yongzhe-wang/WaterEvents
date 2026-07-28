@@ -20,7 +20,7 @@ import os
 
 from providers.qwen_llm import config as qcfg      # mutate DEBUG_DIR per-event so each event's req_*.txt is separated
 
-from .enrich import enrich_page
+from agent.media_agent.pipeline.enrich import enrich_page    # absolute: this file lives in tests/, not in the package
 
 _DATASET = os.environ.get("MEDIA_DATASET_DIR",              # reusable oracle dataset (moved under tests/datasets/ 2026-07-23)
                           os.path.join(os.path.dirname(__file__), "..", "..", "tests", "datasets", "ir_events_media_oracle"))
