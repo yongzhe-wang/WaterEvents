@@ -15,6 +15,7 @@ Run as the resident controller:      PYTHONPATH=/workspace/WaterEvents/backend p
 from __future__ import annotations
 
 import asyncio
+import math
 import os
 import sys
 
@@ -44,10 +45,31 @@ _DEFAULT_FULL_CALLS = float(os.environ.get("EVENTINC_DEFAULT_FULL_CALLS", "6"))
 #  is proven by the 96.7% never-scanned figure. Tune with EVENTINC_FULL_SHARE without a code edit.]
 _FULL_SHARE = float(os.environ.get("EVENTINC_FULL_SHARE", "0.5"))
 
+# Usable fraction of nominal slot-seconds. `slots x 3600` assumes PERFECT packing — no claim/poll gap, no backoff, no
+# tail effect from a 367 s full unit finishing alone. Two independent reasons to discount it, and they agree:
+#   (a) MEASURED: at 18 slots the fleet sustained 50,934 worker-s/h against 64,800 nominal = 78.6%.
+#   (b) THEORY: for n periodic task classes, rate-monotonic scheduling only guarantees deadlines below
+#       U <= n(2^(1/n) - 1); for the two classes here that bound is 2(sqrt(2) - 1) = 82.8%. Past it, non-harmonic
+#       periods start missing deadlines — which is exactly the climbing `due_now` observed at 18 slots.
+# Taking the theoretical bound rather than the measured 78.6% because the measurement was itself taken while OVER the
+# bound (i.e. already degraded), so it under-reports what a correctly-paced fleet sustains.
+# {SHA ET AL. "Generalized Rate-Monotonic Scheduling Theory", utilization bound n(2^(1/n)-1) -> ln 2 as n grows}
+# {MEASURED 2026-07-29 "slots=18 worker_s_per_h=50934 util=78%" with due_now climbing 6->13->21}
+# [CONFIDENCE: CONFIRMED 90% — the bound is textbook and the measurement brackets it; the 4-point gap between 78.6%
+#  and 82.8% is not separately verified, which is why this is env-tunable rather than hard-coded.]
+# NOTE: harmonic periods lift this bound to 1.0 — see the plan's option C. Worth revisiting if T* is ever quantised
+# to an integer divisor of the full week.
+_SLOT_UTIL = float(os.environ.get("EVENTINC_SLOT_UTIL", "0.828"))
+
+# Harmonic-period quantisation, DEFAULT OFF — see the block in solve() for why it is not enabled. Pair with
+# EVENTINC_SLOT_UTIL=1.0 when turning it on; enabling one without the other gets the constraint and not the benefit.
+_HARMONIC = os.environ.get("EVENTINC_HARMONIC", "") in ("1", "true", "yes")
+
 
 def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rate: float,
           n_full: int, full_pages: float, full_calls: float, full_gated: bool = False,
-          measured_c_r: float = 0.0, measured_c_v: float = 0.0) -> dict:
+          measured_c_r: float = 0.0, measured_c_v: float = 0.0,
+          inc_secs: float = 0.0, full_secs: float = 0.0) -> dict:
     """PURE packing solve → {t_star_s, binding, infeasible, ...}. Given the week budget and the two per-unit demands,
     solve T for each resource (T = week·inc_per_cycle / residual-after-full) and take the max (the binding resource sets
     the achievable period). residual ≤ 0 → that resource can't fit the weekly full sweep → DEGRADED mode (see below).
@@ -69,6 +91,11 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
     #  scheduler_state.note verbatim; same failure class as the _DEFAULT_FULL_PAGES=40 bug fixed above].
     C_R = max(profile["render_pph"], measured_c_r or 0.0)
     C_V = max(profile["vlm_cph"], measured_c_v or 0.0)
+    # Slots is a HARD physical count, not an estimate, so it takes no max() with a measured rate — you cannot run more
+    # units at once than there are slots. A missing/zero cost measurement disables the slot equation rather than
+    # producing a divide-by-a-guess: cold start should fall back to the two lanes that already worked, not invent one.
+    slots = float(profile.get("slots") or 0.0)
+    slots_known = slots > 0 and inc_secs > 0 and full_secs > 0
     # per-CYCLE incremental demand: ALL hubs are rendered (to compute the hash), only the CHANGED fraction hits the VLM.
     inc_render_cycle = n_hub * inc_pages
     inc_vlm_cycle = n_hub * inc_calls * hit_rate
@@ -83,7 +110,27 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
     # T (hours) = week · (incremental per cycle) / (residual capacity). Bigger demand or smaller residual → longer period.
     t_render_h = (week * inc_render_cycle / render_resid) if render_resid > _EPS else inf
     t_vlm_h = (week * inc_vlm_cycle / vlm_resid) if vlm_resid > _EPS else inf
-    infeasible = (t_render_h == inf) or (t_vlm_h == inf)          # a resource can't fit full weekly at all
+    # ── THIRD RESOURCE: WORKER SLOTS, in unit-seconds ────────────────────────────────────────────────────────────────
+    # A unit holds its slot for its whole wall-clock duration no matter which lane it is blocked on, so concurrency —
+    # not pages and not calls — is what actually bounds the fleet. Modelling only render and VLM let this solver publish
+    # a T* the fleet could not physically sustain, and the shortfall was invisible in every number it printed: the queue
+    # simply fell behind. Same shape as the two equations above so the three compose as a plain max().
+    # {MEASURED 2026-07-29 duration_s over 7,076 rows — full 367.1 s/unit, incremental 31.3 s/unit (11.7x apart)}
+    # {MEASURED 2026-07-29 "slots=18 running=18 due_now 6→13→21" then, after slots=24, "due_now 6→5→3→0→0→0"}
+    # [CONFIDENCE: CONFIRMED 100% — the pinned `running` with a monotonically climbing `due_now` is the signature of a
+    #  concurrency bound, and raising ONLY the slot count drained the backlog within three minutes.]
+    # NOT-MEASURED must mean NON-BINDING (0.0), never inf. An unknown cost is not evidence of infeasibility, and an inf
+    # here would propagate straight into `infeasible` and slam T* to the politeness floor — the exact 2026-07-27
+    # failure this file already documents, re-created from a cold start with no duration data.
+    slot_seconds_wk = slots * 3600.0 * week * _SLOT_UTIL if slots_known else 0.0
+    full_secs_wk = n_full * full_secs if slots_known else 0.0
+    inc_secs_cycle = n_hub * inc_secs if slots_known else 0.0
+    slot_resid = slot_seconds_wk - full_secs_wk                   # what is left for incremental after full's weekly slice
+    if not slots_known:
+        t_slots_h = 0.0                                           # unmeasured → contributes nothing to the max()
+    else:
+        t_slots_h = (week * inc_secs_cycle / slot_resid) if slot_resid > _EPS else inf
+    infeasible = (t_render_h == inf) or (t_vlm_h == inf) or (t_slots_h == inf)   # a resource can't fit full weekly at all
     floor_h = profile["inc_floor_s"] / 3600.0                     # politeness: never cycle faster than this
     if infeasible:
         # DEGRADED MODE — full's weekly sweep alone over-subscribes a lane, so a WEEKLY full cadence is off the table.
@@ -98,16 +145,41 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
         # [CONFIDENCE: CONFIRMED 100% — starvation observed live; the floor fallback is the mechanism].
         r_resid = C_R * week * (1.0 - _FULL_SHARE)                # incremental may only spend the non-reserved slice
         v_resid = C_V * week * (1.0 - _FULL_SHARE)
+        s_resid = slot_seconds_wk * (1.0 - _FULL_SHARE)
         t_render_h = (week * inc_render_cycle / r_resid) if r_resid > _EPS else inf
         t_vlm_h = (week * inc_vlm_cycle / v_resid) if v_resid > _EPS else inf
-    binding = "render" if t_render_h >= t_vlm_h else "vlm"        # the resource that sets the (larger) period
-    t_star_h = max(t_render_h, t_vlm_h, floor_h)                  # binding resource, but not below the floor
+        t_slots_h = (week * inc_secs_cycle / s_resid) if s_resid > _EPS else inf
+    # The binding resource is whichever demands the LONGEST period; T* must satisfy all three simultaneously.
+    _cands = {"render": t_render_h, "vlm": t_vlm_h, "slots": t_slots_h}
+    binding = max(_cands, key=lambda k: _cands[k])
+    t_star_h = max(t_render_h, t_vlm_h, t_slots_h, floor_h)       # binding resource, but not below the politeness floor
+    # OPTIONAL: snap T* DOWN to an integer divisor of the full-sweep week, making the two periods harmonic.
+    # WHY it would help: the _SLOT_UTIL discount above exists because rate-monotonic scheduling only guarantees
+    # deadlines below n(2^(1/n)-1) = 82.8% for two NON-harmonic classes. For a harmonic task set that bound rises to
+    # 1.0, so harmonising would recover ~17% of usable capacity for free.
+    # WHY IT IS OFF BY DEFAULT: it is an optimisation with no demonstrated need. After raising the slot count the fleet
+    # sits at ~58% utilisation with the backlog drained, so there is nothing for the extra headroom to buy, and turning
+    # it on quantises T* — a real constraint that would have to be reasoned about every time the solve moves. Enabling
+    # it without evidence would be optimising the part of the system that is currently not the problem.
+    # Snapping DOWN (to the next-shorter harmonic period) keeps the result feasible: a shorter period costs MORE
+    # capacity, so it must only be taken when the harmonic bound actually licenses it — hence the pairing with
+    # EVENTINC_SLOT_UTIL=1.0, which the operator sets together with this flag.
+    # {SHA ET AL. — for harmonic periods RMS achieves 100% utilisation vs 82.8% for two arbitrary periods}
+    # [CONFIDENCE: CONFIRMED 90% for the theory; UNVERIFIED on this fleet — deliberately not enabled, so it has never
+    #  run in production. Do not turn it on without re-measuring due_now slope.]
+    if _HARMONIC and t_star_h > _EPS:
+        k = math.floor(week / t_star_h)                           # largest integer number of cycles that fits the week
+        if k >= 1:
+            t_star_h = week / k                                   # exact divisor → the two periods are harmonic
     return {
         "t_star_s": t_star_h * 3600.0,
-        "t_render_h": t_render_h, "t_vlm_h": t_vlm_h, "binding": binding, "infeasible": infeasible,
+        "t_render_h": t_render_h, "t_vlm_h": t_vlm_h, "t_slots_h": t_slots_h,
+        "binding": binding, "infeasible": infeasible,
         "inc_render_cycle": inc_render_cycle, "inc_vlm_cycle": inc_vlm_cycle,
         "full_render_wk": full_render_wk, "full_vlm_wk": full_vlm_wk,
         "render_resid": render_resid, "vlm_resid": vlm_resid,
+        # Slot terms exposed so `binding=slots` can be explained without re-deriving it from the profile.
+        "slots": slots, "slot_seconds_wk": slot_seconds_wk, "full_secs_wk": full_secs_wk, "slot_resid": slot_resid,
     }
 
 
@@ -208,8 +280,13 @@ async def solve_and_apply(pool) -> dict:
     # only. So full's weekly VLM demand = all pages. {USER 2026-07-26 "seed is for full bfs; hub[gate] is for incremental"}.
     # measured_c_r/measured_c_v let solve() raise a too-low profile ceiling to the rate the fleet demonstrably sustains
     # (see the capacity comment in solve()) — the "solver prefers the MEASURED C_V" behaviour profile.py documents.
+    # Per-unit WALL-CLOCK seconds — the slot equation's demand term. metrics.unit_cost has always returned these; the
+    # solver simply never consumed them. 0.0 when a type has never completed a scan, which switches the slot equation
+    # off rather than guessing (see `slots_known` in solve()).
+    inc_secs = inc.get("sec_per_unit") or 0.0
+    full_secs = full.get("sec_per_unit") or 0.0
     sol = solve(profile, n_hub, inc_pages, inc_calls, tp["hit_rate"], n_full, full_pages, full_calls, full_gated=False,
-                measured_c_r=tp["C_R"], measured_c_v=tp["C_V"])
+                measured_c_r=tp["C_R"], measured_c_v=tp["C_V"], inc_secs=inc_secs, full_secs=full_secs)
 
     # full ETA (Little's Law, serial-VLM upper bound): remaining full VLM demand ÷ measured C_V. None when no full/no rate.
     eta_full_h = None

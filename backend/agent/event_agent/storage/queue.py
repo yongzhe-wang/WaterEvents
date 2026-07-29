@@ -66,7 +66,29 @@ async def claim_work(pool: asyncpg.Pool, worker_id: str, type_filter: str | None
                 WHERE (status = 'queued' OR (status = 'running' AND lease_until < now()))
                   AND due_at <= now()
                   AND ($3::text IS NULL OR type = $3)          -- reserved-slot filter (NULL = claim any type)
-                ORDER BY priority ASC, due_at ASC
+                -- LATENESS RELATIVE TO EACH TYPE'S OWN CADENCE, not a static priority.
+                -- The old ordering was `priority ASC, due_at ASC`, and with incremental at priority 10 vs full at 100
+                -- that is STRICT priority: a single due incremental outranks every full row that exists, forever. The
+                -- only thing preventing starvation was the pacer spreading full's due_at across the week — i.e. an
+                -- invariant enforced nowhere, by a component that can be wrong. It has already been wrong: full sat at
+                -- 2595/2683 never-scanned (96.7%) on 2026-07-27 when a bad solve slammed T* to the politeness floor.
+                -- Dividing lateness by the type's period makes the comparison dimensionless: a full unit one whole week
+                -- late (ratio 1.0) beats an incremental one T* late (ratio 1.0) only when it is later IN ITS OWN TERMS.
+                -- Neither lane can be starved, because any lane left unserved keeps growing its ratio until it wins.
+                -- This is the guaranteed-share idea from packet scheduling (WRR/DRR), where a small weight on the low
+                -- class is what prevents strict priority from starving it; here the weight is the period itself.
+                -- Reads T* from scheduler_state so the incremental denominator tracks whatever the solver publishes;
+                -- COALESCE keeps a fresh database (empty scheduler_state) working at the 30-minute floor.
+                -- {DB 2026-07-27 "INCREMENTAL PRIORITY 10 / FULL 100; 18/18 RUNNING ON INCREMENTAL, 0 ON FULL"}
+                -- {DEFICIT ROUND ROBIN — "assigning a small weight to the lower priority queues ensures at least a
+                --  minimum number of rounds ... avoiding starvation of lower priority traffic"}
+                -- [CONFIDENCE: CONFIRMED 100% — the 96.7% starvation is recorded in this repo from a live measurement;
+                --  the ordering change is what removes the dependency on the pacer being correct.]
+                ORDER BY EXTRACT(EPOCH FROM (now() - due_at)) / CASE
+                             WHEN type = 'full' THEN 604800.0                    -- the one-week deadline, in seconds
+                             ELSE GREATEST(COALESCE((SELECT t_star_s FROM scheduler_state WHERE id = 1), 1800.0), 1.0)
+                         END DESC,
+                         due_at ASC                                              -- tie-break: oldest first, as before
                 FOR UPDATE SKIP LOCKED
                 LIMIT 1
             )
