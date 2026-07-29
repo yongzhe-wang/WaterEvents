@@ -32,11 +32,21 @@ if [ -z "$DSN" ]; then
   exit 78                                      # EX_CONFIG: fail loud, do NOT silently pass
 fi
 
-# minutes since the newest scan_log row. NULL (empty table) is treated as stale so a fleet that never starts is caught.
-age=$("$PSQL" "$DSN" -t -A -c \
-  "SELECT COALESCE(ROUND(EXTRACT(epoch FROM now()-max(ts))/60.0), 99999) FROM waterevents.scan_log" 2>/dev/null)
+# ASK THE ONE ORACLE. This used to compute its own predicate here — "minutes since the newest scan_log row" — and that
+# predicate is why the 2026-07-28 outage ran 11h52m undetected: scan_log kept moving the entire time because the workers
+# kept scanning; only the EXTRACTION was dead. This script logged "healthy — last scan 0m ago" every five minutes while
+# the system produced literally nothing. The dashboard had its own third predicate and also read healthy.
+# waterevents.fleet_health() is now the single definition all three consumers share, so when it is wrong it is wrong in
+# ONE place and gets fixed once. `-F ' | '` keeps this parseable with plain shell field-splitting.
+# {AUDIT 2026-07-29 "3 consumers, 3 hand-rolled predicates, all reporting healthy through a total outage"}
+# {DB 2026-07-29 replay of a 15-min window inside the outage → "DOWN | 231 vlm calls, 0 events, 424 scans"}
+# [CONFIDENCE: CONFIRMED 100% — the oracle was verified in both directions before this script was pointed at it].
+OUT=$("$PSQL" "$DSN" -t -A -F'|' -c \
+  "SELECT verdict, reason FROM waterevents.fleet_health(${STALE_MIN})" 2>/dev/null)
+VERDICT="${OUT%%|*}"                           # first field; plain parameter expansion, no awk/read subtleties
+REASON="${OUT#*|}"                             # everything after the first '|' — the reason itself may contain spaces
 
-if [ -z "$age" ]; then
+if [ -z "$VERDICT" ]; then
   echo "watchdog: DB unreachable — NOT restarting (a DB outage is not a fleet fault)" >&2
   exit 0                                       # never restart on our own inability to observe
 fi
@@ -67,10 +77,27 @@ if [ -z "$TARGET" ]; then
   exit 0
 fi
 
-if [ "$age" -gt "$STALE_MIN" ]; then
-  echo "CRITICAL: waterevents fleet wedged — no scan_log row for ${age} minutes (threshold ${STALE_MIN}). Restarting."
-  systemctl restart "$TARGET"
-  echo "watchdog: restart issued"
-else
-  echo "watchdog: healthy — last scan ${age}m ago"
-fi
+case "$VERDICT" in
+  down)
+    # RESTART ONLY HELPS ONE OF THE TWO 'down' SHAPES, and saying so matters. A wedged fleet (no scan activity) is cured
+    # by restarting the units. Extraction producing nothing is NOT — the fleet is healthy and the vLLM behind it is not,
+    # so a restart just re-runs the same doomed work faster. Both are CRITICAL; the reason string distinguishes them and
+    # goes to the journal, where the Ops Agent can forward it. Restarting regardless would have turned the 2026-07-28
+    # outage into a restart loop that still produced nothing.
+    # [CONFIDENCE: CONFIRMED 100% — the outage's own remedy was restarting vLLM ON THE POD; nothing on this host would
+    #  have fixed it, so a host-side restart would have been pure noise.]
+    echo "CRITICAL: waterevents fleet DOWN — ${REASON}"
+    if [ "${REASON#no scan_log activity}" != "$REASON" ]; then
+      systemctl restart "$TARGET"
+      echo "watchdog: restart issued (wedged fleet)"
+    else
+      echo "watchdog: NOT restarting — the fleet is running; the failure is downstream (vLLM/extraction). Restarting would not fix it."
+    fi
+    ;;
+  degraded)
+    echo "WARNING: waterevents degraded — ${REASON}"      # visible, but not worth a restart on its own
+    ;;
+  *)
+    echo "watchdog: healthy — ${REASON}"
+    ;;
+esac

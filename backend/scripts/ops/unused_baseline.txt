@@ -1,0 +1,31 @@
+# Known-unused module-level definitions, recorded 2026-07-29 when check_unused landed.
+#
+# This list may ONLY SHRINK. A new unused definition fails CI immediately; an entry here that becomes used also fails,
+# so the file cannot quietly turn into a permanent exemption list. Delete a line the moment its name gets a caller.
+# Matched by bare name, so moving or renaming code does not silently re-baseline it.
+#
+# Each of these is real dead code with a real reason, not a false positive:
+
+# watercrawl host-health circuit breaker — implemented, never attached to the render path. The one wiring attempt was
+# reverted (it zeroed every Akamai-fronted Q4 company) and never re-landed with per-(host,method) keys.
+is_dead
+skip_direct
+record
+snapshot
+
+# stage-2 enrichment plumbing — the enrichment worker's lease reclaimer and completion writer have no callers, which is
+# consistent with all five enrichment tables being empty in production.
+reconcile_events
+mark_enriched
+
+# added 2026-07-28/29 and not yet wired:
+wait_turn              # sync per-host pacing; only the async variant is used, by the render coroutines
+ensure_live_browsers   # browser liveness sweep
+on_loop_bounded        # inner per-coroutine deadline, the belt to run_on_loop's braces
+
+# media pipeline
+dispatch               # handlers.dispatch — the worker calls the individual handlers directly
+Chart                  # chart.Chart — constructed nowhere
+
+# tools
+download_audio         # youtube.download_audio + its package re-export; no caller in-tree

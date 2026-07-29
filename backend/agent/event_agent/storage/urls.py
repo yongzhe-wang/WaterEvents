@@ -38,6 +38,16 @@ _DATE_YM_RE = re.compile(r"^(\d{4})-(\d\d)$")                # 2026-03
 _DATE_Y_RE = re.compile(r"^(\d{4})$")                        # 2026
 
 
+# ci: allow-unused — WIRED DELIBERATELY LATER, NOT FORGOTTEN.
+# _event_key still compares dates at their printed granularity, so one event arriving as "2026-Q1" from a hub page and
+# "2026-03-15" from its own detail page yields two dedup_keys and two rows. This function is the fix. It is NOT switched
+# on yet because switching it on changes the key for rows that already exist: ~147k events were written under the old
+# scheme, so the next scan of an already-scanned company would INSERT instead of UPDATE. Landing it requires a backfill
+# migration that rewrites stored dedup_keys in the same change. The waiver is explicit so this reads as named debt in a
+# review rather than as an unexplained hole in the dead-code check.
+# {VERIFIED 2026-07-28 by executing the live function — _event_key("Q1 2026 Earnings Call", "2026-Q1", …) →
+#  'q12026earningscall|2026-q1' vs the same title with "2026-03-15" → 'q12026earningscall|2026-03-15'}
+# [CONFIDENCE: CONFIRMED 100% — the split was reproduced by running the real function on both inputs.]
 def _date_bucket(d: str) -> str:
     """Collapse ANY of the prompt's four date granularities to ONE common coarse bucket: "YYYY-qN" (or "YYYY" when only
     a year is known, or "" when nothing is).

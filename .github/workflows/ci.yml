@@ -113,6 +113,16 @@ jobs:
           sys.exit(1 if missing else 0)
           PY
 
+      # 1c — a module-level definition that NOTHING calls fails the build. ruff's F821 already covers the mirror case
+      # (used but never defined); this is the direction that actually keeps happening here. On 2026-07-28 five separate
+      # freshly-written fixes — an SSRF/robots guard, a teardown timeout, a semaphore warning, the queue lease reaper
+      # and a date-bucketing key fix — were all believed shipped while every one had zero call sites. A fix that is
+      # never called is worse than no fix: it closes the ticket without changing the behaviour.
+      # Blocking, with a name-keyed baseline for the backlog that existed when it landed, so anything NEW fails at once
+      # while the known list can only shrink (a baseline entry that gains a caller also fails).
+      - name: no unused definitions
+        run: python backend/scripts/ops/check_unused.py
+
       # 2 — every tracked shell script must parse. `bash -n` would have caught the apostrophe in
       # ${QWEN_API_KEY:?... the pod's vLLM ...} that made launch_fleet.sh unrunnable — and that mattered beyond the one
       # script, because install_systemd.sh evals its `export` lines to build the systemd EnvironmentFile.

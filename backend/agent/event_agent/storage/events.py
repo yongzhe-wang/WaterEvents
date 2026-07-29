@@ -153,10 +153,16 @@ async def log_scan(pool: asyncpg.Pool, unit_type: str, url: str, stats: dict) ->
     and vlm usage for parallel"; PLAN packing solver reads C_R/C_V/hit_rate live} [CONFIDENCE: CONFIRMED — rate needs history]."""
     async with pool.acquire() as conn:
         await conn.execute(
-            "INSERT INTO scan_log (unit_type, url, render_pages, vlm_calls, vlm_skipped, events) "
-            "VALUES ($1, $2, $3, $4, $5, $6)",
+            # extract_errors is what lets a QUERY tell "this scan found nothing" apart from "this scan could not
+            # look". Without it every consumer sees the same row for a healthy hash-gate skip and for a dead VLM, and
+            # each invents its own guess — which is how three separate health checks all reported healthy through an
+            # 11h52m total outage. {MIGRATION 20260729021500 fleet_health "events=0, extract_errors>0 → the system is
+            # broken right now"} [CONFIDENCE: CONFIRMED 100% — the indistinguishability was the measured root cause].
+            "INSERT INTO scan_log (unit_type, url, render_pages, vlm_calls, vlm_skipped, events, extract_errors) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7)",
             unit_type, url, int(stats.get("render_pages") or 0), int(stats.get("vlm_calls") or 0),
             int(stats.get("vlm_skipped") or 0), int(stats.get("events") or 0),
+            int(stats.get("extract_errors") or 0),
         )
 
 
