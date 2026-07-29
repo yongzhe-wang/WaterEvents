@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 interface NextRow { company: string; url: string; due_at: string; }   // a next-up queued unit (company + url)
-interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; stale_window_h: number; next: NextRow[]; }
+interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; stale_window_h: number; coverage_pct: number | null; scheduled_past_window: number; next: NextRow[]; }
 interface EvRow { id: string; company: string; date: string; discovered: string | null; type: string; title: string; url: string | null; }
 interface Sched {
   profile: string; t_star_h: number | null; binding: string | null;
@@ -106,7 +106,7 @@ function every(h: number | null): string {
 // we're watching, and how long a full deep re-crawl of everything takes. The internal knobs (T*, C_R/C_V, hit_rate,
 // binding resource, profile) are DELIBERATELY hidden — nobody outside the engine cares what "C_V" is. {USER 2026-07-26
 // "don't show the technicals, show what we care about — no one knows what c_v is"}.
-function SchedulerBar({ s }: { s: Sched }) {
+function SchedulerBar({ s, full }: { s: Sched; full?: QStat }) {
   const cell = (label: string, val: string, hint?: string) => (
     <div className="q-stat" style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 120 }}>
       <span style={{ opacity: 0.6, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</span>
@@ -123,7 +123,18 @@ function SchedulerBar({ s }: { s: Sched }) {
       <div className="q-card-stats" style={{ gap: 28, flexWrap: "wrap", alignItems: "flex-start" }}>
         {cell("Refresh cycle", every(s.t_star_h), "every watched page re-checked")}
         {cell("Watching", s.inc_hubs != null ? s.inc_hubs.toLocaleString() : "—", "pages monitored for new events")}
-        {cell("Full re-crawl", every(s.eta_full_h), "deep pass over all companies")}
+        {/* WAS `every(s.eta_full_h)` labelled "deep pass over all companies", and it meant neither of those things.
+            eta_full_h is "remaining full VLM demand / measured C_V" — how long a deep pass would take IF THE WHOLE GPU
+            DID NOTHING ELSE. That is a capacity bound, not a cadence: it moves with GPU load rather than with progress,
+            and it read "~36h" while full was on track to need ~9 days, because the real full cadence is set by due_at
+            (+7d per completion), not by spare VLM. The contract is "every company gets a deep pass inside one week",
+            so the number shown is now coverage against exactly that — the only figure here that goes wrong when the
+            contract is missed, and the one worth steering on.
+            {DASHBOARD 2026-07-29 read "~36h" while full 7-day coverage was 41.6%}
+            [CONFIDENCE: CONFIRMED 100% — both figures read from the same live state minutes apart.] */}
+        {cell("Weekly coverage",
+              full?.coverage_pct != null ? `${full.coverage_pct}%` : "—",
+              full ? `${full.remaining.toLocaleString()} still owed a deep pass this week` : "deep pass within 7 days")}
       </div>
       <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
         Re-checks every watched page about {every(s.t_star_h).replace("~", "every ")}, and runs deep re-crawls whenever
@@ -340,7 +351,7 @@ export default function TodayView() {
       <div className="events-panel">
         <div className="body-full">
           {/* SCHEDULER strip — the packing solver's live T* decision (dynamic rotation keeping VLM+CPU busy) */}
-          {data?.scheduler && <SchedulerBar s={data.scheduler} />}
+          {data?.scheduler && <SchedulerBar s={data.scheduler} full={data.queue?.full} />}
 
           {/* LIVE BOTTLENECKS — CPU (render) + VLM (GPU) usage right now; click either → the day's usage chart */}
           {data?.resources && <ResourceCards r={data.resources} onClick={openUsage} />}

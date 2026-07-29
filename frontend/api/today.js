@@ -91,6 +91,17 @@ export default async function handler(_req, res) {
         // env-tunable; a label that says "24h" while the constant says something else is the same class of drift that
         // made this number meaningless in the first place, so the number carries its own units.
         stale_window_h: windowH,
+        // COVERAGE AGAINST THE ACTUAL CONTRACT, as a percentage. For full the contract is literally "every company gets
+        // a deep pass inside one week", so this is the number the system is judged on and the only one worth showing
+        // large. `remaining` above is the same fact as a count; this is it as a fraction, so it can be read without
+        // knowing the denominator.
+        coverage_pct: r.length ? Math.round((100 * (r.length - remaining)) / r.length) : null,
+        // Units whose next visit is scheduled BEYOND the contract window. This is the failure mode the 2026-07-28
+        // outage created and that nothing else on this page can show: complete_work() pushed due_at +7d for units that
+        // had produced nothing, so they look scheduled while being, in fact, skipped for a week. They are not overdue
+        // (their due_at is in the FUTURE), so a lateness- or staleness-based number cannot see them at all.
+        // {DB 2026-07-29 "2,312 units called the VLM and got nothing, then had due_at pushed forward"}
+        scheduled_past_window: r.filter((x) => Date.parse(x.due_at) > now + windowH * 3600 * 1000).length,
         next,                                                          // the 5 next-up units (company + url)
       };
     };

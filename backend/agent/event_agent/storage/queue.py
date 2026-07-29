@@ -84,10 +84,27 @@ async def claim_work(pool: asyncpg.Pool, worker_id: str, type_filter: str | None
                 --  minimum number of rounds ... avoiding starvation of lower priority traffic"}
                 -- [CONFIDENCE: CONFIRMED 100% — the 96.7% starvation is recorded in this repo from a live measurement;
                 --  the ordering change is what removes the dependency on the pacer being correct.]
-                ORDER BY EXTRACT(EPOCH FROM (now() - due_at)) / CASE
-                             WHEN type = 'full' THEN 604800.0                    -- the one-week deadline, in seconds
-                             ELSE GREATEST(COALESCE((SELECT t_star_s FROM scheduler_state WHERE id = 1), 1800.0), 1.0)
-                         END DESC,
+                -- Measured from LAST SCAN, not from due_at. Keying on due_at meant a unit only started accumulating
+                -- urgency AFTER its deadline had already passed, because due_at IS the deadline (last scan + period).
+                -- With incremental on a 3.86 h period and full on 168 h, the same five minutes of lateness gave
+                -- incremental a ratio 43x larger, so a full unit had to be hours past due before it could win a claim —
+                -- by which point the weekly contract was already broken. Measured under that rule: full held 1.08 of
+                -- 24 slots and completed 10.5 units/h against the 16.0/h the one-week deadline requires.
+                -- Elapsed-fraction-of-allowed-period is the deadline-driven form: a full unit on day 6 of 7 scores
+                -- 0.857 and an incremental 3.3 h into a 3.86 h cycle scores 0.855, so the two compete on how much of
+                -- their OWN contract they have consumed, and urgency rises BEFORE the deadline rather than after it.
+                -- NULL last_scanned_at (never scanned) sorts first — nothing has a stronger claim than a company that
+                -- has never had a deep pass at all.
+                -- {MEASURED 2026-07-29 "full_needed_per_h 16.0 | full_actual_per_h 11.2 | days_for_a_full_sweep 10.0"
+                --  with the fleet at 61% utilisation and full due_now sitting at 2 — supply existed, urgency did not}
+                -- [CONFIDENCE: CONFIRMED 100% — the 1.08-slot occupancy is 10.5 units/h x 369 s/unit / 3600.]
+                ORDER BY (CASE WHEN last_scanned_at IS NULL THEN 1e9
+                               ELSE EXTRACT(EPOCH FROM (now() - last_scanned_at)) / CASE
+                                        WHEN type = 'full' THEN 604800.0          -- the one-week deadline, in seconds
+                                        ELSE GREATEST(COALESCE((SELECT t_star_s FROM scheduler_state WHERE id = 1),
+                                                               1800.0), 1.0)
+                                    END
+                          END) DESC,
                          due_at ASC                                              -- tie-break: oldest first, as before
                 FOR UPDATE SKIP LOCKED
                 LIMIT 1

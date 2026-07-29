@@ -206,6 +206,51 @@ async def _respace_incremental(pool, t_star_s: float) -> int:
         return 0
 
 
+async def _respace_full(pool, week_hours: float) -> int:
+    """Spread all QUEUED full rows evenly across [now, now+week], STALEST FIRST → the deep sweep completes in exactly
+    one week by construction instead of by hope.
+
+    WHY this had to exist. complete_work sets a full unit's next due_at to `now + 7 days`, so the rate at which full
+    units become DUE is simply the rate at which they were scanned a week ago. The lane therefore replays its own
+    history forever and has no way to catch up from any deficit: measured 2026-07-29, full needed 16.0 units/h to meet
+    the weekly contract and was getting 11.2 — 70% of the required rate, a 10.0-day sweep — while the fleet sat at only
+    61% utilisation. There was spare capacity the whole time; nothing was asking full to use it. Incremental has been
+    re-spaced every tick since day one (see _respace_incremental); full never was, and that asymmetry IS the missed
+    deadline.
+
+    Re-spacing by rank forces exactly n/week units to come due per hour, which is the definition of the constraint.
+    Ordering by last_scanned_at NULLS FIRST puts never-scanned and longest-neglected companies at the front of the
+    week, so a deficit drains oldest-first rather than at random.
+
+    This pairs with the lateness-ratio ordering in claim_work: re-spacing decides WHEN a unit becomes due, that
+    ordering guarantees a due unit is actually reached. Either alone is insufficient — spacing without the ordering
+    starves against strict priority, ordering without spacing never generates the demand in the first place.
+
+    `running` rows are left alone; they re-arm through complete_work. Returns rows re-spaced.
+    {MEASURED 2026-07-29 "full_needed_per_h 16.0 | full_actual_per_h 11.2 | days_for_a_full_sweep 10.0 | covered_7d
+     1118/2683" against a fleet at 61% utilisation}
+    [CONFIDENCE: CONFIRMED 100% — the rate deficit and the spare capacity were measured in the same query window.]"""
+    async with pool.acquire() as conn:
+        tag = await conn.execute(
+            """
+            WITH ranked AS (
+                SELECT id,
+                       row_number() OVER (ORDER BY last_scanned_at ASC NULLS FIRST, due_at ASC) - 1 AS rk,
+                       count(*) OVER () AS n
+                FROM work_queue WHERE type='full' AND status='queued'
+            )
+            UPDATE work_queue w
+            SET due_at = now() + ((r.rk::float / greatest(r.n,1)) * $1 || ' seconds')::interval, updated_at = now()
+            FROM ranked r WHERE w.id = r.id;
+            """,
+            week_hours * 3600.0,
+        )
+    try:
+        return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+    except (ValueError, IndexError):
+        return 0
+
+
 async def _reap_failed(pool, cooloff_h: float = 6.0) -> int:
     """Return 'failed' units to the queue once they have cooled off → the queue stops leaking rows permanently.
 
@@ -312,8 +357,13 @@ async def solve_and_apply(pool) -> dict:
     # puts it in the rank order with everything else instead of leaving it bunched at now().
     reaped = await _reap_failed(pool)
     respaced = await _respace_incremental(pool, sol["t_star_s"])
+    # Same treatment for full, over the week rather than over T*. Incremental has been re-spaced every tick since this
+    # controller was written and full never was; that asymmetry is why the weekly deadline was being missed at 70% of
+    # the required rate while capacity sat idle. See _respace_full for the measurement.
+    respaced_full = await _respace_full(pool, profile["week_hours"])
     await _publish(pool, profile, sol, tp, n_hub, eta_full_h, note)
     sol["_note"], sol["_tp"], sol["_n_hub"], sol["_n_full"], sol["_eta_full_h"] = note, tp, n_hub, n_full, eta_full_h
+    sol["_respaced_full"] = respaced_full
     # Surface both counts — "re-spaced 5000 rows" and "re-spaced 0 because everything is stuck in running" printed
     # identically before, which is the silently-does-nothing shape this audit was looking for.
     sol["_reaped"], sol["_respaced"] = reaped, respaced
