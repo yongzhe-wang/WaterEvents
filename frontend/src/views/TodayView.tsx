@@ -49,7 +49,10 @@ function shortUrl(u: string): string {
 // incremental card (its default) and merely imprecise for full, which beats printing a broken string.
 function windowLabel(h: number | undefined) {
   const n = Number.isFinite(h) ? (h as number) : 24;
-  return n >= 48 ? `${Math.round(n / 24)}d` : `${n}h`;
+  if (n >= 48) return `${Math.round(n / 24)}d`;
+  // ROUND. The window used to be a whole number (24), so interpolating it raw was harmless; it is now the live T*,
+  // which arrives as 3.861880421374611 and rendered verbatim. One decimal is the precision a cadence is read at.
+  return n >= 10 ? `${Math.round(n)}h` : `${n.toFixed(1)}h`;
 }
 
 // One queue card: a work type (full / incremental) with its live counts AND the next-5 units a worker will claim.
@@ -59,16 +62,20 @@ function QueueCard({ title, sub, s, remainingNoun }: { title: string; sub: strin
     <div className="q-card">
       <div className="q-card-head"><span className="q-card-title">{title}</span><span className="q-card-sub">{sub}</span></div>
       <div className="q-card-big">{s.total}<span className="q-card-big-sub"> units</span></div>
-      {/* COVERAGE GAP — units whose last scan is older than a FIXED window. Read it as "how far behind are we", not
-          "how much work is left"; `queued` below is the work-left number. The distinction matters: this used to be
-          measured against the live T*, which the pacer stretches whenever the fleet slows, so a degrading system kept
-          reporting 0 while 5,754 hubs sat queued. Now the window is fixed and shipped with the count, so the number
-          climbs when coverage actually slips. {USER 2026-07-28 "this is still buggy, 0 hours left what is going on"}
-          {MEASURED 2026-07-28 "997/1000 SCANNED WITHIN THE 23.8H T* WINDOW → remaining=0 WITH 5754 QUEUED"}
-          [CONFIDENCE: CONFIRMED 100% — counted off work_queue.last_scanned_at while the card displayed 0]. */}
+      {/* ROUND PROGRESS — units still owed a visit in the CURRENT rotation, i.e. whose last scan predates one full
+          period. The window is each lane's own period (incremental T*, full 7 days), which is what makes this a
+          progress number rather than a staleness one.
+          A fixed 24h window was tried here and made the incremental card useless in the opposite direction: with T* at
+          3.86h every hub is necessarily scanned several times inside 24h, so it read 0 permanently and said nothing.
+          The earlier objection to T* — that a widening window hides a slowing fleet — was about using this as a HEALTH
+          signal, and health is now waterevents.fleet_health(), which keys on production rather than staleness and
+          cannot be gamed by a moving window. So this card is free to answer the question actually being asked.
+          {USER 2026-07-29 "i dont need this, i want how many hub left this round of incremental"}
+          {MEASURED 2026-07-29 same rows: 24h window -> 0 hubs; T* window -> 143 of 5,989}
+          [CONFIDENCE: CONFIRMED 100% — both counts computed side by side against live work_queue.] */}
       <div style={{ fontSize: 13, margin: "2px 0 8px" }}>
         <b style={{ color: s.remaining > 0 ? "#f0b400" : "#6ee7a8" }}>{s.remaining.toLocaleString()}</b>{" "}
-        <span style={{ opacity: 0.7 }}>{remainingNoun} in the last {windowLabel(s.stale_window_h)}</span>
+        <span style={{ opacity: 0.7 }}>{remainingNoun} left this round · {windowLabel(s.stale_window_h)} cycle</span>
       </div>
       <div className="q-card-stats">
         <span className="q-stat"><b>{s.due_now}</b> due now</span>
@@ -361,11 +368,11 @@ export default function TodayView() {
           {q ? (
             <div className="q-row">
               <QueueCard title="Full run" sub="weekly · deep BFS (20+ pages/co)" s={q.full}
-                remainingNoun="companies not crawled" />
+                remainingNoun="companies" />
               <QueueCard title="Incremental"
                 sub={data?.scheduler?.t_star_h != null ? `every ${data.scheduler.t_star_h}h · deep=1 (hub page)` : "deep=1 (hub page)"}
                 s={q.incremental}
-                remainingNoun="hubs not refreshed" />
+                remainingNoun="hubs" />
             </div>
           ) : loading ? <div className="loading">Loading queue…</div> : <div className="artifacts-empty">Queue empty — nothing enqueued yet.</div>}
 

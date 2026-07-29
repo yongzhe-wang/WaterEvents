@@ -69,7 +69,22 @@ export default async function handler(_req, res) {
     // consistent instead of one honest and one self-referential.
     // {MEASURED 2026-07-28 "INCREMENTAL: 997/1000 SCANNED WITHIN 23.8H, 0 STALE, 3 NEVER SCANNED, 5754 QUEUED, remaining=0"}
     // [CONFIDENCE: CONFIRMED 100% — distribution counted directly off work_queue.last_scanned_at against the live T*].
-    const staleWindowH = Number(process.env.TODAY_STALE_WINDOW_H) || 24;
+    // BACK TO T*, ON PURPOSE, AND FOR A DIFFERENT JOB THAN BEFORE. The reasoning above is sound but it is about a
+    // HEALTH signal: measured against a window that widens whenever the fleet slows, "stale hubs" can never report a
+    // problem. That objection no longer applies here, because health is now answered by waterevents.fleet_health(),
+    // which keys on production (VLM calls with zero events) rather than on staleness and cannot be gamed by a moving
+    // window. What this card is for is PROGRESS — "how many hubs are still owed a visit in the current rotation" — and
+    // for that the rotation's own length is the only correct denominator.
+    // The fixed 24h window made the number useless in the other direction: with T* at 3.86h every hub is necessarily
+    // scanned many times inside 24h, so it read 0 permanently and carried no information at all.
+    // {MEASURED 2026-07-29 across the same rows: 24h window -> 0 hubs; T* (3.86h) window -> 143 of 5,989}
+    // {USER 2026-07-29 "i dont need this, i want how many hub left this round of incremental"}
+    // [CONFIDENCE: CONFIRMED 100% — both counts computed side by side in one query against live work_queue.]
+    // `sched` is the sbAll ARRAY, not the row — the row is unwrapped further down as sched[0]. Reading .t_star_s off
+    // the array yields undefined and would silently fall through to the 24h default, i.e. exactly the permanently-zero
+    // display this change exists to remove, with no error to notice it by.
+    const tStarH = sched?.[0]?.t_star_s ? sched[0].t_star_s / 3600 : 0;
+    const staleWindowH = Number(process.env.TODAY_STALE_WINDOW_H) || tStarH || 24;
     const cycleAgo = now - staleWindowH * 3600 * 1000;
     const summarize = (t, staleBefore, windowH) => {
       const r = queue.filter((x) => x.type === t);
