@@ -66,6 +66,32 @@ async def _worker(idx: int, pool, client) -> None:
             s = await asyncio.wait_for(
                 scan_unit(pool, client, unit["url"], unit["type"], unit["company_id"]),
                 timeout=_SCAN_TIMEOUT_S)   # stats dict (events + resource usage)
+            # "NOTHING FOUND" vs "NEVER GOT TO LOOK" — the distinction this loop could not previously make.
+            # A scan that lost its pages to a hard VLM/transport failure AND produced no events is not a completed scan;
+            # it is a scan that never happened. Completing it re-arms due_at (full: +7 days) and stores
+            # last_event_count=0, so the unit reads as "recently scanned, nothing there" and is not looked at for a week.
+            #
+            # The predicate is deliberately BOTH conditions, never `extract_errors > 0` alone:
+            #   errors>0 AND events==0  → transport was down and we have nothing        → FAIL, due_at preserved
+            #   errors>0 AND events>0   → one flaky page inside a productive BFS; those events were already flushed
+            #                             incrementally by on_events                    → COMPLETE
+            #   errors==0 AND events==0 → hash-gate skip, or a genuinely empty page      → COMPLETE
+            # so a single bad page never discards an otherwise-good multi-page crawl, while a systemic outage — every
+            # page failing, nothing coming back — stops advancing the schedule.
+            #
+            # WHY fail_work rather than a bespoke path: it already does backoff-retry and, at the attempt cap, flips the
+            # row to 'failed'. That is precisely the behaviour wanted here — `failed` is a counter the dashboard ALREADY
+            # displays, so a repeat of this outage becomes visible within minutes on a panel that exists, with no new
+            # monitoring. Through the 2026-07-28 outage that counter read 0 for 11h52m while 6,304 units were re-armed.
+            # {W1.LOG 2026-07-29 "1628× ⛔ EXTRACT FAILED ... APIConnectionError: Connection error. — page's events LOST"}
+            # {DB 2026-07-29 "WORK_QUEUE FAILED = 0 THROUGHOUT; 6,304 OF 6,310 UNITS RE-ARMED WITH LAST_EVENT_COUNT=0"}
+            # [CONFIDENCE: CONFIRMED 100% — both measured live during the outage; the engine's own `status` was already
+            #  correct and simply never reached this decision point.]
+            if s.get("extract_errors", 0) > 0 and s["events"] == 0:
+                await q.fail_work(pool, unit["id"], unit["type"])     # due_at preserved → retried, not silently skipped
+                print(f"[eventinc] {wid[-4:]} ⛔ EXTRACT-DOWN {unit['url'][:48]} — "
+                      f"{s['extract_errors']} page(s) lost to transport failure, 0 events → NOT completing", flush=True)
+                continue
             await q.complete_work(pool, unit["id"], unit["type"], event_count=s["events"],     # self re-arm (full +7d / inc +T*)
                                   duration_s=s["duration_s"], render_pages=s["render_pages"], vlm_calls=s["vlm_calls"])
             # UPDATABLE HUBS — a full BFS may have surfaced new event-listing pages for this company → re-derive its hubs and

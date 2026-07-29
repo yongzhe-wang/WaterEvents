@@ -292,6 +292,18 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     # {USER 2026-07-23 "fail loudly is the core ... we dont want quality issue"} [CONFIDENCE: CONFIRMED 100% — directive].
     failed_render = 0
     failed_extract = 0
+    # HARD extraction failures ONLY — the `_error` branch, where the page's events are LOST. Kept separate from
+    # failed_extract, which ALSO counts `_partial` and `_route_error`; in those two the events were KEPT, so a caller
+    # that treated failed_extract as "this scan produced nothing trustworthy" would be wrong. This counter is the one a
+    # caller can act on: >0 means we rendered pages, called the VLM, and got nothing back for them.
+    # WHY it had to be added: on 2026-07-28 the vLLM died and every extract returned
+    # `APIConnectionError: Connection error.` The engine detected it correctly and shouted ~18,000 times, but the only
+    # signal it exported was folded in with the harmless partial/route failures, so scan.py dropped the whole set and
+    # worker.py called complete_work() — 6,304 queue units were re-armed as "scanned, nothing found" over 11h52m.
+    # {W1.LOG 2026-07-29 "1628× ⛔ EXTRACT FAILED ... APIConnectionError: Connection error. — page's events LOST"}
+    # {DB 2026-07-29 "6,304 of 6,310 units re-armed with last_event_count=0; 19,829 scan_log rows; 0 events"}
+    # [CONFIDENCE: CONFIRMED 100% — both numbers measured live during the outage, not reconstructed.]
+    extract_errors = 0
     # RESOURCE COUNTERS — feed the packing solver's C_R/C_V/hit_rate. vlm_calls = pages that actually hit the VLM;
     # vlm_skipped = pages the hash-gate short-circuited (unchanged). hit_rate = vlm_calls/(vlm_calls+vlm_skipped) is the
     # single knob that decides VLM demand → the incremental period T*. {USER 2026-07-26 "calculate render and vlm usage"}.
@@ -346,7 +358,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
         # nonlocal MUST include seen_event: `seen_event |= ekeys` is an augmented assignment that REBINDS the name, so
         # without this Python treats seen_event as a _harvest-local and every page raised UnboundLocalError → the crawl
         # crashed → the company was marked failed with 0 events (even when the VLM had extracted plenty). {DEBUG 2026-07-23}.
-        nonlocal failed_render, failed_extract, seen_event, vlm_calls, vlm_skipped
+        nonlocal failed_render, failed_extract, extract_errors, seen_event, vlm_calls, vlm_skipped
         if render is None:                                     # render failed (walled/dead/empty) — coverage loss, no VLM touched
             failed_render += 1
             return []
@@ -356,6 +368,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
             return []
         if res.get("_error"):                                  # LLM hard-failed → NOT '0 events', it FAILED (fail-loud)
             failed_extract += 1
+            extract_errors += 1                                # the ACTIONABLE count: this page's events are lost, not absent
             vlm_calls += 1                                     # the VLM WAS invoked (it errored) → still a call for C_V accounting
             print(f"[crawl] ⛔ EXTRACT FAILED {render['url'][:70]} — {res['_error']} — page's events LOST", flush=True)
             return []
@@ -464,7 +477,8 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
               f"{failed_render} pages FAILED render (walled/dead). Event list is PARTIAL — do NOT treat as complete.",
               flush=True)
     return {"events": events, "pages": len(visited), "trace_dir": run_dir,
-            "status": status, "failed_extract": failed_extract, "failed_render": failed_render,
+            "status": status, "failed_extract": failed_extract, "extract_errors": extract_errors,
+            "failed_render": failed_render,
             "vlm_calls": vlm_calls, "vlm_skipped": vlm_skipped}   # → scan_log → C_R/C_V/hit_rate for the packing solver
 
 

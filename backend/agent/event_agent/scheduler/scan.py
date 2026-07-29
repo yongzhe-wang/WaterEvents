@@ -112,6 +112,18 @@ async def scan_unit(pool, client, url: str, unit_type: str, company_id=None) -> 
         "render_pages": res.get("pages") or 0,               # pages rendered → Σ/window = C_R
         "vlm_calls": res.get("vlm_calls") or 0,              # real VLM extracts → Σ/window = C_V
         "vlm_skipped": res.get("vlm_skipped") or 0,          # hash-gated skips → hit_rate denominator
+        # THE SIGNAL THIS DICT USED TO DROP. crawl_company has always returned `status` ("ok"/"incomplete") plus the
+        # failure counts, and has always printed a run-level ⚠️⚠️ INCOMPLETE RUN banner — but this dict took only the
+        # resource numbers, so everything above the engine saw a successful scan that merely found nothing. On
+        # 2026-07-28 the pod's vLLM died for 11h52m and that one gap turned ~18,000 correctly-detected failures into
+        # 6,304 queue units re-armed as "scanned, nothing found", pushing due_at forward (full: +7 days) as if the work
+        # had been done. No data was corrupted — the SCHEDULE was. Carrying these two keys is what lets worker.py tell
+        # "this page has no events" apart from "we never actually got to read this page".
+        # {W1.LOG 2026-07-29 "⛔ EXTRACT FAILED ... APIConnectionError: Connection error. — page's events LOST" ×1628}
+        # {DB 2026-07-29 "6,304 OF 6,310 UNITS RE-ARMED WITH LAST_EVENT_COUNT=0; 19,829 SCAN_LOG ROWS; 0 EVENTS"}
+        # [CONFIDENCE: CONFIRMED 100% — the dropped keys verified by reading both sides; the damage counted live].
+        "status": res.get("status") or "ok",                 # "ok" | "incomplete" — the engine's run-level verdict
+        "extract_errors": res.get("extract_errors") or 0,    # pages whose events were LOST to a hard VLM/transport failure
     }
     await db.log_scan(pool, unit_type, url, stats)           # append to scan_log (the windowed C_R/C_V/hit_rate source)
     # TITLE HOOK — after every full/incremental scan, curl THIS company's title-less events' URLs and fill what we can
