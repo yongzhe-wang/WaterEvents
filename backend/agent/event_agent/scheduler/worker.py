@@ -87,10 +87,26 @@ async def _worker(idx: int, pool, client) -> None:
             # {DB 2026-07-29 "WORK_QUEUE FAILED = 0 THROUGHOUT; 6,304 OF 6,310 UNITS RE-ARMED WITH LAST_EVENT_COUNT=0"}
             # [CONFIDENCE: CONFIRMED 100% — both measured live during the outage; the engine's own `status` was already
             #  correct and simply never reached this decision point.]
-            if s.get("extract_errors", 0) > 0 and s["events"] == 0:
+            # BOTH ways a page can be lost, not just the VLM one. The previous version named only extract_errors, which
+            # meant a scan whose renders all failed still completed: a page that never loads reaches the VLM zero times,
+            # so extract_errors is 0, so `extract_errors > 0` is False, so due_at went out a week — the exact failure
+            # this branch was added to prevent, arrived at through the render lane instead of the extraction lane.
+            # [CONFIDENCE: CONFIRMED 100% — engine.py increments failed_render on the `render is None` path and returns
+            #  it; scan.py did not carry it and this predicate did not name it.]
+            # TOTAL loss, not any loss. `render_pages` is len(visited), and a failed render is still a visited page, so
+            # `render_pages <= lost` means not one page survived — the outage shape. Requiring totality matters: a 6-page
+            # BFS where one page is walled and the company genuinely has no events would otherwise be failed and
+            # retried to the attempt cap, parking legitimately-empty walled companies in 'failed' by the thousand. That
+            # would be a self-inflicted flood dressed up as fail-loud.
+            # [CONFIDENCE: CONFIRMED 90% — the len(visited) semantics are read off engine.py's return; the flood is
+            #  reasoned from fail_work's 4-attempt cap rather than observed, which is why the condition is the strict
+            #  one. If walled-and-empty companies still accumulate in 'failed', this is the line to revisit.]
+            lost = s.get("extract_errors", 0) + s.get("failed_render", 0)
+            if lost > 0 and s["events"] == 0 and s.get("render_pages", 0) <= lost:
                 await q.fail_work(pool, unit["id"], unit["type"])     # due_at preserved → retried, not silently skipped
-                print(f"[eventinc] {wid[-4:]} ⛔ EXTRACT-DOWN {unit['url'][:48]} — "
-                      f"{s['extract_errors']} page(s) lost to transport failure, 0 events → NOT completing", flush=True)
+                print(f"[eventinc] {wid[-4:]} ⛔ NOTHING-USABLE {unit['url'][:48]} — "
+                      f"{s.get('extract_errors', 0)} extract-fail + {s.get('failed_render', 0)} render-fail, "
+                      f"0 events → NOT completing", flush=True)
                 continue
             await q.complete_work(pool, unit["id"], unit["type"], event_count=s["events"],     # self re-arm (full +7d / inc +T*)
                                   duration_s=s["duration_s"], render_pages=s["render_pages"], vlm_calls=s["vlm_calls"])

@@ -124,6 +124,18 @@ async def scan_unit(pool, client, url: str, unit_type: str, company_id=None) -> 
         # [CONFIDENCE: CONFIRMED 100% — the dropped keys verified by reading both sides; the damage counted live].
         "status": res.get("status") or "ok",                 # "ok" | "incomplete" — the engine's run-level verdict
         "extract_errors": res.get("extract_errors") or 0,    # pages whose events were LOST to a hard VLM/transport failure
+        # THE OTHER HALF OF THE SAME HOLE. The 2026-07-28 fix carried extract_errors so a dead VLM could no longer look
+        # like "found nothing" — but left failed_render behind, and a render that never loads reaches the VLM zero
+        # times, so extract_errors stays 0 while the page's events are just as lost. `extract_errors > 0` is then
+        # False, complete_work runs, and due_at goes out a week: the identical failure to the one just fixed, one lane
+        # to the left. Carrying it lets worker.py ask "did we produce nothing BECAUSE something stopped us", which is
+        # the actual question, instead of asking only about the VLM.
+        # `status` alone cannot substitute: it is also "incomplete" for _partial and _route_error, both of which KEEP
+        # their events, so keying on status would fail units that succeeded.
+        # {ENGINE.PY "STATUS = \"OK\" IF (FAILED_RENDER == 0 AND FAILED_EXTRACT == 0) ELSE \"INCOMPLETE\""}
+        # [CONFIDENCE: CONFIRMED 100% — engine returns failed_render, this dict did not read it, and worker.py's
+        #  predicate named only extract_errors; all three verified by reading them together.]
+        "failed_render": res.get("failed_render") or 0,      # pages that never loaded (walled / dead / empty)
     }
     await db.log_scan(pool, unit_type, url, stats)           # append to scan_log (the windowed C_R/C_V/hit_rate source)
     # TITLE HOOK — after every full/incremental scan, curl THIS company's title-less events' URLs and fill what we can

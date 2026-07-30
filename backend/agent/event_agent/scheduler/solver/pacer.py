@@ -148,7 +148,15 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
         s_resid = slot_seconds_wk * (1.0 - _FULL_SHARE)
         t_render_h = (week * inc_render_cycle / r_resid) if r_resid > _EPS else inf
         t_vlm_h = (week * inc_vlm_cycle / v_resid) if v_resid > _EPS else inf
-        t_slots_h = (week * inc_secs_cycle / s_resid) if s_resid > _EPS else inf
+        # SAME slots_known GUARD AS THE FEASIBLE BRANCH. Without it this line is a crash: when the slot cost has not
+        # been measured, slot_seconds_wk is 0.0, so s_resid is 0.0, so t_slots_h becomes inf — and inf then wins the
+        # max() below, making t_star_s infinite. complete_work interpolates that into an interval and int()s it, which
+        # raises OverflowError on EVERY incremental completion. The guard was written once, for the feasible branch, and
+        # this branch overwrote it unconditionally; a value being correct on one code path says nothing about the other.
+        # [CONFIDENCE: CONFIRMED 100% — the two branches were read side by side; degraded reassigns t_slots_h with no
+        #  slots_known test, and 0.0 > _EPS is False so the else-inf is taken.]
+        t_slots_h = (week * inc_secs_cycle / s_resid) if (slots_known and s_resid > _EPS) else (
+            0.0 if not slots_known else inf)
     # The binding resource is whichever demands the LONGEST period; T* must satisfy all three simultaneously.
     _cands = {"render": t_render_h, "vlm": t_vlm_h, "slots": t_slots_h}
     binding = max(_cands, key=lambda k: _cands[k])
