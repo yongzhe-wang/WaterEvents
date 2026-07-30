@@ -43,7 +43,7 @@ export default async function handler(_req, res) {
       sbAll("companies?select=id,ir_url,ticker"),
       // the SCHEDULER row — the pacer (packing solver) already computed T*/binding/C_R/C_V/hit_rate/ETA and stored it here,
       // so the dashboard just reads this one row (no REST-side aggregation of scan_log). {pacer._publish → scheduler_state}.
-      sbAll("scheduler_state?select=profile,t_star_s,binding,c_r,c_v,hit_rate,eta_full_h,inc_hubs,note,updated_at&id=eq.1"),
+      sbAll("scheduler_state?select=profile,t_star_s,binding,c_r,c_v,hit_rate,inc_hubs,note,updated_at&id=eq.1"),
     ]);
 
     // company label map (id → ticker, fallback IR host) — used by both the queue next-up list and the events feed.
@@ -58,28 +58,21 @@ export default async function handler(_req, res) {
     // window; else it is behind. {USER 2026-07-27 "full: this week we still have N not done; incremental: this cycle we
     // still have N urls not finished"}.
     const weekAgo = now - 7 * 24 * 3600 * 1000;
-    // FIXED window, deliberately NOT T*. This used to be `now - t_star_s`, which made the number self-certifying: the
-    // pacer re-spaces every queued hub across exactly one T*, so "scanned within the last T*" is true by construction
-    // whenever the fleet keeps its own cadence — and when the fleet SLOWS, the solver publishes a LARGER T*, the window
-    // widens with it, and the count stays 0. It could not report a problem in either direction. Measured while the card
-    // read 0: 997/1000 incremental rows scanned inside the 23.8h window, 0 stale — while 5754 sat queued and the real
-    // rotation was running slower than the published period (only 99/1000 scanned in the last 6h, against the ~252 a
-    // uniform 23.8h rotation implies). A constant window is what makes degradation visible: if T* drifts past 24h this
-    // number climbs, which is the whole point of showing it. full already used a fixed 7 days — this makes the two
-    // consistent instead of one honest and one self-referential.
-    // {MEASURED 2026-07-28 "INCREMENTAL: 997/1000 SCANNED WITHIN 23.8H, 0 STALE, 3 NEVER SCANNED, 5754 QUEUED, remaining=0"}
-    // [CONFIDENCE: CONFIRMED 100% — distribution counted directly off work_queue.last_scanned_at against the live T*].
-    // BACK TO T*, ON PURPOSE, AND FOR A DIFFERENT JOB THAN BEFORE. The reasoning above is sound but it is about a
-    // HEALTH signal: measured against a window that widens whenever the fleet slows, "stale hubs" can never report a
-    // problem. That objection no longer applies here, because health is now answered by waterevents.fleet_health(),
-    // which keys on production (VLM calls with zero events) rather than on staleness and cannot be gamed by a moving
-    // window. What this card is for is PROGRESS — "how many hubs are still owed a visit in the current rotation" — and
-    // for that the rotation's own length is the only correct denominator.
-    // The fixed 24h window made the number useless in the other direction: with T* at 3.86h every hub is necessarily
-    // scanned many times inside 24h, so it read 0 permanently and carried no information at all.
-    // {MEASURED 2026-07-29 across the same rows: 24h window -> 0 hubs; T* (3.86h) window -> 143 of 5,989}
+    // WINDOW = EACH LANE'S OWN PERIOD (incremental T*, full 7 days), because this figure is ROUND PROGRESS —
+    // "how many units are still owed a visit in the current rotation" — and a rotation's own length is the only correct
+    // denominator for that.
+    // Both previous attempts failed, in opposite directions, and the pair is worth remembering:
+    //   • T* as a HEALTH signal was self-certifying — the pacer re-spaces every queued hub across exactly one T*, and
+    //     when the fleet slowed the solver published a LARGER T*, so the window widened with the problem and the count
+    //     stayed 0. Measured: 997/1000 scanned inside a 23.8h window, 0 stale, while 5,754 sat queued.
+    //   • A fixed 24h window then made it useless the other way: with T* at 3.86h every hub is necessarily scanned
+    //     several times inside 24h, so it read 0 permanently.
+    // What resolves the contradiction is that health moved OUT of this card: waterevents.fleet_health() answers it on
+    // production (VLM calls returning zero events), which no window can game. This card is then free to answer progress.
+    // {MEASURED 2026-07-28 "997/1000 SCANNED WITHIN 23.8H, 0 STALE, 5754 QUEUED, remaining=0"}
+    // {MEASURED 2026-07-29 same rows: 24h window -> 0 hubs; T* (3.86h) window -> 143 of 5,989}
     // {USER 2026-07-29 "i dont need this, i want how many hub left this round of incremental"}
-    // [CONFIDENCE: CONFIRMED 100% — both counts computed side by side in one query against live work_queue.]
+    // [CONFIDENCE: CONFIRMED 100% — both counts computed side by side against live work_queue.]
     // `sched` is the sbAll ARRAY, not the row — the row is unwrapped further down as sched[0]. Reading .t_star_s off
     // the array yields undefined and would silently fall through to the 24h default, i.e. exactly the permanently-zero
     // display this change exists to remove, with no error to notice it by.
@@ -111,12 +104,6 @@ export default async function handler(_req, res) {
         // large. `remaining` above is the same fact as a count; this is it as a fraction, so it can be read without
         // knowing the denominator.
         coverage_pct: r.length ? Math.round((100 * (r.length - remaining)) / r.length) : null,
-        // Units whose next visit is scheduled BEYOND the contract window. This is the failure mode the 2026-07-28
-        // outage created and that nothing else on this page can show: complete_work() pushed due_at +7d for units that
-        // had produced nothing, so they look scheduled while being, in fact, skipped for a week. They are not overdue
-        // (their due_at is in the FUTURE), so a lateness- or staleness-based number cannot see them at all.
-        // {DB 2026-07-29 "2,312 units called the VLM and got nothing, then had due_at pushed forward"}
-        scheduled_past_window: r.filter((x) => Date.parse(x.due_at) > now + windowH * 3600 * 1000).length,
         next,                                                          // the 5 next-up units (company + url)
       };
     };
@@ -143,7 +130,7 @@ export default async function handler(_req, res) {
       t_star_h: s.t_star_s != null ? +(s.t_star_s / 3600).toFixed(2) : null,   // incremental rotation period, hours
       binding: s.binding,                                                       // 'render' | 'vlm' — which resource sets T*
       c_r: s.c_r, c_v: s.c_v, hit_rate: s.hit_rate,                             // observed throughput + hash-change rate
-      eta_full_h: s.eta_full_h, inc_hubs: s.inc_hubs, note: s.note, updated_at: s.updated_at,
+      inc_hubs: s.inc_hubs, note: s.note, updated_at: s.updated_at,
     } : null;
 
     const resources = await liveResources();                 // live CPU (render) + VLM (GPU) usage right now

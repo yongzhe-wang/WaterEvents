@@ -6,12 +6,6 @@
 #
 # Each of these is real dead code with a real reason, not a false positive:
 
-# watercrawl host-health circuit breaker — implemented, never attached to the render path. The one wiring attempt was
-# reverted (it zeroed every Akamai-fronted Q4 company) and never re-landed with per-(host,method) keys.
-is_dead
-skip_direct
-record
-snapshot
 
 # stage-2 enrichment plumbing — the enrichment worker's lease reclaimer and completion writer have no callers, which is
 # consistent with all five enrichment tables being empty in production.
@@ -22,7 +16,8 @@ mark_enriched
 # wait_turn  — REMOVED 2026-07-29: the impersonate lane now calls it (engines/impersonate.py), so the
 #              backlog shrank by one. Left as a comment to show the ratchet working rather than as a
 #              silent deletion.
-ensure_live_browsers   # browser liveness sweep
+# ensure_live_browsers — REMOVED 2026-07-30: the function is gone and its repair path (_relaunch_dead)
+#                        is now called from ensure_browser when the pool is partially dead.
 on_loop_bounded        # inner per-coroutine deadline, the belt to run_on_loop's braces
 
 # media pipeline

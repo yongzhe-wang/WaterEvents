@@ -201,8 +201,38 @@ def ensure_browser() -> bool:
     global _dead, _launch_fails, _launch_next_try
     if _dead:                                             # terminal only after repeated failures — a genuinely broken env
         return False
-    if _browsers and _live_browsers():                    # fast path: at least one LIVE process (not merely a non-None ref)
+    live = _live_browsers() if _browsers else []
+    if live and len(live) == len(_browsers):              # fast path: the WHOLE pool is alive
         return True
+    if live:
+        # PARTIAL POOL — detected before, never repaired. `_live_browsers()` was already wired here, so a dead Chromium
+        # stopped being handed out; nothing replaced it. This predicate used to be `if _browsers and _live_browsers()`,
+        # which is satisfied by ONE survivor: with the default pool of 3, two OOM kills silently left the worker at a
+        # third of its render capacity while every check reported healthy. Capacity decays monotonically and the only
+        # outward sign is a falling event yield.
+        # `_relaunch_dead` was written for exactly this and was reachable only through `ensure_live_browsers()`, which
+        # had no callers anywhere — so the REPAIR half of the mechanism had never once run.
+        # Blocking the caller is deliberate: it is about to render, a full pool is worth a few seconds, and taking
+        # `_lock` is what stops N worker threads from each launching their own replacements.
+        # {RUNTIME.PY next_browser "EVERY BROWSER IN THE CYCLE IS DEAD → ... `_relaunch_dead` IS AWAITED BY
+        #  `ensure_live_browsers()` INSTEAD" — a comment pointing at a function nothing called}
+        # {SHELL 2026-07-30 "git grep ensure_live_browsers → the definition plus one baseline entry, no call sites"}
+        # [CONFIDENCE: CONFIRMED 100% — the missing caller was grepped, and this fast path's own predicate is satisfied
+        #  by a single survivor, which is what made the decay invisible.]
+        with _lock:
+            live = _live_browsers()                       # re-read under the lock: another thread may have repaired it
+            dead_n = len(_browsers) - len(live)
+            if dead_n > 0:
+                try:
+                    _ensure_loop()
+                    fut = asyncio.run_coroutine_threadsafe(_relaunch_dead(dead_n), _loop)
+                    fut.result(timeout=60)
+                    print(f"[watercrawl] replaced {dead_n} dead browser(s) — pool back to {len(_live_browsers())}/"
+                          f"{len(_browsers)}", flush=True)
+                except Exception as e:                    # noqa: BLE001 — a failed repair must not fail the render
+                    print(f"[watercrawl] browser repair FAILED ({type(e).__name__}: {e}) — continuing on "
+                          f"{len(live)}/{len(_browsers)} browser(s)", flush=True)
+        return True                                       # survivors exist either way, so the render lane is usable
     with _lock:
         if _dead:
             return False
@@ -275,29 +305,6 @@ def next_browser():
     # the loop; `_relaunch_dead` is awaited by `ensure_live_browsers()` instead. Here we degrade to `_browser` so the
     # caller gets a definite TargetClosedError it can attribute, rather than a silent hang.
     return _browser
-
-
-async def ensure_live_browsers() -> bool:
-    """ON-LOOP liveness repair: count the dead Chromiums in the pool, relaunch that many, return whether any live
-    browser exists afterwards. Awaited from the render coroutines BEFORE they open a context.
-
-    WHY it is a coroutine and `next_browser()` is not: relaunching requires `await playwright.chromium.launch(...)`,
-    which can only happen on the loop thread. `next_browser()` is called from inside already-running coroutines, so the
-    repair is hoisted to an explicit await at the top of the render path instead of being hidden in the picker.
-
-    Upstream trigger: `render._render_shot_one` / `_render_one` / `_render_full_one`, right after acquiring the
-    semaphore. Downstream: the round-robin cycle contains only live browsers, so `next_browser()` cannot hand out a
-    corpse and the `TargetClosedError` storm cannot start.
-    """
-    live = _live_browsers()
-    if len(live) == len(_browsers) and live:              # all present and connected → nothing to repair (common case)
-        return True
-    dead = len(_browsers) - len(live)                     # how many processes we lost since the last check
-    if dead > 0:
-        print(f"[watercrawl] ⚠ {dead}/{len(_browsers)} Chromium process(es) DEAD (is_connected=False) — relaunching; "
-              f"a dead browser raises TargetClosedError on EVERY context opened on it", flush=True)
-        await _relaunch_dead(dead)                        # replace the corpses + rebuild the round-robin cycle
-    return bool(_live_browsers())
 
 
 def free_slots() -> tuple[int, int]:

@@ -67,21 +67,6 @@ export async function sb(path) {
   return r.json();
 }
 
-// ESTIMATED row count for a PostgREST query (via the Content-Range header). NOT count=exact: events grew to
-// 264k+ rows and an exact count FULL-SCANS the table (~9s, and companies 20s-timed-out under connection-pool
-// pressure), so the dashboard's Promise.all([stats…]) rejected → "backend unreachable" toast. count=estimated
-// returns instantly from the planner's pg_class.reltuples — plenty accurate for a dashboard tally, and it never
-// full-scans. {USER 2026-07-09 dashboard unreachable: exact count timed out on the 264k-row events table}
-// [CONFIDENCE: CONFIRMED — measured exact count 9-20s vs estimated instant].
-export async function sbCount(query) {
-  const r = await fetch(`${SUPABASE_URL}/${query}`, {
-    method: "GET",
-    headers: { ...HEADERS, Prefer: "count=estimated", "Range-Unit": "items", Range: "0-0" },
-  });
-  const range = r.headers.get("content-range") || "*/0";
-  return parseInt(range.split("/")[1] || "0", 10);
-}
-
 // Fetch ALL rows for a PostgREST path, paging past the server's 1000-row response cap.
 // WHY: PostgREST returns at most 1000 rows per request, so any endpoint that AGGREGATES a table
 // (e.g. token_usage now has 6000+ rows) was silently summing only the first 1000 → frozen totals.

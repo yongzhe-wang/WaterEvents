@@ -69,7 +69,7 @@ async def register(page, frames, reg, dbg, fill_in) -> bool:
                 cb = page.locator(sel)                                    # locate the combobox trigger
                 if await cb.count() > 0:                                  # async: await .count() 取候选数
                     await cb.first.click(timeout=3000)                   # async: click to reveal the options listbox
-                    opened = True; break                                 # stop at the first one that clicks
+                    break                                                # stop at the first one that clicks
             except Exception:
                 pass                                                     # try the next selector candidate
         await page.wait_for_timeout(900)                                 # async: React renders the listbox a beat after the click

@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 interface NextRow { company: string; url: string; due_at: string; }   // a next-up queued unit (company + url)
-interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; stale_window_h: number; coverage_pct: number | null; scheduled_past_window: number; next: NextRow[]; }
+interface QStat { total: number; queued: number; running: number; failed: number; due_now: number; events_seen: number; remaining: number; stale_window_h: number; coverage_pct: number | null; next: NextRow[]; }
 interface EvRow { id: string; company: string; date: string; discovered: string | null; type: string; title: string; url: string | null; }
 interface Sched {
   profile: string; t_star_h: number | null; binding: string | null;
-  c_r: number | null; c_v: number | null; hit_rate: number | null; eta_full_h: number | null;
+  c_r: number | null; c_v: number | null; hit_rate: number | null;
   inc_hubs: number | null; note: string | null; updated_at: string | null;
 }
 interface Res {
