@@ -252,6 +252,98 @@ _DATE_MAX_YEARS_AHEAD = int(os.environ.get("EVENT_DATE_MAX_YEARS_AHEAD", "5"))
 _DATE_SHAPE_RE = re.compile(r"^(\d{4})(?:-(?:Q[1-4]|\d{2}(?:-\d{2})?))?$", re.I)
 
 
+# ── DATE NORMALISATION (runs BEFORE the shape check) ───────────────────────────────────────────────────────────────
+# _plausible_date rejects on FORMAT, and it was rejecting dates that are perfectly parseable. Measured across the worker
+# logs: 853 events dropped with `⛔ IMPLAUSIBLE DATE`, and the top shapes were not garbage —
+#   103  2026-03-15T00:00:00      ISO 8601 with a time component
+#   290  3/15/2026 · 03/15/2026   US/EU numeric
+#    38  2026-H1                  half-year
+#    27  2026-03-15 - 2026-03-18  a range
+#    17  July 15, 2026            long form
+# 853 against 97,760 written is 0.87% in aggregate, but the loss is CLUSTERED BY COMPANY: an IR site that prints every
+# date as `3/15/2026` loses ALL of its events, which is why 90 of the 193 companies with fewer than five events had
+# pages with rich content (>=5k chars, one of them 887,974) and nothing extracted.
+# {SHELL 2026-07-30 "grep -c 'IMPLAUSIBLE DATE' ~/eventinc_fleet/w*.log → 853"}
+# {DB 2026-07-30 "193 companies with <5 events; bucket D = 90 with >=5k chars of stored page content"}
+# [CONFIDENCE: CONFIRMED 100% — the shape histogram is counted off the live logs and the bucket split off the DB.]
+# Date-order convention for the genuinely ambiguous numeric form. Default US (month first) because the corpus is
+# 2,107/2,785 US listings; set EVENTINC_DATE_DMY=1 for a day-first run.
+_DATE_DMY = os.environ.get("EVENTINC_DATE_DMY", "") in ("1", "true", "yes")
+_DATE_MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+def _norm_date_shape(raw: str) -> str:
+    """Coerce a human-written date into one of the four permitted shapes, or "" when it genuinely cannot be read.
+
+    AMBIGUITY RESOLVES TO US ORDER. `01/04/2019` is Jan 4 or Apr 1 and the string cannot say which. When one component
+    exceeds 12 the order is determined (`1/14/2019` must be M/D) and that wins. Otherwise the corpus decides: 2,107 of
+    2,785 companies are US listings, and a US IR page writing 01/04/2019 means January 4. Assuming M/D is therefore
+    right roughly three times in four, and the alternative — downgrading to `2019` — is wrong about the month EVERY
+    time, for US and non-US pages alike. `EVENTINC_DATE_DMY=1` flips the default for a non-US-heavy run.
+    {DB 2026-07-30 "US listing 2107 | non-US suffix 408 | ADR 270 of 2785 companies"}
+    [CONFIDENCE: CONFIRMED 100% on the corpus split; the M/D choice is a policy call whose cost is bounded — a non-US
+     page's day and month get transposed, which is wrong by at most eleven months and only for genuinely ambiguous
+     day-of-month values 1-12.]
+    Half-years are different and stay downgraded: `2026-H1` spans two quarters, so mapping it to `Q1` would invent
+    precision the source never had — there is no convention to appeal to, unlike date order.
+    A RANGE keeps its START — an event that runs 19-22 Sep begins on the 19th, and the start is what a calendar entry
+    needs. Nothing here invents a value the source did not contain; every branch either preserves or downgrades.
+    [CONFIDENCE: CONFIRMED 100% — every branch below is covered by a unit test built from the shapes actually observed
+     in production logs and in the 3,090 non-ISO rows already stored.]"""
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    # CJK date words become separators. The Korean form is spaced ("2026년 3월 15일"), so whitespace around the
+    # separators has to go too or the numeric patterns below never match — that gap made the Korean case fall through
+    # to the bare-year salvage and silently lose the month and day.
+    # ORDER MATTERS HERE, and getting it wrong is silent. The range split has to run BEFORE the CJK space collapse:
+    # collapsing " - " to "-" first turns `2017-06-21 - 2017-06-22` into `2017-06-21-2017-06-22`, which then matches no
+    # numeric pattern and falls through to the bare-year salvage — the event survives but loses its month and day, and
+    # nothing reports the downgrade. Caught by the range case in the unit test, not by reading.
+    s = re.split(r"\s*(?:~|--|—|–|\bto\b|\bthrough\b)\s*|\s+-\s+", s)[0].strip()   # a range keeps its START
+    s = (s.replace("年", "-").replace("月", "-").replace("日", "")
+          .replace("년", "-").replace("월", "-").replace("일", ""))
+    s = re.sub(r"\s*-\s*(?=\d)", "-", s)                    # CJK separators leave spaces ("2026- 3- 15") — close them
+    s = re.sub(r"[T ]\d{1,2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$", "", s)  # drop a time component
+    s = s.strip(" ,.-")
+    if _DATE_SHAPE_RE.match(s):                                # already one of the four permitted shapes
+        return s.upper() if "q" in s.lower() else s
+    m = re.match(r"^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$", s)  # YYYY-M-D / YYYY/M/D / YYYY.M.D
+    if m:
+        y, mo, d = (int(x) for x in m.groups())
+        return f"{y:04d}-{mo:02d}-{d:02d}" if 1 <= mo <= 12 and 1 <= d <= 31 else f"{y:04d}"
+    m = re.match(r"^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$", s)  # M/D/YYYY or D/M/YYYY — ambiguous unless one part > 12
+    if m:
+        a, b, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if a > 12 and b <= 12:
+            return f"{y:04d}-{b:02d}-{a:02d}"                  # D/M — unambiguous
+        if b > 12 and a <= 12:
+            return f"{y:04d}-{a:02d}-{b:02d}"                  # M/D — unambiguous
+        # Ambiguous: both parts <= 12. Fall back to the corpus's dominant convention rather than losing the month.
+        mo, d = (b, a) if _DATE_DMY else (a, b)
+        return f"{y:04d}-{mo:02d}-{d:02d}" if 1 <= mo <= 12 and 1 <= d <= 31 else f"{y:04d}"
+    m = re.match(r"^(\d{4})-?H([12])$", s, re.I)               # half-year → year (H1 spans Q1+Q2; a quarter is invented)
+    if m:
+        return m.group(1)
+    m = re.match(r"^(\d{4})-?FY$|^FY-?(\d{4})$", s, re.I)      # fiscal-year marker → the year
+    if m:
+        return m.group(1) or m.group(2)
+    m = re.match(r"^([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})$", s)          # July 15, 2026 / Jul 15 2026
+    if m and m.group(1)[:3].lower() in _DATE_MONTHS:
+        return f"{int(m.group(3)):04d}-{_DATE_MONTHS[m.group(1)[:3].lower()]:02d}-{int(m.group(2)):02d}"
+    m = re.match(r"^(\d{1,2})\s+([A-Za-z]{3,9})\.?\s+(\d{4})$", s)            # 15 March 2026
+    if m and m.group(2)[:3].lower() in _DATE_MONTHS:
+        return f"{int(m.group(3)):04d}-{_DATE_MONTHS[m.group(2)[:3].lower()]:02d}-{int(m.group(1)):02d}"
+    m = re.match(r"^([A-Za-z]{3,9})\.?\s+(\d{4})$", s)                        # March 2026 → year-month
+    if m and m.group(1)[:3].lower() in _DATE_MONTHS:
+        return f"{int(m.group(2)):04d}-{_DATE_MONTHS[m.group(1)[:3].lower()]:02d}"
+    m = re.search(r"(19|20)\d{2}", s)                          # last resort: a plausible year is still worth keeping
+    if m:
+        return m.group(0)
+    return ""                                                  # unreadable → the caller drops it, as before
+
+
 def _plausible_date(date: str) -> bool:
     """Structural + range sanity for an extracted event date. "" is ALLOWED (the prompt explicitly permits an undated
     event when the page prints no date, and the footer-chrome guard already requires date OR title), but a NON-empty
@@ -306,7 +398,23 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
         # the prompt's own enum. A forged "2099 acquisition" passes grounding and dies here.
         # {PROMPTS.PY _FENCE_OPEN BLOCK "GROUNDING ANSWERS 'DID THE MODEL MAKE THIS UP?'; IT CANNOT ANSWER 'IS THE PAGE
         #  LYING?'"} [CONFIDENCE: CONFIRMED 100% — structural validity is independent of attacker-controlled content].
-        if not _plausible_date(date):                          # malformed or absurd year → poisoned/garbled → drop
+        # NORMALISE FIRST, THEN VALIDATE. The check below is structural, and it was rejecting dates that were merely
+        # written in a human format: `2026-03-15T00:00:00`, `3/15/2026`, `July 15, 2026`. Validating a raw string means
+        # the guard's real job (catch a forged 2099 date) gets conflated with a formatting complaint, and the event is
+        # discarded either way. Normalising first keeps the injection defence exactly as strict on the YEAR while
+        # letting a readable date through.
+        # {SHELL 2026-07-30 "grep -c 'IMPLAUSIBLE DATE' ~/eventinc_fleet/w*.log → 853 events dropped"}
+        # {DB 2026-07-30 "3,090 stored rows already hold a non-ISO shape, same histogram as the drops"}
+        # [CONFIDENCE: CONFIRMED 100% — 26 shapes taken from the live logs and the stored rows are covered by a unit
+        #  test; the year-window half of the guard is unchanged, so a forged 2099 date still dies here.]
+        norm = _norm_date_shape(date)
+        if date and not norm:                                  # genuinely unreadable → the old behaviour, loudly
+            print(f"[extract] ⛔ UNREADABLE DATE {date[:24]!r} — dropping event {title[:48]!r}", flush=True)
+            continue
+        if norm != date:
+            print(f"[extract] ↻ date normalised {date[:24]!r} → {norm!r}", flush=True)
+        date = norm
+        if not _plausible_date(date):                          # absurd year → poisoned/garbled → drop
             print(f"[extract] ⛔ IMPLAUSIBLE DATE {date[:24]!r} — dropping event {title[:48]!r}", flush=True)
             continue
         etype = _plausible_type(e.get("type"))                 # clamp to the allowed enum (unknown → "other")
