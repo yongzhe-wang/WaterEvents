@@ -9,6 +9,7 @@ each-page 的 OOM 修复);但**截图路径拦得更少** —— 它保留 CSS +
 from __future__ import annotations
 
 from . import config
+from . import politeness          # the navigation policy gate — see goto() for why it is enforced at this layer
 
 # RENDER path blocks HEAVY non-DOM sub-resources but LETS document/script/xhr/fetch through so the SPA's list-loading
 # JS/XHR still runs.
@@ -62,9 +63,22 @@ async def new_shot_page(ctx):
 
 
 async def goto(pg, url: str) -> None:
-    """goto with ONE retry on a transient net error (HTTP2/reset/timeout) — a first-try net::ERR is often transient;
-    a bare failure would empty the render. Raises if the retry also fails (caller returns empty). Shared by render.py
-    + the load_more/year_bar drivers."""
+    """goto with the POLICY GATE plus ONE retry on a transient net error (HTTP2/reset/timeout) — a first-try net::ERR is
+    often transient; a bare failure would empty the render. Raises if the retry also fails (caller returns empty).
+
+    THE GATE LIVES HERE, not in render.py, because this is the chokepoint every navigation actually passes through.
+    While it sat in render.py it covered render.py's own three coroutines and nothing else: the drivers navigate on their
+    own, and year_bar alone re-navigates up to seven times for one page. Enforcing at the shared primitive means scheme
+    validation, the SSRF guard and per-host pacing apply by construction rather than by every future caller remembering.
+    A refusal RAISES rather than returning quietly, because every caller already treats a goto exception as "this page
+    did not load" and returns empty — raising reuses the path they all have instead of adding a second contract that
+    nobody checks.
+    {SHELL 2026-07-29 "git grep '\\.goto(' -- backend/providers/watercrawl → 5 driver call sites outside render.py"}
+    [CONFIDENCE: CONFIRMED 100% — every goto call site was enumerated and checked individually for a preceding gate.]"""
+    ok, why = await politeness.url_allowed_async(url)
+    if not ok:
+        raise PermissionError(f"navigation refused ({why}): {url[:120]}")
+    await politeness.wait_turn_async(url)                 # per-host pacing, async so it cannot stall the shared loop
     try:
         await pg.goto(url, wait_until="domcontentloaded", timeout=config.NAV_TIMEOUT_MS)
     except Exception:                                     # noqa: BLE001 — one transient-error retry

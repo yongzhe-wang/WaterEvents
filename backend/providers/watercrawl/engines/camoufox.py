@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import threading
 
-from .. import config, runtime
+from .. import config
+from .. import politeness, runtime
 
 # Camoufox launches a FULL Firefox per call; a burst of the hardest walled pages would OOM on N concurrent Firefoxes.
 # Bound concurrent launches. [CONFIDENCE: CONFIRMED — OOM guard].
@@ -38,6 +39,15 @@ async def _render_one(url: str, wait_ms: int) -> tuple[str, list, str]:
     # "geoip=True OK content=559"} [CONFIDENCE: CONFIRMED — tested on the pod, tesla recovered with camoufox].
     async with AsyncCamoufox(headless=True, proxy=pxd, geoip=True) as browser:   # C++-stealth Firefox on the residential IP
         page = await browser.new_page()
+        # This is camoufox's OWN Playwright page, not watercrawl.page, so the gate that now lives in page.goto does
+        # not reach it. Async form because this coroutine runs on a loop. Raising is the established contract for a
+        # refused navigation — the caller already treats a goto failure as "no content".
+        # [CONFIDENCE: CONFIRMED 100% — `page` here is bound from `browser.new_page()` a few lines above, so the name
+        #  collision with the watercrawl.page module is exactly why this site was missed.]
+        _ok, _why = await politeness.url_allowed_async(url)
+        if not _ok:
+            raise PermissionError(f"navigation refused ({_why}): {url[:120]}")
+        await politeness.wait_turn_async(url)
         await page.goto(url, timeout=config.NAV_TIMEOUT_MS + 20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(max(wait_ms, 6000))   # let Akamai/Incapsula sensor.js run → _abck cookie lands
         html = await page.content()                        # the post-challenge REAL page

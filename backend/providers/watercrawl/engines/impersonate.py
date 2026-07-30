@@ -22,7 +22,10 @@ back walled/thin. Downstream: the (text, links) fold into the crawl link set exa
 from __future__ import annotations
 
 import re
+import sys
 import urllib.parse
+
+from .. import politeness      # SSRF + robots gate; the SYNC entry point — this lane runs off-loop
 
 # Chrome UA to match the impersonated fingerprint (curl_cffi sets the TLS/HTTP2 layer; UA keeps the app layer consistent).
 _UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -52,6 +55,19 @@ def get(url: str, *, want_json: bool = False):
     caller decides how to read .text/.json()). Used by the platform adapters to reach Q4/RSS JSON APIs through
     the wall. WHY a thin get(): the adapters need the Response (status + json), while fetch() below returns the
     parsed (text, links) shape the render path wants."""
+    # POLICY GATE for the NON-BROWSER lane. Adding the gate to page.goto covered every browser navigation and left this
+    # one open: curl_cffi issues a raw GET that never touches Playwright, so it had no scheme check, no SSRF check and no
+    # per-host pacing. It is also the lane most able to do damage — no browser sandbox between the fetch and the reply,
+    # and the whole reason it exists is to reach hosts that actively resist us.
+    # The SYNC gate is correct here: get() is a plain function called from a worker thread, not from the render loop.
+    # {SHELL 2026-07-29 "grep -n 'politeness|host_is_public|url_allowed' engines/impersonate.py → no matches"}
+    # [CONFIDENCE: CONFIRMED 100% — the absence was grepped, and the sync/async choice follows from get() having no
+    #  running loop of its own.]
+    ok, why = politeness.url_allowed(url)
+    if not ok:
+        print(f"[impersonate] refused {url[:70]} — {why}", file=sys.stderr, flush=True)
+        return None
+    politeness.wait_turn(url)                             # sync pacing: correct off-loop, and this lane is off-loop
     try:
         from curl_cffi import requests as creq            # import here: optional dep must not break module import
         _hdrs = {"User-Agent": _UA, "Accept": "*/*"}

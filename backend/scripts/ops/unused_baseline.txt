@@ -19,7 +19,9 @@ reconcile_events
 mark_enriched
 
 # added 2026-07-28/29 and not yet wired:
-wait_turn              # sync per-host pacing; only the async variant is used, by the render coroutines
+# wait_turn  — REMOVED 2026-07-29: the impersonate lane now calls it (engines/impersonate.py), so the
+#              backlog shrank by one. Left as a comment to show the ratchet working rather than as a
+#              silent deletion.
 ensure_live_browsers   # browser liveness sweep
 on_loop_bounded        # inner per-coroutine deadline, the belt to run_on_loop's braces
 

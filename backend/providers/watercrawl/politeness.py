@@ -16,14 +16,16 @@ WHY it matters operationally, not just legally: this fleet re-scans ~2,900 compa
 company's IR site can carry 70+ event urls. Hammering a host until the source IP is banned is an UNRECOVERABLE outage —
 the only remedy left would be routing through the residential proxy, which escalates the problem instead of fixing it.
 
-Upstream trigger: `render.url_allowed()` calls `allowed()` before every navigation; callers that are about to issue a
+Upstream trigger: `page.goto` (every browser navigation) and `impersonate.fetch` (the non-browser lane); callers about to issue a
 request call `next_delay()`/`wait_turn*()` to pace themselves.
 Downstream: a refusal returns an empty render with a specific reason token, exactly like any other render failure, so a
 robots denial is observable in the logs rather than looking like a timeout.
 """
 
 import asyncio
+import ipaddress
 import os
+import socket
 import sys
 import threading
 import time
@@ -43,11 +45,18 @@ IGNORE_ROBOTS = os.environ.get("WATERCRAWL_IGNORE_ROBOTS", "") in ("1", "true", 
 # How long a parsed robots.txt stays trusted. An hour keeps us honest without re-fetching robots.txt once per page:
 # a full BFS of one company is dozens of pages on ONE host, so the cache turns N robots fetches into 1.
 _ROBOTS_TTL_S = float(os.environ.get("WATERCRAWL_ROBOTS_TTL_S", "3600"))
-# Hard bound on the robots fetch. `allowed()` is SYNCHRONOUS and is called from render coroutines running on the single
-# Playwright loop thread, so a slow robots fetch blocks that whole loop. 3s + aggressive caching keeps the worst case at
-# one 3s stall per host per hour, which is cheaper than the machinery an async-only path would need.
-# [CONFIDENCE: INFERRED 85% — the loop-blocking risk is structural (runtime.py marshals every render onto one loop);
-#  3s is chosen as "shorter than NAV_TIMEOUT_MS/7" rather than measured against real robots.txt latency.]
+# Hard bound on the robots fetch. THE PREVIOUS REASONING HERE WAS WRONG AND IS WORTH KEEPING AS A CORRECTION: it argued
+# that a synchronous fetch on the render loop cost "one 3s stall per host per hour, cheaper than the machinery an
+# async-only path would need". Two measurements refuted both halves. The stall is not one render but the ENTIRE loop —
+# heartbeat gap 51 ms idle versus 3042 ms while the fetch ran, so every concurrent render freezes with it. And the TTL
+# cache does not cover the case that matters: 24 simultaneous first-touches of one origin produced 24 fetches, because
+# nothing is cached until the first returns, and same-host clusters are the crawl's normal shape.
+# The bound still exists as a backstop, but it is no longer what keeps the loop responsive — `url_allowed_async` doing
+# the work off-thread with per-origin de-duplication is.
+# {MEASURED 2026-07-29 "MAX HEARTBEAT GAP WHILE IT RAN: 3042MS" vs "BASELINE MAX HEARTBEAT GAP (IDLE LOOP): 51MS"}
+# {MEASURED 2026-07-29 "24 CONCURRENT FIRST-TOUCHES OF ONE HOST -> 24 FETCHES (CACHE PREVENTS 0)"}
+# [CONFIDENCE: CONFIRMED 100% — both figures from a repro running the real function on the real loop. The earlier
+#  INFERRED 85% estimate was the wrong shape, not merely the wrong number.]
 _ROBOTS_TIMEOUT_S = float(os.environ.get("WATERCRAWL_ROBOTS_TIMEOUT_S", "3"))
 
 # Default spacing between two requests to the SAME host, in seconds. 0.5s ≈ 2 req/s: slow enough that no single host
@@ -77,6 +86,51 @@ _NEXT_OK: dict[str, float] = {}
 _PACE_LOCK = threading.Lock()
 
 _CACHE_MAX = 4096                        # same bound as render._SSRF_CACHE: a link-spam page must not grow these maps
+
+
+# ── SSRF GUARD ──────────────────────────────────────────────────────────────────────────────────────────────────────
+# MOVED HERE FROM render.py 2026-07-29 so that page.py can enforce it. It has to live in the module with no
+# first-party imports: page.py cannot import render.py (render imports page), so while the guard lived in render.py the
+# only navigations it covered were render.py's own three coroutines. Five driver call sites — clicks, year_select,
+# years, and load_more/year_bar via page.goto — went straight to the browser with no scheme check, no SSRF check and no
+# pacing, and year_bar is the highest-goto-density path in the crawler at up to seven navigations for one page.
+# {SHELL 2026-07-29 "git grep '\.goto(' -- backend/providers/watercrawl → 5 driver sites outside render.py"}
+# [CONFIDENCE: CONFIRMED 100% — the bypass was found by listing every goto call site and checking which were preceded
+#  by a gate; politeness.py imports only `config`, so hosting it here creates no cycle.]
+_SSRF_CACHE: dict = {}                                    # host -> bool; DNS resolution is the expensive part
+_SSRF_CACHE_MAX = 4096                                    # hard cap so a link-spam page cannot grow this without bound
+
+
+def host_is_public(host: str) -> bool:
+    """True only when `host` resolves EXCLUSIVELY to public IPs. Blocks localhost / loopback / RFC1918 private /
+    link-local (169.254.169.254 cloud metadata) / reserved / multicast. A resolution failure returns False — fail
+    CLOSED, because an unresolvable host is not worth navigating to anyway.
+
+    BLOCKING: `socket.getaddrinfo` is a synchronous DNS call, so this must never be invoked directly from a coroutine
+    on the shared Playwright loop. `url_allowed_async` is the entry point that offloads it.
+    {OFFICEALL/FETCH.PY "TRUE ONLY WHEN `HOST` RESOLVES TO A PUBLIC IP (SSRF GUARD)"} — same policy, same stdlib
+    predicates, deliberately duplicated so the two fetchers cannot diverge.
+    [CONFIDENCE: CONFIRMED 100% — on GCE the metadata endpoint serves service-account tokens to any unauthenticated
+     GET from the instance, and the crawl frontier's only address filter is `startswith("http")`.]"""
+    h = (host or "").lower().strip()
+    if not h or h == "localhost" or h.endswith(".local") or h.endswith(".internal"):
+        return False
+    cached = _SSRF_CACHE.get(h)
+    if cached is not None:                                # resolution is the costly part — reuse the verdict
+        return cached
+    ok = True
+    try:
+        for info in socket.getaddrinfo(h, None):           # EVERY resolved address must be public, not just the first
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                ok = False
+                break
+    except Exception:                                     # noqa: BLE001 — unresolvable → fail closed, never navigate
+        ok = False
+    if len(_SSRF_CACHE) >= _SSRF_CACHE_MAX:               # bounded: drop the whole cache rather than grow unbounded
+        _SSRF_CACHE.clear()
+    _SSRF_CACHE[h] = ok
+    return ok
 
 
 def _loud(msg: str) -> None:
@@ -156,7 +210,7 @@ def _robots_for(url: str) -> urllib.robotparser.RobotFileParser | None:
 def allowed(url: str) -> bool:
     """MAY we fetch this url? True when robots.txt permits it (or there are no rules, or compliance is switched off).
 
-    Upstream: `render.url_allowed()`, which combines this with the scheme check and the SSRF guard and turns a False
+    Upstream: `url_allowed` / `url_allowed_async`, which combine this with the scheme check and the SSRF guard and turn a False
     into the "robots-denied" reason token. Downstream: a False means the render coroutine returns empty WITHOUT opening
     a browser context, so a disallowed url costs one cached lookup rather than a full page load."""
     if IGNORE_ROBOTS:                                     # explicit operator override; logged once per call site upstream
@@ -213,6 +267,92 @@ def wait_turn(url: str) -> None:
     d = next_delay(url)
     if d > 0:
         time.sleep(d)
+
+
+# ── THE ASYNC GATE ──────────────────────────────────────────────────────────────────────────────────────────────────
+# `allowed()` above is SYNCHRONOUS and does network I/O (the robots fetch) plus, via the caller's SSRF check, a blocking
+# `socket.getaddrinfo`. Both run on the single Playwright loop thread that every render shares. The comment on
+# _ROBOTS_TIMEOUT_S reasoned about this as "one 3s stall per host per hour" and that reasoning was wrong in two ways,
+# both measured:
+#   • the stall is not one render, it is the WHOLE LOOP — a heartbeat probe on an idle loop showed a 51 ms maximum gap,
+#     and 3042 ms while a sync robots fetch ran inside a coroutine. Every other in-flight render freezes with it.
+#   • the TTL cache does not help the case that matters. 24 concurrent first-touches of one origin produced 24 fetches,
+#     because nothing is stored until the first one returns. The crawl claims work in id order, so same-host clusters
+#     are the normal shape, not the exception — worst case 24 x 3s of frozen loop.
+# {MEASURED 2026-07-29 "BASELINE MAX HEARTBEAT GAP (IDLE LOOP): 51MS" / "MAX HEARTBEAT GAP WHILE IT RAN: 3042MS"}
+# {MEASURED 2026-07-29 "24 CONCURRENT FIRST-TOUCHES OF ONE HOST -> 24 FETCHES (CACHE PREVENTS 0)"}
+# [CONFIDENCE: CONFIRMED 100% — both numbers come from a repro that ran the real function on the real loop.]
+#
+# The fix is two things, and both are needed: move the blocking work off the loop with asyncio.to_thread, AND
+# de-duplicate concurrent work per origin so a stampede collapses to one computation.
+_INFLIGHT: dict[str, asyncio.Future] = {}
+
+
+async def url_allowed_async(url: str) -> tuple[bool, str]:
+    """(allowed, reason) for a url about to be navigated, WITHOUT blocking the shared loop.
+
+    The scheme test is done inline because it is pure string work. Everything that can block is handed to a thread, and
+    concurrent callers for the same origin await ONE shared future instead of each starting their own resolution and
+    fetch — which is what turned a 3-second stall into a potential 72-second one.
+
+    Upstream: `page.goto` (so every browser navigation is covered, including the drivers) and any other async
+    callers. Downstream: a False means the navigation never happens and the caller returns an empty render with the
+    specific reason token, so a refusal is legible in the logs rather than looking like a timeout."""
+    parsed = urllib.parse.urlparse(url or "")
+    if parsed.scheme not in ("http", "https"):            # pure string work — no reason to leave the loop for it
+        return False, "bad-scheme"
+    if IGNORE_ROBOTS and _SSRF_CACHE.get((parsed.hostname or "").lower().strip()) is True:
+        return True, ""                                   # fully warm and compliance disabled → nothing left to check
+    origin = _host_key(url)
+    fut = _INFLIGHT.get(origin)
+    if fut is None:
+        loop = asyncio.get_running_loop()
+        fut = loop.create_future()
+        _INFLIGHT[origin] = fut
+        try:
+            res = await asyncio.to_thread(url_allowed, url)
+            if not fut.done():
+                fut.set_result(res)
+        except Exception as e:                            # noqa: BLE001 — a gate crash must not wedge every waiter
+            if not fut.done():
+                fut.set_exception(e)
+            raise
+        finally:
+            # Drop the slot BEFORE returning so the next first-touch after the TTL lapses starts a fresh computation.
+            # Leaving it would pin one verdict forever and quietly defeat _ROBOTS_TTL_S.
+            _INFLIGHT.pop(origin, None)
+        return res
+    return await asyncio.shield(fut)                      # a stampede member: share the leader's single result
+
+
+def url_allowed(url: str) -> tuple[bool, str]:
+    """(allowed, reason) — the SYNCHRONOUS gate, for callers that are already on a worker thread.
+
+    Two entry points exist on purpose, and picking the wrong one is the bug this module was rewritten to fix:
+      • `url_allowed_async` — for anything running on the shared Playwright loop. Offloads the blocking work.
+      • `url_allowed` (this) — for thread contexts, e.g. the impersonate lane's curl_cffi GET, which is a plain
+        synchronous function called off-loop. Using the async form there would need a loop it does not have; using this
+        one ON the loop is what froze every in-flight render for 3 seconds.
+    `url_allowed_async` calls this via asyncio.to_thread, so the policy itself has exactly one implementation.
+
+    THE SCHEME CHECK IS HERE, not only in the async wrapper. It was briefly in the wrapper alone, and that made the two
+    entry points disagree in the one direction that matters: `gopher://investors.amgen.com/x` and `ftp://...` returned
+    (True, '') from this function, because a hostile scheme with a PUBLIC hostname passes the SSRF test cleanly. The
+    async path happened to be safe only because it tested the scheme before delegating. `javascript:` and `file:` were
+    caught either way, but by accident — they have no hostname, so resolution fails and the SSRF check fails closed.
+    Relying on that accident is what hid the gap.
+    {MEASURED 2026-07-29 "async=(False,'bad-scheme') sync=(True,'') gopher://investors.amgen.com/x"}
+    [CONFIDENCE: CONFIRMED 100% — the divergence was produced by running both entry points over the same url list.]
+    [CONFIDENCE: CONFIRMED 100% — the 3042 ms loop stall was measured with a heartbeat probe against an idle-loop
+     baseline of 51 ms.]"""
+    parsed = urllib.parse.urlparse(url or "")
+    if parsed.scheme not in ("http", "https"):            # blocks file: / javascript: / data: / gopher: / ftp: …
+        return False, "bad-scheme"
+    if not host_is_public(parsed.hostname or ""):
+        return False, "ssrf-blocked"
+    if not allowed(url):
+        return False, "robots-denied"
+    return True, ""
 
 
 async def wait_turn_async(url: str) -> None:

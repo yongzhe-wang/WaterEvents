@@ -12,13 +12,10 @@ from __future__ import annotations
 import asyncio
 import base64
 import contextlib
-import ipaddress
 import os
 import re
-import socket
 import sys
 import time
-import urllib.parse
 
 from . import config, detection, extract_js, html_inline, page, politeness, runtime, walls
 
@@ -57,56 +54,15 @@ def _loud(msg: str) -> None:
 #  (verified by reading every goto call site in this file). The officeall tool already guards this exact way, so the
 #  crawler was the inconsistent one.]
 # Mirrors backend/tools/officeall/fetch.py:_host_is_public so both entry points enforce ONE policy.
-_SSRF_CACHE: dict = {}                                    # host -> bool, bounded below; resolution is the expensive part
-_SSRF_CACHE_MAX = 4096                                    # hard cap so a link-spam page can't grow this without bound
-
-
-def host_is_public(host: str) -> bool:
-    """True only when `host` resolves EXCLUSIVELY to public IPs. Blocks localhost / loopback / RFC1918 private /
-    link-local (169.254.169.254 cloud metadata) / reserved / multicast. A resolution failure returns False (fail
-    CLOSED — an unresolvable host is not worth navigating to anyway).
-
-    Upstream trigger: `_guard_url` before every `page.goto` and before the impersonate lane's GET. Downstream: a False
-    means the url is never navigated, so a malicious link on a crawled page cannot reach internal infrastructure.
-    {OFFICEALL/FETCH.PY:32-45 "TRUE ONLY WHEN `HOST` RESOLVES TO A PUBLIC IP (SSRF GUARD). BLOCKS LOCALHOST / PRIVATE /
-    LOOPBACK / LINK-LOCAL (169.254.169.254 METADATA) / RESERVED"} [CONFIDENCE: CONFIRMED 100% — same policy, same
-    stdlib predicates, deliberately copied so the two fetchers cannot diverge]."""
-    h = (host or "").lower().strip()
-    if not h or h == "localhost" or h.endswith(".local") or h.endswith(".internal"):
-        return False
-    cached = _SSRF_CACHE.get(h)
-    if cached is not None:                                # resolution is the costly part — reuse the verdict
-        return cached
-    ok = True
-    try:
-        for info in socket.getaddrinfo(h, None):          # EVERY resolved address must be public, not just the first
-            ip = ipaddress.ip_address(info[4][0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
-                ok = False
-                break
-    except Exception:                                     # noqa: BLE001 — unresolvable → fail closed, never navigate
-        ok = False
-    if len(_SSRF_CACHE) >= _SSRF_CACHE_MAX:               # bounded: drop the whole cache rather than grow unbounded
-        _SSRF_CACHE.clear()
-    _SSRF_CACHE[h] = ok
-    return ok
-
-
-def url_allowed(url: str) -> tuple[bool, str]:
-    """(allowed, reason) for a url about to be navigated: http(s) scheme AND a publicly-resolving host AND permitted by
-    robots.txt. `reason` is "" when allowed and a SPECIFIC token otherwise (bad-scheme / ssrf-blocked / robots-denied)
-    so the caller can log WHICH policy refused — never a silent drop.
-
-    Upstream: every render coroutine before `_goto`, and `render_shot` before the impersonate lane. Downstream: a
-    refusal returns an empty render with a loud stderr line, exactly like any other render failure."""
-    parsed = urllib.parse.urlparse(url or "")
-    if parsed.scheme not in ("http", "https"):            # blocks file: / javascript: / data: / gopher: …
-        return False, "bad-scheme"
-    if not host_is_public(parsed.hostname or ""):         # blocks metadata / loopback / RFC1918 / link-local
-        return False, "ssrf-blocked"
-    if not politeness.allowed(url):                       # robots.txt Disallow (env-gated escape hatch inside)
-        return False, "robots-denied"
-    return True, ""
+# host_is_public + the SSRF cache MOVED TO politeness.py 2026-07-29. They had to live in a module page.py can import
+# (page.py cannot import render.py — render imports page), because while the guard lived here it covered only render's
+# own three coroutines and five driver navigations bypassed it entirely. Re-exported under the original name so the
+# sync callers in this file and the impersonate lane keep working, and so there is exactly ONE implementation of the
+# policy rather than two that can drift.
+# {SHELL 2026-07-29 "git grep '\\.goto(' -- backend/providers/watercrawl → 5 driver call sites outside render.py"}
+# [CONFIDENCE: CONFIRMED 100% — the bypass was found by enumerating goto call sites; the import direction was verified
+#  by reading both modules' import blocks.]
+host_is_public = politeness.host_is_public
 
 
 # Bound how long a context teardown may take. WHY: `finally: await ctx.close()` is correctly present on every render
@@ -304,7 +260,7 @@ async def _render_one(url: str, inject_js: str | None, wait_ms: int) -> tuple[st
     # POLICY GATE, BEFORE the semaphore. A url we may not fetch must not consume one of the 8 `_sem` permits while we
     # decide that — and the decision is a cached lookup, so gating here costs nothing and keeps a link-spam page from
     # occupying the pool with urls that were never going to be fetched.
-    ok, why = url_allowed(url)
+    ok, why = await politeness.url_allowed_async(url)
     if not ok:
         _loud(f"refused {url}: {why}")                    # never a silent drop — the reason token says WHICH policy refused
         return "", []
@@ -337,7 +293,7 @@ async def _render_full_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     (orchestrator.render_full/render_detail) needs the HTML to find interactive controls, so when watercrawl is the
     sole render engine it hands back HTML too, not just text. `browser` overrides the default (HTTP/1.1 or residential
     lane). Runs ON the loop."""
-    ok, why = url_allowed(url)                            # same pre-semaphore policy gate as _render_one
+    ok, why = await politeness.url_allowed_async(url)     # same pre-semaphore policy gate as _render_one
     if not ok:
         _loud(f"refused {url}: {why}")
         return "", [], ""
@@ -371,7 +327,7 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     t0 = time.monotonic()
     # POLICY GATE before EITHER semaphore. This lane holds TWO permits (_shot_sem and _sem), so letting a disallowed url
     # reach the acquire is twice as expensive here as in the other two coroutines.
-    ok, why = url_allowed(url)
+    ok, why = await politeness.url_allowed_async(url)
     if not ok:
         _loud(f"refused {url}: {why}")
         return "", [], "", "", ""
