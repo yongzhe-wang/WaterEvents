@@ -134,6 +134,36 @@ jobs:
           done
           exit $fail
 
+      # 2b — every file the installer installs must exist in the repo. This is not hypothetical tidying: on 2026-07-29
+      # backend/deploy/systemd/install.sh referenced three files that had never been committed
+      # (waterevents-janitor.service/.timer and waterevents-logrotate.conf). The script runs `set -euo pipefail`, so
+      # `install -m 644 <missing>` aborted it — and because the OTHER installer had just been deleted during a
+      # consolidation, there was no runnable install path at all. Production kept working only off units the deleted
+      # script had left behind, so nothing surfaced it. A rebuild or a new host would have failed mid-install.
+      # {SHELL 2026-07-29 "ls backend/deploy/systemd/waterevents-janitor.service → No such file or directory"}
+      # {SHELL 2026-07-29 "git log --all --diff-filter=AD -- '*janitor*' '*logrotate*' → empty; never committed"}
+      # [CONFIDENCE: CONFIRMED 100% — the three missing paths were listed by stat-ing every "$SRC/..." and "$DEPLOY/..."
+      #  reference in the installer.]
+      - name: installer references exist
+        run: |
+          python - <<'PY'
+          import os, re, sys
+          f = "backend/deploy/systemd/install.sh"
+          src = open(f).read()
+          # The installer resolves $SRC and $DEPLOY off $REPO; map them to the repo-relative directories directly rather
+          # than trying to evaluate shell, which would mean running the installer to test it.
+          base = {"SRC": "backend/deploy/systemd", "DEPLOY": "backend/deploy"}
+          missing = []
+          for var, name in sorted(set(re.findall(r'"\$(SRC|DEPLOY)/([A-Za-z0-9._@-]+)"', src))):
+              p = os.path.join(base[var], name)
+              if not os.path.exists(p):
+                  missing.append(f"{f} installs ${var}/{name} but {p} does not exist")
+          for m in missing:
+              print(f"::error file={f}::{m}")
+          print(f"{len(missing)} missing installer input(s)" if missing else "all installer inputs exist")
+          sys.exit(1 if missing else 0)
+          PY
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

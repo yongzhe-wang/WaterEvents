@@ -1,0 +1,28 @@
+# reaper — return abandoned work_queue rows to the pool every two minutes.
+#
+# 用一句话讲完: 一个 worker 崩掉/被重启后, 它抢走的行会停在 status='running' 直到 30 分钟租约自然到期; 这个 timer
+# 每 2 分钟把租约已过期的行翻回 'queued', 所以「有活没人干」的窗口从 30 分钟缩到 2 分钟。
+#
+# LANDED FROM THE HOST 2026-07-29, and this one is worse than the janitor: it has been running in production every two
+# minutes while systemd/install.sh — the file that calls itself the only installer — does not install it AT ALL. Not a
+# broken reference, an omission. A rebuild from the repo would have produced a host with no reaper, and the symptom
+# would have been rows sitting 'running' with nothing working them, which reads as "the fleet is busy".
+# {SHELL 2026-07-29 "grep -c reaper backend/deploy/systemd/install.sh → 0, while the host timer shows ACTIVE"}
+# {HOST 2026-07-29 journal "reaper: nothing to reclaim" x5 consecutive firings}
+# [CONFIDENCE: CONFIRMED 100% — content copied from the live host via `systemctl cat`; the installer omission verified
+#  by grepping install.sh for the unit name.]
+#
+# Upstream trigger: waterevents-reaper.timer (every 2 min). Downstream: work_queue rows flip 'running' → 'queued'; the
+# script itself is dry-run by default, so --apply here is what makes the timer act rather than merely report.
+# EnvironmentFile is /etc/waterevents/fleet.env — NOT /etc/waterevents.env. The two files hold different key sets and
+# only fleet.env carries the fleet's DSN; install.sh currently knows only about the latter, which is its own drift.
+[Unit]
+Description=WaterEvents abandoned-lease reaper
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/waterevents/fleet.env
+# Absolute psql path: a oneshot unit gets a minimal PATH, and the script's `${PSQL_BIN:-psql}` default would resolve to
+# nothing, making every firing a silent no-op that still exits 0.
+Environment=PSQL_BIN=/usr/bin/psql
+ExecStart=/usr/local/bin/waterevents-reaper --apply

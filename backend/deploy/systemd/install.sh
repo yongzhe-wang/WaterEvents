@@ -77,11 +77,18 @@ mkdir -p "$LOGD" && chown "$RUN_USER" "$LOGD"
 install -m 644 "$SRC/waterevents-worker@.service" "$SRC/waterevents-pacer.service" \
                "$SRC/waterevents-webapp.service"  "$SRC/waterevents-fleet.target" \
                "$SRC/waterevents-watchdog.service" "$SRC/waterevents-watchdog.timer" \
-               "$SRC/waterevents-janitor.service"  "$SRC/waterevents-janitor.timer" /etc/systemd/system/
+               "$SRC/waterevents-janitor.service"  "$SRC/waterevents-janitor.timer" \
+               "$SRC/waterevents-reaper.service"   "$SRC/waterevents-reaper.timer" /etc/systemd/system/
 
 # The watchdog script is installed to a stable absolute path because the unit's ExecStart cannot depend on the repo
 # checkout being present/readable by root at activation time.
 install -m 755 "$DEPLOY/watchdog.sh" /usr/local/bin/waterevents-watchdog
+# Same for the reaper. This installer did not previously mention the reaper AT ALL — not a broken path, an omission —
+# while the timer ran every two minutes in production. A rebuild from this repo would have produced a host with no
+# reaper, and the symptom is rows sitting in 'running' with nothing working them, which reads as a busy fleet.
+# {SHELL 2026-07-29 "grep -c reaper backend/deploy/systemd/install.sh → 0, while the host timer showed ACTIVE"}
+# [CONFIDENCE: CONFIRMED 100% — the omission was found by grepping this file for the unit name.]
+install -m 755 "$DEPLOY/reaper.sh" /usr/local/bin/waterevents-reaper
 
 # Watchdog state dir — the debounce counter and the post-restart suppression timestamp persist here BETWEEN timer
 # firings (each firing is a fresh oneshot process, so in-memory state cannot survive). Root-owned: the watchdog runs
@@ -107,8 +114,8 @@ sleep 3
 # --- enable + start ---
 for i in $(seq 1 "$N"); do systemctl enable -q --now "waterevents-worker@$i.service"; done
 systemctl enable -q --now waterevents-pacer.service waterevents-webapp.service waterevents-fleet.target
-systemctl enable -q --now waterevents-watchdog.timer waterevents-janitor.timer
-echo "[install] started $N workers + pacer + webapp + watchdog/janitor timers"
+systemctl enable -q --now waterevents-watchdog.timer waterevents-janitor.timer waterevents-reaper.timer
+echo "[install] started $N workers + pacer + webapp + watchdog/janitor/reaper timers"
 
 # ── assert the supervision actually landed ──────────────────────────────────────────────────────────────────────────
 # WHY assert instead of trusting the enable above: the previous installer ended with an unconditional success message
@@ -120,6 +127,10 @@ echo "[install] started $N workers + pacer + webapp + watchdog/janitor timers"
 FAILED=()
 systemctl is-enabled --quiet waterevents-watchdog.timer || FAILED+=("waterevents-watchdog.timer")
 systemctl is-enabled --quiet waterevents-janitor.timer  || FAILED+=("waterevents-janitor.timer")
+# The reaper gets the same assertion as the other two. It is the component whose absence is hardest to notice — a
+# missing reaper leaves rows in 'running' that nothing is working, and a queue full of claimed-but-idle rows looks
+# exactly like a busy fleet from every other number on the dashboard.
+systemctl is-enabled --quiet waterevents-reaper.timer   || FAILED+=("waterevents-reaper.timer")
 if [ "${#FAILED[@]}" -gt 0 ]; then
   echo "[install] FATAL: these units are NOT enabled: ${FAILED[*]}" >&2
   echo "[install] the fleet would run UNSUPERVISED — refusing to report success." >&2

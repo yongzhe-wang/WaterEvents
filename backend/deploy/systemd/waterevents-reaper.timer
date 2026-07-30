@@ -1,0 +1,19 @@
+# Two-minute lease reclaim. Landed from the host 2026-07-29 — see waterevents-reaper.service for why it existed in
+# production while the repo's installer did not install it.
+#
+# WHY two minutes and not the lease length: the lease is 30 minutes, so without this the recovery window after a worker
+# dies is 30 minutes of rows that look claimed and are not being worked. Two minutes makes the reclaim latency small
+# next to a single unit's runtime (incremental ~31s, full ~369s) without polling the DB hard — the query is one indexed
+# UPDATE against a partial index on (status, lease_until).
+# No Persistent=true: a missed firing while the host was off is meaningless here, because OnBootSec runs it two minutes
+# after boot anyway and any lease that lapsed during the downtime is still lapsed.
+[Unit]
+Description=Reclaim abandoned WaterEvents work_queue rows every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target

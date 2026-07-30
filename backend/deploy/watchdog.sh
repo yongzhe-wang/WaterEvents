@@ -23,9 +23,38 @@
 #  is-active-on-missing-unit behaviour is what routes control to the stand-down branch].
 set -uo pipefail
 
-STALE_MIN="${WATEREVENTS_STALE_MIN:-30}"      # minutes of scan_log silence that counts as wedged
+# TWO SEPARATE NUMBERS, previously conflated into one. STALE_MIN was being passed as fleet_health's `window_min`, which
+# is the aggregation window, not a silence threshold — so raising "how long counts as wedged" silently also widened the
+# window the zero-production check averages over. The two must move independently: WINDOW_MIN is calibrated (the outage
+# ran 95-250 VLM calls per 15-min window, which is what min_vlm_calls=10 was sized against), while STALE_MIN is a
+# policy choice about discovery latency.
+# {WATCHDOG (pre-fix) "fleet_health(${STALE_MIN})" with STALE_MIN commented as "MINUTES OF SCAN_LOG SILENCE"}
+# {MIGRATION 20260729021500 "fleet_health(window_min int DEFAULT 15, min_vlm_calls int DEFAULT 10)"}
+# [CONFIDENCE: CONFIRMED 100% — the call site passed one argument and the function's first parameter is window_min.]
+WINDOW_MIN="${WATEREVENTS_HEALTH_WINDOW_MIN:-15}"   # aggregation window for the production check — matches the oracle's calibration
+MIN_VLM="${WATEREVENTS_HEALTH_MIN_VLM:-10}"         # VLM calls that must have happened before "0 events" means broken
 DSN="${WATEREVENTS_DB_DSN:-}"
 PSQL="${PSQL_BIN:-psql}"
+
+# ── DEBOUNCE + POST-RESTART SUPPRESSION ─────────────────────────────────────────────────────────────────────────────
+# These were DOCUMENTED IN THREE PLACES and implemented in none. waterevents-watchdog.service claims this script
+# "writes debounce state under /var/lib/waterevents", the .timer explains how "a fast timer with a slow debounce gives
+# a tight bound on discovery latency", and install.sh creates the directory for it — while the script held an
+# unconditional `systemctl restart`, and the directory did not exist on the host.
+# Why it matters concretely: if the fleet is wedged in a way a restart does NOT cure — a disk-I/O livelock, which is
+# exactly the 2026-07-27 incident's shape — the timer restarts all six workers every five minutes forever, each restart
+# kills a chromium tree, strands more leases, and delays the next scan_log write, which makes the trigger MORE true.
+# Documentation that describes a guard nobody wrote is worse than silence: it stops the next reader from adding it.
+# {WATCHDOG.SERVICE "WRITES DEBOUNCE STATE UNDER /VAR/LIB/WATEREVENTS, BOTH OF WHICH NEED PRIVILEGE"}
+# {HOST 2026-07-29 "sudo ls -la /var/lib/waterevents → No such file or directory"}
+# {SHELL 2026-07-29 "grep -nE 'debounce|/var/lib/waterevents|suppress' backend/deploy/watchdog.sh → no matches"}
+# [CONFIDENCE: CONFIRMED 100% — three documentation sites quoted, the absence grepped, the directory statted.]
+STATE_DIR="${WATEREVENTS_STATE_DIR:-/var/lib/waterevents}"
+STRIKES_FILE="$STATE_DIR/down_strikes"
+LAST_RESTART_FILE="$STATE_DIR/last_restart"
+NEED_STRIKES="${WATEREVENTS_DOWN_STRIKES:-3}"        # consecutive 'down' firings before acting (3 x 5min = 15min sustained)
+SUPPRESS_MIN="${WATEREVENTS_RESTART_SUPPRESS_MIN:-30}"   # no second restart inside this many minutes
+mkdir -p "$STATE_DIR" 2>/dev/null || true            # best-effort: unwritable state degrades to no-debounce, never to a crash
 
 if [ -z "$DSN" ]; then
   echo "watchdog: WATEREVENTS_DB_DSN unset — cannot check liveness" >&2
@@ -36,13 +65,22 @@ fi
 # predicate is why the 2026-07-28 outage ran 11h52m undetected: scan_log kept moving the entire time because the workers
 # kept scanning; only the EXTRACTION was dead. This script logged "healthy — last scan 0m ago" every five minutes while
 # the system produced literally nothing. The dashboard had its own third predicate and also read healthy.
-# waterevents.fleet_health() is now the single definition all three consumers share, so when it is wrong it is wrong in
-# ONE place and gets fixed once. `-F ' | '` keeps this parseable with plain shell field-splitting.
+# waterevents.fleet_health() is the single DEFINITION of health — but be accurate about the scope: this script is
+# currently its ONLY caller. The commit that introduced it claimed "all three consumers share" it; that was false, and
+# it mattered, because the whole argument for the migration was that three hand-rolled predicates each answered a
+# different question and all read healthy through the outage. Centralising the definition while leaving the dashboard
+# on its own predicate leaves that root cause in place with a note saying it is fixed — which is worse than leaving it
+# openly unfixed, since the next reader stops looking.
+# {SHELL 2026-07-29 "git grep fleet_health -- backend frontend → 1 executable call site (this file); the other 3 hits
+#  are prose in comments"}
+# [CONFIDENCE: CONFIRMED 100% — grepped for the identifier and inspected every hit for whether it was code or prose.]
+# TODO(dashboard): frontend/api/today.js should read this function instead of deriving its own staleness figures.
+# `-F '|'` keeps this parseable with plain shell field-splitting.
 # {AUDIT 2026-07-29 "3 consumers, 3 hand-rolled predicates, all reporting healthy through a total outage"}
 # {DB 2026-07-29 replay of a 15-min window inside the outage → "DOWN | 231 vlm calls, 0 events, 424 scans"}
 # [CONFIDENCE: CONFIRMED 100% — the oracle was verified in both directions before this script was pointed at it].
 OUT=$("$PSQL" "$DSN" -t -A -F'|' -c \
-  "SELECT verdict, reason FROM waterevents.fleet_health(${STALE_MIN})" 2>/dev/null)
+  "SELECT verdict, reason FROM waterevents.fleet_health(${WINDOW_MIN}, ${MIN_VLM})" 2>/dev/null)
 VERDICT="${OUT%%|*}"                           # first field; plain parameter expansion, no awk/read subtleties
 REASON="${OUT#*|}"                             # everything after the first '|' — the reason itself may contain spaces
 
@@ -88,16 +126,47 @@ case "$VERDICT" in
     #  have fixed it, so a host-side restart would have been pure noise.]
     echo "CRITICAL: waterevents fleet DOWN — ${REASON}"
     if [ "${REASON#no scan_log activity}" != "$REASON" ]; then
+      # STRIKE COUNT — a fresh oneshot process every firing, so the counter has to live on disk. Requiring
+      # NEED_STRIKES consecutive 'down' verdicts means a single unlucky sample (a slow minute, a pooler blip) cannot
+      # restart six workers; at the 5-minute timer that is 15 minutes of sustained wedge before acting.
+      # SUPPRESSION IS CHECKED FIRST, BEFORE THE STRIKE GATE — the ordering is the point. If a restart did not cure the
+      # wedge, "the restart did not work, a human is needed" is the most urgent thing this script can say, and it must
+      # be said on the very next firing. Gating it behind a fresh strike count would bury that signal for another
+      # NEED_STRIKES x timer-interval of ordinary-looking "strike 1/3" lines.
+      # This is also the loop-breaker: on a disk-I/O livelock (the 2026-07-27 shape) the trigger stays true forever,
+      # and each restart kills a chromium tree and delays the next scan_log write, making the trigger MORE true.
+      NOW=$(date +%s)
+      LAST=$(cat "$LAST_RESTART_FILE" 2>/dev/null || echo 0)
+      if [ $(( NOW - LAST )) -lt $(( SUPPRESS_MIN * 60 )) ]; then
+        echo "CRITICAL: still wedged $(( (NOW - LAST) / 60 ))m after a restart — NOT restarting again (a restart is not the cure). Escalate."
+        exit 0
+      fi
+      # STRIKE COUNT — a fresh oneshot process every firing, so the counter has to live on disk. Requiring
+      # NEED_STRIKES consecutive 'down' verdicts means a single unlucky sample (a slow minute, a pooler blip) cannot
+      # restart six workers; at the 5-minute timer that is 15 minutes of sustained wedge before acting.
+      STRIKES=$(( $(cat "$STRIKES_FILE" 2>/dev/null || echo 0) + 1 ))
+      echo "$STRIKES" > "$STRIKES_FILE" 2>/dev/null || true
+      if [ "$STRIKES" -lt "$NEED_STRIKES" ]; then
+        echo "watchdog: wedge strike ${STRIKES}/${NEED_STRIKES} — not restarting yet"
+        exit 0
+      fi
+      echo "$NOW" > "$LAST_RESTART_FILE" 2>/dev/null || true
+      : > "$STRIKES_FILE" 2>/dev/null || true      # acted → reset the counter so the next episode starts from zero
       systemctl restart "$TARGET"
-      echo "watchdog: restart issued (wedged fleet)"
+      echo "watchdog: restart issued (wedged fleet, ${STRIKES} consecutive strikes)"
     else
       echo "watchdog: NOT restarting — the fleet is running; the failure is downstream (vLLM/extraction). Restarting would not fix it."
     fi
     ;;
   degraded)
+    # Clear the wedge strikes: 'degraded' means scan activity IS flowing, so whatever wedge streak was accumulating is
+    # over. Without this reset a few scattered 'down' samples across hours would eventually sum to the threshold and
+    # trigger a restart for a wedge that had already resolved — a counter that only ever goes up is a slow false alarm.
+    : > "$STRIKES_FILE" 2>/dev/null || true
     echo "WARNING: waterevents degraded — ${REASON}"      # visible, but not worth a restart on its own
     ;;
   *)
+    : > "$STRIKES_FILE" 2>/dev/null || true               # healthy → the streak must start over, same reasoning
     echo "watchdog: healthy — ${REASON}"
     ;;
 esac

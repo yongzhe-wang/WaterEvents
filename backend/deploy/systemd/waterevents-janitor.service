@@ -1,0 +1,26 @@
+# janitor — bound the crawl-trace directory so disk cannot fill silently.
+#
+# 用一句话讲完: 每天保留最新 500 个 trace 目录, 其余删掉 —— 因为每次 crawl 都会写一个完整审计目录, 无人清理时它
+# 单调增长, 而磁盘写满的表现是 fleet 莫名卡死, 不是一条清晰的 "disk full" 报错。
+#
+# LANDED FROM THE HOST 2026-07-29. This unit has been RUNNING in production while existing in no committed file: the
+# installer that created it (backend/deploy/install_systemd.sh) was deleted during a consolidation, and
+# systemd/install.sh — which claims to be the only installer — references this filename without the file ever having
+# been committed. `set -euo pipefail` plus `install -m 644 <missing>` meant that installer aborted at that line, so
+# there was no runnable install path at all while production kept working off the units the deleted script had left
+# behind. Recovered verbatim from /etc/systemd/system so repo and host finally agree.
+# {SHELL 2026-07-29 "git log --all --diff-filter=AD -- '*janitor*' → empty (never committed)"}
+# {INSTALL.SH:80 "\"$SRC/WATEREVENTS-JANITOR.SERVICE\"  \"$SRC/WATEREVENTS-JANITOR.TIMER\" /ETC/SYSTEMD/SYSTEM/"}
+# [CONFIDENCE: CONFIRMED 100% — content copied from the live host via `systemctl cat`; the absence from git history was
+#  checked with --diff-filter=AD across all refs.]
+#
+# Upstream trigger: waterevents-janitor.timer (daily). Downstream: deletes trace directories only — never touches the DB.
+[Unit]
+Description=WaterEvents trace retention (keep newest 500 crawl traces)
+
+[Service]
+Type=oneshot
+User=thebigsun
+# `exit 0` when the directory is absent so a fresh host does not log a daily failure before the first crawl ever runs.
+# `ls -1dt | tail -n +501` keeps the 500 newest by mtime; -print0/-0 so a path with a space cannot split an argument.
+ExecStart=/bin/bash -c 'T=/home/thebigsun/WaterEvents/backend/agent/event_agent/crawl/traces; [ -d "$T" ] || exit 0; ls -1dt "$T"/*/ 2>/dev/null | tail -n +501 | tr "\n" "\0" | xargs -0 -r rm -rf'

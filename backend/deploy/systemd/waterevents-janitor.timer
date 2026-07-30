@@ -1,0 +1,14 @@
+# Daily trace prune. Landed from the host 2026-07-29 alongside waterevents-janitor.service — see that file for why it
+# was running in production without existing in any committed file.
+#
+# Persistent=true so a host that was powered off over the scheduled time prunes on the next boot instead of skipping a
+# day. Trace growth is monotonic, so a missed run is a permanent step up in disk use, not a gap that heals.
+[Unit]
+Description=Prune WaterEvents crawl traces daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
