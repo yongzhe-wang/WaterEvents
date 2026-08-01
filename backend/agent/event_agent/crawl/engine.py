@@ -230,8 +230,16 @@ async def _render_one(url: str) -> dict | None:
         # it must NOT be counted as a render failure, so it returns its own sentinel rather than None. See render.py's
         # gate for why: as an empty render it burned the full retry ladder and then parked live, event-producing hosts
         # in status='failed'. [CONFIDENCE: CONFIRMED 100% — sap.com and centrica.com were both parked this way.]
+        # "url" IS REQUIRED. _to_page's first line is render["url"], so a sentinel without it raises KeyError, and the
+        # page-task handler at the bottom of this file catches every Exception and sets render=None — which _harvest
+        # then counts as failed_render. The robots refusal came back as a render failure by a completely different
+        # route than before, and the production logs recorded 102 `page task error ... KeyError: 'url'` lines from
+        # exactly the robots-disallowed hosts in the ~20 minutes this shipped.
+        # {W*.LOG 2026-08-01 "[crawl] ⛔ page task error https://ir.prologis.com/news-events: KeyError: 'url'" ×102}
+        # [CONFIDENCE: CONFIRMED 100% — my own bug, found by checking whether the fix had actually changed the numbers.]
         if r.get("method") == "robots-denied":
-            return {"method": "robots-denied", "text": "", "links": [], "html": "", "shot_b64": "", "inline": ""}
+            return {"url": url, "method": "robots-denied", "text": "", "links": [], "html": "", "shot_b64": "",
+                    "inline": ""}
         if attempt < _RENDER_TRIES - 1:                      # empty (timeout/walled/thin) → back off, then retry
             await asyncio.sleep(2.0 * (attempt + 1))         # 2s, 4s — let the browser pool drain before re-firing
     return None                                              # every attempt empty → real skip (counted fail-loud upstream)
@@ -334,6 +342,14 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
         r = await _render_one(url)                             # browser render (self-times-out; retries inside)
         if r is None:                                          # walled/dead/empty → nothing to extract
             return url, None, None
+        # Short-circuit BEFORE the page dict and the VLM. With only the "url" key restored this would still work, but
+        # it would build an empty page and spend a VLM call proving that nothing is in it — on the binding resource.
+        # _harvest reads the method and counts skipped_robots.
+        # No _skipped marker: that flag means "the hash-gate saw identical content", and _harvest counts it as
+        # vlm_skipped, which feeds the solver's hit_rate. A page we never fetched is not a hash-gate hit, and putting
+        # it in that denominator would quietly bias T*. _harvest reads the method and returns before it looks at res.
+        if r.get("method") == "robots-denied":
+            return url, r, {"events": [], "routes": []}
         print(f"[crawl] · rendered {url[:60]} → VLM", flush=True)      # heartbeat: log advances so the stall-watchdog sees liveness
         _pg = _to_page(r)                                      # build the extract page dict once (need its size before the VLM)
         _n = len(_pg.get("page_text") or "")                  # rendered text length — a doc-sized page must NOT reach the chunker
