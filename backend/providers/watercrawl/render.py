@@ -89,19 +89,20 @@ async def _close_ctx(ctx) -> None:
 _goto = page.goto
 _settle = page.settle
 
-# HTTP-FIRST: try the cheap curl_cffi direct fetch BEFORE spinning up the browser (research #1 optimization — static
-# pages skip the browser + screenshot entirely, served TEXT-ONLY). Env-toggleable. {RESEARCH wv2d0n0v3 "HTTP-first gate
-# + text-only path ... vision-call 数落到 ~30-50%"} [CONFIDENCE: CONFIRMED — top-ranked cost lever].
-_HTTP_FIRST = os.environ.get("WATERCRAWL_HTTP_FIRST", "1") not in ("0", "false", "no")
-# ...EXCEPT events/calendar LISTING pages, forced to the browser+screenshot: the layout table IS the signal there and a
-# text-only fetch of a JS/image-rendered calendar would miss events. {RESEARCH "/events|/calendar 白名单强制 vision"}.
-_FORCE_VISION_RE = re.compile(r'/(events?|calendar|ir-calendar|webcasts?)(/|\?|#|$)', re.I)
-
-
-def _force_vision(url: str) -> bool:
-    """True for pages where the layout screenshot is highest-value (events/calendar listings) → skip HTTP-first, always
-    render + screenshot. Text-signal is weak on these (image-rendered tables) but layout is strong."""
-    return bool(_FORCE_VISION_RE.search(url or ""))
+# HTTP-FIRST REMOVED 2026-08-01, switch and all. It fetched with curl_cffi before the browser and kept that result when
+# two static-text heuristics agreed the page looked "real", and both heuristics were measured to be inverted on exactly
+# the page type this crawler exists to read — see the block in render_shot for the evidence. The switch is deleted
+# rather than defaulted to 0 so the function has one path and the heuristics cannot be re-enabled by configuration.
+# Production already ran with WATERCRAWL_HTTP_FIRST=0 in both env files, so no behaviour changes for the fleet.
+# _FORCE_VISION_RE / _force_vision REMOVED with HTTP-first. They existed to force events/calendar listings PAST the
+# cheap fetch and onto the browser; with the browser as the only first attempt there is nothing left to force. Retiring
+# them also retires a boundary bug they carried: the pattern required the token to be followed by / ? # or end-of-string,
+# so `events-and-presentations` (Boeing, Amgen), `ir-events`, `upcoming-event` and `calendar.html` (Shimano) all failed
+# to match — 6,373 of 10,500 distinct event-looking page urls in the corpus, 61%, were never forced. A whitelist that
+# misses the majority of the shapes it targets is worse than none, because it reads as coverage.
+# {MEASURED 2026-08-01 over distinct pages.url: eventish AND forced 4,127 / eventish AND NOT forced 6,373}
+# [CONFIDENCE: CONFIRMED 100% — the regex was run against the live url corpus, and against 12 hand-checked real IR urls
+#  of which 9 failed to match.]
 
 
 # Events pages hide their history behind a year-filter / load-more / pagination. Match the ones worth EXPANDING (broader
@@ -452,23 +453,28 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
             pass
         return dict(empty)
 
-    # ── HTTP-FIRST: try the cheap curl_cffi direct fetch BEFORE the browser. Accept it ONLY when it returned a REAL
-    # content page (not walled AND not a thin JS shell) — i.e. a prose-rich static page (press release / article). A
-    # link-dense LISTING is render_thin=True → falls through to the browser (those pages most want the screenshot, and
-    # events/calendar are force-vision anyway). So content/detail pages go text-only (save a browser spin), discovery
-    # listings still get the shot. The result is REUSED in the wall-escalation below — never fetched twice.
-    i_result = None
-    if _HTTP_FIRST and not _force_vision(url):
-        try:
-            it, il, ih = impersonate.fetch(url)
-            i_result = (it, il, ih)
-            if not detection.looks_walled(it, il) and not detection.render_thin(it):
-                return {"text": it, "links": list(il), "html": ih or "", "shot_b64": "",
-                        "method": "impersonate", "inline": html_inline.to_inline(ih, url)}
-        except Exception:                                # noqa: BLE001
-            pass
+    # HTTP-FIRST IS GONE — the browser is the only entry point, impersonate is strictly a fallback.
+    #
+    # What it used to do: fetch with curl_cffi BEFORE the browser and accept that result when it was "not walled and not
+    # a thin JS shell". Both halves of that test are unreliable in the direction that matters, and it was measured:
+    #   • `render_thin` counts sentence-ending punctuation. An events LISTING is Title-Case labels with no periods, so
+    #     the pages this crawler exists to read score as "shell" — CECO (7,255 chars, 67 links, 11 dates) and Shimano
+    #     (9 dated events) were both judged thin, while Boeing's genuine JS shell scored 4 terminators and was ACCEPTED.
+    #     On that sample the heuristic was inverted.
+    #   • `looks_walled` returns True whenever a page has fewer than 5 links, so a legitimately small page is
+    #     indistinguishable from a block page.
+    # No static-text heuristic can decide whether JS will add content — that is not information the static text carries.
+    # Firecrawl and Jina both resolve this by not asking: the browser is the default and a plain HTTP client is the last
+    # resort, explicitly because "once chrome-cdp fail, degrading to a plain HTTP client tends to produce bot-walled
+    # content, so we'd rather fail". The env switch is removed rather than defaulted off so there is exactly one path
+    # through this function and no way to re-enable the heuristics by configuration.
+    # {MEASURED 2026-08-01 over 7,080 page traces: render 90.9%, residential 4.8%, impersonate 4.3% — production had
+    #  WATERCRAWL_HTTP_FIRST=0 in both env files already, so this deletes a branch prod never took}
+    # {FIRECRAWL engines/index.ts quality scores — chrome-cdp 50, tlsclient 10, fetch 5; index/cache 1000}
+    # [CONFIDENCE: CONFIRMED 100% — the inversion was reproduced on the three pages named above; the production setting
+    #  was read from /etc/waterevents/fleet.env and /etc/waterevents.env.]
 
-    # 1) headless render + full-page screenshot (dynamic pages / events pages / thin-static HTTP-first didn't serve)
+    # 1) headless render + full-page screenshot — the DEFAULT and only first attempt
     text, links, html, shot, inline = _shot_via(url, wait_ms, browser=None)
     _walled = detection.looks_walled(text, links)
     if _RDEBUG:
@@ -487,24 +493,41 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
     if not text and not links and detection.dead_host(url):
         return dict(empty)
 
-    # 2) walled → patchright residential render + screenshot (real browser from a residential IP, beats IP-reputation walls)
+    # 2) walled → curl_cffi impersonate. PROMOTED FROM TIER 3 for two independent reasons.
+    # COST: this is one HTTP request; the residential and camoufox tiers each spin up a browser. Trying the cheapest
+    # fallback first means a wall it can beat never costs a browser at all.
+    # HIT RATE: walls come in three kinds, and the one we have actually measured is precisely this tier's speciality —
+    # a TLS/HTTP2 FINGERPRINT wall, where headless Chrome is recognised and refused while a Chrome-impersonating HTTP
+    # client walks through. CECO returned a 231-char Akamai "Access Denied ... Reference #18.c7fd117" to Chromium and a
+    # clean 7,255-char / 67-link / 11-date page to curl_cffi, from the same host, seconds apart. That is not an
+    # IP-reputation wall (which needs the residential tier) and not a JS challenge (which needs camoufox).
+    # This also matches Firecrawl, whose `tlsclient` ranks ABOVE plain `fetch` — an impersonating client and a naive
+    # HTTP client are different tools, which is a distinction I previously blurred when citing their "we'd rather fail
+    # than degrade to plain HTTP" rule.
+    # {MEASURED 2026-08-01 CECO: BROWSER text=231 links=0 challenge=True / IMPERSONATE text=7255 links=67 challenge=False}
+    # [CONFIDENCE: CONFIRMED 100% — both fetches were run against the live host in one script, printed side by side.]
+    #
+    # ACCEPTANCE IS ABSOLUTE, NOT RELATIVE. The previous test was
+    #     `len(i_links) > len(links) or (i_text and not text)`
+    # which judges this result against the browser's — and we only reach here BECAUSE the browser was walled, so the
+    # baseline is a block page. A challenge interstitial that happens to carry a few links would beat genuinely good
+    # content on link count. What matters is whether THIS result is itself a real page.
+    # `is_challenge` rather than `looks_walled`: the latter also returns True for any page with fewer than 5 links, and
+    # a legitimately small page has few links — Shimano's IR calendar has 4, and carries 9 real dated events.
+    try:
+        i_text, i_links, i_html = impersonate.fetch(url)
+    except Exception:                                    # noqa: BLE001 — optional dep / network; fall through to tier 3
+        i_text, i_links, i_html = "", [], ""
+    if i_text and not detection.is_challenge(i_text):
+        return {"text": i_text, "links": list(i_links or []), "html": i_html or "", "shot_b64": "",
+                "method": "impersonate", "inline": html_inline.to_inline(i_html, url)}
+
+    # 3) still walled → patchright residential render + screenshot (real browser from a residential IP, beats
+    # IP-reputation walls — the kind impersonate cannot help with, because the source address is what is refused)
     if runtime._browser_proxy is not None:
         r_text, r_links, r_html, r_shot, r_inline = _shot_via(url, wait_ms, browser=runtime._browser_proxy)
         if not detection.looks_walled(r_text, r_links):
             return {"text": r_text, "links": list(r_links), "html": r_html, "shot_b64": r_shot, "method": "residential", "inline": r_inline}
-
-    # 3) still walled → curl_cffi impersonate (different TLS/HTTP2 fingerprint than the browser). REUSE the HTTP-first
-    # fetch if we already did it above; else fetch now. inline rebuilt from html so its events keep their urls.
-    if i_result is None:
-        try:
-            i_result = impersonate.fetch(url)
-        except Exception:                                # noqa: BLE001
-            i_result = None
-    if i_result:
-        i_text, i_links, i_html = i_result
-        if len(i_links) > len(links) or (i_text and not text):
-            return {"text": i_text, "links": list(i_links), "html": i_html or "", "shot_b64": "",
-                    "method": "impersonate", "inline": html_inline.to_inline(i_html, url)}
 
     # 4) STILL walled → camoufox (stealth Firefox — beats Akamai/Incapsula sensor.js). Content-only: no screenshot.
     # The tier the refactor dropped from render_shot (kept only in render_full/render_detail). inline rebuilt from html.

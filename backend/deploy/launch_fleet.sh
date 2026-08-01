@@ -56,7 +56,6 @@ export QWEN_BASE_URLS="http://127.0.0.1:8000/v1" QWEN_SERVED_NAME="qwen-vl"
 export QWEN_API_KEY="${QWEN_API_KEY:?set QWEN_API_KEY (the --api-key the vLLM on the pod was launched with) — provision in /etc/waterevents.env}"
 # 14B Qwen2.5-Instruct-AWQ has NO vision encoder → NEVER send a screenshot. NO_SHOT forces DOM/text-only; USE_IMAGE=0 too.
 export WATERCRAWL_NO_SHOT="1" EVENT_USE_IMAGE="0"
-export WATERCRAWL_HTTP_FIRST="0"
 # WEBSHARE_PROXY is OPTIONAL, so it is passed through rather than `:?`-required: unset simply leaves the tier-2
 # residential render lane dormant (webshare.playwright_proxy() returns None and the `if runtime._browser_proxy is not
 # None` gate stays False), which degrades bot-walled hosts to 0 events but does NOT stop the fleet. Requiring it would

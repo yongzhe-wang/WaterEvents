@@ -376,7 +376,7 @@ def _plausible_type(etype: str) -> str:
     return t if t in _ALLOWED_TYPES else "other"
 
 
-def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
+def _normalize_events(result: dict, tag_map: dict, source: str = "", page_url: str = "") -> dict:
     """EXTRACTION reply → {"events":[...], "_event_urls":set, "_error":?}. Lnn ids → urls (resolve_ids drops unknowns) +
     _clean_urls drops feed/asset junk. GROUNDING: each event must carry an `evidence` snippet that appears in `source`
     (the page the model read) — an event whose evidence is not in the page was hallucinated and is DROPPED. Then every
@@ -388,10 +388,27 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
         if src and not _grounded(e.get("evidence") or "", src):   # evidence not in the page → fabricated → drop
             continue
         urls = _clean_urls(prompts.resolve_ids(e.get("urls") or [], tag_map))   # Lnn ids → real urls → drop junk + dedup
-        if not urls:                                          # an event must have at least one real url, else drop it
-            continue
         title = (e.get("title") or "").strip()[:300]
         date = (e.get("date") or "").strip()
+        if not urls:
+            # A HYPERLINK IS NOT WHAT MAKES AN EVENT REAL. This used to be an unconditional drop, and it silently
+            # discarded an entire page shape: an IR calendar that lists events as plain text rows. Shimano's
+            # /en/ir/calendar.html is 1,255 chars containing 9 unambiguous dated events —
+            # "July 28, 2026 at 3:30 PM (JST) Announcement of Financial Results 2nd Quarter for FY2026" and eight more —
+            # with only 4 links on the whole page (home, IR, and two year anchors). Every one of those 9 died here, and
+            # the company reads as 0 events with no error, no partial, and no drop counter anywhere.
+            # The page itself is the honest source for such a row, so it becomes the event's url.
+            # BOTH date AND title are required for this fallback, which is stricter than the general rule below (date OR
+            # title). Without a date, a nav label the model mis-read as an event would now be admitted instead of
+            # dropped — the url requirement was doing that filtering as a side effect, so tightening here is what keeps
+            # the footer-chrome guard as strong as it was.
+            # {MEASURED 2026-08-01 shimano.com/en/ir/calendar.html — 9 dated rows in the text the model received,
+            #  events_kept=0, _error=None, _partial=None}
+            # [CONFIDENCE: CONFIRMED 100% — the full page text and the extraction result were printed side by side.]
+            if page_url and date and title:
+                urls = [page_url]
+            else:
+                continue
         # PLAUSIBILITY (injection defence layer (c)) — grounding proves the model COPIED from the page; it cannot prove
         # the PAGE is honest, because a poisoner controls the grounding corpus too. So an event must ALSO survive a
         # structural check that does not consult the page: a parseable date inside a sane year window, and a type inside
@@ -575,7 +592,7 @@ async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_i
     for i, res in enumerate(results):
         if res.get("__finish__") == "length":                # block hit the output limit → partial, keep what it gave us
             partials.append(f"block {i} truncated at limit")
-        ne = _normalize_events(res, maps[i], blocks[i])      # resolve THIS block's ids + ground evidence against THIS block's text
+        ne = _normalize_events(res, maps[i], blocks[i], page_url)  # resolve THIS block's ids + ground evidence against THIS block's text
         if ne.get("_error"):                                  # a block that HARD-failed (transport/parse) → real error
             errs.append(ne["_error"])
         # DEDUP BY EVENT IDENTITY, not by url overlap. Sharing a url is normal on IR pages — one webcast/registration/
@@ -688,7 +705,7 @@ async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
         if res.get("__finish__") == "length":                  # output cut even with Lnn → chunk (split input, merge)
             print(f"[extract] ✂️  OUTPUT TRUNCATED {url[:70]} — finish=length → chunking", flush=True)
             return await _extract_events_chunked(raw_text, url, c, use_img)
-        return _normalize_events(res, tag_map, tagged)         # ground evidence against the page the model read
+        return _normalize_events(res, tag_map, tagged, url)    # ground evidence against the page the model read
 
     routes_r, ev = await asyncio.gather(_route(), _events())   # ROUTING + EXTRACTION concurrently on the GPU
     return _combine(ev["events"], ev.get("_event_urls") or set(), routes_r["routes"],
