@@ -21,6 +21,13 @@ Description=WaterEvents trace retention (keep newest 500 crawl traces)
 [Service]
 Type=oneshot
 User=thebigsun
-# `exit 0` when the directory is absent so a fresh host does not log a daily failure before the first crawl ever runs.
-# `ls -1dt | tail -n +501` keeps the 500 newest by mtime; -print0/-0 so a path with a space cannot split an argument.
-ExecStart=/bin/bash -c 'T=/home/thebigsun/WaterEvents/backend/agent/event_agent/crawl/traces; [ -d "$T" ] || exit 0; ls -1dt "$T"/*/ 2>/dev/null | tail -n +501 | tr "\n" "\0" | xargs -0 -r rm -rf'
+# THE LOGIC IS IN A SCRIPT, DELIBERATELY. Two different inline ExecStart one-liners were silently rewritten by systemd
+# before this unit ever reached a shell: the inner double quotes around "$T" terminate systemd's quoted-string parsing,
+# so the stored command truncated to `argv[]=/bin/bash -c set -o pipefail` — set an option, exit 0, report success in
+# one second. `%` is also systemd's specifier prefix, so find's `-printf "%T@ %p"` cannot safely be written here at all,
+# and `\t` / `\0` are consumed by systemd's escape processing before bash sees them. A file is run by a shell, so none
+# of that applies to it; deploy/reaper.sh and deploy/watchdog.sh are files for the same reason.
+# {JOURNAL 2026-08-01 "Ignoring unknown escape sequences: \"set -o pipefail; T=...\""}
+# {SYSTEMCTL 2026-08-01 "systemctl show -p ExecStart" -> "argv[]=/bin/bash -c set -o pipefail"}
+# [CONFIDENCE: CONFIRMED 100% — the truncated argv was read back out of systemd after installing the one-liner.]
+ExecStart=/home/thebigsun/WaterEvents/backend/deploy/janitor.sh

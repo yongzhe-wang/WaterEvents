@@ -123,6 +123,20 @@ jobs:
       - name: no unused definitions
         run: python backend/scripts/ops/check_unused.py
 
+      # 1d — systemd REWRITES an ExecStart it cannot parse and then reports the unit as successful, so this class of
+      # bug is invisible at runtime and no amount of monitoring finds it. waterevents-janitor.service carried its
+      # retention logic inline; the inner double quotes around "$T" ended systemd's own quoted-string parsing and the
+      # stored command became `argv[]=/bin/bash -c set -o pipefail` — set an option, exit 0. The timer fired daily, the
+      # journal read Starting and Finished in the same second, and nothing was ever deleted, until the trace tree
+      # reached 127,573 directories and 36GB on a 97GB disk. Nothing errored at any point; that is exactly why a static
+      # check earns its place. `%` is the same hazard by another route: it is systemd's specifier prefix.
+      # {SYSTEMCTL 2026-08-01 "systemctl show -p ExecStart --value waterevents-janitor.service" ->
+      #  "argv[]=/bin/bash -c set -o pipefail"}
+      # {JOURNAL 2026-08-01 "Ignoring unknown escape sequences: \"set -o pipefail; T=...\"" — logged, then ignored}
+      # [CONFIDENCE: CONFIRMED 100% — read back out of systemd on the production host after installing the one-liner.]
+      - name: systemd units are not silently rewritten
+        run: python backend/scripts/ops/check_units.py
+
       # 2 — every tracked shell script must parse. `bash -n` would have caught the apostrophe in
       # ${QWEN_API_KEY:?... the pod's vLLM ...} that made launch_fleet.sh unrunnable — and that mattered beyond the one
       # script, because install_systemd.sh evals its `export` lines to build the systemd EnvironmentFile.
