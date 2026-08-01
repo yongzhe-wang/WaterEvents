@@ -2,12 +2,21 @@
 # was running in production without existing in any committed file.
 #
 # Persistent=true so a host that was powered off over the scheduled time prunes on the next boot instead of skipping a
-# day. Trace growth is monotonic, so a missed run is a permanent step up in disk use, not a gap that heals.
+# run. Trace growth is monotonic, so a missed run is a permanent step up in disk use, not a gap that heals.
+#
+# HOURLY, NOT DAILY, because the retention number has to mean something. The fleet writes traces at a measured
+# ~1,565/hour: one hour after a successful prune to 500, the tree was already back to 2,065. On a daily timer it
+# therefore spends almost all of its time somewhere around 37,000 directories and ~11GB, and "keep the newest 500" is
+# a figure that is true for a few seconds a day. Hourly keeps it near 2,000, which is what the setting says.
+# It is also cheap at that size: pruning 127,451 directories took about three minutes, so pruning ~1,500 is seconds.
+# {MEASURED 2026-08-01 traces 500 -> 2065 in the hour after the janitor ran}
+# {MEASURED 2026-08-01 "janitor: 127573 -> 523 directories (removed 127050)" — what a day of unbounded growth cost}
+# [CONFIDENCE: CONFIRMED 100% — both counts read off the production host an hour apart.]
 [Unit]
-Description=Prune WaterEvents crawl traces daily
+Description=Prune WaterEvents crawl traces hourly
 
 [Timer]
-OnCalendar=daily
+OnCalendar=hourly
 Persistent=true
 
 [Install]
