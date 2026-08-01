@@ -443,6 +443,26 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
     from .engines import impersonate                      # lazy: the curl_cffi fingerprint-bypass engine (optional dep)
     empty = {"text": "", "links": [], "html": "", "shot_b64": "", "method": "", "inline": ""}
 
+    # ROBOTS REFUSAL IS A DECISION, NOT A FAILURE — and it has to be said out loud, here, before any tier runs.
+    # The gate already existed inside page.goto(), where a refusal raises PermissionError, gets caught, and comes back
+    # as an empty render with method="". Nothing downstream can tell that apart from a timeout, so a host we have
+    # deliberately chosen not to crawl costs the full ladder — _RENDER_TRIES attempts, four tiers each, with 2s and 4s
+    # backoffs between — and then engine.py counts failed_render, worker.py calls fail_work, and after four scans the
+    # unit lands in status='failed'. That state means "this is broken, look at it". Nobody needs to look at it: the
+    # answer will be identical tomorrow.
+    # Returning a distinct method makes the refusal terminal and free, and keeps 'failed' meaning what it says.
+    # {MEASURED 2026-08-01 politeness.url_allowed -> (False, 'robots-denied') for www.sap.com/investors/en.html and
+    #  www.centrica.com/investors/ — both robots.txt carry "User-agent: *" then "Disallow: /", centrica's file is
+    #  25 bytes and contains nothing else}
+    # {DB 2026-08-01 both urls sit in work_queue status='failed' attempt=4, having produced 17 and 16 events earlier}
+    # [CONFIDENCE: CONFIRMED 100% — the robots bodies were fetched and read, and the gate's verdict reproduced.]
+    try:
+        _ok, _why = politeness.url_allowed(url)
+    except Exception:                                    # noqa: BLE001 — a broken robots fetch must not block a crawl
+        _ok, _why = True, ""
+    if not _ok:
+        return {"text": "", "links": [], "html": "", "shot_b64": "", "method": "robots-denied", "inline": ""}
+
     if not runtime.ensure_browser():                     # no browser env → text-only impersonate is all we have
         try:
             it, il, ih = impersonate.fetch(url)

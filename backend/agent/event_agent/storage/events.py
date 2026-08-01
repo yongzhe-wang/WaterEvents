@@ -158,11 +158,18 @@ async def log_scan(pool: asyncpg.Pool, unit_type: str, url: str, stats: dict) ->
             # each invents its own guess — which is how three separate health checks all reported healthy through an
             # 11h52m total outage. {MIGRATION 20260729021500 fleet_health "events=0, extract_errors>0 → the system is
             # broken right now"} [CONFIDENCE: CONFIRMED 100% — the indistinguishability was the measured root cause].
-            "INSERT INTO scan_log (unit_type, url, render_pages, vlm_calls, vlm_skipped, events, extract_errors) "
-            "VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            # failed_render carries the SAME argument one lane over. The engine counts it and worker.py's fail/complete
+            # predicate consumes it (`lost = extract_errors + failed_render`), but it was dropped on the way here — so
+            # a render failure reached the table as render_pages=1, vlm_calls=0, vlm_skipped=0, events=0,
+            # extract_errors=0 and had to be deduced from three zeros. That is the exact shape all 40 permanently
+            # 'failed' work_queue rows share, every one of them a url that has produced real events before.
+            # {DB 2026-08-01 scan_log for the 40 failed units -> "1 | 0 | 0 | 0 | 0" on every row}
+            # [CONFIDENCE: CONFIRMED 100% — read off production for all 40.]
+            "INSERT INTO scan_log (unit_type, url, render_pages, vlm_calls, vlm_skipped, events, extract_errors, "
+            "failed_render) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             unit_type, url, int(stats.get("render_pages") or 0), int(stats.get("vlm_calls") or 0),
             int(stats.get("vlm_skipped") or 0), int(stats.get("events") or 0),
-            int(stats.get("extract_errors") or 0),
+            int(stats.get("extract_errors") or 0), int(stats.get("failed_render") or 0),
         )
 
 

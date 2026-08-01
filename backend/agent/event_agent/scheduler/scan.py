@@ -136,6 +136,16 @@ async def scan_unit(pool, client, url: str, unit_type: str, company_id=None) -> 
         # [CONFIDENCE: CONFIRMED 100% — engine returns failed_render, this dict did not read it, and worker.py's
         #  predicate named only extract_errors; all three verified by reading them together.]
         "failed_render": res.get("failed_render") or 0,      # pages that never loaded (walled / dead / empty)
+        # THE THIRD CATEGORY, which the two above were quietly absorbing. A page robots.txt tells us not to fetch is
+        # coverage DECLINED, not coverage lost — the crawl worked exactly as intended. It arrived here as an empty
+        # render, so it counted as failed_render, so worker.py's `lost` predicate fired, so the unit failed four times
+        # and parked in status='failed'. sap.com/investors/en.html and centrica.com/investors/ are both there right
+        # now, both live, having produced 17 and 16 events before the robots gate existed. Keeping the count separate
+        # is what stops a policy decision from being reported as a malfunction.
+        # {MEASURED 2026-08-01 politeness.url_allowed -> (False, 'robots-denied') for both; their robots.txt carry
+        #  "User-agent: *" then "Disallow: /", centrica's whole file being 25 bytes}
+        # [CONFIDENCE: CONFIRMED 100% — robots bodies fetched and read, parked rows read from work_queue.]
+        "skipped_robots": res.get("skipped_robots") or 0,    # pages we declined to fetch (robots.txt)
     }
     await db.log_scan(pool, unit_type, url, stats)           # append to scan_log (the windowed C_R/C_V/hit_rate source)
     # TITLE HOOK — after every full/incremental scan, curl THIS company's title-less events' URLs and fill what we can

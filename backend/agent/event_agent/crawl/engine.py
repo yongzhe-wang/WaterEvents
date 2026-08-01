@@ -226,6 +226,12 @@ async def _render_one(url: str) -> dict | None:
         # method="walled" only after every tier failed} [CONFIDENCE: CONFIRMED — walled is terminal within one attempt].
         if r.get("method") == "walled":
             return None
+        # A robots refusal is terminal for the same reason "walled" is — retrying re-runs a decision, not a chain — but
+        # it must NOT be counted as a render failure, so it returns its own sentinel rather than None. See render.py's
+        # gate for why: as an empty render it burned the full retry ladder and then parked live, event-producing hosts
+        # in status='failed'. [CONFIDENCE: CONFIRMED 100% — sap.com and centrica.com were both parked this way.]
+        if r.get("method") == "robots-denied":
+            return {"method": "robots-denied", "text": "", "links": [], "html": "", "shot_b64": "", "inline": ""}
         if attempt < _RENDER_TRIES - 1:                      # empty (timeout/walled/thin) → back off, then retry
             await asyncio.sleep(2.0 * (attempt + 1))         # 2s, 4s — let the browser pool drain before re-firing
     return None                                              # every attempt empty → real skip (counted fail-loud upstream)
@@ -291,6 +297,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     # and shout at run end so a degraded run is NEVER mistaken for a complete one.
     # {USER 2026-07-23 "fail loudly is the core ... we dont want quality issue"} [CONFIDENCE: CONFIRMED 100% — directive].
     failed_render = 0
+    skipped_robots = 0                                       # pages robots.txt told us not to fetch — declined, not failed
     failed_extract = 0
     # HARD extraction failures ONLY — the `_error` branch, where the page's events are LOST. Kept separate from
     # failed_extract, which ALSO counts `_partial` and `_route_error`; in those two the events were KEPT, so a caller
@@ -358,9 +365,16 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
         # nonlocal MUST include seen_event: `seen_event |= ekeys` is an augmented assignment that REBINDS the name, so
         # without this Python treats seen_event as a _harvest-local and every page raised UnboundLocalError → the crawl
         # crashed → the company was marked failed with 0 events (even when the VLM had extracted plenty). {DEBUG 2026-07-23}.
-        nonlocal failed_render, failed_extract, extract_errors, seen_event, vlm_calls, vlm_skipped
+        nonlocal failed_render, failed_extract, extract_errors, seen_event, vlm_calls, vlm_skipped, skipped_robots
         if render is None:                                     # render failed (walled/dead/empty) — coverage loss, no VLM touched
             failed_render += 1
+            return []
+        # Counted apart from failed_render on purpose: this page was not attempted, so it is not coverage LOST, it is
+        # coverage DECLINED. Folding it into failed_render is what made worker.py's `lost` predicate fire and park
+        # robots-disallowed hosts in status='failed'. It still returns no events, so the scan reports 0 for this page —
+        # it simply does not claim something broke. [CONFIDENCE: CONFIRMED 100% — see render.py's robots gate.]
+        if render.get("method") == "robots-denied":
+            skipped_robots += 1
             return []
         tracer.save_page(render["url"], render, res)           # full audit trail: content/shot/html/links/result/method
         if res.get("_skipped"):                                # hash-gate short-circuited this page → a SKIP, not a VLM call
@@ -470,7 +484,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     tracer.save_summary(events, len(visited))
     # status = ok ONLY if nothing dropped. ANY render/extract failure → "incomplete" so the GCP caller can react
     # (retry the failed pages / alert) instead of trusting a partial event list as the whole truth.
-    status = "ok" if (failed_render == 0 and failed_extract == 0) else "incomplete"
+    status = "ok" if (failed_render == 0 and failed_extract == 0) else "incomplete"   # skipped_robots deliberately absent: declining a page is a complete scan
     print(f"[crawl] DONE {start_url[:50]} — {len(events)} events over {len(visited)} pages. Trace: {run_dir}", flush=True)
     if status != "ok":                                        # LOUD run-level banner — a degraded run must be unmissable
         print(f"[crawl] ⚠️⚠️ INCOMPLETE RUN — {failed_extract} pages FAILED extraction (LLM/network), "
@@ -479,6 +493,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int 
     return {"events": events, "pages": len(visited), "trace_dir": run_dir,
             "status": status, "failed_extract": failed_extract, "extract_errors": extract_errors,
             "failed_render": failed_render,
+            "skipped_robots": skipped_robots,
             "vlm_calls": vlm_calls, "vlm_skipped": vlm_skipped}   # → scan_log → C_R/C_V/hit_rate for the packing solver
 
 
