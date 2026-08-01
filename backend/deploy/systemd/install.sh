@@ -73,6 +73,38 @@ echo "[install] verified $ENVF ($(grep -c . "$ENVF") lines, all required keys pr
 
 mkdir -p "$LOGD" && chown "$RUN_USER" "$LOGD"
 
+# ── system libs for camoufox's Firefox (tier 4, the anti-Akamai lane) ────────────────────────────────────────────────
+# THIS IS THE GCP TWIN OF backend/deploy/runpod/onstart.sh:56. The pod installer has had this block since 2026-07-24;
+# this host never got one, and that asymmetry is why identical code produced opposite results on the two machines.
+#
+# camoufox-bin is a Firefox fork. Without libgtk-3.so.0 it dies at launch with "XPCOMGlueLoad error ... Couldn't load
+# XPCOM ... exitCode=255". The engine catches that, returns empty, and the render reports method="walled" — which is
+# indistinguishable from a wall that genuinely beat all four tiers. Nothing counts it, nothing aggregates it, it never
+# reaches scan_log or fleet_health. So tier 4 was dead on the production VM and every symptom pointed at the websites.
+#
+# Measured on ir-media-8, same url before and after installing these packages:
+#   arganinc.com/category/news/   method=walled text=0            ->  method=camoufox text=6303 links=292 dates=62
+# — a host with 36 events already in the database, which tier 1 and the residential tier both see as 460 chars of
+# block page. Only Firefox/FB4 can read it.
+#
+# The 2026-07-24 audit that fixed this on the pod recorded the scale: 45 walled hosts, 39 recovered once the libs were
+# installed. That fix reached one machine and not the other, and there was nothing in the repo to carry it across.
+# apt is idempotent — present libs skip in under a second — and the ldconfig guard keeps a no-op install silent.
+# {ONSTART.SH:52-60 "libgtk-3 missing — installing camoufox/Firefox libs (tier4 anti-Akamai lane)" — the pod's copy}
+# {AUDIT 2026-07-24 camoufox_libgtk_missing "before: 45 walled; after: 39 recovered"}
+# {MEASURED 2026-08-01 ir-media-8 "libgtk-3.so.0: cannot open shared object file" in the camoufox browser log}
+# [CONFIDENCE: CONFIRMED 100% — the launch error was read from the host, and the recovery verified on the same url.]
+if ! ldconfig -p 2>/dev/null | grep -q "libgtk-3.so.0"; then
+  echo "[install] libgtk-3 missing — installing camoufox/Firefox libs (tier4 anti-Akamai lane)"
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    libgtk-3-0 libasound2 libdbus-glib-1-2 libx11-xcb1 libxt6 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libpango-1.0-0 libcairo2
+  ldconfig -p 2>/dev/null | grep -q "libgtk-3.so.0" \
+    || { echo "[install] FATAL: libgtk-3.so.0 still absent after install — tier 4 would be silently dead" >&2; exit 1; }
+fi
+echo "[install] camoufox/Firefox system libs present (tier 4 can launch)"
+
 # ── units ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 install -m 644 "$SRC/waterevents-worker@.service" "$SRC/waterevents-pacer.service" \
                "$SRC/waterevents-webapp.service"  "$SRC/waterevents-fleet.target" \

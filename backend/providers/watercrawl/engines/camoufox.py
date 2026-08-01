@@ -62,6 +62,11 @@ async def _render_one(url: str, wait_ms: int) -> tuple[str, list, str]:
         return text, links, html
 
 
+# Set the first time camoufox fails to LAUNCH (missing system libs, no binary, OOM at start). Process-wide because
+# the fault is a property of the HOST, not of a url — see the warning in render() for what it cost to not have this.
+_LAUNCH_BROKEN = False
+
+
 def render(url: str, wait_ms: int) -> tuple[str, list, str]:
     """SYNC wrapper for FB4 — run _render_one on the shared loop, bounded by _CAMOUFOX_SEM. ('', [], '') on ANY
     failure (camoufox absent / launch error / wall unbeaten) so a caller keeps its prior result. WHY sync: the
@@ -72,5 +77,36 @@ def render(url: str, wait_ms: int) -> tuple[str, list, str]:
             return runtime.run_on_loop(_render_one(url, wait_ms),
                                        (config.NAV_TIMEOUT_MS / 1000) + max(wait_ms, 0) / 1000 + 70)
         except Exception as _ce:                           # noqa: BLE001 — FB4 is a best-effort last resort
-            print(f"[watercrawl] camoufox FB4 failed for {url[:70]}: {_ce}", flush=True)
+            # A LAUNCH failure is not a per-url outcome, it is a broken host, and it must say so ONCE and loudly.
+            # This tier was dead on the production VM for an unknown length of time: camoufox's Firefox could not start
+            # because libgtk-3.so.0 was not installed, so every attempt printed one line among thousands and returned
+            # empty, and the render then reported method="walled" — indistinguishable from a wall that genuinely beat
+            # all four tiers. Nothing counted it, nothing aggregated it, it never reached scan_log or fleet_health.
+            # Meanwhile arganinc.com/category/news/ — 36 events already in the database — is a host ONLY camoufox can
+            # read: from a working install it returns 6,303 chars with 62 date tokens, while tier 1 and the residential
+            # tier both get 460 chars of block page.
+            # The `⚠ NO webshare proxy` startup warning exists for exactly this failure mode one tier over. This is its
+            # missing twin.
+            # {MEASURED 2026-08-01 ir-media-8 "camoufox FB4 failed ... libgtk-3.so.0: cannot open shared object file:
+            #  No such file or directory / Couldn't load XPCOM. / <process did exit: exitCode=255>"}
+            # {MEASURED 2026-08-01 same url, pod vs prod: method=camoufox text=6303 links=292 dates=62 -> method=walled
+            #  text=0 links=0 dates=0}
+            # [CONFIDENCE: CONFIRMED 100% — the launch error was read from the browser log on the production host.]
+            msg = str(_ce)
+            if "Failed to launch" in msg or "cannot open shared object" in msg or "Couldn't load XPCOM" in msg:
+                global _LAUNCH_BROKEN
+                if not _LAUNCH_BROKEN:                     # once per process, not once per url
+                    _LAUNCH_BROKEN = True
+                    print("[watercrawl] ⚠ camoufox CANNOT LAUNCH on this host — tier 4 is DEAD, not merely unlucky. "
+                          "Bot-walled hosts that only Firefox/FB4 can read will return 0 events forever and look "
+                          f"'walled'. Fix the environment, then restart. First error: {msg[:300]}", flush=True)
+            else:
+                print(f"[watercrawl] camoufox FB4 failed for {url[:70]}: {_ce}", flush=True)
             return "", [], ""
+
+# No launch_broken() accessor here on purpose. I wrote one, and check_unused.py failed the build for it: nothing
+# called it. That check exists because of five fixes in one day that were believed shipped with zero call sites, and
+# it was right — the one-time warning above IS the fix, and a getter waiting for a hypothetical future consumer is the
+# exact shape the ratchet is built to reject. Add it back when something actually reads it.
+# {CI 2026-08-01 "::error::defined but never used — camoufox.py:108 launch_broken"}
+# [CONFIDENCE: CONFIRMED 100% — the build failed on it.]
