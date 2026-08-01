@@ -545,10 +545,21 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
     # as a successful render — the caller would feed the block page to the model → 0 events with failed_render=0 (a
     # degraded run masquerading as clean). Return method="walled" + EMPTY so the caller drops it + counts a render
     # failure. {DEBUG 2026-07-23 pepsico: block body returned as method="render"} [CONFIDENCE: CONFIRMED 100%].
-    if detection.is_challenge(text):
+    # CHECK EVERY TEXT FIELD, NOT JUST `text`. This guard existed and did not fire, because the block-page wording does
+    # not always land in `text`: BAE Systems renders to text='\n' (one newline) with the Incapsula body — "Request
+    # unsuccessful. Incapsula incident ID: ..." — sitting in `inline`. is_challenge(text) was therefore False, the
+    # `text or links` line below saw a truthy '\n', and the block page was returned as method="render" with
+    # failed_render=0. That is precisely the "degraded run masquerading as clean" this block is written to prevent, and
+    # it was reachable the whole time through a field the check did not read.
+    # {MEASURED 2026-08-01 investors.baesystems.com — tier1 text=1 links=0 inline=83, is_challenge(text)=False,
+    #  final method="render"; the inline body is the Incapsula interstitial}
+    # [CONFIDENCE: CONFIRMED 100% — every branch predicate was printed for that url in one run.]
+    if any(detection.is_challenge(s) for s in (text, inline, html)):
         return {"text": "", "links": [], "html": "", "shot_b64": "", "method": "walled", "inline": ""}
     # merely link-sparse (no challenge body) → a possibly-legit small page → return the thin render we have.
-    if text or links:
+    # `.strip()` because a render that produced only whitespace is not a small page, it is nothing — and an unstripped
+    # truthiness test on '\n' is what let the case above through to a successful-looking return.
+    if (text or "").strip() or links:
         return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render", "inline": inline}
     return dict(empty)
 
