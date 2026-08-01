@@ -31,7 +31,16 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 # The manifest covers python AND the shell/sql the fleet runs, because a stale migration or watchdog is just as capable
 # of a silent production difference as a stale module. Generated fresh each run rather than checked in: a checked-in
 # manifest is one more thing that can be out of date, and the tracked file list is already the source of truth.
-FILES=$(git ls-files 'backend/**.py' 'backend/**.sh' 'backend/**.sql' 'backend/**.mjs')
+#
+# MIGRATIONS ARE EXCLUDED, and their absence from a host is not drift. They are applied from the dev machine straight
+# to Supabase; the VM never replays them. The proof is on the box right now: fleet_health() is present in pg_proc while
+# 20260729021500_waterevents_fleet_health.sql does not exist anywhere on the host. Reporting those five files as
+# MISSING-ON-TARGET was five false alarms out of five, and a drift tool that cries wolf about files that are
+# CORRECTLY absent is a tool nobody reads to the end of.
+# {MEASURED 2026-08-01 "SELECT count(*) FROM pg_proc ... proname='fleet_health'" -> 1, while the same run reported
+#  "MISSING-ON-TARGET backend/supabase/migrations/20260729021500_waterevents_fleet_health.sql"}
+# [CONFIDENCE: CONFIRMED 100% — the contradiction was observed in one sitting; every missing file was a migration.]
+FILES=$(git ls-files 'backend/**.py' 'backend/**.sh' 'backend/**.mjs' | grep -v '^backend/supabase/migrations/')
 [ -z "$FILES" ] && { echo "no tracked backend files — wrong directory?" >&2; exit 2; }
 
 MAN=$(mktemp); trap 'rm -f "$MAN"' EXIT
