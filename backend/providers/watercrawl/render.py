@@ -17,7 +17,7 @@ import re
 import sys
 import time
 
-from . import config, detection, extract_js, html_inline, page, politeness, runtime, walls
+from . import capacity, config, detection, extract_js, html_inline, page, politeness, runtime, walls
 
 # RENDER STEP INSTRUMENTATION — when WATERCRAWL_RENDER_DEBUG=1, print a timestamped line at EVERY step of a browser
 # render (context → page → goto → size-gate → settle → break-walls → extract → screenshot) with the elapsed ms. WHY:
@@ -331,6 +331,19 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
     ok, why = await politeness.url_allowed_async(url)
     if not ok:
         _loud(f"refused {url}: {why}")
+        return "", [], "", "", ""
+    # CAPACITY CEILING, before the semaphores for the same reason the policy gate is: a render that has to wait must
+    # wait WITHOUT holding permits, or the queue behind it stalls on a page it was never going to open.
+    # The semaphores bound how many pages run at once; they cannot bound how much MEMORY those pages take, and the
+    # relationship between the two is not fixed — 48 slots hold 8.5GB today across 140 chromium processes, but a
+    # heavy page costs several times an average one. That gap is what took this box down on 2026-07-27, and a static
+    # slot count is a guess at it made in advance. capacity.check reads the machine instead of guessing.
+    # A blocked render is counted, logged and eventually reported as failed_render — never silently absorbed.
+    # {LAUNCH_FLEET.SH:70-82 the 2026-07-27 livelock} {MEASURED 2026-08-01 "140 chromium / 8.5GB / 24.5GB free"}
+    # [CONFIDENCE: CONFIRMED 100% — both read off the host.]
+    _cap_ok, _cap_why = await capacity.wait_for_capacity_async()
+    if not _cap_ok:
+        _loud(f"capacity ceiling held off {url[:60]} for the full budget — {_cap_why}")
         return "", [], "", "", ""
     _rlog(url, "want-sems", t0, f"(shot_sem+page_sem; browser={'proxy' if browser else 'pool'})")
     # When NO_SHOT is set we won't take a screenshot, so DON'T hold _shot_sem (the shot-slot cap of 4) — otherwise text-only

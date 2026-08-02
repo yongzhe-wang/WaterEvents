@@ -34,10 +34,20 @@ _WAIVER = "ci: allow-unused"
 
 
 def tracked_python() -> list[str]:
-    """Every .py git knows about. `git ls-files` rather than a filesystem walk so build artifacts, virtualenvs and
-    untracked scratch files can never influence the verdict."""
-    out = subprocess.run(["git", "ls-files", "*.py"], capture_output=True, text=True).stdout
-    return out.split()
+    """Every .py git knows about OR would accept — tracked files plus untracked ones that .gitignore does not exclude.
+
+    `--others --exclude-standard` is the half that was missing, and its absence was a hole big enough to drive a
+    module through: a NEW file is untracked until its first commit, so every symbol in it was invisible to this check
+    on exactly the commit that introduced it. Found by writing capacity.py with a function nothing called and watching
+    this report "0 new" — the same class of miss it exists to prevent, in the checker itself.
+    Build artifacts and virtualenvs stay out because --exclude-standard honours .gitignore, so the original reason for
+    preferring git over a filesystem walk still holds.
+    {MEASURED 2026-08-01 "grep -rn wait_for_capacity" -> one hit, the definition; check_unused reported "0 new"}
+    [CONFIDENCE: CONFIRMED 100% — reproduced on this repo, then fixed by adding the two flags.]
+    """
+    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.py"],
+                         capture_output=True, text=True).stdout
+    return sorted(set(out.split()))
 
 
 def referenced_names(src: dict[str, str]) -> set[str]:
