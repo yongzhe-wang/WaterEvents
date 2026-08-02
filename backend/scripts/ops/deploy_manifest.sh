@@ -55,8 +55,32 @@ echo "local: $(wc -l < "$MAN" | tr -d ' ') tracked backend files at $(git rev-pa
 # which is exactly what happened on the first run of this file, printing 129 lines of
 # "backend/agent/__init__.py: No such file or directory" as the shell tried to execute each filename as a command.
 # [CONFIDENCE: CONFIRMED 100% — reproduced, then fixed by moving the script into a variable.]
+#
+# COMPARE AGAINST WHAT ACTUALLY RUNS. Some scripts are `install`-ed to /usr/local/bin by systemd/install.sh, and the
+# copy left in the checkout is not the one any unit executes. Reporting drift on the checkout copy is a false alarm of
+# the same kind as the migrations: measured today, backend/deploy/watchdog.sh in the repo on the host was stale at
+# 2cb6d112e901 while /usr/local/bin/waterevents-watchdog — the file waterevents-watchdog.service actually runs — was
+# 2b0cd3defdb9, byte-identical to HEAD. The tool was reporting the fleet as drifted on a file that was already current
+# where it counts, which is exactly the noise that trains people to skim past the output.
+# {SHA1 2026-08-02 "/usr/local/bin/waterevents-watchdog 2b0cd3defdb9" = "local HEAD 2b0cd3defdb9", repo copy 2cb6d112e901}
+# {SYSTEMD "ExecStart=/usr/local/bin/waterevents-watchdog"}
+# [CONFIDENCE: CONFIRMED 100% — all three hashes read in one command, and the ExecStart names the installed path.]
 REMOTE_SCRIPT='same=0
+installed_path() {
+  case "$1" in
+    backend/deploy/watchdog.sh) echo /usr/local/bin/waterevents-watchdog ;;
+    backend/deploy/reaper.sh)   echo /usr/local/bin/waterevents-reaper ;;
+    *) echo "" ;;
+  esac
+}
 while read -r f h; do
+  inst=$(installed_path "$f")
+  if [ -n "$inst" ] && [ -f "$inst" ]; then
+    # The installed copy is authoritative. A stale checkout copy alongside a current installed one is not drift.
+    if [ "$(sha1sum "$inst" | cut -d" " -f1)" = "$h" ]; then same=$((same+1))
+    else echo "DIFFERS $f  (installed at $inst)"; fi
+    continue
+  fi
   p="$ROOT/$f"
   if [ ! -f "$p" ]; then echo "MISSING-ON-TARGET $f"
   elif [ "$(sha1sum "$p" | cut -d" " -f1)" = "$h" ]; then same=$((same+1))
