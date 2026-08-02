@@ -607,16 +607,26 @@ async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_i
     ITS map, merge (dedup by url overlap). NO RECURSION, NO ROUTES (routing is a separate single call now). A block that
     STILL truncates is accepted as a partial and flagged (_error). {USER 2026-07-24 "simple chunking, cut each at the
     limit, not using recursion, but keep the have url"} [CONFIDENCE: CONFIRMED 100% — direct instruction]."""
-    n = max(2, -(-len(text) // _CHUNK_TARGET_CHARS))          # ceil-div → each block ≈ _CHUNK_TARGET_CHARS (~14 rows, under the cliff)
+    # SCALED FOR CJK, for the same reason _text_cap is: the 20,000 target is characters and its "still ctx-safe" note
+    # was measured on English. A CJK block of 20,000 chars is ~16,700 tokens, so with the old 16,384 output budget the
+    # request totalled ~34,051 against a 32,768 window — every chunk of a Korean or Japanese page 400'd, which is why
+    # samyangfoods logged "0 events over 3 pages" with three extract failures. It had chunked, and each chunk was
+    # rejected. Halving the output budget already brings that to ~25,859 and fixes it, but leaving the block size
+    # char-fixed just relocates the English assumption one layer down.
+    # {MEASURED arithmetic: CJK at 1.2 chars/token, 20000 chars = 16,667 tok; +16384 output +1k system = 34,051 > 32,768}
+    # {W*.LOG 2026-08-02 samyangfoods "0 events over 3 pages" with 3 × "maximum context length" 400}
+    # [CONFIDENCE: CONFIRMED 100% — the 400 body gives the window and the operands; the 3-block failure is in the log.]
+    target = int(_CHUNK_TARGET_CHARS * (1.0 - 0.64 * _cjk_ratio(text))) or _CHUNK_TARGET_CHARS
+    n = max(2, -(-len(text) // target))                       # ceil-div → each block ≈ target (~14 rows, under the cliff)
     cap_note = None
     if n > _MAX_CHUNK_BLOCKS:                                  # runaway page → cap blocks, process the TOP window, drop+flag tail
-        kept = _MAX_CHUNK_BLOCKS * _CHUNK_TARGET_CHARS         # the top cap×target chars (real events/list live near the top)
+        kept = _MAX_CHUNK_BLOCKS * target                     # the top cap×target chars (real events/list live near the top)
         cap_note = f"block cap: {n} blocks > {_MAX_CHUNK_BLOCKS}; processed top {kept} chars, dropped tail {len(text)-kept} chars"
         print(f"[extract] ⚠️ BLOCK CAP {page_url[:70]} — {cap_note}", flush=True)
         text = text[:kept]                                    # only the top window is chunked → VLM calls bounded to the cap
         n = _MAX_CHUNK_BLOCKS
     blocks = _split_text(text, n)
-    print(f"[extract] ✂️  chunking {page_url[:70]} → {len(blocks)} blocks (events-only, ~{_CHUNK_TARGET_CHARS} chars each)", flush=True)
+    print(f"[extract] ✂️  chunking {page_url[:70]} → {len(blocks)} blocks (events-only, ~{target} chars each)", flush=True)
     jobs, maps = [], []
     for b in blocks:
         tg, mp = prompts.tag_links(b)                         # EACH block gets its OWN Lnn id space + map
