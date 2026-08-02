@@ -503,20 +503,65 @@ def _combine(events: list, event_urls: set, routes: list, error: str | None,
     return out
 
 
+def _cjk_ratio(text: str) -> float:
+    """Fraction of the first 4k chars that are CJK. Sampled rather than counted in full: this runs on every page, and a
+    Korean IR page does not turn English halfway down, so the opening is representative."""
+    head = text[:4000]
+    if not head:
+        return 0.0
+    n = sum(1 for ch in head
+            if "　" <= ch <= "鿿" or "가" <= ch <= "힯" or "＀" <= ch <= "￯")
+    return n / len(head)
+
+
 def _text_cap(page: dict, use_image: bool) -> int:
     """The char cap page_text is limited to before tagging: smaller WITH an image (image carries layout + its tokens are
-    scarce), full budget text-only. One source of truth for the input bound."""
+    scarce), full budget text-only. One source of truth for the input bound.
+
+    SCALED FOR CJK, because 40,000 is an ENGLISH measurement and this file says so itself: "at 40000 chars ≈ ~12k input
+    tok" is 3.3 chars per token, which is what English tokenizes at. Korean and Japanese tokenize at roughly 1.2 chars
+    per token, so the SAME 40,000 chars is ~33k tokens — past the whole 32,768 window on its own, before the system
+    prompt or a single output token. Those pages never reach the chunker either: they sit comfortably under the
+    character threshold that triggers it and simply 400 at the server.
+
+    Measured: 803 `maximum context length` failures across 18 urls, and the hosts are exactly the ones this predicts —
+    samyangfoods.com (KR), mitsui-kinzoku.com (JP), screen.co.jp (JP), renesas.com (JP). On this evidence it is also a
+    large part of why the low-event company population skews Asian.
+    {W*.LOG 2026-08-02 "THIS MODEL'S MAXIMUM CONTEXT LENGTH IS 32768 TOKENS. HOWEVER, YOU REQUESTED 16384 OUTPUT TOKENS
+     AND YOUR PROMPT CONTAINS AT LEAST 16385 INPUT TOKENS, FOR A TOTAL OF AT LEAST 32769 TOKENS."}
+    {EXTRACT.PY:44 "A REQUEST IS INPUT + QWEN_MAX_TOKENS(16384) + SYSTEM(~1K); AT 40000 CHARS ≈ ~12K INPUT TOK"}
+    [CONFIDENCE: CONFIRMED 100% — the 400 body names both numbers, and every affected host is CJK.]
+    """
     has_img = bool(use_image and page.get("image_b64"))
-    return _VISION_TEXT_CHARS if has_img else MAX_INPUT_CHARS
+    base = _VISION_TEXT_CHARS if has_img else MAX_INPUT_CHARS
+    # Interpolate between the English cap and an all-CJK cap of base×0.36 (1.2/3.3, the tokens-per-char ratio). A
+    # partly-CJK page — Japanese body with English headings — lands in between instead of being over- or
+    # under-truncated by an all-or-nothing branch.
+    r = _cjk_ratio(page.get("page_text") or "")
+    return int(base * (1.0 - 0.64 * r)) if r > 0.05 else base
+
+
+# Output budget for the EXTRACTION call. config.MAX_TOKENS is 16384 — exactly half the 32,768 window — which leaves
+# 16,384 for input and system combined, and a prompt one token over that is rejected outright. An events reply is a
+# JSON list of {date, title, urls, evidence}; even 60 events is ~5k tokens, so half the context window was never
+# needed and was costing the other half. Halving it doubles the usable input budget.
+# The per-call override already exists for exactly this failure: client.py:148 documents the media ROUTE path using it
+# after "POD 2026-07-25 PDF-as-text: input 20769 + max 12000 > 32768 → 400". This is the same 400, on the events lane.
+# NOT cut further than half: truncating the output mid-JSON is its own failure ("max_tokens and the JSON was cut
+# mid-structure → _parse_json returns {}"), and a page with a long event list needs real room.
+# [CONFIDENCE: CONFIRMED 100% — the 400 body states both operands; the override path is already in production use.]
+EVENTS_MAX_TOKENS = int(os.environ.get("EVENT_EXTRACT_MAX_TOKENS", "8192"))
 
 
 def _build_events_job(tagged_text: str, page_url: str, image_b64, use_image: bool) -> dict:
-    """EXTRACTION job from ALREADY-Lnn-TAGGED page text → events only. Attaches the screenshot only when use_image."""
+    """EXTRACTION job from ALREADY-Lnn-TAGGED page text → events only. Attaches the screenshot only when use_image.
+    max_tokens rides in the job dict because send_many does `send_one(**job)`, so any key here becomes a kwarg."""
     return {
         "system": prompts.SYSTEM_EVENTS,
         "user": prompts.build_events_user(tagged_text, page_url),
         "image_b64": image_b64 if use_image else None,
         "guided_json": prompts.EVENTS_SCHEMA,
+        "max_tokens": EVENTS_MAX_TOKENS,
     }
 
 
