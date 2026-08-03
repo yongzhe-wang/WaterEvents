@@ -1,15 +1,19 @@
 // Shared Supabase REST helpers for the Vercel serverless functions.
-// WHY: the dashboard now reads LIVE from Supabase (project data_invest) instead of
+// WHY: the dashboard now reads LIVE from Supabase (project water_events_ir) instead of
 // a static snapshot, so the deployed site is dynamic for anyone. The publishable
 // key is public by design (RLS is off → read-only public access to these tables).
 // {USER 2026-06-06 "i want this dynamic, and working for vercel and other people"}
 // Files prefixed with "_" are NOT treated as routes by Vercel — just a shared lib.
 // From env (publishable key is public-by-design; the literal is only the local-dev default) so a project/key
 // change is a config edit, not a code edit. {AUDIT 2026-06-22 "no hardcode"}.
-// Defaults point to the LIVE project (ezuvmolyfgsadkehjnef) post-migration; prod overrides via env.
-// {MIGRATION 2026-06-24 old duioztbhvufoikracwgf → new ezuvmolyfgsadkehjnef} — anon key is public-by-design.
-const SUPABASE_URL = process.env.SUPABASE_REST_URL || "https://ezuvmolyfgsadkehjnef.supabase.co/rest/v1";
-const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6dXZtb2x5ZmdzYWRrZWhqbmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjI1NDEsImV4cCI6MjA5Nzc5ODU0MX0.o06CM1IiezCNV_hHq5n9oY6JA9oImM4nz4Rey5qhtJE";
+// Defaults point to the LIVE project (vtwdantvlurtvymhhorr) post-migration; prod overrides via env.
+// {MIGRATION 2026-06-24 duioztbhvufoikracwgf → ezuvmolyfgsadkehjnef} — anon key is public-by-design.
+// {MIGRATION 2026-08-03 ezuvmolyfgsadkehjnef (personal project, us-east-1) → vtwdantvlurtvymhhorr
+//  (water_events_ir under the focusAlpha org, us-west-2)} — moving the DB off a personal project onto the company org.
+// [CONFIDENCE: CONFIRMED 100% — pg_dump/pg_restore reconciled 14/15 tables exactly (scan_log drifted during the
+//  cutover window), indexes 34/34 and constraints 115/115 matched, and the old project went to zero writes].
+const SUPABASE_URL = process.env.SUPABASE_REST_URL || "https://vtwdantvlurtvymhhorr.supabase.co/rest/v1";
+const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0d2RhbnR2bHVydHZ5bWhob3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzMzOTMsImV4cCI6MjEwMTMwOTM5M30.-ls5eNkxKHJSE_YBtfV_Zhi-qT2QKDPbYMHkhJ3JUOU";
 
 // Accept-Profile pins PostgREST to the `waterevents` schema (discovery + enrichment tables live there, NOT public —
 // a bare read would hit public / a stale ir-pipeline table). {MIGRATION 20260723 "create schema waterevents"}.

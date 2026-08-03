@@ -38,11 +38,16 @@ from aiohttp import ClientSession, ClientTimeout, web
 # exposing it here grants nothing new. Env-overridable so a project/key rotation is a config change, not a code edit.
 # {frontend/lib/_db.js "anon key is public-by-design"} {MEASURED 2026-07-28 "PATCH work_queue as anon → 401 / 42501"}
 # [CONFIDENCE: CONFIRMED 100% — write-denial probed directly against the live REST API].
-_REST_URL = os.environ.get("SUPABASE_REST_URL", "https://ezuvmolyfgsadkehjnef.supabase.co/rest/v1")
+# {MIGRATION 2026-08-03 ezuvmolyfgsadkehjnef (personal project, us-east-1) → vtwdantvlurtvymhhorr
+#  (water_events_ir under the focusAlpha org, us-west-2)} — the runtime already reads the new project from
+#  /etc/waterevents.env; these literals are the fallback and were stale, so a fresh clone would have silently
+#  talked to the retired project. [CONFIDENCE: CONFIRMED 100% — /today/pulse against the new project returned
+#  live rows (period_matched_today=204) on 2026-08-03 after the cutover].
+_REST_URL = os.environ.get("SUPABASE_REST_URL", "https://vtwdantvlurtvymhhorr.supabase.co/rest/v1")
 _REST_KEY = os.environ.get(
     "SUPABASE_PUBLISHABLE_KEY",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6dXZtb2x5ZmdzYWRrZWhqbmVmIiwicm9sZSI6"
-    "ImFub24iLCJpYXQiOjE3ODIyMjI1NDEsImV4cCI6MjA5Nzc5ODU0MX0.o06CM1IiezCNV_hHq5n9oY6JA9oImM4nz4Rey5qhtJE",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0d2RhbnR2bHVydHZ5bWhob3JyIiwicm9sZSI6"
+    "ImFub24iLCJpYXQiOjE3ODU3MzMzOTMsImV4cCI6MjEwMTMwOTM5M30.-ls5eNkxKHJSE_YBtfV_Zhi-qT2QKDPbYMHkhJ3JUOU",
 )
 
 _PORT = int(os.environ.get("PORT", "8090"))
