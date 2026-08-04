@@ -1,0 +1,30 @@
+[Unit]
+# The PUBLIC read-only api on :8090. It was the only WaterEvents process NOT under systemd — started with nohup by
+# launch_api_service.sh — which made it invisible to `systemctl list-units 'waterevents*'` and therefore easy to miss.
+# It was in fact missed twice: once killed as a stray orphan, and once nearly lost across a planned VM stop, since a
+# nohup process does not come back after a reboot. launch_api_service.sh already assumed this unit existed —
+# its own guard line reads `guard_owner waterevents-api.service "sudo systemctl restart waterevents-api.service"`.
+# {GCLOUD firewall "allow-api-service-8090  default  0.0.0.0/0  tcp:8090  webapp" — this port is open to the internet}
+# [CONFIDENCE: CONFIRMED — the guard line and the firewall rule were both read directly].
+Description=WaterEvents public read-only API (:8090)
+After=network-online.target
+Wants=network-online.target
+PartOf=waterevents.target
+
+[Service]
+Type=simple
+User=thebigsun
+WorkingDirectory=/home/thebigsun/WaterEvents/backend
+EnvironmentFile=/etc/waterevents/fleet.env
+Environment=PYTHONPATH=/home/thebigsun/WaterEvents/backend
+Environment=PORT=8090
+Environment=API_CACHE_TTL_S=10
+Environment=API_RATE_MAX=60
+ExecStart=/home/thebigsun/venv/bin/python -m api_service.main
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/thebigsun/eventinc_fleet/api_service.log
+StandardError=append:/home/thebigsun/eventinc_fleet/api_service.log
+
+[Install]
+WantedBy=multi-user.target
