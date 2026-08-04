@@ -44,35 +44,63 @@ def _pypdf_text(data: bytes) -> str:
 # ONLY in the structured `tables` JSON — the two are cleanly separated (option B).
 _MD_TABLE_BLOCK = re.compile(r"(?:^[ \t]*\|.*\n?)+", re.M)
 
-_converter = None                                                # heavy singleton (loads layout + TableFormer models once)
+_converter = None                                                # heavy singleton, OCR OFF (loads layout + TableFormer)
+_converter_ocr = None                                            # second singleton, OCR ON — only built if a doc needs it
 _lock = threading.Lock()
 _ACCURATE = os.environ.get("OFFICE_TABLE_ACCURATE", "1") == "1"   # TableFormer ACCURATE mode — best for financial tables
+# OCR is OFF on the fast path and used only as a FALLBACK for a document the text path could not read.
+# WHY: Docling's PdfPipelineOptions defaults do_ocr=True, so every page of every pdf went through RapidOCR — and IR
+# pdfs are overwhelmingly text-native, so it found nothing. The log during the first dataset smoke was a wall of
+# "[RapidOCR] The text detection result is empty" / "RapidOCR returned empty result!" while the process sat at 382%
+# CPU. That is the entire cost of OCR paid for zero content on the common case.
+# Scanned pdfs are real but rare, and they are already DETECTABLE: an empty text extraction is exactly the signal
+# {EXTRACT.PY "pypdf fallback also EMPTY — likely image-only/scanned pdf (needs OCR)"}. So: try text-only, and if the
+# document comes back empty, retry ONCE with OCR. Fast on the 95% case, correct on the 5%.
+# {MEASURED 2026-08-03 media_dispatch_run smoke — RapidOCR invoked on every page, empty result every time}
+# [CONFIDENCE: CONFIRMED — the warnings name the exact call and its empty return].
+_OCR_FALLBACK = os.environ.get("OFFICE_OCR_FALLBACK", "1") == "1"   # set 0 to disable the scanned-pdf retry entirely
 
 
-def _get_converter():
-    """Build the Docling DocumentConverter ONCE (thread-safe) and cache it. None if docling is absent so the caller
-    degrades instead of crashing. ACCURATE table mode is the default (financial tables); flip OFFICE_TABLE_ACCURATE=0
-    for the faster FAST mode."""
-    global _converter
-    if _converter is not None:
-        return _converter
+def _build(do_ocr: bool):
+    """One Docling converter with OCR on or off. Kept separate because the pipeline options are baked in at
+    construction — you cannot flip do_ocr per document on a built converter."""
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
+    opts = PdfPipelineOptions()
+    opts.do_table_structure = True                                # tables are the point — always on
+    opts.do_ocr = do_ocr
+    opts.table_structure_options.mode = TableFormerMode.ACCURATE if _ACCURATE else TableFormerMode.FAST
+    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
+
+
+def _get_converter(ocr: bool = False):
+    """The cached Docling converter. `ocr=False` (default) is the fast text-only path; `ocr=True` builds — lazily, on
+    first real need — the scanned-pdf fallback. None if docling is absent so the caller degrades instead of crashing."""
+    global _converter, _converter_ocr
+    cached = _converter_ocr if ocr else _converter
+    if cached is not None:
+        return cached
     with _lock:
-        if _converter is not None:
-            return _converter
+        cached = _converter_ocr if ocr else _converter
+        if cached is not None:
+            return cached
         try:
-            from docling.document_converter import DocumentConverter, PdfFormatOption
-            from docling.datamodel.base_models import InputFormat
-            from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
-            opts = PdfPipelineOptions()
-            opts.do_table_structure = True
-            opts.table_structure_options.mode = TableFormerMode.ACCURATE if _ACCURATE else TableFormerMode.FAST
-            _converter = DocumentConverter(
-                format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
-            print(f"[officeall] docling converter ready (table_mode={'ACCURATE' if _ACCURATE else 'FAST'})", flush=True)
+            c = _build(ocr)
+            if ocr:
+                _converter_ocr = c
+            else:
+                _converter = c
+            print(f"[officeall] docling converter ready (ocr={'ON' if ocr else 'OFF'}, "
+                  f"table_mode={'ACCURATE' if _ACCURATE else 'FAST'})", flush=True)
+            return c
         except Exception as e:                                    # noqa: BLE001 — docling absent / import error → None
             print(f"[officeall] docling unavailable ({type(e).__name__}: {e})", flush=True)
-            _converter = None
-    return _converter
+            if ocr:
+                _converter_ocr = None
+            else:
+                _converter = None
+    return None
 
 
 def _prose_markdown(full_md: str) -> str:
@@ -108,10 +136,12 @@ def docling_extract(data: bytes, fmt: str, want_structured: bool = False) -> dic
     'none'); `warnings` collects the loud reasons. Never raises. A truly empty result comes back with a loud
     warning explaining WHY (not a silent '')."""
     warnings: list[str] = []
-    conv = _get_converter()
 
-    # PRIMARY — Docling.
-    if conv is not None:
+    def _try(conv, tag: str):
+        """One Docling pass → the out dict, or None when it produced nothing usable (so the caller escalates).
+        `tag` names which converter ran, so `via` tells you afterwards whether OCR was needed."""
+        if conv is None:
+            return None
         try:
             from docling.datamodel.base_models import DocumentStream
             stream = DocumentStream(name=f"document.{fmt or 'pdf'}", stream=io.BytesIO(data))
@@ -123,23 +153,39 @@ def docling_extract(data: bytes, fmt: str, want_structured: bool = False) -> dic
             except Exception:                                    # noqa: BLE001 — non-paginated (xlsx/html)
                 n_pages = len(getattr(doc, "pages", []) or [])
             # QUALITY GATE: a real doc (has pages) that yields NO text AND NO tables is a quality failure, not a
-            # success-with-empty — escalate to the pypdf fallback (for pdf) and say so LOUDLY.
+            # success-with-empty — return None so the caller escalates (OCR, then pypdf) and say so LOUDLY.
             if not markdown.strip() and not tables and n_pages > 0 and fmt == "pdf":
-                _loud(f"QUALITY: docling returned 0 text + 0 tables on a {n_pages}-page pdf → pypdf fallback")
-                warnings.append(f"docling-empty-on-{n_pages}p")
-            else:
-                out = {"markdown": markdown, "tables": tables, "n_pages": n_pages,
-                       "n_tables": len(tables), "via": "docling", "warnings": warnings}
-                if want_structured:
-                    try:
-                        out["structured"] = doc.export_to_dict()
-                    except Exception:                            # noqa: BLE001
-                        out["structured"] = {}
-                return out
-        except Exception as e:                                   # noqa: BLE001 — docling crashed → LOUD + fall back
-            _loud(f"docling convert FAILED ({type(e).__name__}: {str(e)[:100]}) → pypdf fallback")
-            warnings.append(f"docling-crash:{type(e).__name__}")
-    else:
+                _loud(f"QUALITY: docling[{tag}] returned 0 text + 0 tables on a {n_pages}-page pdf → escalate")
+                warnings.append(f"docling-{tag}-empty-on-{n_pages}p")
+                return None
+            out = {"markdown": markdown, "tables": tables, "n_pages": n_pages,
+                   "n_tables": len(tables), "via": f"docling:{tag}", "warnings": warnings}
+            if want_structured:
+                try:
+                    out["structured"] = doc.export_to_dict()
+                except Exception:                                # noqa: BLE001
+                    out["structured"] = {}
+            return out
+        except Exception as e:                                   # noqa: BLE001 — docling crashed → LOUD + escalate
+            _loud(f"docling[{tag}] convert FAILED ({type(e).__name__}: {str(e)[:100]}) → escalate")
+            warnings.append(f"docling-{tag}-crash:{type(e).__name__}")
+            return None
+
+    # PRIMARY — Docling with OCR OFF. IR pdfs are overwhelmingly text-native, and OCR on a text-native page costs the
+    # full OCR price for zero content {MEASURED 2026-08-03: a wall of "RapidOCR returned empty result!" at 382% CPU}.
+    out = _try(_get_converter(ocr=False), "text")
+    if out is not None:
+        return out
+
+    # ESCALATION 1 — the text path found nothing on a real pdf, which is exactly the scanned-document signal. Retry
+    # ONCE with OCR. Rare by construction, so the expensive converter is also built lazily, only when first needed.
+    if out is None and fmt == "pdf" and _OCR_FALLBACK:
+        _loud("text-only docling was empty → retrying WITH OCR (image-only/scanned pdf)")
+        out = _try(_get_converter(ocr=True), "ocr")
+        if out is not None:
+            return out
+
+    if _get_converter(ocr=False) is None:
         _loud("docling unavailable → pypdf fallback (pdf only)")
         warnings.append("docling-unavailable")
 

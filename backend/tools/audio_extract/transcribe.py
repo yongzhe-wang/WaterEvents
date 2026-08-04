@@ -18,6 +18,32 @@ _FALLBACK_MODEL = os.environ.get("WHISPER_FALLBACK_MODEL", "medium")   # smaller
 _DEVICE = os.environ.get("WHISPER_DEVICE", "auto")
 _COMPUTE = os.environ.get("WHISPER_COMPUTE", "")
 
+
+class _TooLong(Exception):
+    """Audio longer than the device can transcribe in reasonable time. Distinct from a decode failure so the caller
+    reports 'too-long' (a policy decision) rather than 'transcribe-failed' (a defect) — and so the CUDA-OOM fallback
+    to a smaller model is NOT attempted: a smaller model does not make an 8-hour file shorter."""
+
+
+def _default_max_duration() -> float:
+    """Device-aware duration cap in seconds. 0 disables the gate.
+
+    A GPU decodes far faster than realtime, so an hour-long earnings call is fine there. faster-whisper large-v3 at
+    cpu/int8 runs well UNDER realtime on this 8-core box while it also shares the box with the crawl fleet, so the
+    same file would hold a worker for hours. Defaults therefore differ by an order of magnitude; both are overridable
+    with WHISPER_MAX_DURATION_S."""
+    env = os.environ.get("WHISPER_MAX_DURATION_S")
+    if env is not None:
+        return float(env)
+    try:
+        import torch                                              # noqa: PLC0415 — lazy, torch is a heavy import
+        return 7200.0 if torch.cuda.is_available() else 900.0     # 2h on GPU, 15min on CPU
+    except Exception:                                             # noqa: BLE001 — torch absent → assume CPU
+        return 900.0
+
+
+_MAX_DURATION_S = _default_max_duration()
+
 _models: dict = {}                                              # name → loaded WhisperModel (cache; may hold primary + fallback)
 _lock = threading.Lock()
 
@@ -59,9 +85,25 @@ def _run(model, path: str) -> tuple[str, list[dict], str, float]:
     """Run one model over the temp file → (text, segments, language, duration). Raises on OOM/decode error so the
     caller can fall back."""
     segments_iter, info = model.transcribe(path, beam_size=5, vad_filter=True)
+    dur = float(getattr(info, "duration", 0.0) or 0.0)
+
+    # DURATION GATE — checked HERE because `segments_iter` is a lazy generator: `info.duration` is known after the
+    # feature/VAD pass but BEFORE any decoding work happens, so refusing here costs almost nothing while refusing
+    # after the loop would cost the entire transcription.
+    # WHY a gate exists at all: an IR earnings-call mp3 is routinely over an hour — the choruscall file in
+    # tests/datasets/media_100 is 91.7 MB (Content-Length: 91,723,583) — and large-v3 at cpu/int8 runs at well under
+    # realtime, so one such file occupies a worker for hours. fetch.py's existing cap is 300 MB and is applied AFTER
+    # the download, so it stops nothing here. A worker silently blocked for hours is indistinguishable from a hang.
+    # {MEASURED 2026-08-03 — a 3-event smoke over the audio stratum produced 0 completed events in 22 minutes}
+    # [CONFIDENCE: CONFIRMED — the file size is from the server's own Content-Length; the stall was observed].
+    # The cap is device-aware: a GPU decodes fast enough that an hour-long call is fine, a CPU is not.
+    if _MAX_DURATION_S and dur > _MAX_DURATION_S:
+        raise _TooLong(f"audio {dur/60:.0f}min exceeds cap {_MAX_DURATION_S/60:.0f}min "
+                       f"(device={_resolve_device()[0]}; raise WHISPER_MAX_DURATION_S to override)")
+
     segments = [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()} for s in segments_iter]
     text = " ".join(s["text"] for s in segments).strip()
-    return text, segments, (getattr(info, "language", "") or ""), float(getattr(info, "duration", 0.0) or 0.0)
+    return text, segments, (getattr(info, "language", "") or ""), dur
 
 
 def transcribe(data: bytes) -> tuple[str, list[dict], str, float, str]:
@@ -82,6 +124,9 @@ def transcribe(data: bytes) -> tuple[str, list[dict], str, float, str]:
         try:
             text, segs, lang, dur = _run(model, tmp_path)
             return text, segs, lang, dur, ""
+        except _TooLong as e:                                    # policy refusal, NOT a defect → no model fallback
+            _loud(f"REFUSED: {e}")
+            return "", [], "", 0.0, f"too-long:{str(e)[:60]}"
         except Exception as e:                                   # noqa: BLE001 — likely CUDA OOM → LOUD + fallback model
             name = type(e).__name__
             _loud(f"{_MODEL_NAME} transcribe FAILED ({name}: {str(e)[:90]}) → fallback {_FALLBACK_MODEL}")
