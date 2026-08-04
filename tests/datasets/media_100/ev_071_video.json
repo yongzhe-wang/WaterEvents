@@ -1,0 +1,31 @@
+{
+  "id": "ev_071_video",
+  "event_url": "https://youtu.be/eedBWCGat7I",
+  "known_event": {
+    "title": "Financial Results",
+    "date": "2025-04-28",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.mitsubishielectric.com/en/pr/2025/pdf/0428-a1.pdf",
+      "https://www.mitsubishielectric.com/en/pr/2025/pdf/0428-a2.pdf",
+      "https://youtu.be/eedBWCGat7I"
+    ]
+  },
+  "meta": {
+    "db_event_id": "9244b5f0-6ca5-4fd7-9b10-3df5a679c0c2",
+    "ticker": "6503.T",
+    "market": "T",
+    "stratum": "video",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://www.mitsubishielectric.com/investors/library/results/"
+  }
+}

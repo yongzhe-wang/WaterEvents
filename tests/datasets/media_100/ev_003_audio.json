@@ -1,0 +1,33 @@
+{
+  "id": "ev_003_audio",
+  "event_url": "https://www.centralpuerto.com/en/financial-results/",
+  "known_event": {
+    "title": "4th Quarter 2018",
+    "date": "2018-Q4",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.centralpuerto.com/wp-content/uploads/2018/04/4Q18-TRANSCRIPT.pdf",
+      "https://www.centralpuerto.com/wp-content/uploads/2024/04/4Q18-FIN-STATE.pdf",
+      "https://www.centralpuerto.com/wp-content/uploads/2024/04/4Q18-PRESENTATION.pdf",
+      "https://www.centralpuerto.com/wp-content/uploads/2024/04/4Q18-RELEASE.pdf",
+      "https://www.centralpuerto.com/wp-content/uploads/2024/04/Third_Quarter_2018_Financial_Results_Conference_Call-1.mp3"
+    ]
+  },
+  "meta": {
+    "db_event_id": "cf23a06f-5d64-434c-b2db-b3738f5c30fd",
+    "ticker": "CEPU",
+    "market": "US",
+    "stratum": "audio",
+    "n_urls": 5,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.centralpuerto.com/en/financial-results/"
+  }
+}

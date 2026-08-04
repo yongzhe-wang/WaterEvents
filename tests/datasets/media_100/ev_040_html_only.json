@@ -1,0 +1,29 @@
+{
+  "id": "ev_040_html_only",
+  "event_url": "https://newsroom.wiley.com/press-releases/press-release-details/2026/Wiley-Launches-Advanced-Brain-to-Push-Disciplinary-Boundaries-Across-Neuroscience--Related-Fields/default.aspx",
+  "known_event": {
+    "title": "Wiley Launches Advanced Brain to Push Disciplinary Boundaries Across Neuroscience & Related Fields",
+    "date": "2026-06-09",
+    "type": "press_release",
+    "media_urls": [
+      "https://newsroom.wiley.com/press-releases/press-release-details/2026/Wiley-Launches-Advanced-Brain-to-Push-Disciplinary-Boundaries-Across-Neuroscience--Related-Fields/default.aspx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "24c6e1d9-882d-49a2-a3cf-1b6a4ee73d32",
+    "ticker": "WLYB",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://newsroom.wiley.com/press-releases/default.aspx"
+  }
+}

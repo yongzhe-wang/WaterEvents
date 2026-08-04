@@ -1,0 +1,31 @@
+{
+  "id": "ev_097_xlsx",
+  "event_url": "https://kraftonearningscall.com/",
+  "known_event": {
+    "title": "2Q26 실적발표",
+    "date": "2026-07-07",
+    "type": "earnings",
+    "media_urls": [
+      "https://kraftonearningscall.com/",
+      "https://www.krafton.com/wp-content/uploads/2026/07/KOR-Factsheet_2Q26.xlsx",
+      "https://www.krafton.com/wp-content/uploads/2026/07/KRAFTON-2Q26-Earnings_Release_KOR.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "fcc107c5-87b8-4402-a659-d6a194719cbf",
+    "ticker": "259960.KS",
+    "market": "KS",
+    "stratum": "xlsx",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.krafton.com/ir/investor-events/announce/"
+  }
+}

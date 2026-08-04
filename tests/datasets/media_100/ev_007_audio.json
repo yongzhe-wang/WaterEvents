@@ -1,0 +1,33 @@
+{
+  "id": "ev_007_audio",
+  "event_url": "https://www.poscointl.com/irActivity/convert?script=10001295",
+  "known_event": {
+    "title": "2026년 2분기 기업설명회",
+    "date": "2026-07-30",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.poscointl.com/irActivity/convert?script=10001295",
+      "https://www.poscointl.com/irActivity/convert?script=10001328",
+      "https://www.poscointl.com/upload/file/202607/202607GuW7h8zK.pdf",
+      "https://www.poscointl.com/upload/file/202607/202607s0znli2l3FCU.m4a",
+      "https://www.poscointl.com/upload/file/202608/2026081YtEyeKW.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "138e98cc-73d3-43e3-ac54-1c0ea142cbb1",
+    "ticker": "047050.KS",
+    "market": "KS",
+    "stratum": "audio",
+    "n_urls": 5,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.poscointl.com/irActivity"
+  }
+}

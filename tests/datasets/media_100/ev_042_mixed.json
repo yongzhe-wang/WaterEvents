@@ -1,0 +1,36 @@
+{
+  "id": "ev_042_mixed",
+  "event_url": "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.aha.org%2F&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=American+Hospital+Association+%28AHA%29&index=2&md5=2957de1e9d2f7a4f342ecfded665e5dc",
+  "known_event": {
+    "title": "Rubrik Selected as an AHA Preferred Provider for Cybersecurity Resiliency",
+    "date": "2026-04-08",
+    "type": "press_release",
+    "media_urls": [
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.aha.org%2F&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=American+Hospital+Association+%28AHA%29&index=2&md5=2957de1e9d2f7a4f342ecfded665e5dc",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.aha.org%2Fcenter%2Fcybersecurity-and-risk-advisory-services%2Fpreferred-cybersecurity&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=AHA%26%238217%3Bs+Preferred+Cybersecurity+%26amp%3B+Risk+Provider+Program&index=3&md5=db3dc388751887e35ad027216d4742d0",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.rubrik.com&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=%28NYSE%3A+RBRK%29&index=1&md5=80f023c5c699efdd0406e17f713d7ee0",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.rubrik.com%2Fblog%2Fcompany%2F26%2F4%2Fbuilding-cyber-resilience-in-healthcare-rubrik-named-american-hospital-association-aha-preferred-cybersecurity-provider&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=post&index=7&md5=172b4ec5b8159cd4d10ecbb19fd8a39b",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.rubrik.com%2Findustries%2Fminimum-viable-hospital&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=Minimum+Viable+Hospital&index=6&md5=5aa74cd180935bc79892a7b4db51bba4",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.rubrik.com%2Fproducts%2Fidentity-recovery&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=Identity+Recovery&index=4&md5=4f649a54451e03e6bc39aedc7de05140",
+      "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.rubrik.com%2Fsolutions%2Fmicrosoft-365&esheet=54483169&newsitemid=20260408439265&lan=en-US&anchor=Microsoft+365+protection&index=5&md5=d441219757d04a753557cb1fd8519dd4",
+      "https://s203.q4cdn.com/667520861/files/doc_news/Rubrik-Selected-as-an-AHA-Preferred-Provider-for-Cybersecurity-Resiliency-2026.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "94867068-ac3a-45dc-9e4b-6ce3a326d228",
+    "ticker": "RBRK",
+    "market": "US",
+    "stratum": "mixed",
+    "n_urls": 8,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://ir.rubrik.com/news-events/press-releases/news-details/2026/Rubrik-Selected-as-an-AHA-Preferred-Provider-for-Cybersecurity-Resiliency/default.aspx"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "ev_086_webcast",
+  "event_url": "https://www.asus.com/event/Content/attachment/2025Q2_QA(Chinese",
+  "known_event": {
+    "title": "2025年第二季法人說明會",
+    "date": "2025-08-13",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.asus.com/event/Content/attachment/2025Q2_QA(Chinese",
+      "https://www.asus.com/event/Content/attachment/2025Q2%20IR(Chinese",
+      "https://www.webcast-eqs.com/asus25q2/tc"
+    ]
+  },
+  "meta": {
+    "db_event_id": "9a489e78-c493-45d0-b1d1-441054ccc276",
+    "ticker": "2357.TW",
+    "market": "TW",
+    "stratum": "webcast",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://www.asus.com/event/Investor/C"
+  }
+}

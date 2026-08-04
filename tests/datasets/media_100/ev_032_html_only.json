@@ -1,0 +1,29 @@
+{
+  "id": "ev_032_html_only",
+  "event_url": "https://www.asus.com/event/Investor/event_announcement_inner?id=13681",
+  "known_event": {
+    "title": "The Company will postpone the 2021 Annual General Meeting on 2021/06/10 in accordance with the instructions of FSC",
+    "date": "2021-05-21",
+    "type": "shareholder_meeting",
+    "media_urls": [
+      "https://www.asus.com/event/Investor/event_announcement_inner?id=13681"
+    ]
+  },
+  "meta": {
+    "db_event_id": "7909284b-2eff-4f22-837c-06c965e6089b",
+    "ticker": "2357.TW",
+    "market": "TW",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.asus.com/event/Investor/"
+  }
+}

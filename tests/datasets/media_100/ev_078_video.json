@@ -1,0 +1,30 @@
+{
+  "id": "ev_078_video",
+  "event_url": "https://vimeo.com/1096851865/a8ce8e9466",
+  "known_event": {
+    "title": "Investor Spotlight Private Banking",
+    "date": "2023-06-25",
+    "type": "presentation",
+    "media_urls": [
+      "https://investors.natwestgroup.com/~/media/Files/R/RBS-IR-V2/documents/natwest-investor-spotlight-private-banking.pdf",
+      "https://vimeo.com/1096851865/a8ce8e9466"
+    ]
+  },
+  "meta": {
+    "db_event_id": "e00272fd-2eb2-4631-a4e3-20c1430d4e94",
+    "ticker": "NWG",
+    "market": "US",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://investors.natwestgroup.com/"
+  }
+}

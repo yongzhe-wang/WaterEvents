@@ -1,0 +1,29 @@
+{
+  "id": "ev_035_html_only",
+  "event_url": "https://www.samsungsem.com/global/newsroom/news/view.do?id=9082",
+  "known_event": {
+    "title": "[CES 2025 Samsung Electro-Mechanics CEO Press Meeting]",
+    "date": "2025-01-09",
+    "type": "conference",
+    "media_urls": [
+      "https://www.samsungsem.com/global/newsroom/news/view.do?id=9082"
+    ]
+  },
+  "meta": {
+    "db_event_id": "84be4765-e4bf-40cc-b63f-f17871047899",
+    "ticker": "009150.KS",
+    "market": "KS",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.samsungsem.com/global/newsroom/news/overview.do"
+  }
+}

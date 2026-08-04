@@ -1,0 +1,32 @@
+{
+  "id": "ev_072_video",
+  "event_url": "https://investors.palantir.com/news-details/2026/Palantir-Reports-Q2-2026-U-S--Comm-Revenue-Growth-of-149-YY-and-Revenue-Growth-of-93-YY-Raises-FY-2026-Revenue-Guidance-to-82-YY-Growth-and-U-S--Comm-Revenue-Guidance-to-134-YY-Crushing-Consensus-Expectations/",
+  "known_event": {
+    "title": "Q2 2026 Earnings",
+    "date": "2026-08-03",
+    "type": "earnings",
+    "media_urls": [
+      "https://investors.palantir.com/files/Palantir%20-%20Q2%202026%20Business%20Update.pdf",
+      "https://investors.palantir.com/news-details/2026/Palantir-Reports-Q2-2026-U-S--Comm-Revenue-Growth-of-149-YY-and-Revenue-Growth-of-93-YY-Raises-FY-2026-Revenue-Guidance-to-82-YY-Growth-and-U-S--Comm-Revenue-Guidance-to-134-YY-Crushing-Consensus-Expectations/",
+      "https://www.palantir.com/q2-2026-letter/en/",
+      "https://www.youtube.com/watch?v=yTHNjVWnoWo"
+    ]
+  },
+  "meta": {
+    "db_event_id": "c72ed97b-1045-47db-9e26-0ffdea439f6e",
+    "ticker": "PLTR",
+    "market": "US",
+    "stratum": "video",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://investors.palantir.com/financials/quarterly-results"
+  }
+}

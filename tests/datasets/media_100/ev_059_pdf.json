@@ -1,0 +1,29 @@
+{
+  "id": "ev_059_pdf",
+  "event_url": "https://www.baycurrent.co.jp/en/ir/",
+  "known_event": {
+    "title": "Notice Regarding Completion of Disposal of Treasury Shares as Restricted Stock Compensation and Partial Forfeiture",
+    "date": "2026-07-17",
+    "type": "press_release",
+    "media_urls": [
+      "https://ssl4.eir-parts.net/doc/6532/tdnet/2853593/00.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "3fb11c07-89ba-4918-91a4-93252f64d23b",
+    "ticker": "6532.T",
+    "market": "T",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.baycurrent.co.jp/en/ir/"
+  }
+}

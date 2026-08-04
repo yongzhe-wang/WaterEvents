@@ -1,0 +1,32 @@
+{
+  "id": "ev_043_mixed",
+  "event_url": "https://global.toyota/en/ir/financial-results/archives/02.html",
+  "known_event": {
+    "title": "FY2014 2Q Financial Results",
+    "date": "2013-11-06",
+    "type": "earnings",
+    "media_urls": [
+      "https://global.toyota/pages/global_toyota/ir/financial-results/archives/en/November_6_2013_consolidated.pdf",
+      "https://global.toyota/pages/global_toyota/ir/financial-results/archives/en/November_6_2013_overview.pdf",
+      "https://global.toyota/pages/global_toyota/ir/financial-results/archives/en/November_6_2013_presentation.pdf",
+      "https://global.toyota/pages/global_toyota/ir/financial-results/archives/en/November_6_2013_summary.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "cfb7c4d9-5426-4be6-a5ea-714cb33fbc4d",
+    "ticker": "TM",
+    "market": "US",
+    "stratum": "mixed",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://global.toyota/en/ir/financial-results/archives/02.html"
+  }
+}

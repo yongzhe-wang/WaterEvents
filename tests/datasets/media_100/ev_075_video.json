@@ -1,0 +1,30 @@
+{
+  "id": "ev_075_video",
+  "event_url": "https://www.youtube.com/watch?v=aCARU8zf5h0",
+  "known_event": {
+    "title": "The Institutional Conference of Nan Ya PCB Corp. | Concord Securities",
+    "date": "2023/05/23",
+    "type": "conference",
+    "media_urls": [
+      "https://www.nanyapcb.com.tw/nypcb/images/InvestorRelations/FinancialReport/NYPCB%20ENG%2020230511.pdf",
+      "https://www.youtube.com/watch?v=aCARU8zf5h0"
+    ]
+  },
+  "meta": {
+    "db_event_id": "a82cfd23-b5ba-485f-9529-798eafc23571",
+    "ticker": "8046.TW",
+    "market": "TW",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://www.nanyapcb.com.tw/nypcb/english/InvestorRelations/FinancialReports"
+  }
+}

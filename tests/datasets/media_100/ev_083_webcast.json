@@ -1,0 +1,31 @@
+{
+  "id": "ev_083_webcast",
+  "event_url": "https://event.webcasts.com/starthere.jsp?ei=1744569&tp_key=9360682d8c",
+  "known_event": {
+    "title": "[Starbucks 2026 Investor Day]",
+    "date": "2026-01-29",
+    "type": "conference",
+    "media_urls": [
+      "https://event.webcasts.com/starthere.jsp?ei=1744569&tp_key=9360682d8c",
+      "https://investor.starbucks.com/events-presentations/event-details/2026/Starbucks-2026-Investor-Day-2026-w0k0vvnJag/default.aspx",
+      "https://s203.q4cdn.com/326826266/files/doc_events/2026/Jan/Starbucks-Investor-Day-2026-Corrected-Transcript.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d917bd26-bf1e-4c56-b186-2b7311bde82e",
+    "ticker": "SBUX",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://investor.starbucks.com/events-presentations/default.aspx"
+  }
+}

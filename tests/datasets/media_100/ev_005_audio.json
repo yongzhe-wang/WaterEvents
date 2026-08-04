@@ -1,0 +1,29 @@
+{
+  "id": "ev_005_audio",
+  "event_url": "https://investor.dlocal.com/news-and-events/",
+  "known_event": {
+    "title": "JP Morgan Global Technology, Media and Communications Conference",
+    "date": "2022-Q1",
+    "type": "webcast",
+    "media_urls": [
+      "https://investor.dlocal.com/wp-content/uploads/2022/05/dlocal.mp3"
+    ]
+  },
+  "meta": {
+    "db_event_id": "c4382b30-6724-42a9-9748-62f0e8d44488",
+    "ticker": "DLO",
+    "market": "US",
+    "stratum": "audio",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investor.dlocal.com/news-and-events/"
+  }
+}

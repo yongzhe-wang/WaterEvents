@@ -1,0 +1,33 @@
+{
+  "id": "ev_009_audio",
+  "event_url": "https://www.chinatelecom-h.com/en/ir/calendar.php?year=2021",
+  "known_event": {
+    "title": "2020 Annual Results Announcement",
+    "date": "2021-03-09",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.chinatelecom-h.com/en/ir/audio/2021030900728_eng.mp3",
+      "https://www.chinatelecom-h.com/en/ir/presentations/annpre210309.pdf",
+      "https://www.chinatelecom-h.com/en/ir/transcripts/tra_ar2020.pdf",
+      "https://www.chinatelecom-h.com/en/media/press/p210309.pdf",
+      "https://www.chinatelecom-h.com/en/regulatory/announcements/a210309.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "29bc7c4a-95ad-4c60-aa98-8687fa358589",
+    "ticker": "601728.SS",
+    "market": "SS",
+    "stratum": "audio",
+    "n_urls": 5,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.chinatelecom-h.com/en/ir/calendar.php?year=2021"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ev_046_pdf",
+  "event_url": "https://www.hsbc.com/investors/shareholder-and-dividend-information/scrip-dividend",
+  "known_event": {
+    "title": "Fourth interim dividend 2012",
+    "date": "2012-Q4",
+    "type": "dividend",
+    "media_urls": [
+      "https://www.hsbc.com/-/files/hsbc/investors/shareholder-information/scrip-dividend/2012/sea-121106-scrip-dividend-cn.pdf",
+      "https://www.hsbc.com/-/files/hsbc/investors/shareholder-information/scrip-dividend/2012/sea-121106-scrip-dividend-en.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "04b36034-3c37-4d19-ad4e-7b84503d38f8",
+    "ticker": "HSBC",
+    "market": "US",
+    "stratum": "pdf",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.hsbc.com/investors/shareholder-and-dividend-information/scrip-dividend"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ev_061_pdf",
+  "event_url": "https://www.wharfreic.com/storage/fm/PressRelease/2018-02/20171220.zip",
+  "known_event": {
+    "title": "The Wharf Group and The Murray, Hong Kong, a Niccolo Hotel Celebrate the Completion of a Conserving Central Initiative Project",
+    "date": "2017-12-19",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.wharfreic.com/storage/fm/PressRelease/2018-02/171220-the-murray-plaque-unveiling-ceremony-eweb.pdf",
+      "https://www.wharfreic.com/storage/fm/PressRelease/2018-02/20171220.zip"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d543dc69-a039-4399-969e-12d294369f24",
+    "ticker": "1997.HK",
+    "market": "HK",
+    "stratum": "pdf",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.wharfreic.com/en/media_centre/media_press_release?page=7"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ev_076_video",
+  "event_url": "https://ir.netease.com/news-releases/news-release-details/where-winds-meet-officially-available-xbox-and-game-pass-now",
+  "known_event": {
+    "title": "Where Winds Meet Officially Available on XBOX and Game Pass Now, Unveiling Massive New 'Hidden Mountain' Expansion at XBOX Games Showcase",
+    "date": "2026-06-07",
+    "type": "press_release",
+    "media_urls": [
+      "https://ir.netease.com/news-releases/news-release-details/where-winds-meet-officially-available-xbox-and-game-pass-now",
+      "https://youtu.be/Z3p-qLdAyXY"
+    ]
+  },
+  "meta": {
+    "db_event_id": "6f224dd6-0d74-48d6-b798-baa95caaa383",
+    "ticker": "NTES",
+    "market": "US",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://ir.netease.com/news-releases/news-release-details/where-winds-meet-officially-available-xbox-and-game-pass-now"
+  }
+}

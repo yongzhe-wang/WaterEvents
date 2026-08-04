@@ -1,0 +1,30 @@
+{
+  "id": "ev_077_video",
+  "event_url": "https://todayir.com/webcasting/CT2025AR/index_en.php",
+  "known_event": {
+    "title": "2025 Annual Results",
+    "date": "2025-12-31",
+    "type": "webcast",
+    "media_urls": [
+      "https://todayir.com/webcasting/CT2025AR/index_en.php",
+      "https://www.chinatelecom-h.com/en/ir/audio/2026032400728_eng.mp4"
+    ]
+  },
+  "meta": {
+    "db_event_id": "50bb3e32-ebfd-4b25-ad63-e1f91f7cf232",
+    "ticker": "601728.SS",
+    "market": "SS",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": true
+    },
+    "source_url": "https://www.chinatelecom-h.com/en/ir/webcasts.php"
+  }
+}

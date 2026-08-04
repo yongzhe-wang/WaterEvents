@@ -1,0 +1,29 @@
+{
+  "id": "ev_028_html_only",
+  "event_url": "https://www.chinatelecom-h.com/sc/regulatory/announcements_sse.php",
+  "known_event": {
+    "title": "1-3Q2024 KPIs Announcement",
+    "date": "2024-10-22",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.chinatelecom-h.com/sc/regulatory/announcements_sse.php"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d5c16710-ca48-44d4-baa9-68390e7bf95b",
+    "ticker": "601728.SS",
+    "market": "SS",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.chinatelecom-h.com/en/ir/calendar.php?year=2024"
+  }
+}

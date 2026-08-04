@@ -1,0 +1,30 @@
+{
+  "id": "ev_002_audio",
+  "event_url": "https://www.wharfreic.com/en/investor_relations/presentation?page=2",
+  "known_event": {
+    "title": "Interim Results 2020 Results Presentation",
+    "date": "2020-07-29",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.wharfreic.com/storage/fm/PresentationAndOther/2020-07/1h20-wreic-presentation-white.pdf",
+      "https://www.wharfreic.com/storage/fm/PresentationAndOther/2020-07/200730-wreic-1h20-analyst-briefing.mp3"
+    ]
+  },
+  "meta": {
+    "db_event_id": "4fbf2535-67e6-4229-a316-36c3972a7ffc",
+    "ticker": "1997.HK",
+    "market": "HK",
+    "stratum": "audio",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.wharfreic.com/en/investor_relations/presentation?page=2"
+  }
+}

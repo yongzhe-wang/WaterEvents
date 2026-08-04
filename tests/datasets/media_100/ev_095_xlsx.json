@@ -1,0 +1,32 @@
+{
+  "id": "ev_095_xlsx",
+  "event_url": "https://investors.mheducation.com/overview/default.aspx",
+  "known_event": {
+    "title": "AI Blueprint of Q4 2026",
+    "date": "2026-Q4",
+    "type": "presentation",
+    "media_urls": [
+      "https://s205.q4cdn.com/964897494/files/doc_financials/2026/q4/Investor-Presentation_Supplemental-3-31-26.xlsx",
+      "https://s205.q4cdn.com/964897494/files/doc_financials/2026/q4/McGraw-Hill-Inc-2026-3-31-10-K_FINAL.pdf",
+      "https://s205.q4cdn.com/964897494/files/doc_financials/2026/q4/MH-2026-6-11-AI-Blueprint_FINAL.pdf",
+      "https://s205.q4cdn.com/964897494/files/doc_financials/2026/q4/MH-US-Fiscal-Year-2026-Earnings-Call-Transcript.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "7d33ed4c-1a98-45ef-bff9-225aeb211224",
+    "ticker": "MH",
+    "market": "US",
+    "stratum": "xlsx",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.mheducation.com/overview/default.aspx"
+  }
+}

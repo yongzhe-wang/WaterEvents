@@ -1,0 +1,37 @@
+{
+  "id": "ev_085_webcast",
+  "event_url": "https://event.choruscall.com/mediaframe/webcast.html?webcastid=ogst4p3C",
+  "known_event": {
+    "title": "Huntington Bancshares 2026 Second Quarter Earnings Conference Call / Webcast",
+    "date": "2026-07-23T09:00:00",
+    "type": "webcast",
+    "media_urls": [
+      "https://d1io3yog0oux5.cloudfront.net/_911381cd00e56b55e387a409290589a1/huntington/db/2725/28860/earnings_press_release_and_supplement/2Q26+EPR+and+Supplemental+vF.pdf",
+      "https://d1io3yog0oux5.cloudfront.net/_911381cd00e56b55e387a409290589a1/huntington/db/2725/28860/presentation/2Q26+Earnings+Presentation_vfinal.pdf",
+      "https://d1io3yog0oux5.cloudfront.net/_d988411bf9b40b4e1e3b265b6a634d30/huntington/db/2725/28860/earnings_press_release_and_supplement/2Q26+EPR+and+Supplemental+vF.pdf",
+      "https://d1io3yog0oux5.cloudfront.net/_d988411bf9b40b4e1e3b265b6a634d30/huntington/db/2725/28860/presentation/2Q26+Earnings+Presentation_vfinal.pdf",
+      "https://event.choruscall.com/mediaframe/webcast.html?webcastid=ogst4p3C",
+      "https://ir.huntington.com/news-presentations/events-presentations/detail/20260723-huntington-bancshares-2026-second-quarter-earnings-conference-call-webcast",
+      "https://ir.huntington.com/news-presentations/press-releases/detail/1006/huntington-bancshares-incorporated-reports-2026-second-quarter-earnings",
+      "https://ir.huntington.com/regulatory-sec-filings/all-sec-filings/content/0000049196-26-000066/0000049196-26-000066-xbrl.zip",
+      "https://ir.huntington.com/regulatory-sec-filings/all-sec-filings/content/0000049196-26-000066/hban-20260630.htm"
+    ]
+  },
+  "meta": {
+    "db_event_id": "5eef02f3-2b19-4dc6-b6d2-7ce1c9c2b5de",
+    "ticker": "HBAN",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 9,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://ir.huntington.com/"
+  }
+}

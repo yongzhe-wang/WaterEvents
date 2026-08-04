@@ -1,0 +1,37 @@
+{
+  "id": "ev_093_xlsx",
+  "event_url": "https://investors.smurfitwestrock.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19168934",
+  "known_event": {
+    "title": "Form 4 filing dated 02/20/2026",
+    "date": "2026-02-20",
+    "type": "filing",
+    "media_urls": [
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/0d2f9374-a362-4375-b53d-63577aa0c712.pdf",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/483504bb-a89f-491f-b804-a2894be6d3e4.xls",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/9c27f2d7-bdcc-43d3-ac7c-4c670c405205.pdf",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/9e28b16e-fff4-4cbc-a337-52025b1dd593.pdf",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/c1cc3895-e0e9-4d85-9199-3d3ea862b891.xls",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0002005951/e2328960-97ce-4c54-9524-60661c6a5101.xls",
+      "https://investors.smurfitwestrock.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19168934",
+      "https://investors.smurfitwestrock.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19168935",
+      "https://investors.smurfitwestrock.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19168937"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d313536c-467b-4198-91e2-bb2d5db86fca",
+    "ticker": "SW",
+    "market": "US",
+    "stratum": "xlsx",
+    "n_urls": 9,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.smurfitwestrock.com/financials/sec-filings/default.aspx"
+  }
+}

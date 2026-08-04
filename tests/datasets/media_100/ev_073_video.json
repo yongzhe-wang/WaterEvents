@@ -1,0 +1,30 @@
+{
+  "id": "ev_073_video",
+  "event_url": "https://youtu.be/tif0bttfsTU",
+  "known_event": {
+    "title": "Andy Halford at UBS European Conference 2020",
+    "date": "2020-09-09",
+    "type": "conference",
+    "media_urls": [
+      "https://av.sc.com/corp-en/nr/content/docs/Andy-Halford-at-BofA-Securities-25th-Annual-Financials-CEO-Conference-Transcript.pdf",
+      "https://youtu.be/tif0bttfsTU"
+    ]
+  },
+  "meta": {
+    "db_event_id": "235b54bd-2864-4923-aa47-276385a7080f",
+    "ticker": "SCBFY",
+    "market": "US",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://www.sc.com/en/investors/events-and-presentations/"
+  }
+}

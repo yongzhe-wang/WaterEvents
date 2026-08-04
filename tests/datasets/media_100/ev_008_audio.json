@@ -1,0 +1,31 @@
+{
+  "id": "ev_008_audio",
+  "event_url": "https://edge.media-server.com/mmc/p/c2nt59bn/",
+  "known_event": {
+    "title": "2nd Quarter FY 2024 Earnings Conference Call",
+    "date": "2024-Q2",
+    "type": "earnings",
+    "media_urls": [
+      "https://edge.media-server.com/mmc/p/c2nt59bn/",
+      "https://investors.tollbrothers.com/~/media/Files/T/toll-brothers-ir-v2/documents/events/audio/2024/tol_20240522_830ame.mp3",
+      "https://investors.tollbrothers.com/~/media/Files/T/toll-brothers-ir-v2/documents/events/transcripts/2024/tol%20-%20transcript%20q2%202024.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "fc7366be-dd4f-4363-b85a-41d26d0c86f7",
+    "ticker": "TOL",
+    "market": "US",
+    "stratum": "audio",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.tollbrothers.com/news-and-events/events-and-presentations"
+  }
+}

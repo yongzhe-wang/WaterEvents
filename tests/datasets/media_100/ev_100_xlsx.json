@@ -1,0 +1,29 @@
+{
+  "id": "ev_100_xlsx",
+  "event_url": "https://corp.asics.com/en/investor_relations/library/financial_summary",
+  "known_event": {
+    "title": "2022-02-10 [Fact Sheet for the FY2021, Update on Feb 10, 2022 (excel)]",
+    "date": "2022-02-10",
+    "type": "press_release",
+    "media_urls": [
+      "https://assets.asics.com/system/libraries/779/Fact%20Sheet%20for%20the%20FY2021.xlsx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "454580d8-f428-4815-8cde-ba4845e12771",
+    "ticker": "7936.T",
+    "market": "T",
+    "stratum": "xlsx",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://corp.asics.com/en/investor_relations/library/financial_summary"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ev_070_pptx",
+  "event_url": "https://www.chenbro.com/en-US/investor-conference",
+  "known_event": {
+    "title": "2024Q2 Investment Forum",
+    "date": "2024-06-25",
+    "type": "conference",
+    "media_urls": [
+      "https://chenbro-newwebserver-hk.s3.ap-east-1.amazonaws.com/upload/files/2024/10/2024Q1_CN_Chenbro-Investor-Presentation.pptx",
+      "https://chenbro-newwebserver-hk.s3.ap-east-1.amazonaws.com/upload/files/2024/10/2024Q1_EN_Chenbro-Investor-Presentation.pptx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "f2552e01-58c0-4e4d-9d31-edc1522494cb",
+    "ticker": "8210.TW",
+    "market": "TW",
+    "stratum": "pptx",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": true,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.chenbro.com/en-US/investor-conference"
+  }
+}

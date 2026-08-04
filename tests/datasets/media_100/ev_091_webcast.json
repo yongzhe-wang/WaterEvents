@@ -1,0 +1,29 @@
+{
+  "id": "ev_091_webcast",
+  "event_url": "https://www.chinamobileltd.com/en/ir/webcasts.php?year=2023&scroll2title=1",
+  "known_event": {
+    "title": "2023 Interim Results Presentation (A Shares)",
+    "date": "2023-08-10",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.chinamobileltd.com/en/ir/webcasts/pre230810a.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "f0821ca1-e878-460c-83df-7af871a2d701",
+    "ticker": "0941.HK",
+    "market": "HK",
+    "stratum": "webcast",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://www.chinamobileltd.com/en/ir/webcasts.php?year=2023&scroll2title=1"
+  }
+}

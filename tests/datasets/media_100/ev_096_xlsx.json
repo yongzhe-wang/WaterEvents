@@ -1,0 +1,32 @@
+{
+  "id": "ev_096_xlsx",
+  "event_url": "https://www.sinopac.com/upload/sinopac/media/2024Q2_AnalystMeetings_Evdo.zip",
+  "known_event": {
+    "title": "2Q24 Analyst Meeting",
+    "date": "2024-08-21",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.sinopac.com/upload/sinopac/media/2024Q2_AnalystMeetings_Evdo.zip",
+      "https://www.sinopac.com/upload/sinopac/spfcMenu/1916e60c1ce0000023fe.pdf",
+      "https://www.sinopac.com/upload/sinopac/spfcMenu/1916e60c1d0000009528.pdf",
+      "https://www.sinopac.com/upload/sinopac/spfcMenu/1916e60c1d100000325d.xlsx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ba2b5eca-bd6c-45f5-9d2a-9fdab345677a",
+    "ticker": "2890.TW",
+    "market": "TW",
+    "stratum": "xlsx",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.sinopac.com/en/investors/20211210153457585149/20211210153457695412.html"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "ev_022_html_only",
+  "event_url": "https://press.getlinkgroup.com/news/getlink-announces-a-new-phase-of-medium-term-growth-and-targets-eur1-billion-ebitda-by-2030-371a6-0791e.html",
+  "known_event": {
+    "title": "[Shuttle traffic in January 2026]",
+    "date": "2026-01-06",
+    "type": "press_release",
+    "media_urls": [
+      "https://press.getlinkgroup.com/news/getlink-announces-a-new-phase-of-medium-term-growth-and-targets-eur1-billion-ebitda-by-2030-371a6-0791e.html"
+    ]
+  },
+  "meta": {
+    "db_event_id": "648aaccb-c505-48bb-812c-43bbbe0a8947",
+    "ticker": "GRPTY",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://press.getlinkgroup.com/press-releases.html"
+  }
+}

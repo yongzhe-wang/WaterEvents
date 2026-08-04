@@ -1,0 +1,33 @@
+{
+  "id": "ev_098_xlsx",
+  "event_url": "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000714310/22c676aa-93d8-40e3-ba48-33ca86e1dd8a.html",
+  "known_event": {
+    "title": "Form 8-K filing dated 04/23/2026",
+    "date": "2026-04-23",
+    "type": "filing",
+    "media_urls": [
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000714310/22c676aa-93d8-40e3-ba48-33ca86e1dd8a.html",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000714310/86d708e5-ac9f-4660-9ba5-1bd1981a29b8.xls",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000714310/886fc4b6-d29d-4bdc-bbe1-39d47b67bc84.zip",
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000714310/c67ee114-8eac-4a44-a65c-61df1c87fa0d.pdf",
+      "https://ir.valleynationalbank.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19361868"
+    ]
+  },
+  "meta": {
+    "db_event_id": "75e29744-6f57-408a-bda0-bdaf8428fa7e",
+    "ticker": "VLY",
+    "market": "US",
+    "stratum": "xlsx",
+    "n_urls": 5,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://ir.valleynationalbank.com/financials/sec-filings/default.aspx"
+  }
+}

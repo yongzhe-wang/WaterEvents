@@ -1,0 +1,29 @@
+{
+  "id": "ev_021_html_only",
+  "event_url": "https://www.lonza.com/news/2026-07-22-06-30",
+  "known_event": {
+    "title": "Lonza Delivered Strong H1 2026 Performance Across All Business Platforms and Upgrades Full-Year 2026 Margin Outlook",
+    "date": "2026-07-22",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.lonza.com/news/2026-07-22-06-30"
+    ]
+  },
+  "meta": {
+    "db_event_id": "7f07c9ec-bea2-495f-ad37-93d9fe23c527",
+    "ticker": "LZAGY",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.lonza.com/news"
+  }
+}

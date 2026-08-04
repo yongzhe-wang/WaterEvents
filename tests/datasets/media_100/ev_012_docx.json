@@ -1,0 +1,31 @@
+{
+  "id": "ev_012_docx",
+  "event_url": "https://ir.cmc.com/investors/sec-filings/",
+  "known_event": {
+    "title": "Mar 25, 2025 | 10-Q | Quarterly Report - 2025Q2",
+    "date": "2025-03-25",
+    "type": "filing",
+    "media_urls": [
+      "https://s3.amazonaws.com/sec.irpass.cc/653/0000022444-25-000060.doc",
+      "https://s3.amazonaws.com/sec.irpass.cc/653/0000022444-25-000060.pdf",
+      "https://s3.amazonaws.com/sec.irpass.cc/653/0000022444-25-000060.xlsx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "4b1e5742-70ae-4365-84fe-0f16bde3dc1f",
+    "ticker": "CMC",
+    "market": "US",
+    "stratum": "docx",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": true,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://ir.cmc.com/investors/sec-filings/"
+  }
+}

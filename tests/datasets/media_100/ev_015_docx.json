@@ -1,0 +1,31 @@
+{
+  "id": "ev_015_docx",
+  "event_url": "https://s3.amazonaws.com/sec.irpass.cc/2475/0001292814-26-002220.htm",
+  "known_event": {
+    "title": "View Filing Data for SEC filing 0001292814-26-002220",
+    "date": "2026-04-10",
+    "type": "filing",
+    "media_urls": [
+      "https://s3.amazonaws.com/sec.irpass.cc/2475/0001292814-26-002220.doc",
+      "https://s3.amazonaws.com/sec.irpass.cc/2475/0001292814-26-002220.htm",
+      "https://s3.amazonaws.com/sec.irpass.cc/2475/0001292814-26-002220.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ddf78b20-ec07-4e86-a67a-5b31ddae460a",
+    "ticker": "BBAR",
+    "market": "US",
+    "stratum": "docx",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": true,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://ir.bbva.com.ar/financial-information/sec-filings"
+  }
+}

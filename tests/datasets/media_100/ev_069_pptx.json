@@ -1,0 +1,29 @@
+{
+  "id": "ev_069_pptx",
+  "event_url": "https://emcorgroup.com/investor-relations/presentations",
+  "known_event": {
+    "title": "[D.A. DAVIDSON 24TH ANNUAL DIVERSIFIED INDUSTRIALS & SERVICES CONFERENCE 09/18/2025]",
+    "date": "2025-09-18",
+    "type": "webcast",
+    "media_urls": [
+      "https://emcorgroup.com/application/files/1817/5803/9591/EME_Corporate_Overview_Presentation_D.A._Davidson_Industrials_and_Services_Conference_FINAL_w_Video_1.pptx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "88b145e9-72b8-41d3-9265-f05bc7722679",
+    "ticker": "EME",
+    "market": "US",
+    "stratum": "pptx",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": true,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://emcorgroup.com/investor-relations/presentations"
+  }
+}

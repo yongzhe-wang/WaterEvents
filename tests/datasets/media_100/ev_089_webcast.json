@@ -1,0 +1,30 @@
+{
+  "id": "ev_089_webcast",
+  "event_url": "https://event.choruscall.com/mediaframe/webcast.html?webcastid=NaDtdlpN",
+  "known_event": {
+    "title": "2026 Q1 Investor presentation",
+    "date": "2026-04-21",
+    "type": "presentation",
+    "media_urls": [
+      "https://event.choruscall.com/mediaframe/webcast.html?webcastid=NaDtdlpN",
+      "https://www.asm.com/media/olsd33sa/asm_q126_investor_presentation.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ffd85c7b-eb6d-4351-8420-91a3d7041a87",
+    "ticker": "ASMIY",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://www.asm.com/downloads/presentations-other"
+  }
+}

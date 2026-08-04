@@ -1,0 +1,29 @@
+{
+  "id": "ev_049_pdf",
+  "event_url": "https://www.wharfholdings.com/en/investor-relations/presentations?page=3",
+  "known_event": {
+    "title": "Final Results 2013 Results Presentation",
+    "date": "2014-03-26",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.wharfholdings.com/storage/fm/PresentationAndOther/2018-02/wharf-2013-annual-results-presentation.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "74d281da-6fb9-4277-b929-a439c2fed874",
+    "ticker": "0004.HK",
+    "market": "HK",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.wharfholdings.com/en/investor-relations/presentations?page=3"
+  }
+}

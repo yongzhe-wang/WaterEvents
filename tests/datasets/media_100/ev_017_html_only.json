@@ -1,0 +1,29 @@
+{
+  "id": "ev_017_html_only",
+  "event_url": "https://edge.media-server.com/mmc/p/6dvx6p6d",
+  "known_event": {
+    "title": "2023 Annual Webcast (English only)",
+    "date": "2023-12-31",
+    "type": "webcast",
+    "media_urls": [
+      "https://edge.media-server.com/mmc/p/6dvx6p6d"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d3204700-4580-47e6-bbed-fef40d4e9357",
+    "ticker": "0388.HK",
+    "market": "HK",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.hkexgroup.com/Investor-Relations/Financial-Results-and-Presentations/2023?sc_lang=en"
+  }
+}

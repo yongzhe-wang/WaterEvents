@@ -1,0 +1,30 @@
+{
+  "id": "ev_027_html_only",
+  "event_url": "https://edge.media-server.com/mmc/p/zmzkab8d",
+  "known_event": {
+    "title": "The Chefs’ Warehouse First Quarter 2025 Earnings Call",
+    "date": "2025-04-30",
+    "type": "earnings",
+    "media_urls": [
+      "https://edge.media-server.com/mmc/p/zmzkab8d",
+      "https://investors.chefswarehouse.com/static-files/d92d1c8f-af5b-46ec-82fb-27d9f7d8acfa"
+    ]
+  },
+  "meta": {
+    "db_event_id": "9a5bb29e-d615-4082-9189-2ec1c61411f1",
+    "ticker": "CHEF",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.chefswarehouse.com/events-and-presentations"
+  }
+}

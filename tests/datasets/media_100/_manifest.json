@@ -1,0 +1,42 @@
+{
+  "name": "media_100",
+  "n": 100,
+  "purpose": "stage-2 media_agent handler coverage — every handler path exercised, NOT a population mirror",
+  "excludes": "any event whose media_urls contain sec.gov (FocusAlpha's item-splitter.ts handles SEC far better; EDGAR rate limits are owned by focusalpha-backend's edgar_rate_bucket)",
+  "strata": {
+    "audio": 10,
+    "docx": 5,
+    "html_only": 25,
+    "mixed": 3,
+    "pdf": 25,
+    "pptx": 2,
+    "video": 10,
+    "webcast": 12,
+    "xlsx": 8
+  },
+  "markets": {
+    "US": 52,
+    "HK": 7,
+    "TW": 10,
+    "T": 11,
+    "KS": 10,
+    "SS": 5,
+    "KQ": 1,
+    "L": 4
+  },
+  "event_types": {
+    "presentation": 18,
+    "earnings": 17,
+    "conference": 13,
+    "webcast": 11,
+    "press_release": 24,
+    "filing": 13,
+    "shareholder_meeting": 2,
+    "dividend": 1,
+    "report": 1
+  },
+  "us_vs_nonus": {
+    "US": 52,
+    "non_US": 48
+  }
+}

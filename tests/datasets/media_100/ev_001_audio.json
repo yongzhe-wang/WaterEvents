@@ -1,0 +1,36 @@
+{
+  "id": "ev_001_audio",
+  "event_url": "https://event.choruscall.com/mediaframe/webcast.html?webcastid=kwcdTuWp",
+  "known_event": {
+    "title": "First Quarter 2023",
+    "date": "2023-Q1",
+    "type": "presentation",
+    "media_urls": [
+      "https://78449.choruscall.com/dataconf/productusers/ifs/media/2023/ifs230511_1000_archive.mp3",
+      "https://event.choruscall.com/mediaframe/webcast.html?webcastid=kwcdTuWp",
+      "https://ifs.com.pe/documents/13576036/13607094/cc_invite_1Q23.pdf",
+      "https://ifs.com.pe/documents/13576036/13607241/EP_1Q23.pdf",
+      "https://ifs.com.pe/documents/13576036/13607241/ER_1Q23.pdf",
+      "https://ifs.com.pe/documents/13576036/13607241/financial_spreadsheet_1Q23.xlsx",
+      "https://ifs.com.pe/documents/13576036/13607241/FS_1Q23.pdf",
+      "https://ifs.com.pe/documents/13576036/14193516/cc_transcript_1Q23.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "a31fdfca-766a-4ee7-83ad-884f0ed62c04",
+    "ticker": "IFS",
+    "market": "US",
+    "stratum": "audio",
+    "n_urls": 8,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": true,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://ifs.com.pe/es/quarterly-information"
+  }
+}

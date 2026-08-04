@@ -1,0 +1,29 @@
+{
+  "id": "ev_048_pdf",
+  "event_url": "https://www.daimlertruck.com/en/investors/capital-market-releases",
+  "known_event": {
+    "title": "Strong first quarter in uncertain times",
+    "date": "2025-05-13",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.daimlertruck.com/fileadmin/user_upload/documents/investors/capital-market-releases/financial-news/2025/20250513_Investor_Relations_Release_Daimler_Truck_Strong_first_quarter_in_uncertain_times.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "11b0f883-9b77-4ddd-873a-18ade57b7571",
+    "ticker": "DTRUY",
+    "market": "US",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.daimlertruck.com/en/investors/capital-market-releases"
+  }
+}

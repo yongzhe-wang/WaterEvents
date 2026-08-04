@@ -1,0 +1,29 @@
+{
+  "id": "ev_006_audio",
+  "event_url": "https://global.rakuten.com/corp/investors/documents/events.html",
+  "known_event": {
+    "title": "Mobile Conference Call",
+    "date": "2020-03-11",
+    "type": "conference",
+    "media_urls": [
+      "https://global.rakuten.com/corp/investors/assets/doc/documents/200311_rakuten_tel_audio.mp3"
+    ]
+  },
+  "meta": {
+    "db_event_id": "32f2e678-990b-4ab0-ac6b-74ad9ad62283",
+    "ticker": "4755.T",
+    "market": "T",
+    "stratum": "audio",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://global.rakuten.com/corp/investors/documents/events.html"
+  }
+}

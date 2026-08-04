@@ -1,0 +1,29 @@
+{
+  "id": "ev_030_html_only",
+  "event_url": "https://www.ottertail.com/investors/news/news-details/2024/Otter-Tail-Corporation-Announces-Record-Second-Quarter-Earnings-Maintains-Electric-Segment-Guidance-and-Increases-Consolidated-2024-Annual-Earnings-Guidance/default.aspx",
+  "known_event": {
+    "title": "[Otter Tail Corporation Announces Record Second Quarter Earnings, Maintains Electric Segment Guidance and Increases Consolidated 2024 Annual Earnings Guidance]",
+    "date": "2024-08-05",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.ottertail.com/investors/news/news-details/2024/Otter-Tail-Corporation-Announces-Record-Second-Quarter-Earnings-Maintains-Electric-Segment-Guidance-and-Increases-Consolidated-2024-Annual-Earnings-Guidance/default.aspx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "0d752cb1-9f60-4600-a6bf-39b8485f5bc6",
+    "ticker": "OTTR",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.ottertail.com/investors/news/default.aspx"
+  }
+}

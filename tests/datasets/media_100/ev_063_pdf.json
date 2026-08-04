@@ -1,0 +1,29 @@
+{
+  "id": "ev_063_pdf",
+  "event_url": "https://investors.koreazinc.co.kr/ko/investors/ir-events/earnings-release/",
+  "known_event": {
+    "title": "2026년 1분기 실적 발표",
+    "date": "2026-05-07",
+    "type": "earnings",
+    "media_urls": [
+      "https://investors.koreazinc.co.kr/media/uuwpbqbx/26q1-korea-zinc-ir-presentation-kr.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "9367c6ab-4fb8-4804-95f4-e3729416d3b4",
+    "ticker": "010130.KS",
+    "market": "KS",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.koreazinc.co.kr/ko/investors/ir-events/earnings-release/"
+  }
+}

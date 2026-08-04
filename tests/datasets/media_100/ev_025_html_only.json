@@ -1,0 +1,29 @@
+{
+  "id": "ev_025_html_only",
+  "event_url": "https://www.jusung.com/postact/download/1242",
+  "known_event": {
+    "title": "[28th Settlement Announcement] Statement of Financial Position",
+    "date": "2023-12-24",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.jusung.com/postact/download/1242"
+    ]
+  },
+  "meta": {
+    "db_event_id": "2147721e-64f9-4c99-9c4f-804265f449cc",
+    "ticker": "036930.KQ",
+    "market": "KQ",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.jusung.com/eng/board/online_notice"
+  }
+}

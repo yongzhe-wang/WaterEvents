@@ -1,0 +1,29 @@
+{
+  "id": "ev_037_html_only",
+  "event_url": "https://investor-relations.cna.com/events/event-details/2020/Q2-Earnings-Release/default.aspx",
+  "known_event": {
+    "title": "[Q2 Earnings Release]",
+    "date": "2020-Q2",
+    "type": "press_release",
+    "media_urls": [
+      "https://investor-relations.cna.com/events/event-details/2020/Q2-Earnings-Release/default.aspx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "af697114-d985-4dc2-96a9-4bd6e4a70cb4",
+    "ticker": "CNA",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investor-relations.cna.com/events/default.aspx?ShowEvents=PAST"
+  }
+}

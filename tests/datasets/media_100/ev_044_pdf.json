@@ -1,0 +1,29 @@
+{
+  "id": "ev_044_pdf",
+  "event_url": "https://www.hd.square-enix.com/eng/ir/library/explanatory.html",
+  "known_event": {
+    "title": "Reference Slides for the Three-Month Period Ended June 30, 2013",
+    "date": "2013-08-06",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.hd.square-enix.com/eng/ir/library/pdf/14q1slides.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "10b3b486-ce6d-4ec9-85b6-9af87d870034",
+    "ticker": "9684.T",
+    "market": "T",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.hd.square-enix.com/eng/ir/library/explanatory.html"
+  }
+}

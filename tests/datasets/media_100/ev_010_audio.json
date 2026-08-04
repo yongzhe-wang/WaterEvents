@@ -1,0 +1,30 @@
+{
+  "id": "ev_010_audio",
+  "event_url": "https://www.coherent.com/news/press-releases/fy2025-first-quarter-conference-call-announced.html",
+  "known_event": {
+    "title": "First-Quarter Fiscal Year 2025 Conference Call",
+    "date": "2024-11-06",
+    "type": "conference",
+    "media_urls": [
+      "https://assets.coherent.com/is/content/coherentinc/coherent/site/en/documents/investors/webcasts/recordings/2025/coherent-corp-fy25-1st-quarter-earnings-11062024.mp3",
+      "https://www.coherent.com/news/press-releases/fy2025-first-quarter-conference-call-announced.html"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ed3005ff-297c-47d0-8adf-2dc1f5125c54",
+    "ticker": "COHR",
+    "market": "US",
+    "stratum": "audio",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://www.coherent.com/company/investor-relations/financial-releases"
+  }
+}

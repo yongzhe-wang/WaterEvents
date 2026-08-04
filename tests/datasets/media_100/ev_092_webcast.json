@@ -1,0 +1,29 @@
+{
+  "id": "ev_092_webcast",
+  "event_url": "https://events.q4inc.com/attendee/311921799",
+  "known_event": {
+    "title": "Events Platform - Q4",
+    "date": "2025-10-30",
+    "type": "webcast",
+    "media_urls": [
+      "https://events.q4inc.com/attendee/311921799"
+    ]
+  },
+  "meta": {
+    "db_event_id": "6010ae27-5887-4b76-8dea-034e23a35c5c",
+    "ticker": "FIBK",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://fibk.com/overview/default.aspx"
+  }
+}

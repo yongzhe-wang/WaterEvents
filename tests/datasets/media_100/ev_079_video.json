@@ -1,0 +1,30 @@
+{
+  "id": "ev_079_video",
+  "event_url": "https://boliden.videosync.fi/2021-04-27-q1_2021",
+  "known_event": {
+    "title": "Boliden",
+    "date": "2021-APR",
+    "type": "press_release",
+    "media_urls": [
+      "https://boliden.videosync.fi/2021-04-27-q1_2021",
+      "https://vimeo.com/1191553269"
+    ]
+  },
+  "meta": {
+    "db_event_id": "a12e5c50-7a0c-4766-bd77-676c2a1c7332",
+    "ticker": "BDNNY",
+    "market": "US",
+    "stratum": "video",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://investors.boliden.com/investor-relations/reports-and-presentations/financial-reports"
+  }
+}

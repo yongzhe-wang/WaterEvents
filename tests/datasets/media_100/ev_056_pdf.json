@@ -1,0 +1,29 @@
+{
+  "id": "ev_056_pdf",
+  "event_url": "https://www.cht.com.tw/en/home/cht/investors/shareholder-services/ir-calendar",
+  "known_event": {
+    "title": "MasterLink Securities investor conference",
+    "date": "2024-08-27",
+    "type": "conference",
+    "media_urls": [
+      "https://www.cht.com.tw/home/cht/-/media/web/pdf/investors/shareholder-services/en/ir-calendar-en/20240827/2q24_presentation_en_masterlink_securities.pdf?sc_lang=en"
+    ]
+  },
+  "meta": {
+    "db_event_id": "23dce664-4259-40be-828c-7e4edb516470",
+    "ticker": "CHT",
+    "market": "US",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.cht.com.tw/en/home/cht/investors/shareholder-services/ir-calendar"
+  }
+}

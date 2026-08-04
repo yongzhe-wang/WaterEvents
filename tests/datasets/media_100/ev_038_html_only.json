@@ -1,0 +1,29 @@
+{
+  "id": "ev_038_html_only",
+  "event_url": "https://www.foxconn.com/zh-tw/investor-relations/investor-relations-activities/investor-conference",
+  "known_event": {
+    "title": "2021年第一季法人說明會",
+    "date": "2021-02-10",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.foxconn.com/zh-tw/investor-relations/investor-relations-activities/investor-conference"
+    ]
+  },
+  "meta": {
+    "db_event_id": "5ecaad71-2805-4436-9b27-766b94064294",
+    "ticker": "HHPD.L",
+    "market": "L",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.foxconn.com/zh-tw/investor-relations/investor-relations-activities/event-calendar"
+  }
+}

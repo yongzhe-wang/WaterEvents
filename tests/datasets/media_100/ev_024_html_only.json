@@ -1,0 +1,32 @@
+{
+  "id": "ev_024_html_only",
+  "event_url": "https://investors.navan.com/node/8621/html",
+  "known_event": {
+    "title": "Form 144 Filed by 'insiders' prior intended sale of restricted stock",
+    "date": "2026-07-01T04:00:00Z",
+    "type": "filing",
+    "media_urls": [
+      "https://investors.navan.com/node/8621/html",
+      "https://investors.navan.com/sec-filings/sec-filing/144/0001628280-26-046569",
+      "https://investors.navan.com/static-files/761ecfb5-9c9b-4bda-b1b8-69ae75950bc5",
+      "https://investors.navan.com/static-files/923f0979-d26e-4fad-b0ae-1bd27bbcf349"
+    ]
+  },
+  "meta": {
+    "db_event_id": "12e7d1c8-8db7-4260-87a6-9909e9b3448b",
+    "ticker": "NAVN",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.navan.com/financial-information/sec-filings"
+  }
+}

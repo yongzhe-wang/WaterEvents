@@ -1,0 +1,29 @@
+{
+  "id": "ev_018_html_only",
+  "event_url": "https://www.bizlinktech.com/events/automate-2026",
+  "known_event": {
+    "title": "Upcoming June 22, 2026 Automate 2026",
+    "date": "2026-06-22",
+    "type": "conference",
+    "media_urls": [
+      "https://www.bizlinktech.com/events/automate-2026"
+    ]
+  },
+  "meta": {
+    "db_event_id": "9a770252-858d-4e52-8438-4019533420e9",
+    "ticker": "3665.TW",
+    "market": "TW",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.bizlinktech.com/events/odcc-2025"
+  }
+}

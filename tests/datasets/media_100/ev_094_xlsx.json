@@ -1,0 +1,34 @@
+{
+  "id": "ev_094_xlsx",
+  "event_url": "https://www.ms-ad-hd.com/en/ir/ir_event/event.html",
+  "known_event": {
+    "title": "Announcement of FY2019 2Q Earnings Results",
+    "date": "2019-11-19",
+    "type": "earnings",
+    "media_urls": [
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/0/link/qurter2019_2_e.pdf",
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/00/link/kss_2019_2_e.pdf",
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/01/link/20191119_qa_e.pdf",
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/02/link/ksdk_h_2019_2-1_e.pdf",
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/03/link/20191119_add_e.xls",
+      "https://www.ms-ad-hd.com/en/ir/ir_event/event/event2019/main/01119/teaserItems1/00/linkList/04/link/data_2019Q2_e.xls"
+    ]
+  },
+  "meta": {
+    "db_event_id": "41cd0984-bf22-446e-9fcd-ab3bcf51bf7b",
+    "ticker": "8725.T",
+    "market": "T",
+    "stratum": "xlsx",
+    "n_urls": 6,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.ms-ad-hd.com/en/ir/ir_event/event.html"
+  }
+}

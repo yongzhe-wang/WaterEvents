@@ -1,0 +1,30 @@
+{
+  "id": "ev_062_pdf",
+  "event_url": "https://www.sanofi.com/en/media-room/press-releases/2025/2025-12-11-06-00-00-3203611",
+  "known_event": {
+    "title": "Sanofi’s Qfitlia and Cablivi approved in China, expanding care for rare diseases",
+    "date": "2025-12-11",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.sanofi.com/assets/dotcom/pressreleases/2025/2025-12-11-06-00-00-3203611-en.pdf",
+      "https://www.sanofi.com/en/media-room/press-releases/2025/2025-12-11-06-00-00-3203611"
+    ]
+  },
+  "meta": {
+    "db_event_id": "234aab7e-6b6d-42a7-8de7-d703517d550f",
+    "ticker": "SNY",
+    "market": "US",
+    "stratum": "pdf",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.sanofi.com/en/media-room/press-releases/library"
+  }
+}

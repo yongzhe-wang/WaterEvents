@@ -1,0 +1,29 @@
+{
+  "id": "ev_033_html_only",
+  "event_url": "https://ir.euronetworldwide.com/events/event-details/euronet-worldwides-fourth-quarter-2021-earnings-call",
+  "known_event": {
+    "title": "euronet worldwides fourth quarter 2021 earnings call",
+    "date": "2021-Q4",
+    "type": "earnings",
+    "media_urls": [
+      "https://ir.euronetworldwide.com/events/event-details/euronet-worldwides-fourth-quarter-2021-earnings-call"
+    ]
+  },
+  "meta": {
+    "db_event_id": "1b9d8f63-2930-4dd3-9d02-e69b36ebdc94",
+    "ticker": "EEFT",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://ir.euronetworldwide.com/financial-information/quarterly-results"
+  }
+}

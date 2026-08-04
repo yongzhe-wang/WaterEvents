@@ -1,0 +1,29 @@
+{
+  "id": "ev_084_webcast",
+  "event_url": "https://www.chinamobileltd.com/en/ir/latestresults.php",
+  "known_event": {
+    "title": "FY 2025 Presentation (A Shares)",
+    "date": "",
+    "type": "presentation",
+    "media_urls": [
+      "https://www.chinamobileltd.com/en/ir/webcasts/pre260326a.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "3e4d4271-98d0-400a-bf30-fba93d3962fa",
+    "ticker": "0941.HK",
+    "market": "HK",
+    "stratum": "webcast",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://www.chinamobileltd.com/en/ir/latestresults.php"
+  }
+}

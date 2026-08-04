@@ -1,0 +1,30 @@
+{
+  "id": "ev_004_audio",
+  "event_url": "https://www.esunbank.com/en/-/media/ESUNFHC/Files/Investor-Relations/IR-events/Investor-Conference/2019/4Q18-MP3EN",
+  "known_event": {
+    "title": "4Q18 Investor Conference",
+    "date": "2019-03-06",
+    "type": "conference",
+    "media_urls": [
+      "http://production-mp3-full.s3.amazonaws.com/nuFuuQrV/ch01-gM3mIK.mp3",
+      "https://www.esunbank.com/en/-/media/ESUNFHC/Files/Investor-Relations/IR-events/Investor-Conference/2019/4Q18-MP3EN"
+    ]
+  },
+  "meta": {
+    "db_event_id": "1db912c4-83f2-4210-b778-0a8efe2b66af",
+    "ticker": "2884.TW",
+    "market": "TW",
+    "stratum": "audio",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": true,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.esunfhc.com/en/investor-relations/ir-events/investor-conference"
+  }
+}

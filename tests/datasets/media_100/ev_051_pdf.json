@@ -1,0 +1,29 @@
+{
+  "id": "ev_051_pdf",
+  "event_url": "https://www.konami.com/ir/en/ir-data/meeting.html",
+  "known_event": {
+    "title": "Full Year of FY2025",
+    "date": "2025-FY2025",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.konami.com/ir/en/ir-data/meeting/2025/en0508_gk46ny.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "d3c62b01-7bba-4fb4-96f2-05755d2bf669",
+    "ticker": "KNM.L",
+    "market": "L",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.konami.com/ir/en/ir-data/meeting.html"
+  }
+}

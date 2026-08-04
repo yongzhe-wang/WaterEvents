@@ -1,0 +1,29 @@
+{
+  "id": "ev_034_html_only",
+  "event_url": "https://www.zebra.com/us/en/about-zebra/newsroom/press-releases/2025/zebra-recognises-ai-developer-challenge-winners-for-visionary-approaches-to-increase-frontline-efficiency.html",
+  "known_event": {
+    "title": "Zebra Recognizes AI Developer Challenge Winners for Visionary Approaches to Increase Frontline Efficiency",
+    "date": "2025-Q1",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.zebra.com/us/en/about-zebra/newsroom/press-releases/2025/zebra-recognises-ai-developer-challenge-winners-for-visionary-approaches-to-increase-frontline-efficiency.html"
+    ]
+  },
+  "meta": {
+    "db_event_id": "e86c8995-ea28-4a13-9bd1-7ff784aa9c69",
+    "ticker": "ZBRA",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investors.zebra.com/news-and-events/news/default.aspx"
+  }
+}

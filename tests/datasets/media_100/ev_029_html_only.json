@@ -1,0 +1,30 @@
+{
+  "id": "ev_029_html_only",
+  "event_url": "https://edge.media-server.com/mmc/p/cofyto8d",
+  "known_event": {
+    "title": "2Q 2024 Humana Inc. Earnings Conference Call",
+    "date": "2024-Q2",
+    "type": "earnings",
+    "media_urls": [
+      "https://edge.media-server.com/mmc/p/cofyto8d",
+      "https://humana.gcs-web.com/static-files/85c637f0-d506-4f55-8efb-01f98812ba7d"
+    ]
+  },
+  "meta": {
+    "db_event_id": "a94eb0e2-c001-400c-a631-96c247c66d6e",
+    "ticker": "HUM",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://humana.gcs-web.com/events/event-details/2q-2024-humana-inc-earnings-conference-call"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "ev_055_pdf",
+  "event_url": "https://www.chinatelecom-h.com/en/regulatory/announcements.php",
+  "known_event": {
+    "title": "a260401",
+    "date": "2026-04-01",
+    "type": "filing",
+    "media_urls": [
+      "https://doc.irasia.com/listco/hk/chinatelecom/announcement/a260401.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "33728c0a-31b3-4923-8af6-0145e65ae1e6",
+    "ticker": "601728.SS",
+    "market": "SS",
+    "stratum": "pdf",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.chinatelecom-h.com/en/regulatory/announcements.php"
+  }
+}

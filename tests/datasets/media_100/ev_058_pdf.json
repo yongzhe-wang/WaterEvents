@@ -1,0 +1,30 @@
+{
+  "id": "ev_058_pdf",
+  "event_url": "https://investor.littelfuse.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19459601",
+  "known_event": {
+    "title": "Form 144 filing dated 2026-05-18, NAYAR DEEPAK, Report of proposed sale of securities",
+    "date": "2026-05-18",
+    "type": "filing",
+    "media_urls": [
+      "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000889331/dbe4d9c9-008b-4ca6-8677-b9a59a38d46f.pdf",
+      "https://investor.littelfuse.com/financials/sec-filings/sec-filings-details/default.aspx?FilingId=19459601"
+    ]
+  },
+  "meta": {
+    "db_event_id": "dc6ac086-fae4-445a-b235-dacbbcd25df9",
+    "ticker": "LFUS",
+    "market": "US",
+    "stratum": "pdf",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://investor.littelfuse.com/financials/sec-filings/default.aspx"
+  }
+}

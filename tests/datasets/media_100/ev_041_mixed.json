@@ -1,0 +1,35 @@
+{
+  "id": "ev_041_mixed",
+  "event_url": "https://door.ntt/web/en/ntt-vrconference-room20211025/index.html",
+  "known_event": {
+    "title": "Refinement of the NTT Group Medium-Term Management Strategy",
+    "date": "2021-10-25",
+    "type": "presentation",
+    "media_urls": [
+      "https://door.ntt/web/en/ntt-vrconference-room20211025/index.html",
+      "https://group.ntt/en/ir/library/presentation/2021/211025_1.pdf",
+      "https://group.ntt/en/ir/library/presentation/2021/211025_2.pdf",
+      "https://group.ntt/en/ir/library/presentation/2021/211025_3.pdf?20211203",
+      "https://ntt-ir.webcdn.stream.ne.jp/20211025/ondemand/en/aVC8j70Z/index.html",
+      "https://ntt-ir.webcdn.stream.ne.jp/20211025/text/en/OnWBdUFU/index.html",
+      "https://nttdocomo-ir.webcdn.stream.ne.jp/www11/nttdocomo-ir/ond/211025/en/hcwnzp7m8z/index.html"
+    ]
+  },
+  "meta": {
+    "db_event_id": "6b102670-02f8-47be-aec7-5486950d93a3",
+    "ticker": "9432.T",
+    "market": "T",
+    "stratum": "mixed",
+    "n_urls": 7,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://group.ntt/en/ir/library/presentation/institutional/index.html"
+  }
+}

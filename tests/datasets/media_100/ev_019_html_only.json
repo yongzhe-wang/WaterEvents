@@ -1,0 +1,29 @@
+{
+  "id": "ev_019_html_only",
+  "event_url": "https://www.ir.dnb.no/press-and-reports/press-releases/dnb-bank-asa-agreement-divest-shareholding-luminor-holding-2470246",
+  "known_event": {
+    "title": "[DNB Bank ASA: Agreement to divest shareholding in Luminor Holding AS]",
+    "date": "2026-07-20",
+    "type": "press_release",
+    "media_urls": [
+      "https://www.ir.dnb.no/press-and-reports/press-releases/dnb-bank-asa-agreement-divest-shareholding-luminor-holding-2470246"
+    ]
+  },
+  "meta": {
+    "db_event_id": "5624b295-ea82-4c62-a50a-5a14b3986b7c",
+    "ticker": "DNBBY",
+    "market": "US",
+    "stratum": "html_only",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.ir.dnb.no/"
+  }
+}

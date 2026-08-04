@@ -1,0 +1,32 @@
+{
+  "id": "ev_099_xlsx",
+  "event_url": "http://edge.media-server.com/m/p/ht4uggiy",
+  "known_event": {
+    "title": "Q1 2016 Earnings Release",
+    "date": "2016-05-12",
+    "type": "earnings",
+    "media_urls": [
+      "http://edge.media-server.com/m/p/ht4uggiy",
+      "https://www.veon.com/fileadmin/user_upload/investors/reports/2016/factbook-1q16.xlsx",
+      "https://www.veon.com/fileadmin/user_upload/investors/reports/2016/vip-1q16-er-final.pdf",
+      "https://www.veon.com/fileadmin/user_upload/investors/reports/2016/vip-1q16-presentation.pdf"
+    ]
+  },
+  "meta": {
+    "db_event_id": "681c50be-fa83-4234-bd87-5024d2228cac",
+    "ticker": "VEON",
+    "market": "US",
+    "stratum": "xlsx",
+    "n_urls": 4,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": true,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://www.veon.com/investors"
+  }
+}

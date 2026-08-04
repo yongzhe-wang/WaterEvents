@@ -1,0 +1,29 @@
+{
+  "id": "ev_080_video",
+  "event_url": "https://www.youtube.com/user/samsungpop",
+  "known_event": {
+    "title": "FY2025 Q04 Quarterly Report (Earnings Release)",
+    "date": "2026-02-09",
+    "type": "report",
+    "media_urls": [
+      "https://www.youtube.com/user/samsungpop"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ece491a5-76c8-4b1b-8ed6-104bcdabadea",
+    "ticker": "016360.KS",
+    "market": "KS",
+    "stratum": "video",
+    "n_urls": 1,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": true,
+      "webcast": false
+    },
+    "source_url": "https://www.samsungsecurities.com/eng/invest/annual_report.do?tabCode=2"
+  }
+}

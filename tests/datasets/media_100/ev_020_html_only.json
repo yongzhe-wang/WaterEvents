@@ -1,0 +1,30 @@
+{
+  "id": "ev_020_html_only",
+  "event_url": "https://irsvc.teletogether.com/ktng/ktng2025Q2_eng.php",
+  "known_event": {
+    "title": "FY2025 Q2 Earnings Release",
+    "date": "2025-05-27",
+    "type": "earnings",
+    "media_urls": [
+      "https://irsvc.teletogether.com/ktng/ktng2025Q2_eng.php",
+      "https://irsvc.teletogether.com/ktng/ktng2025Q2_kor.php"
+    ]
+  },
+  "meta": {
+    "db_event_id": "ee95774b-4a16-4c36-844c-eb2aad4a7c01",
+    "ticker": "033780.KS",
+    "market": "KS",
+    "stratum": "html_only",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": false
+    },
+    "source_url": "https://en.ktng.com/ir/ir-archives/events"
+  }
+}

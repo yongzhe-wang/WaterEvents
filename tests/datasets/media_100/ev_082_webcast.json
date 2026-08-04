@@ -1,0 +1,31 @@
+{
+  "id": "ev_082_webcast",
+  "event_url": "https://viavid.webcasts.com/starthere.jsp?ei=1757981&tp_key=52bca9ffa4",
+  "known_event": {
+    "title": "Q1 2026 Earnings Webcast",
+    "date": "2026-Q1",
+    "type": "webcast",
+    "media_urls": [
+      "https://s203.q4cdn.com/488215793/files/doc_financials/2026/q1/v2/ESS-1Q26-Earnings-Package.pdf",
+      "https://viavid.webcasts.com/starthere.jsp?ei=1757981&tp_key=52bca9ffa4",
+      "https://viavid.webcasts.com/starthere.jsp?ei=1768568&tp_key=803968129c"
+    ]
+  },
+  "meta": {
+    "db_event_id": "c1b45819-8552-4784-a146-ce06269d4253",
+    "ticker": "ESS",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 3,
+    "kinds": {
+      "pdf": true,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://investors.essexapartmenthomes.com/"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ev_087_webcast",
+  "event_url": "https://cc.webcasts.com/morg007/060926a_js/?entity=58_0YD8YKP",
+  "known_event": {
+    "title": "Morgan Stanley U.S. Financials Conference",
+    "date": "2026-06-09",
+    "type": "webcast",
+    "media_urls": [
+      "https://cc.webcasts.com/morg007/060926a_js/?entity=58_0YD8YKP",
+      "https://investors.corebridgefinancial.com/events-and-presentations/events/event-details/2026/Morgan-Stanley-US-Financials-Conference-2026-8wq01Bo9VT/default.aspx"
+    ]
+  },
+  "meta": {
+    "db_event_id": "3267e126-1b6a-48a6-84fd-f264860434bd",
+    "ticker": "CRBG",
+    "market": "US",
+    "stratum": "webcast",
+    "n_urls": 2,
+    "kinds": {
+      "pdf": false,
+      "pptx": false,
+      "docx": false,
+      "xlsx": false,
+      "audio": false,
+      "video": false,
+      "webcast": true
+    },
+    "source_url": "https://investors.corebridgefinancial.com/events-and-presentations/events/event-details/2026/Morgan-Stanley-US-Financials-Conference-2026-8wq01Bo9VT/default.aspx"
+  }
+}
