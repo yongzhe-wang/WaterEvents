@@ -69,3 +69,20 @@ def extract(url: str, proxy: str | None = None, want_structured: bool = False) -
     res = extract_bytes(data, fmt=fmt_or_reason, want_structured=want_structured)   # on success it's the real format
     res.source = "url"
     return res
+
+# ── REMOTE FETCH SPLIT ───────────────────────────────────────────────────────────────────────────────────────────
+# FETCH_REMOTE_URL moves the DOWNLOAD itself to ir-render-16: extract(url) becomes one HTTP call, and the file bytes
+# never touch this box. Three reasons, memory being the weakest:
+#   1. Egress IP coherence — a site currently sees one IP render the page and a DIFFERENT IP download the file it
+#      links to, seconds later. That is a bot signature we manufacture ourselves.
+#      {GCLOUD 2026-08-04 — ir-media-8 EXTERNAL 35.254.161.69 / ir-render-16 EXTERNAL 136.112.158.156}
+#   2. Rate limiting — the download path consults politeness ZERO times while the render path consults it 20 times,
+#      so two uncoordinated channels hit the same host. On the render VM both run in ONE process and share one
+#      per-host pacing cursor. {GREP 2026-08-04 — render.py 15, capture.py 5, both fetch.py files 0}
+#   3. Memory — fetch reads the whole file into RAM before forwarding, capped at 300MB each; 24 slots is 7.2GB worst
+#      case, which is what decides how small this box can get. {one choruscall mp3 = 91,723,583 bytes}
+# [CONFIDENCE: CONFIRMED — IPs, grep counts and file size all read from live sources].
+import os as _os                                              # noqa: E402 — deliberately after the local imports above
+
+if _os.environ.get("FETCH_REMOTE_URL", "").strip():
+    from providers.fetch_remote import office_extract as extract        # noqa: F811,E402 — intentional rebind

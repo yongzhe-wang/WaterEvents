@@ -41,6 +41,20 @@ PORT = int(os.environ.get("RENDER_SERVICE_PORT", "8100"))
 _stats: dict = {"started": time.time(), "inflight": 0, "total": 0, "errors": 0, "by_method": {}}
 
 
+# The residential proxy lives HERE, in this box's own environment, and is deliberately never accepted over the wire:
+# the client that calls us already knows it should not ship a credential to the machine that already holds it.
+# {RENDER.ENV on ir-render-16 carries WEBSHARE_PROXY, inherited from ir-media-8's fleet.env at provisioning}
+# [CONFIDENCE: CONFIRMED — written by the provisioning step and read back as "WEBSHARE_PROXY: 1 条"].
+_PROXY = os.environ.get("WEBSHARE_PROXY") or None
+
+
+def _asdict(r) -> dict:
+    """A DocResult / AudioResult dataclass → a plain dict for the wire. dataclasses.asdict handles the nested lists and
+    dicts; the client rebuilds the SAME dataclass on the far side, so every call site keeps its original type."""
+    from dataclasses import asdict
+    return asdict(r)
+
+
 def _loud(msg: str) -> None:
     """The fail-loud channel. A render failing here is a QUALITY signal for the whole pipeline and must be visible in
     the service log, never swallowed into an empty 200."""
@@ -166,6 +180,70 @@ async def h_capture_media(request: web.Request) -> web.Response:
     return web.json_response(out or {})
 
 
+async def _gated_fetch(url: str, fn, *args):
+    """Run one FETCH-and-extract behind the same politeness gate every render already goes through.
+
+    THIS is the point of moving downloads here, more than the memory it frees on ir-media-8. Before this, the two paths
+    were uncoordinated: renders consulted politeness, downloads did not, and both hammered the same host from two
+    different machines with neither aware of the other.
+    {GREP 2026-08-04 — providers/watercrawl/render.py 15 politeness references, capture.py 5,
+     tools/officeall/fetch.py 0, tools/audio_extract/fetch.py 0}
+    [CONFIDENCE: CONFIRMED — counted across the whole backend].
+    Running the download in THIS process means it shares one per-host pacing cursor with the renders, so a page render
+    followed by its own pdf download is now two paced requests to one host, not two racing ones from two IPs.
+
+    url_allowed_async first (scheme + SSRF + robots), then wait_turn_async, which RESERVES this host's next slot rather
+    than sleeping a fixed interval — the reservation is what stops N concurrent callers from waking together and hitting
+    the host as one burst {POLITENESS.PY "A NAIVE SLEEP(INTERVAL) WOULD LET N COROUTINES WAKE SIMULTANEOUSLY AND HIT THE
+    HOST TOGETHER — WHICH IS THE PILE-UP THIS MODULE EXISTS TO PREVENT"}."""
+    from . import politeness
+    ok, why = await politeness.url_allowed_async(url)
+    if not ok:
+        return None, why                                    # 'bad-scheme' / 'ssrf-blocked' / 'robots-denied'
+    await politeness.wait_turn_async(url)
+    return await _call(fn, *args), ""
+
+
+async def h_fetch_doc(request: web.Request) -> web.Response:
+    """POST /fetch_doc {url, structured?} → the DocResult fields.
+
+    Downloads on THIS box and forwards the bytes to the pod, so ir-media-8 never holds them. The forwarding half is
+    already configured here as DOCLING_REMOTE_URL, which makes this handler literally the code ir-media-8 used to run —
+    same fetch, same remote extract — just relocated to the machine whose IP the site has already seen rendering."""
+    from tools.officeall import extract as office_extract   # lazy: pulls the officeall package + its lazy docling client
+
+    body = await request.json()
+    url = str(body.get("url") or "").strip()
+    if not url:
+        return web.json_response({"error": "missing url"}, status=400)
+    want = bool(body.get("structured"))
+    r, refused = await _gated_fetch(url, office_extract, url, _PROXY, want)
+    if r is None:
+        _loud(f"fetch_doc({url}) → refused:{refused}")
+        return web.json_response({"source": "url", "error": f"refused:{refused}", "via": ""})
+    if not r.ok:
+        _loud(f"fetch_doc({url}) → NOT OK: {r.error!r} (via={r.via!r})")
+    return web.json_response(_asdict(r))
+
+
+async def h_fetch_audio(request: web.Request) -> web.Response:
+    """POST /fetch_audio {url} → the AudioResult fields. Same shape as /fetch_doc; the audio leg is the one that makes
+    the memory argument concrete — a single choruscall earnings mp3 is 91.7 MB {SERVER CONTENT-LENGTH 91,723,583}."""
+    from tools.audio_extract import extract as audio_extract  # lazy: pulls the audio package + its lazy whisper client
+
+    body = await request.json()
+    url = str(body.get("url") or "").strip()
+    if not url:
+        return web.json_response({"error": "missing url"}, status=400)
+    r, refused = await _gated_fetch(url, audio_extract, url, _PROXY)
+    if r is None:
+        _loud(f"fetch_audio({url}) → refused:{refused}")
+        return web.json_response({"source": "url", "error": f"refused:{refused}", "via": ""})
+    if not r.ok:
+        _loud(f"fetch_audio({url}) → NOT OK: {r.error!r}")
+    return web.json_response(_asdict(r))
+
+
 async def h_health(_request: web.Request) -> web.Response:
     """GET /health → liveness + what the box is doing. `browser` is the real signal: watercrawl self-skips to empty
     results when the browser is unavailable, so a service that answers 200 with browser=false is answering with
@@ -200,6 +278,8 @@ def build_app() -> web.Application:
     app.router.add_post("/render_detail", h_render_detail)
     app.router.add_post("/expand_events_page", h_expand_events_page)
     app.router.add_post("/capture_media", h_capture_media)
+    app.router.add_post("/fetch_doc", h_fetch_doc)
+    app.router.add_post("/fetch_audio", h_fetch_audio)
     app.router.add_get("/health", h_health)
     return app
 
