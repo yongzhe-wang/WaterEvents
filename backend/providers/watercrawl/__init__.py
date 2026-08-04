@@ -44,6 +44,7 @@ from .drivers.year_select import drive_year_select
 from .drivers.year_bar import drive_year_bar
 
 # lifecycle + wall predicates exposed to callers that route BEFORE building a job / classify a dead host.
+from .capture import capture_media   # webcast/player page → the media urls the browser itself requested
 from .runtime import browser_available
 from .detection import dead_host
 

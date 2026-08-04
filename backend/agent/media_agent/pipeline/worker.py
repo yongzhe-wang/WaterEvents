@@ -1,14 +1,18 @@
 """media_agent.worker — THE ENRICHMENT WORKER (stage-2): turns `discovered` events into `enriched` events with basic_info.
 
-用一句话讲完: 一个常驻进程,循环 { 从 events 表 SKIP-LOCKED claim 一批 `discovered` 事件 → 每个事件取它的详情页 url、
-watercrawl 渲染+截图 → 调 media_agent.enrich.enrich_page 出 basic_info + 补全 media urls → 写回 status='enriched' },
-队列空了退避退出。**它是 discovery worker 的 event 级镜像**:同一套 claim/lease/fencing/fail-loud,但工作单元是"一个
-事件"而非"一家公司",所以一个巨型公司的上万事件被几十个 enrichment worker 自动分摊。
+用一句话讲完: 一个常驻进程,循环 { 从 events 表 SKIP-LOCKED claim 一批 `discovered` 事件 → 对该事件 media_urls 里的
+**每一个** url 按 kind 分派给对应 handler(html→渲染+VLM、pdf/pptx/docx/xlsx→Docling、audio→whisper、video/webcast→
+yt-dlp 或浏览器抓流)→ 全部结果汇进 Chart → 一个事务写进 5 张规范化表 },队列空了退避退出。**它是 discovery worker
+的 event 级镜像**:同一套 claim/lease/fencing/fail-loud,但工作单元是"一个事件"而非"一家公司"。
+
+URL 集合是 event_agent 一次性给定的,**不发现、不增长** —— 每个事件的工作量恰好是 len(media_urls)。
+{USER 2026-08-03 "let's just use the original list from the event agent"} [CONFIDENCE: CONFIRMED 100%].
 
 Flow (one event):
-  claim (SKIP LOCKED, status→rendering + claim_token + lease) ──► pick detail url (first HTML, not PDF/mp3)
-    ──► watercrawl.render_shot ──► enrich_page(known_event, page) ──► mark_enriched (basic_info + merged urls, fenced)
-  render empty / enrich _error → fail_event (backoff+retry or dead_letter) — a failed event NEVER silently 'enriched'.
+  claim (SKIP LOCKED, status→rendering + claim_token + lease)
+    ──► for each url in media_urls:  router.classify → dispatch → handler fills the Chart
+    ──► mark_enriched_media (content_blocks + transcript_segments + media_files + audio + url ledger, fenced, ONE txn)
+  every url failed/skipped → fail_event('nothing_usable') — an event with no archive is NEVER marked 'enriched'.
 
 Run (on GCP, VLM on RunPod):
   WATEREVENTS_DB_DSN=... WATEREVENTS_DB_SCHEMA=waterevents QWEN_BASE_URLS=<runpod>/v1 python3 -m agent.media_agent.worker
@@ -25,10 +29,10 @@ import uuid
 from providers.qwen_llm import QwenClient
 
 from agent.event_agent.storage import events as db                       # the SHARED WaterEvents DB layer (companies + events tables, claim/fail)
-from ..storage import db_media                                 # media_agent's normalized-schema writer (content_blocks/transcript/url ledger)
-from .enrich import enrich_page                        # the stage-2 endpoint: (known_event + detail page) → enriched record
-# render via the bounded-retry wrapper, NOT bare watercrawl.render_shot — one empty render is a timeout, not a dead page.
-from .render_retry import render_with_retry
+from ..extract import router                          # url → kind, so each of the event's urls reaches the right handler
+from ..extract.chart import Chart                      # the per-event accumulator (fill-and-append + content-hash dedup)
+from ..storage import db_media                         # media_agent's normalized-schema writer (all 5 media tables)
+from .handlers import dispatch                         # (url, kind) → the handler that owns that kind
 
 _WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
 
@@ -53,6 +57,9 @@ _MAX_IDLE_ROUNDS = int(os.environ.get("WATEREVENTS_MAX_IDLE_ROUNDS", "6"))
 # [CONFIDENCE: CONFIRMED — worker.py read EVENT_USE_IMAGE while render read WATERCRAWL_NO_SHOT → the disconnect this fixes].
 _NO_SHOT = os.environ.get("WATERCRAWL_NO_SHOT", "1") in ("1", "true", "yes")
 _USE_IMAGE = not _NO_SHOT                                                          # never claim vision when render gives no shot
+# Residential proxy for the document/audio/video fetches. YouTube blocks datacenter IPs outright and several IR CDNs
+# rate-limit them, so the handlers need the SAME webshare gateway the render lane already uses. Absent → None (direct).
+_PROXY = os.environ.get("WEBSHARE_PROXY") or None
 # a media ASSET (the thing itself), not the detail PAGE to render — we render the HTML detail page, not the pdf/audio.
 _ASSET_RE = re.compile(r"\.(pdf|mp3|wav|m4a|zip|xlsx?|docx?|pptx?)(\?|#|$)", re.I)
 
@@ -90,53 +97,48 @@ async def process_event(pool, client: QwenClient, ev) -> None:
     eid, tok = ev["id"], ev["claim_token"]
     try:
         media = _as_list(ev["media_urls"])
-        known = {"title": ev["title"], "date": ev["event_date"], "type": ev["event_type"], "media_urls": media}
-        url = _detail_url(media)
-        if not url:                                          # only asset urls (pdf/mp3) → no HTML page to enrich from
-            print(f"[enrich] ⛔ event {eid} has no HTML detail url (only assets) — fail", flush=True)
-            await db.fail_event(pool, eid, tok, "no_html_detail_url")
+        if not media:
+            print(f"[enrich] ⛔ event {eid} has NO media urls at all — fail", flush=True)
+            await db.fail_event(pool, eid, tok, "no_media_urls")
             return
-        # BOUNDED RETRY (was a bare single-shot render_shot). Under fleet concurrency a heavy IR page times out and comes
-        # back EMPTY, while the same page renders fine alone — so a single empty render is NOT evidence the page is dead.
-        # With fail_event's 3-strike escalation, the old single shot converted transient timeouts into permanent dead
-        # letters. {ENGINE.PY:191-194 "RETRIES AN EMPTY RENDER UP TO _RENDER_TRIES TIMES WITH A SHORT BACKOFF: A
-        # LOAD-INDUCED TIMEOUTERROR COMES BACK EMPTY, AND A RETRY ONCE THE BROWSER POOL HAS FREED UP USUALLY LANDS THE
-        # PAGE."} [CONFIDENCE: CONFIRMED 100% — same render stack, same IR hosts, same concurrency as the event stage.]
-        r = await render_with_retry(url)                    # render_shot is sync + marshals to the browser loop (in-thread)
-        if not r.get("text") and not r.get("links"):        # STILL empty after every attempt → walled/dead, fail-loud
-            print(f"[enrich] ⛔ event {eid} detail render FAILED after retries ({r.get('method','')!r}) {url[:60]} — fail", flush=True)
-            await db.fail_event(pool, eid, tok, f"render_failed:{r.get('method','')}")
+
+        # THE FIXED LIST. Every url event_agent found gets dispatched to its handler, in order; nothing is discovered
+        # and nothing is added. Work per event is therefore exactly len(media) units — knowable in advance, unlike the
+        # frontier this replaced. Production distribution: 1 url for 56% of events, 2 for 20%, 3 for 8%, 4-6 for 16%
+        # (mean ~2). {USER 2026-08-03 "let's just use the original list from the event agent"}
+        # [CONFIDENCE: CONFIRMED 100% — direct user directive; the discovery path was deleted in the same change].
+        chart = Chart({"title": ev["title"], "date": ev["event_date"], "type": ev["event_type"], "urls": media})
+        detail = _detail_url(media)                          # the HTML page, for provenance stamping on blocks/segments
+
+        for u in media:
+            kind = router.classify(u)
+            try:
+                await dispatch(u, kind, chart, client=client, use_image=_USE_IMAGE, proxy=_PROXY)
+            except Exception as e:                           # noqa: BLE001 — ONE bad url must not lose the other urls'
+                chart.set_status(u, f"failed:{type(e).__name__}")   # work; record it loudly and keep going
+                print(f"[enrich] ⚠️ event {eid} url {u[:60]} raised {type(e).__name__}: {str(e)[:80]}", flush=True)
+
+        n_blocks = len(chart.basic_info)
+        n_segs = len(chart.transcript_segments)
+        n_files = sum(len(v) for v in chart.files.values())
+        n_audio = len(chart.audio)
+        # NOTHING-USABLE is a FAILURE, not an empty success. An event whose every url failed/skipped has no archive to
+        # show; marking it 'enriched' would make a dead event indistinguishable from a genuinely content-free one.
+        if not (n_blocks or n_segs or n_files or n_audio):
+            statuses = {u: s.get("status", "") for s in chart.urls.values() for u in [s.get("url", "")]}
+            print(f"[enrich] ⛔ event {eid} NOTHING-USABLE from {len(media)} urls — {statuses} — fail", flush=True)
+            await db.fail_event(pool, eid, tok, "nothing_usable")
             return
-        # PASS THE RAW HTML + LINKS THROUGH. enrich_page reads page["html"] to run the DETERMINISTIC body extractor
-        # (trafilatura + pandas) and only falls back to the LEGACY full-copy VLM when that yields tier=='empty'
-        # {ENRICH.PY:139-141 "HTML = PAGE.GET(\"HTML\") OR \"\" ... ROUTE = DET[\"TIER\"] != \"EMPTY\""}. This dict
-        # previously carried only page_url/page_text/image_b64, so html was ALWAYS "" ⇒ extract_html's own guard
-        # {EXTRACT_HTML.PY:235 "IF THIN OR NOT (HTML OR \"\").STRIP(): RETURN {... \"TIER\": \"EMPTY\"}"} forced tier
-        # 'empty' on EVERY page ⇒ ROUTE mode was structurally unreachable in production and every event went down the
-        # full-copy path that the ROUTE design exists to avoid (the one that overflows on earnings tables →
-        # output_truncated=True → fail_event, never enriched). render_shot does return html {RENDER.PY:359 "{\"text\",
-        # \"links\", \"html\", \"SHOT_B64\", \"METHOD\", \"INLINE\"}"} — it was simply dropped here.
-        # [CONFIDENCE: CONFIRMED 100% — render_shot's documented return keys vs the keys this dict actually forwarded.]
-        page = {"page_url": url, "page_text": r.get("inline") or r.get("text", ""),
-                "image_b64": r.get("shot_b64") or None,
-                "html": r.get("html") or "", "links": r.get("links") or []}
-        enriched = await enrich_page(known, page, client=client, use_image=_USE_IMAGE)
-        # enrich_page flags a HARD-FAIL (server down / retries exhausted) AND an output-truncation via output_truncated
-        # (it does NOT return an _error key — _finalize returns output_truncated). Check THAT field, else the failure is
-        # silently marked enriched. {AUDIT 2026-07-23 CRITICAL: worker checked enriched.get('_error') which never exists}.
-        if enriched.get("output_truncated") or enriched.get("_error"):
-            print(f"[enrich] ⛔ event {eid} VLM incomplete (hard-fail / truncated) {url[:60]} — fail, NOT enriched", flush=True)
-            await db.fail_event(pool, eid, tok, "vlm_incomplete_or_truncated")
-            return
-        # persist into the NORMALIZED media schema (event_content_blocks / event_transcript_segments / event_media_urls),
-        # fenced + transactional — replaces the old single-JSON-blob write to events.basic_info. {USER 2026-07-23 "建独立
-        # 规范化 media schema"} [CONFIDENCE: CONFIRMED 100% — the 5 tables live via migration 20260723145355].
+
+        # persist into the NORMALIZED media schema — all FIVE tables now (content blocks / transcript segments /
+        # media files / audio / url ledger), fenced + transactional. The ledger carries each url's REAL outcome.
         ok = await db_media.mark_enriched_media(
-            pool, eid, tok, enriched.get("basic_info") or [], enriched.get("transcript_segments") or [],
-            enriched.get("urls") or media, source_url=url)
-        n_blocks = len(enriched.get("basic_info") or [])
-        print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} → {n_blocks} basic_info blocks, "
-              f"{len(enriched.get('urls') or media)} urls", flush=True)
+            pool, eid, tok, chart.basic_info, chart.transcript_segments,
+            [s["url"] for s in chart.urls.values()], source_url=detail or "",
+            files=chart.files, audio=chart.audio,
+            url_status={s["url"]: s.get("status", "") for s in chart.urls.values()})
+        print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} ← {len(media)} urls → "
+              f"{n_blocks} blocks, {n_segs} segments, {n_files} files, {n_audio} audio", flush=True)
     except Exception as e:                               # noqa: BLE001 — one event's crash must NOT sink the whole batch
         print(f"[enrich] ⛔ event {eid} UNEXPECTED {type(e).__name__}: {e} — fail (batch continues)", flush=True)
         try:

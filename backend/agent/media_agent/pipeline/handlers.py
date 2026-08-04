@@ -82,20 +82,84 @@ async def handle_audio(url: str, chart, proxy: str | None = None) -> None:
     return
 
 
-# ── VIDEO (youtube / webcast / .mp4) → audio path OR flagged for yt-dlp ────────────────────────────────────────
+# ── VIDEO (youtube / webcast / .mp4) → three tiers, each measured ─────────────────────────────────────────────
+def _pick_stream(media: list[str]) -> str:
+    """Best downloadable stream out of what the browser requested. Audio-only beats a manifest beats a video file:
+    an .mp3/.m4a is the cheapest thing whisper can decode, an .m3u8/.mpd is what a live player actually uses, and a
+    progressive .mp4 is the fallback. Segment urls (.ts/.m4s) are SKIPPED — they are pieces, not a playable stream."""
+    for pat in (r'\.(mp3|m4a|wav|aac)(\?|#|$)', r'\.(m3u8|mpd)(\?|#|$)', r'\.(mp4|webm|mov)(\?|#|$)'):
+        for u in media:
+            if re.search(r'\.(ts|m4s)(\?|#|$)', u, re.I):
+                continue
+            if re.search(pat, u, re.I):
+                return u
+    return media[0] if media else ""
+
+
+async def _transcribe_bytes(url: str, data: bytes, chart, duration: float = 0.0) -> bool:
+    """Audio bytes → whisper → chart. Shared by the yt-dlp and capture tiers so both land segments identically."""
+    from tools.audio_extract import extract_bytes              # lazy: faster-whisper + torch are heavy deps
+    res = await asyncio.to_thread(extract_bytes, data)
+    if not res.ok:
+        chart.set_status(url, f"failed:{res.error or 'transcribe-failed'}")
+        print(f"[media] ⛔ transcribe failed {url[:70]} — {res.error or 'transcribe-failed'}", flush=True)
+        return False
+    segs = [{"speaker": "SPEAKER_00", "start": s.get("start"), "end": s.get("end"), "text": s.get("text")}
+            for s in (res.segments or [])]
+    chart.append_transcript(segs, source_url=url)
+    chart.append_audio(url, duration_s=res.duration or duration)
+    chart.set_status(url, "done")
+    return True
+
+
 async def handle_video(url: str, chart, proxy: str | None = None) -> None:
-    """A DIRECT video FILE (.mp4/.mov/…) → transcribe its audio track (audio_extract decodes it via ffmpeg). A video
-    PLATFORM url (youtube/vimeo/webcast — no file extension) → audio_extract can't fetch it yet (yt-dlp adapter is a
-    TODO there), so mark it `skipped:needs-ytdlp` LOUDLY rather than letting it gate-pass and die as a vague `failed`.
-    {edge audit M1: maybe_audio_url(youtube)=True → it would fetch the HTML page and fail confusingly}."""
-    if not router.is_direct_file(url):                        # extension-less video host → platform page, not a file
-        # A registration/signup form is a GATE (nothing to fetch); a real player page → flag for the yt-dlp step.
-        # Both are RECORDED (never dropped), just with a status that tells the yt-dlp step whether to bother.
-        gated = bool(_REGISTER_GATE_RE.search(urlsplit(url).path))
-        chart.set_status(url, "skipped:register-gate" if gated else "skipped:needs-ytdlp")
-        print(f"[media] ⏭ webcast {'register-gate' if gated else 'platform'} {url[:70]} — recorded, not fetched", flush=True)
+    """A video/webcast url → transcript, via the first tier that works.
+
+    用一句话讲完: 三档,按成本从低到高 —— ① 直链媒体文件(.mp4/.mp3)直接转写;② YouTube 交 yt-dlp;③ 企业 webcast
+    页面用 watercrawl.capture 打开浏览器、从 network log 抓出它自己请求的 .m3u8/.mp4,**再把那条流地址**交给 yt-dlp
+    下载。每一档失败都写明原因,绝不静默丢弃。
+
+    WHY tier ③ exists — the measured reason: yt-dlp returns `Unsupported URL` for the webcast PAGES of choruscall /
+    webcasts.com / q4inc / webcast-eqs / irwebcasting, and those corporate platforms are 83.5% of all video/webcast
+    urls (23,690 / 28,385) while YouTube is 5.3% (1,492). 17,952 events carry such a webcast and NOTHING else, so
+    skipping them leaves 7% of the whole event table permanently empty. The page is unsupported; the stream it loads
+    is not. {PROBE 2026-08-03 yt_dlp --simulate over the media_100 platforms} {DB 2026-08-03 the two shares}
+    [CONFIDENCE: CONFIRMED 100% — both measured]."""
+    if router.is_direct_file(url):                             # ① a real file → the existing fetch+transcribe path
+        return await handle_audio(url, chart, proxy=proxy)
+
+    if _REGISTER_GATE_RE.search(urlsplit(url).path):           # a signup form is a GATE — there is nothing behind it
+        chart.set_status(url, "skipped:register-gate")
+        print(f"[media] ⏭ register-gate {url[:70]} — recorded, not fetched", flush=True)
         return
-    return await handle_audio(url, chart, proxy=proxy)        # direct media file → same transcribe path
+
+    from tools.youtube import download_audio, download_stream, is_youtube_url   # lazy: yt-dlp optional
+
+    if is_youtube_url(url):                                    # ② YouTube — the one platform yt-dlp handles directly
+        yt = await asyncio.to_thread(download_audio, url, proxy)
+        if yt.ok:
+            await _transcribe_bytes(url, yt.audio, chart, duration=yt.duration)
+            return
+        print(f"[media] ⚠️ yt-dlp failed {url[:60]} — {yt.error}; falling through to browser capture", flush=True)
+
+    # ③ Any other platform (or a YouTube that yt-dlp refused) — let the browser tell us the real stream url.
+    from providers.watercrawl import capture_media
+    cap = await asyncio.to_thread(capture_media, url)
+    media = cap.get("media") or []
+    if not media:
+        why = cap.get("error") or "no-media-in-network-log"
+        chart.set_status(url, f"skipped:no-stream-captured:{why}")
+        print(f"[media] ⏭ no stream captured {url[:70]} — {why} ({cap.get('n_requests', 0)} requests seen)", flush=True)
+        return
+
+    stream = _pick_stream(media)
+    print(f"[media] 🎯 captured {len(media)} media urls on {url[:55]} → {stream[:70]}", flush=True)
+    yt = await asyncio.to_thread(download_stream, stream, proxy)   # yt-dlp DOES handle a bare .m3u8/.mpd/.mp4
+    if not yt.ok:
+        chart.set_status(url, f"failed:stream-download:{yt.error}")
+        print(f"[media] ⛔ stream download failed {stream[:60]} — {yt.error}", flush=True)
+        return
+    await _transcribe_bytes(url, yt.audio, chart, duration=yt.duration)
 
 
 # ── HTML → watercrawl render + qwen-VL (the close-loop engine: only this discovers new urls) ──────────────────
