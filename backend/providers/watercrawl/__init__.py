@@ -55,9 +55,22 @@ from .client import WaterDoc, WatercrawlClient, watercrawl_client
 available = browser_available
 
 # ── REMOTE RENDER SPLIT ──────────────────────────────────────────────────────────────────────────────────────────
-# Setting RENDER_REMOTE_URL rebinds the FOUR browser-driven entries to an HTTP client that calls ir-render-16, where
+# Setting RENDER_REMOTE_URL rebinds the FIVE browser-driven entries to an HTTP client that calls ir-render-16, where
 # the same code runs against a dedicated 16-core box. Every other export above stays local: the drivers run INSIDE
-# render_shot on the server, and dead_host is a pure predicate that never opens a browser.
+# render_shot / expand_events_page on the server, and dead_host and should_expand are pure predicates that never open
+# a browser — should_expand reads the dict render_shot already returned, so shipping it would be a round trip to answer
+# a question we can answer from data in hand.
+#
+# THE LIST MUST BE COMPLETE, and "complete" means every export that can reach runtime, not every export that looks like
+# rendering. expand_events_page was missed in the first cut precisely because it does not have "render" in its name.
+# The result was not a clean failure: plain renders went remote and worked, while engine.py:215 kept calling the local
+# expand_events_page, which launched a Chromium inside the worker and put 130 processes at 251% CPU on the exact box
+# the split exists to empty. Half a migration is worse than none — it pays both bills.
+# {OBSERVED 2026-08-04 — ir-media-8 "130 个进程, 合计 251.1% CPU", ALL AGED < 5min AFTER THE RESTART,
+#  cgroup=waterevents-worker@1.service, WITH RENDER_REMOTE_URL SET IN THAT SAME PROCESS}
+# [CONFIDENCE: CONFIRMED — process ages, parent chain and cgroup read off the live box].
+# runtime.py now shouts when a browser launches with RENDER_REMOTE_URL set, so the NEXT omission is loud immediately
+# rather than after someone happens to look at `ps`.
 #
 # WHY rebind here instead of at each call site: this __init__ is the ONLY import surface the agents use
 # {GREP 2026-08-04 — EVERY EXTERNAL CALLER IMPORTS `PROVIDERS.WATERCRAWL`, e.g. HANDLERS.PY:146
@@ -72,7 +85,7 @@ import os as _os                                            # noqa: E402 — del
 
 if _os.environ.get("RENDER_REMOTE_URL", "").strip():
     from ..render_remote import (                           # noqa: F811 — intentional rebind, see block comment
-        render_shot, render_full, render_detail, capture_media, browser_available,
+        render_shot, render_full, render_detail, capture_media, expand_events_page, browser_available,
     )
     available = browser_available
 

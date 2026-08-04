@@ -29,7 +29,7 @@ from aiohttp import web
 # Import the LOCAL implementations directly from their modules, NOT through the package __init__. The __init__ carries
 # the remote/local dispatch, and on a box where RENDER_REMOTE_URL happened to be exported that dispatch would hand this
 # service the HTTP client — which would then call itself. Importing the modules bypasses the question entirely.
-from .render import render_shot as _render_shot
+from .render import render_shot as _render_shot, expand_events_page as _expand_events_page
 from .orchestrator import render_full as _render_full, render_detail as _render_detail
 from .capture import capture_media as _capture_media
 from .runtime import browser_available
@@ -123,6 +123,31 @@ async def h_render_detail(request: web.Request) -> web.Response:
     return await _h_tuple(request, _render_detail, "render_detail")
 
 
+async def h_expand_events_page(request: web.Request) -> web.Response:
+    """POST /expand_events_page {url} → {inline}
+
+    The events-page expansion: drive the year filter and the load-more control to reveal the full historical list
+    instead of the 3-5 entries a static render sees. This is the SECOND browser-driven entry the crawl uses, and it was
+    missed in the first cut of the split — engine.py calls `watercrawl.expand_events_page` directly, and because that
+    name was not rebound it kept running IN THE WORKER, launching a local Chromium there and burning 251% CPU across
+    130 processes on the very box this split exists to free.
+    {OBSERVED 2026-08-04 AFTER CUTOVER — ir-media-8: "130 个进程, 合计 251.1% CPU", ALL STARTED AFTER THE RESTART,
+     cgroup=waterevents-worker@1.service, WHILE RENDER_REMOTE_URL WAS SET IN THAT SAME PROCESS}
+    [CONFIDENCE: CONFIRMED — process ages, parent chain and cgroup all read off the live box].
+
+    It is expensive on purpose — up to 6 per-year navigations plus load-more rounds, ~60-80s — which is exactly why it
+    belongs on the render box rather than next to the DB writes. It is also not optional: it is the fix for pages that
+    show only upcoming events, which was 51% of the low-event-count companies."""
+    body = await request.json()
+    url, _ = _args(body, 0)
+    if not url:
+        return web.json_response({"error": "missing url"}, status=400)
+    inline = await _call(_expand_events_page, url)
+    if not inline:
+        _loud(f"expand_events_page({url}) → nothing expanded (no year-bar / load-more control, or both self-skipped)")
+    return web.json_response({"inline": inline or ""})
+
+
 async def h_capture_media(request: web.Request) -> web.Response:
     """POST /capture_media {url, wait_ms?} → {media, method, n_requests, error}.
 
@@ -173,6 +198,7 @@ def build_app() -> web.Application:
     app.router.add_post("/render_shot", h_render_shot)
     app.router.add_post("/render_full", h_render_full)
     app.router.add_post("/render_detail", h_render_detail)
+    app.router.add_post("/expand_events_page", h_expand_events_page)
     app.router.add_post("/capture_media", h_capture_media)
     app.router.add_get("/health", h_health)
     return app

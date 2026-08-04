@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import os
+import sys
 import threading
 import time
 
@@ -90,6 +92,22 @@ async def _launch() -> None:
     for the ERR_HTTP2 retry lane (Akamai deliberately breaks headless HTTP/2); (3) a patchright + webshare residential
     STEALTH browser for bot-walls (only if a webshare proxy is configured)."""
     global _browser, _browsers, _rr_browser, _playwright, _sem, _shot_sem, _browser_h1, _browser_proxy, _playwright_stealth
+
+    # ── CANARY ─────────────────────────────────────────────────────────────────────────────────────────────────────
+    # A browser launching here while RENDER_REMOTE_URL is set means some entry point escaped the rebind in
+    # providers/watercrawl/__init__.py and is rendering LOCALLY on a box that is supposed to have stopped doing that.
+    # That state does not fail — it silently pays twice, which is why it needs to be loud rather than fatal.
+    # {OBSERVED 2026-08-04 — expand_events_page was not in the rebind list, so engine.py:215 kept it local and put
+    #  130 chrome processes at 251.1% CPU inside waterevents-worker@1.service, while plain renders went remote fine}
+    # [CONFIDENCE: CONFIRMED — process ages, parent chain and cgroup read off the live box].
+    # NOT an exception: watercrawl's whole contract is best-effort degradation, and a hard failure here would take down
+    # the render VM itself if this file were ever loaded there with the var accidentally exported. A shout is enough —
+    # nobody was looking at `ps`, but everybody reads the service log.
+    if os.environ.get("RENDER_REMOTE_URL", "").strip():
+        print("[watercrawl] ⚠ LAUNCHING A LOCAL BROWSER WHILE RENDER_REMOTE_URL IS SET — some entry point escaped the "
+              "remote rebind in providers/watercrawl/__init__.py and is rendering on this box. Find it: the split is "
+              "only paying off for the paths that were rebound.", file=sys.stderr, flush=True)
+
     from playwright.async_api import async_playwright
     _playwright = await async_playwright().start()
     # Container-safe flags (--disable-dev-shm-usage) + cache/GPU trims so peak render memory stays low.

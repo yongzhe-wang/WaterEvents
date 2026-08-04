@@ -114,6 +114,33 @@ def render_detail(url: str, wait_ms: int = 0) -> tuple[str, list, str]:
     return _tuple_call("/render_detail", url, wait_ms)
 
 
+def expand_events_page(url: str) -> str:
+    """Remote twin of watercrawl.expand_events_page → the merged inline text, or '' when nothing expanded.
+
+    This one was MISSED in the first cut of the split, and the miss was expensive rather than harmless. engine.py:215
+    calls `watercrawl.expand_events_page` directly; the name was not rebound, so it kept executing in the worker,
+    launched a local Chromium there, and put 130 processes at 251% CPU on the exact box the split exists to empty —
+    while RENDER_REMOTE_URL was set in that same process and plain renders were correctly going remote.
+    {OBSERVED 2026-08-04 — ir-media-8 "130 个进程, 合计 251.1% CPU", ALL AGED < 5min AFTER THE RESTART,
+     cgroup=waterevents-worker@1.service; render vm /health total ROSE 73 → 223 OVER THE SAME MINUTES}
+    [CONFIDENCE: CONFIRMED — process age, parent chain, cgroup and the remote counter were all read off the live boxes].
+
+    Its sibling `should_expand` deliberately stays LOCAL: it is a pure predicate over the dict render_shot already
+    returned, so shipping it would be a network round trip to answer a question we can answer from data in hand.
+
+    Timeout is generous because the operation is: the drivers are bounded to ~6 per-year navigations plus 8 load-more
+    rounds, which the module itself budgets at 60-80s {RENDER.PY "CAP TO ~6 RECENT YEARS / ~8 LOAD-MORE ROUNDS WITH
+    SHORT WAITS SO A FULL EVENTS-PAGE EXPANSION STAYS ~60-80s"}. Cutting it short would convert a slow success into a
+    false empty, and an empty here silently costs events — this is the path that fixed the pages showing only upcoming
+    entries, which was 51% of the low-event-count companies."""
+    out = _post("/expand_events_page", {"url": url})
+    if out is None:
+        return ""                                          # transport failure = no expansion; the caller already treats
+                                                           # "" as "this page had no control", and the loud log in _post
+                                                           # is what distinguishes the two for a human reading the log
+    return out.get("inline", "") or ""
+
+
 def capture_media(url: str, wait_ms: int = 6000) -> dict:
     """Remote twin of watercrawl.capture_media → {media, method, n_requests, error}. Webcast player page → the media
     urls the browser itself requested."""
