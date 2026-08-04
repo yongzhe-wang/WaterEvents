@@ -61,3 +61,11 @@ frontend/.vercel/
 # large binary test fixtures (keep scripts, not the PDFs)
 tests/datasets/ir_pdfs/
 tests/**/*.pdf
+
+# macOS AppleDouble resource forks. Not created by any tool in this repo — they appear when a Mac
+# tars/rsyncs into the Linux VM (bsdtar writes ._<name> siblings carrying xattrs). 196 of them
+# accumulated under backend/ and tests/ that way. Inert (Python never imports a `._x.py`), but they
+# pollute grep/find and make a directory listing unreadable. Set COPYFILE_DISABLE=1 when tarring
+# from macOS to stop producing them at the source. {CLEANED 2026-08-03 196 files / 784K on ir-media-8}
+._*
+.AppleDouble
