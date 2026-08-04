@@ -54,6 +54,28 @@ from .client import WaterDoc, WatercrawlClient, watercrawl_client
 # `available` is the friendlier public name; `browser_available` stays as the internal alias the runtime exposes.
 available = browser_available
 
+# ── REMOTE RENDER SPLIT ──────────────────────────────────────────────────────────────────────────────────────────
+# Setting RENDER_REMOTE_URL rebinds the FOUR browser-driven entries to an HTTP client that calls ir-render-16, where
+# the same code runs against a dedicated 16-core box. Every other export above stays local: the drivers run INSIDE
+# render_shot on the server, and dead_host is a pure predicate that never opens a browser.
+#
+# WHY rebind here instead of at each call site: this __init__ is the ONLY import surface the agents use
+# {GREP 2026-08-04 — EVERY EXTERNAL CALLER IMPORTS `PROVIDERS.WATERCRAWL`, e.g. HANDLERS.PY:146
+#  "FROM PROVIDERS.WATERCRAWL IMPORT CAPTURE_MEDIA", ENGINE.PY:196 "AWAIT ASYNCIO.TO_THREAD(WATERCRAWL.RENDER_SHOT, URL)"},
+# so one switch here moves the whole fleet and no call site changes. Unset the env var and everything runs locally
+# again — which is exactly what the render VM itself does, so the service never calls back into itself.
+# [CONFIDENCE: CONFIRMED — call sites enumerated by grep across backend/, only these four names cross the boundary].
+#
+# WHY it must be an env var and not a config constant: ir-media-8 (remote) and ir-render-16 (local) run the SAME
+# checked-out tree; the only difference between them is process environment.
+import os as _os                                            # noqa: E402 — deliberately after the local imports above
+
+if _os.environ.get("RENDER_REMOTE_URL", "").strip():
+    from ..render_remote import (                           # noqa: F811 — intentional rebind, see block comment
+        render_shot, render_full, render_detail, capture_media, browser_available,
+    )
+    available = browser_available
+
 __all__ = [
     "render", "render_full", "render_detail", "render_shot",
     "drive_years", "drive_clicks", "drive_year_select", "drive_year_bar", "drive_load_more",
