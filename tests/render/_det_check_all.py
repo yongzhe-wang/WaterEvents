@@ -39,7 +39,7 @@ def main() -> None:
         rows = sum(len(b.get("rows") or []) for b in blocks if b.get("type") == "table")
         print(f"  {entry['id']:6} [{kind:5}] tier={det['tier']:11} blocks={len(blocks):3} "
               f"(md={nm} list={nl} table={nt}/{rows}rows)  transcript_idx={det['transcript_idx']}  "
-              f"cand_urls={len(det['candidate_urls'])}  method={r.get('method','')}  html={len(html)}c")
+              f"method={r.get('method','')}  html={len(html)}c")
 
 
 if __name__ == "__main__":

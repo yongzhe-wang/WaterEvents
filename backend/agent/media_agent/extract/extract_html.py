@@ -2,7 +2,7 @@
 
 用一句话讲完: trafilatura 抽正文 markdown(boilerplate 剥离)→ pandas.read_html 抽**权威**表格 cells → 按表序 splice 回
 markdown 位置(保阅读顺序,不让表格飘到末尾)→ lxml 穷举 harvest 所有 media url(+ render['links'] 补 walled tier 的
-DOM-空场景)→ deterministic transcript 检测(speaker-turn 模式)→ 返回 {blocks, candidate_urls, transcript_idx, tier}。
+deterministic transcript 检测(speaker-turn 模式)→ 返回 {blocks, transcript_idx, tier}。
 这样 VLM 不再逐字 copy body(输出从 KB → 几十字节,earnings 财报页不再撑爆),而 trafilatura 抽表比 VLM 更准。
 Fallback 链(每档 try/except 防 malformed HTML raise): trafilatura → readability → resiliparse → docling → 空(caller
 用 VLM screenshot_body 兜底,fail-loud)。{USER 2026-07-24 "combine deterministic tools, best for media, full plan"}
@@ -29,7 +29,7 @@ _CTX_MARGIN = 1200                                             # headroom for th
 def fit_input(text: str, out_tokens: int) -> str:
     """Trim `text` so its estimated input tokens + `out_tokens` stay under CONTEXT (with margin) → the vLLM 400 input+max
     pre-reject is structurally impossible regardless of page size. The deterministic body is captured BEFORE the VLM call,
-    so trimming the VLM's INPUT view only costs some url-routing reach (the exhaustive candidate_urls harvest backstops it)."""
+    so trimming the VLM's INPUT view costs nothing structural — the body is already deterministic."""
     budget_chars = int(max(2000, (CONTEXT - out_tokens - _CTX_MARGIN) * _CHARS_PER_TOK))   # floor 2000 so we never send empty
     return text[:budget_chars]
 
@@ -147,39 +147,6 @@ def _pandas_tables(html: str) -> list:
         return []
 
 
-def _harvest_urls(html: str, base_url: str, links: list[str] | None) -> list[dict]:
-    """EXHAUSTIVE, deterministic media-url harvest — every <a href>/<source>/<iframe>/<video>/<audio> src in the DOM, PLUS
-    render['links'] (which EVERY render tier populates even when html is empty — the impersonate/camoufox/walled tiers give
-    links but a thin/empty html). urljoin → absolute, drop non-media chrome, dedup. Exhaustive BY CONSTRUCTION → cannot
-    under-list the way the lazy VLM did (28 media → 12) {PROMPTS.PY:31-32}. Numbered C1.. for the VLM verifier.
-    {DESIGN STAGE 5 + edge "walled/screenshot tier" FIX: also harvest links} [CONFIDENCE: CONFIRMED — exhaustive+links]."""
-    found: list[tuple[str, str]] = []                          # (anchor_text, absolute_url)
-    try:
-        from lxml import html as lxml_html
-        if html:
-            doc = lxml_html.fromstring(html)
-            for a in doc.xpath("//a[@href]"):
-                found.append(((a.text_content() or "").strip()[:120], urljoin(base_url, a.get("href"))))
-            for tag in doc.xpath("//source[@src] | //iframe[@src] | //video[@src] | //audio[@src]"):
-                found.append(("", urljoin(base_url, tag.get("src"))))
-    except Exception:                                           # noqa: BLE001 — malformed html must not lose the links[] harvest
-        pass
-    for u in (links or []):                                    # render['links'] — covers impersonate/camoufox tiers (html thin)
-        if isinstance(u, str):
-            found.append(("", urljoin(base_url, u)))
-    out, seen = [], set()
-    for anchor, url in found:
-        if not url.lower().startswith(("http://", "https://")):
-            continue
-        if _NONMEDIA_URL_RE.search(url):                       # drop nav/social/legal/feed chrome
-            continue
-        if url in seen:
-            continue
-        seen.add(url)
-        out.append({"id": f"C{len(out) + 1}", "anchor": anchor, "url": url})
-    return out
-
-
 def _trafilatura(html: str, base_url: str) -> str:
     """Primary body extractor → markdown (boilerplate stripped, tables as GFM markers, reading order kept). Empty/None on a
     thin page → caller walks the fallback chain. {DESIGN STAGE 2; trafilatura F1 0.937}."""
@@ -225,15 +192,14 @@ def _mark_transcript(blocks: list[dict]) -> list[int]:
 
 
 def extract_html(html: str, base_url: str, links: list[str] | None = None, thin: bool = False) -> dict:
-    """DETERMINISTIC HTML → {blocks, candidate_urls, transcript_idx, tier}. blocks = reading-order body (md/list/table),
-    tables authoritative from pandas; candidate_urls = exhaustive numbered media-url harvest for the VLM verifier;
-    transcript_idx = blocks the deterministic detector flags as transcript (for the caller's suppression); tier = which
+    """DETERMINISTIC HTML → {blocks, transcript_idx, tier}. blocks = reading-order body (md/list/table),
+    tables authoritative from pandas; transcript_idx = blocks the deterministic detector flags as transcript (for the caller's suppression); tier = which
     extractor won ('trafilatura'/'readability'/'resiliparse'/'empty') for logging. tier=='empty' → caller MUST activate the
     gated VLM screenshot_body path (edge "JS-shell": deterministic body absent, VLM-from-screenshot is the only source)."""
     # EARLY thin-shell skip (edge "JS-shell" FIX 3): if render already flagged the page thin (content not in the DOM), don't
     # burn four extractor calls on near-empty html — go straight to the empty tier so the caller uses screenshot_body.
     if thin or not (html or "").strip():
-        return {"blocks": [], "candidate_urls": _harvest_urls(html or "", base_url, links), "transcript_idx": [], "tier": "empty"}
+        return {"blocks": [], "transcript_idx": [], "tier": "empty"}
 
     tier = "trafilatura"
     md = _trafilatura(html, base_url)
@@ -249,7 +215,6 @@ def extract_html(html: str, base_url: str, links: list[str] | None = None, thin:
     dfs = _pandas_tables(html)                                  # authoritative tables from the ORIGINAL html (not the fallback frag)
     blocks = _md_to_blocks(md, dfs) if md.strip() else [_table_block(d) for d in dfs]
     return {"blocks": blocks,
-            "candidate_urls": _harvest_urls(html, base_url, links),
             "transcript_idx": _mark_transcript(blocks),
             "tier": tier if (blocks or md.strip()) else "empty"}
 

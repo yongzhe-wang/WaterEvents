@@ -2,7 +2,7 @@
 chart's matching slot; only html yields new urls (the close-loop engine). dispatch() routes a (url,kind) to its handler.
 
 用一句话讲完: router 判 kind → dispatch 把 url 交给对应 handler → handle_html 用 watercrawl 渲染 + qwen-VL 出
-{basic_info blocks, 内联 transcript, new_urls, metadata};handle_office 调 tools/officeall(Docling);handle_audio 调
+{basic_info blocks, 内联 transcript, metadata};handle_office 调 tools/officeall(Docling);handle_audio 调
 tools/audio_extract(faster-whisper)。**office/audio 复用你已建的 tools 包,不重写。**
 
 DESIGN CORE — FAIL LOUDLY, ALWAYS A FALLBACK, NEVER SILENT QUALITY LOSS {USER 2026-07-23 "fail loudly is the core all
@@ -47,31 +47,30 @@ _HEAD_TIMEOUT_S = int(os.environ.get("MEDIA_HEAD_TIMEOUT_S", "10"))          # c
 
 
 # ── OFFICE (pdf / pptx / docx / xlsx) → tools/officeall (Docling) ──────────────────────────────────────────────
-async def handle_office(url: str, chart, proxy: str | None = None) -> list[str]:
-    """Parse an office document via tools/officeall and append it to chart.files[kind]. A document is a LEAF — it
-    yields no new urls to crawl, so returns []. {OFFICEALL extract(url)->DocResult}."""
+async def handle_office(url: str, chart, proxy: str | None = None) -> None:
+    """Parse an office document via tools/officeall and append it to chart.files[kind]. {OFFICEALL extract(url)->DocResult}."""
     from tools.officeall import extract as office_extract     # lazy: docling is a heavy GPU dep, only load on use
     res = await asyncio.to_thread(office_extract, url, proxy)  # blocking Docling call off the event loop
     if not res.ok:                                            # unreachable / not-a-doc / unparseable → say why, loudly
         chart.set_status(url, f"failed:{res.error or 'no-content'}")
         print(f"[media] ⛔ office parse failed {url[:70]} — {res.error or 'no-content'}", flush=True)
-        return []
+        return
     kind = res.format or router.classify(url)                 # trust the magic-confirmed format from the fetch
     chart.append_file(kind, url, markdown=res.text, tables=res.tables, n_pages=res.n_pages)
     chart.set_status(url, "done")
-    return []
+    return
 
 
 # ── AUDIO (mp3 / wav / direct video file) → tools/audio_extract (faster-whisper) ──────────────────────────────
-async def handle_audio(url: str, chart, proxy: str | None = None) -> list[str]:
+async def handle_audio(url: str, chart, proxy: str | None = None) -> None:
     """Transcribe an audio url via tools/audio_extract and append speaker-tagged segments to chart.transcript +
-    the audio artifact to chart.audio. Returns [] (audio is a leaf)."""
+    the audio artifact to chart.audio."""
     from tools.audio_extract import extract as audio_extract  # lazy: faster-whisper + torch are heavy GPU deps
     res = await asyncio.to_thread(audio_extract, url, proxy)   # blocking whisper transcription off the event loop
     if not res.ok:
         chart.set_status(url, f"failed:{res.error or 'transcribe-failed'}")
         print(f"[media] ⛔ transcribe failed {url[:70]} — {res.error or 'transcribe-failed'}", flush=True)
-        return []
+        return
     # audio_extract.segments are {start,end,text} with NO speaker — diarization is a documented TODO in that tool, and
     # the user wants SPEAKER_00 for now. {AUDIO_EXTRACT __init__ "留待后续... pyannote 说话人 diarization"} {USER
     # 2026-07-23 "first use speaker_00 for now"} [CONFIDENCE: CONFIRMED 100% — tool docstring + direct user instruction].
@@ -80,11 +79,11 @@ async def handle_audio(url: str, chart, proxy: str | None = None) -> list[str]:
     chart.append_transcript(segs, source_url=url)
     chart.append_audio(url, duration_s=res.duration)
     chart.set_status(url, "done")
-    return []
+    return
 
 
 # ── VIDEO (youtube / webcast / .mp4) → audio path OR flagged for yt-dlp ────────────────────────────────────────
-async def handle_video(url: str, chart, proxy: str | None = None) -> list[str]:
+async def handle_video(url: str, chart, proxy: str | None = None) -> None:
     """A DIRECT video FILE (.mp4/.mov/…) → transcribe its audio track (audio_extract decodes it via ffmpeg). A video
     PLATFORM url (youtube/vimeo/webcast — no file extension) → audio_extract can't fetch it yet (yt-dlp adapter is a
     TODO there), so mark it `skipped:needs-ytdlp` LOUDLY rather than letting it gate-pass and die as a vague `failed`.
@@ -95,7 +94,7 @@ async def handle_video(url: str, chart, proxy: str | None = None) -> list[str]:
         gated = bool(_REGISTER_GATE_RE.search(urlsplit(url).path))
         chart.set_status(url, "skipped:register-gate" if gated else "skipped:needs-ytdlp")
         print(f"[media] ⏭ webcast {'register-gate' if gated else 'platform'} {url[:70]} — recorded, not fetched", flush=True)
-        return []
+        return
     return await handle_audio(url, chart, proxy=proxy)        # direct media file → same transcribe path
 
 
@@ -130,30 +129,13 @@ def _split_blocks(text: str, n: int, overlap: int) -> list[str]:
     return blocks
 
 
-def _resolve_new_urls(raw: list, page_url: str) -> list[str]:
-    """Turn the VLM's new_urls into absolute http(s) urls (edge audit H1). A relative `/files/x.pdf` or protocol-
-    relative `//cdn/a.mp3` is urljoin'd against the page; anything still not http after that is DROPPED LOUDLY (it
-    can't be fetched and would poison the ledger's canonical dedup)."""
-    out = []
-    for u in raw or []:
-        if not isinstance(u, str) or not u.strip():
-            continue
-        absu = urljoin(page_url, u.strip())                   # relative / protocol-relative → absolute against the page
-        if not absu.lower().startswith(("http://", "https://")):
-            print(f"[media] ⚠️ dropping non-resolvable link {u!r} on {page_url[:60]}", flush=True)
-            continue
-        out.append(absu)
-    return out
-
-
-def _apply_contribution(contrib: dict, chart, page_url: str) -> list[str]:
+def _apply_contribution(contrib: dict, chart, page_url: str) -> None:
     """Apply ONE VLM contribution to the chart (confirm metadata, append basic_info, route inline transcript to the
-    transcript slot) and return this contribution's resolved new_urls. Shared by the single-call and chunked paths so
-    both fill the chart identically; chart's own content-hash dedup absorbs overlap between chunks."""
+    transcript slot). Shared by the single-call and chunked paths so both fill the chart identically; chart's own
+    content-hash dedup absorbs overlap between chunks. Discovers nothing — the url set is event_agent's, fixed."""
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
     chart.append_basic_info(contrib.get("basic_info") or [])
     chart.append_transcript(contrib.get("transcript_segments") or [], source_url=page_url)   # inline transcript → its slot
-    return _resolve_new_urls(contrib.get("new_urls"), page_url)
 
 
 async def _vlm_call(client: QwenClient, page_text: str, page_url: str, image_b64, known: dict) -> dict:
@@ -163,59 +145,53 @@ async def _vlm_call(client: QwenClient, page_text: str, page_url: str, image_b64
                                  image_b64=image_b64, guided_json=prompts.SCHEMA)
 
 
-async def _chunked_html(page_text: str, page_url: str, chart, client: QwenClient, depth: int = 0) -> list[str]:
+async def _chunked_html(page_text: str, page_url: str, chart, client: QwenClient, depth: int = 0) -> None:
     """FALLBACK for a truncated html page — split its text into blocks that each fit, extract each TEXT-ONLY (the image
     tokens are what overflowed and add little on a long list/transcript), apply every block to the chart, recurse into
-    a block that STILL truncates (≤ max depth), and REPORT loudly if a block is still cut at the cap. Returns the union
-    of all blocks' new_urls (chart dedup handles the overlap-region duplicates)."""
+    a block that STILL truncates (≤ max depth), and REPORT loudly if a block is still cut at the cap."""
     n = max(2, -(-len(page_text) // _CHUNK_TARGET_CHARS))     # ceil-div: enough blocks that each block's input is bounded
     blocks = _split_blocks(page_text, n, _CHUNK_OVERLAP)
     print(f"[media] ✂️ chunking {page_url[:70]} → {len(blocks)} blocks (depth {depth}, {len(page_text)} chars)", flush=True)
     known = chart_known(chart)
-    new_urls: list[str] = []
     for i, b in enumerate(blocks):
         contrib = await _vlm_call(client, b, page_url, None, known)   # text-only sub-call (no image → can't re-overflow)
         if contrib.get("__finish__") == "length":             # this block STILL too big
             if depth < _CHUNK_MAX_DEPTH:                       # → split it further
-                new_urls += await _chunked_html(b, page_url, chart, client, depth + 1)
+                await _chunked_html(b, page_url, chart, client, depth + 1)
                 continue
             print(f"[media] ⛔ {page_url[:60]} block {i} STILL truncated at max depth {depth} — REPORTING partial "
                   f"(raise MEDIA_CHUNK_MAX_DEPTH)", flush=True)   # never hide it
         if contrib:                                           # apply whatever this block did yield (partial ≠ nothing)
-            new_urls += _apply_contribution(contrib, chart, page_url)
-    return new_urls
+            _apply_contribution(contrib, chart, page_url)
 
 
-async def _route_html(url: str, page_text: str, img, det: dict, chart, client: QwenClient) -> list[str]:
+async def _route_html(url: str, page_text: str, img, det: dict, chart, client: QwenClient) -> None:
     """ROUTE-mode html (deterministic body exists): the trafilatura+pandas blocks ARE the body; a SHRUNK VLM call only
     confirms metadata + parses transcript + lists media-url ids → its output is tiny, so NO overflow, NO chunking. Mirrors
     enrich.enrich_page's route path. {DESIGN wf_7b61c8d0} [CONFIDENCE: CONFIRMED — validated on prologis: 14 tables, no length].
     On VLM failure the deterministic body STILL lands (only metadata/routing lost) and the exhaustive url harvest backstops
     the frontier — recall is never sacrificed to a flaky call."""
-    tagged, tag_map = prompts.tag_links(page_text)              # [anchor](url) → [anchor](Lnn): cheap ids beat the lazy url-list
-    fitted = fit_input(tagged[:(_VISION_TEXT_CHARS if img else _MAX_INPUT_CHARS)], ROUTE_MAX_TOKENS)   # cap, then context-fit
+    fitted = fit_input(page_text[:(_VISION_TEXT_CHARS if img else _MAX_INPUT_CHARS)], ROUTE_MAX_TOKENS)  # cap, then context-fit
     contrib = await client.send_one(system=prompts.SYSTEM_ROUTE,
                                     user=prompts.build_user(fitted, url, chart_known(chart)),
                                     image_b64=img, guided_json=prompts.SCHEMA_ROUTE, max_tokens=ROUTE_MAX_TOKENS)
     if not contrib or contrib.get("_error"):                    # VLM hard-fail → body kept, urls fall back to the harvest
         chart.append_basic_info(det["blocks"])
         chart.set_status(url, "done:route-vlm-fail")
-        print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, frontier from url harvest", flush=True)
-        return [c["url"] for c in det["candidate_urls"]]        # exhaustive harvest = recall-preserving frontier fallback
+        print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, only metadata/transcript lost", flush=True)
+        return
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
     chart.append_transcript(contrib.get("transcript_segments") or [], source_url=url)   # transcript → its slot (needed for suppress)
     # STAGE 8: drop a det transcript-flagged block ONLY where the VLM actually routed it (no double-listing; uncovered stays body)
     body = suppress_transcript_blocks(det["blocks"], det["transcript_idx"], contrib.get("transcript_segments") or [])
     chart.append_basic_info(body)                               # deterministic reading-order body (real urls, no Lnn to resolve)
     chart.set_status(url, "done:route")
-    return prompts.resolve_url_list(contrib.get("new_urls"), tag_map)   # Lnn ids → real urls
 
 
-async def handle_html(url: str, chart, client: QwenClient, use_image: bool = True) -> list[str]:
-    """Render an html page + get THIS page's contribution, FILL the chart, and RETURN the resolved new_urls (the caller
-    dedups + enqueues them). Two paths by extract_html tier: ROUTE (deterministic body exists → shrunk VLM, no overflow) vs
-    LEGACY (JS-shell/thin page, tier=='empty' → full-copy VLM with the two truncation twins). This is the only handler that
-    grows the frontier."""
+async def handle_html(url: str, chart, client: QwenClient, use_image: bool = True) -> None:
+    """Render an html page + get THIS page's contribution and FILL the chart. Two paths by extract_html tier: ROUTE
+    (deterministic body exists → shrunk VLM, no overflow) vs LEGACY (JS-shell/thin page, tier=='empty' → full-copy VLM
+    with the two truncation twins). Discovers no urls — the set is event_agent's, fixed."""
     # BOUNDED RETRY, not a bare single shot. Under fleet concurrency a heavy IR page comes back EMPTY from a load-induced
     # TimeoutError while the SAME page renders fine when run alone, so treating attempt #1's empty as terminal converts a
     # transient timeout into a permanent `failed:empty-render` — and, via the 3-strike counter, into a dead letter.
@@ -226,7 +202,7 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
     if not render.get("text") and not render.get("links"):         # STILL empty after every attempt → genuinely walled/dead
         chart.set_status(url, "failed:empty-render")
         print(f"[media] ⛔ empty render {url[:70]} after retries — walled/dead/no content", flush=True)
-        return []
+        return
     page_text = render.get("inline") or render.get("text", "")
     img = render.get("shot_b64", "") if use_image else None
     text_cap = _VISION_TEXT_CHARS if img else _MAX_INPUT_CHARS
@@ -242,26 +218,25 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
     if len(page_text) > text_cap:
         print(f"[media] ⚠️ INPUT over cap {url[:70]} — {len(page_text)}>{text_cap} chars → chunking full text "
               f"(else the tail's content vanishes silently)", flush=True)
-        new_urls = await _chunked_html(page_text, url, chart, client)
+        await _chunked_html(page_text, url, chart, client)
         chart.set_status(url, "done:chunked-input")
-        return new_urls
+        return
 
     contrib = await _vlm_call(client, page_text, url, img, chart_known(chart))
     if not contrib:                                           # {} = hard failure after retries (not truncation) → loud
         chart.set_status(url, "failed:no-parse")
         print(f"[media] ⛔ no-parse {url[:70]} — VLM returned nothing usable after retries", flush=True)
-        return []
+        return
 
     # TWIN B — OUTPUT truncated (finish_reason=length): the reply JSON was cut. Chunk-and-retry, never salvage partial.
     if contrib.get("__finish__") == "length":
         print(f"[media] ⚠️ OUTPUT truncated {url[:70]} → chunking (no silent salvage)", flush=True)
-        new_urls = await _chunked_html(page_text, url, chart, client)
+        await _chunked_html(page_text, url, chart, client)
         chart.set_status(url, "done:chunked-output")
-        return new_urls
+        return
 
-    new_urls = _apply_contribution(contrib, chart, url)
+    _apply_contribution(contrib, chart, url)
     chart.set_status(url, "done")
-    return new_urls
 
 
 # ── extension-less content-type refine (edge audit H3) ────────────────────────────────────────────────────────
@@ -309,17 +284,21 @@ async def _refine_kind(url: str, kind: str) -> str:
 
 # ── dispatch: (url, kind) → the right handler ─────────────────────────────────────────────────────────────────
 async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
-                   use_image: bool = True, proxy: str | None = None) -> list[str]:
-    """Route one url to its handler by kind and return any new urls to enqueue (only html yields them). Refines an
-    extension-less html guess via HEAD first (H3). `other` is recorded-only (feeds/assets/unknown) — never fetched."""
+                   use_image: bool = True, proxy: str | None = None) -> None:
+    """Route one url to its handler by kind. Refines an extension-less html guess via HEAD first (H3). `other` is
+    recorded-only (feeds/assets/unknown) — never fetched.
+
+    用一句话讲完: URL 集合由 event_agent 一次性给定,dispatch 只负责"这一条交给谁处理",不再产生新 URL —— 闭环
+    frontier 已删除。{USER 2026-08-03 "let's just use the original list from the event agent"}
+    [CONFIDENCE: CONFIRMED 100% — direct user directive]."""
     kind = await _refine_kind(url, kind)                      # H3: extensionless html → maybe pdf/audio via content-type
     if kind == router.KIND_HTML:
-        return await handle_html(url, chart, client or QwenClient(), use_image=use_image)
-    if kind in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):   # H2: xlsx now routed
-        return await handle_office(url, chart, proxy=proxy)
-    if kind == router.KIND_AUDIO:
-        return await handle_audio(url, chart, proxy=proxy)
-    if kind == router.KIND_VIDEO:
-        return await handle_video(url, chart, proxy=proxy)
-    chart.set_status(url, "skipped:other")                    # feed / asset / mailto / unknown external
-    return []
+        await handle_html(url, chart, client or QwenClient(), use_image=use_image)
+    elif kind in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):   # H2: xlsx now routed
+        await handle_office(url, chart, proxy=proxy)
+    elif kind == router.KIND_AUDIO:
+        await handle_audio(url, chart, proxy=proxy)
+    elif kind == router.KIND_VIDEO:
+        await handle_video(url, chart, proxy=proxy)
+    else:
+        chart.set_status(url, "skipped:other")                # feed / asset / mailto / unknown external

@@ -1,0 +1,487 @@
+diff --git a/backend/agent/event_agent/crawl/engine.py b/backend/agent/event_agent/crawl/engine.py
+index ebe1941..9b9bc5f 100644
+--- a/backend/agent/event_agent/crawl/engine.py
++++ b/backend/agent/event_agent/crawl/engine.py
+@@ -226,6 +226,12 @@ async def _render_one(url: str) -> dict | None:
+         # method="walled" only after every tier failed} [CONFIDENCE: CONFIRMED — walled is terminal within one attempt].
+         if r.get("method") == "walled":
+             return None
++        # A robots refusal is terminal for the same reason "walled" is — retrying re-runs a decision, not a chain — but
++        # it must NOT be counted as a render failure, so it returns its own sentinel rather than None. See render.py's
++        # gate for why: as an empty render it burned the full retry ladder and then parked live, event-producing hosts
++        # in status='failed'. [CONFIDENCE: CONFIRMED 100% — sap.com and centrica.com were both parked this way.]
++        if r.get("method") == "robots-denied":
++            return {"method": "robots-denied", "text": "", "links": [], "html": "", "shot_b64": "", "inline": ""}
+         if attempt < _RENDER_TRIES - 1:                      # empty (timeout/walled/thin) → back off, then retry
+             await asyncio.sleep(2.0 * (attempt + 1))         # 2s, 4s — let the browser pool drain before re-firing
+     return None                                              # every attempt empty → real skip (counted fail-loud upstream)
+@@ -291,6 +297,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int
+     # and shout at run end so a degraded run is NEVER mistaken for a complete one.
+     # {USER 2026-07-23 "fail loudly is the core ... we dont want quality issue"} [CONFIDENCE: CONFIRMED 100% — directive].
+     failed_render = 0
++    skipped_robots = 0                                       # pages robots.txt told us not to fetch — declined, not failed
+     failed_extract = 0
+     # HARD extraction failures ONLY — the `_error` branch, where the page's events are LOST. Kept separate from
+     # failed_extract, which ALSO counts `_partial` and `_route_error`; in those two the events were KEPT, so a caller
+@@ -358,10 +365,17 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int
+         # nonlocal MUST include seen_event: `seen_event |= ekeys` is an augmented assignment that REBINDS the name, so
+         # without this Python treats seen_event as a _harvest-local and every page raised UnboundLocalError → the crawl
+         # crashed → the company was marked failed with 0 events (even when the VLM had extracted plenty). {DEBUG 2026-07-23}.
+-        nonlocal failed_render, failed_extract, extract_errors, seen_event, vlm_calls, vlm_skipped
++        nonlocal failed_render, failed_extract, extract_errors, seen_event, vlm_calls, vlm_skipped, skipped_robots
+         if render is None:                                     # render failed (walled/dead/empty) — coverage loss, no VLM touched
+             failed_render += 1
+             return []
++        # Counted apart from failed_render on purpose: this page was not attempted, so it is not coverage LOST, it is
++        # coverage DECLINED. Folding it into failed_render is what made worker.py's `lost` predicate fire and park
++        # robots-disallowed hosts in status='failed'. It still returns no events, so the scan reports 0 for this page —
++        # it simply does not claim something broke. [CONFIDENCE: CONFIRMED 100% — see render.py's robots gate.]
++        if render.get("method") == "robots-denied":
++            skipped_robots += 1
++            return []
+         tracer.save_page(render["url"], render, res)           # full audit trail: content/shot/html/links/result/method
+         if res.get("_skipped"):                                # hash-gate short-circuited this page → a SKIP, not a VLM call
+             vlm_skipped += 1                                   # counts toward hit_rate denominator (VLM demand saved)
+@@ -470,7 +484,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int
+     tracer.save_summary(events, len(visited))
+     # status = ok ONLY if nothing dropped. ANY render/extract failure → "incomplete" so the GCP caller can react
+     # (retry the failed pages / alert) instead of trusting a partial event list as the whole truth.
+-    status = "ok" if (failed_render == 0 and failed_extract == 0) else "incomplete"
++    status = "ok" if (failed_render == 0 and failed_extract == 0) else "incomplete"   # skipped_robots deliberately absent: declining a page is a complete scan
+     print(f"[crawl] DONE {start_url[:50]} — {len(events)} events over {len(visited)} pages. Trace: {run_dir}", flush=True)
+     if status != "ok":                                        # LOUD run-level banner — a degraded run must be unmissable
+         print(f"[crawl] ⚠️⚠️ INCOMPLETE RUN — {failed_extract} pages FAILED extraction (LLM/network), "
+@@ -479,6 +493,7 @@ async def crawl_company(start_url: str, max_pages: int = _MAX_PAGES, batch: int
+     return {"events": events, "pages": len(visited), "trace_dir": run_dir,
+             "status": status, "failed_extract": failed_extract, "extract_errors": extract_errors,
+             "failed_render": failed_render,
++            "skipped_robots": skipped_robots,
+             "vlm_calls": vlm_calls, "vlm_skipped": vlm_skipped}   # → scan_log → C_R/C_V/hit_rate for the packing solver
+ 
+ 
+diff --git a/backend/agent/event_agent/crawl/extract.py b/backend/agent/event_agent/crawl/extract.py
+index b4b7fcf..de505fa 100644
+--- a/backend/agent/event_agent/crawl/extract.py
++++ b/backend/agent/event_agent/crawl/extract.py
+@@ -252,6 +252,98 @@ _DATE_MAX_YEARS_AHEAD = int(os.environ.get("EVENT_DATE_MAX_YEARS_AHEAD", "5"))
+ _DATE_SHAPE_RE = re.compile(r"^(\d{4})(?:-(?:Q[1-4]|\d{2}(?:-\d{2})?))?$", re.I)
+ 
+ 
++# ── DATE NORMALISATION (runs BEFORE the shape check) ───────────────────────────────────────────────────────────────
++# _plausible_date rejects on FORMAT, and it was rejecting dates that are perfectly parseable. Measured across the worker
++# logs: 853 events dropped with `⛔ IMPLAUSIBLE DATE`, and the top shapes were not garbage —
++#   103  2026-03-15T00:00:00      ISO 8601 with a time component
++#   290  3/15/2026 · 03/15/2026   US/EU numeric
++#    38  2026-H1                  half-year
++#    27  2026-03-15 - 2026-03-18  a range
++#    17  July 15, 2026            long form
++# 853 against 97,760 written is 0.87% in aggregate, but the loss is CLUSTERED BY COMPANY: an IR site that prints every
++# date as `3/15/2026` loses ALL of its events, which is why 90 of the 193 companies with fewer than five events had
++# pages with rich content (>=5k chars, one of them 887,974) and nothing extracted.
++# {SHELL 2026-07-30 "grep -c 'IMPLAUSIBLE DATE' ~/eventinc_fleet/w*.log → 853"}
++# {DB 2026-07-30 "193 companies with <5 events; bucket D = 90 with >=5k chars of stored page content"}
++# [CONFIDENCE: CONFIRMED 100% — the shape histogram is counted off the live logs and the bucket split off the DB.]
++# Date-order convention for the genuinely ambiguous numeric form. Default US (month first) because the corpus is
++# 2,107/2,785 US listings; set EVENTINC_DATE_DMY=1 for a day-first run.
++_DATE_DMY = os.environ.get("EVENTINC_DATE_DMY", "") in ("1", "true", "yes")
++_DATE_MONTHS = {m: i for i, m in enumerate(
++    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
++
++
++def _norm_date_shape(raw: str) -> str:
++    """Coerce a human-written date into one of the four permitted shapes, or "" when it genuinely cannot be read.
++
++    AMBIGUITY RESOLVES TO US ORDER. `01/04/2019` is Jan 4 or Apr 1 and the string cannot say which. When one component
++    exceeds 12 the order is determined (`1/14/2019` must be M/D) and that wins. Otherwise the corpus decides: 2,107 of
++    2,785 companies are US listings, and a US IR page writing 01/04/2019 means January 4. Assuming M/D is therefore
++    right roughly three times in four, and the alternative — downgrading to `2019` — is wrong about the month EVERY
++    time, for US and non-US pages alike. `EVENTINC_DATE_DMY=1` flips the default for a non-US-heavy run.
++    {DB 2026-07-30 "US listing 2107 | non-US suffix 408 | ADR 270 of 2785 companies"}
++    [CONFIDENCE: CONFIRMED 100% on the corpus split; the M/D choice is a policy call whose cost is bounded — a non-US
++     page's day and month get transposed, which is wrong by at most eleven months and only for genuinely ambiguous
++     day-of-month values 1-12.]
++    Half-years are different and stay downgraded: `2026-H1` spans two quarters, so mapping it to `Q1` would invent
++    precision the source never had — there is no convention to appeal to, unlike date order.
++    A RANGE keeps its START — an event that runs 19-22 Sep begins on the 19th, and the start is what a calendar entry
++    needs. Nothing here invents a value the source did not contain; every branch either preserves or downgrades.
++    [CONFIDENCE: CONFIRMED 100% — every branch below is covered by a unit test built from the shapes actually observed
++     in production logs and in the 3,090 non-ISO rows already stored.]"""
++    s = (raw or "").strip()
++    if not s:
++        return ""
++    # CJK date words become separators. The Korean form is spaced ("2026년 3월 15일"), so whitespace around the
++    # separators has to go too or the numeric patterns below never match — that gap made the Korean case fall through
++    # to the bare-year salvage and silently lose the month and day.
++    # ORDER MATTERS HERE, and getting it wrong is silent. The range split has to run BEFORE the CJK space collapse:
++    # collapsing " - " to "-" first turns `2017-06-21 - 2017-06-22` into `2017-06-21-2017-06-22`, which then matches no
++    # numeric pattern and falls through to the bare-year salvage — the event survives but loses its month and day, and
++    # nothing reports the downgrade. Caught by the range case in the unit test, not by reading.
++    s = re.split(r"\s*(?:~|--|—|–|\bto\b|\bthrough\b)\s*|\s+-\s+", s)[0].strip()   # a range keeps its START
++    s = (s.replace("年", "-").replace("月", "-").replace("日", "")
++          .replace("년", "-").replace("월", "-").replace("일", ""))
++    s = re.sub(r"\s*-\s*(?=\d)", "-", s)                    # CJK separators leave spaces ("2026- 3- 15") — close them
++    s = re.sub(r"[T ]\d{1,2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$", "", s)  # drop a time component
++    s = s.strip(" ,.-")
++    if _DATE_SHAPE_RE.match(s):                                # already one of the four permitted shapes
++        return s.upper() if "q" in s.lower() else s
++    m = re.match(r"^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$", s)  # YYYY-M-D / YYYY/M/D / YYYY.M.D
++    if m:
++        y, mo, d = (int(x) for x in m.groups())
++        return f"{y:04d}-{mo:02d}-{d:02d}" if 1 <= mo <= 12 and 1 <= d <= 31 else f"{y:04d}"
++    m = re.match(r"^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$", s)  # M/D/YYYY or D/M/YYYY — ambiguous unless one part > 12
++    if m:
++        a, b, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
++        if a > 12 and b <= 12:
++            return f"{y:04d}-{b:02d}-{a:02d}"                  # D/M — unambiguous
++        if b > 12 and a <= 12:
++            return f"{y:04d}-{a:02d}-{b:02d}"                  # M/D — unambiguous
++        # Ambiguous: both parts <= 12. Fall back to the corpus's dominant convention rather than losing the month.
++        mo, d = (b, a) if _DATE_DMY else (a, b)
++        return f"{y:04d}-{mo:02d}-{d:02d}" if 1 <= mo <= 12 and 1 <= d <= 31 else f"{y:04d}"
++    m = re.match(r"^(\d{4})-?H([12])$", s, re.I)               # half-year → year (H1 spans Q1+Q2; a quarter is invented)
++    if m:
++        return m.group(1)
++    m = re.match(r"^(\d{4})-?FY$|^FY-?(\d{4})$", s, re.I)      # fiscal-year marker → the year
++    if m:
++        return m.group(1) or m.group(2)
++    m = re.match(r"^([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})$", s)          # July 15, 2026 / Jul 15 2026
++    if m and m.group(1)[:3].lower() in _DATE_MONTHS:
++        return f"{int(m.group(3)):04d}-{_DATE_MONTHS[m.group(1)[:3].lower()]:02d}-{int(m.group(2)):02d}"
++    m = re.match(r"^(\d{1,2})\s+([A-Za-z]{3,9})\.?\s+(\d{4})$", s)            # 15 March 2026
++    if m and m.group(2)[:3].lower() in _DATE_MONTHS:
++        return f"{int(m.group(3)):04d}-{_DATE_MONTHS[m.group(2)[:3].lower()]:02d}-{int(m.group(1)):02d}"
++    m = re.match(r"^([A-Za-z]{3,9})\.?\s+(\d{4})$", s)                        # March 2026 → year-month
++    if m and m.group(1)[:3].lower() in _DATE_MONTHS:
++        return f"{int(m.group(2)):04d}-{_DATE_MONTHS[m.group(1)[:3].lower()]:02d}"
++    m = re.search(r"(19|20)\d{2}", s)                          # last resort: a plausible year is still worth keeping
++    if m:
++        return m.group(0)
++    return ""                                                  # unreadable → the caller drops it, as before
++
++
+ def _plausible_date(date: str) -> bool:
+     """Structural + range sanity for an extracted event date. "" is ALLOWED (the prompt explicitly permits an undated
+     event when the page prints no date, and the footer-chrome guard already requires date OR title), but a NON-empty
+@@ -284,7 +376,7 @@ def _plausible_type(etype: str) -> str:
+     return t if t in _ALLOWED_TYPES else "other"
+ 
+ 
+-def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
++def _normalize_events(result: dict, tag_map: dict, source: str = "", page_url: str = "") -> dict:
+     """EXTRACTION reply → {"events":[...], "_event_urls":set, "_error":?}. Lnn ids → urls (resolve_ids drops unknowns) +
+     _clean_urls drops feed/asset junk. GROUNDING: each event must carry an `evidence` snippet that appears in `source`
+     (the page the model read) — an event whose evidence is not in the page was hallucinated and is DROPPED. Then every
+@@ -296,17 +388,50 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "") -> dict:
+         if src and not _grounded(e.get("evidence") or "", src):   # evidence not in the page → fabricated → drop
+             continue
+         urls = _clean_urls(prompts.resolve_ids(e.get("urls") or [], tag_map))   # Lnn ids → real urls → drop junk + dedup
+-        if not urls:                                          # an event must have at least one real url, else drop it
+-            continue
+         title = (e.get("title") or "").strip()[:300]
+         date = (e.get("date") or "").strip()
++        if not urls:
++            # A HYPERLINK IS NOT WHAT MAKES AN EVENT REAL. This used to be an unconditional drop, and it silently
++            # discarded an entire page shape: an IR calendar that lists events as plain text rows. Shimano's
++            # /en/ir/calendar.html is 1,255 chars containing 9 unambiguous dated events —
++            # "July 28, 2026 at 3:30 PM (JST) Announcement of Financial Results 2nd Quarter for FY2026" and eight more —
++            # with only 4 links on the whole page (home, IR, and two year anchors). Every one of those 9 died here, and
++            # the company reads as 0 events with no error, no partial, and no drop counter anywhere.
++            # The page itself is the honest source for such a row, so it becomes the event's url.
++            # BOTH date AND title are required for this fallback, which is stricter than the general rule below (date OR
++            # title). Without a date, a nav label the model mis-read as an event would now be admitted instead of
++            # dropped — the url requirement was doing that filtering as a side effect, so tightening here is what keeps
++            # the footer-chrome guard as strong as it was.
++            # {MEASURED 2026-08-01 shimano.com/en/ir/calendar.html — 9 dated rows in the text the model received,
++            #  events_kept=0, _error=None, _partial=None}
++            # [CONFIDENCE: CONFIRMED 100% — the full page text and the extraction result were printed side by side.]
++            if page_url and date and title:
++                urls = [page_url]
++            else:
++                continue
+         # PLAUSIBILITY (injection defence layer (c)) — grounding proves the model COPIED from the page; it cannot prove
+         # the PAGE is honest, because a poisoner controls the grounding corpus too. So an event must ALSO survive a
+         # structural check that does not consult the page: a parseable date inside a sane year window, and a type inside
+         # the prompt's own enum. A forged "2099 acquisition" passes grounding and dies here.
+         # {PROMPTS.PY _FENCE_OPEN BLOCK "GROUNDING ANSWERS 'DID THE MODEL MAKE THIS UP?'; IT CANNOT ANSWER 'IS THE PAGE
+         #  LYING?'"} [CONFIDENCE: CONFIRMED 100% — structural validity is independent of attacker-controlled content].
+-        if not _plausible_date(date):                          # malformed or absurd year → poisoned/garbled → drop
++        # NORMALISE FIRST, THEN VALIDATE. The check below is structural, and it was rejecting dates that were merely
++        # written in a human format: `2026-03-15T00:00:00`, `3/15/2026`, `July 15, 2026`. Validating a raw string means
++        # the guard's real job (catch a forged 2099 date) gets conflated with a formatting complaint, and the event is
++        # discarded either way. Normalising first keeps the injection defence exactly as strict on the YEAR while
++        # letting a readable date through.
++        # {SHELL 2026-07-30 "grep -c 'IMPLAUSIBLE DATE' ~/eventinc_fleet/w*.log → 853 events dropped"}
++        # {DB 2026-07-30 "3,090 stored rows already hold a non-ISO shape, same histogram as the drops"}
++        # [CONFIDENCE: CONFIRMED 100% — 26 shapes taken from the live logs and the stored rows are covered by a unit
++        #  test; the year-window half of the guard is unchanged, so a forged 2099 date still dies here.]
++        norm = _norm_date_shape(date)
++        if date and not norm:                                  # genuinely unreadable → the old behaviour, loudly
++            print(f"[extract] ⛔ UNREADABLE DATE {date[:24]!r} — dropping event {title[:48]!r}", flush=True)
++            continue
++        if norm != date:
++            print(f"[extract] ↻ date normalised {date[:24]!r} → {norm!r}", flush=True)
++        date = norm
++        if not _plausible_date(date):                          # absurd year → poisoned/garbled → drop
+             print(f"[extract] ⛔ IMPLAUSIBLE DATE {date[:24]!r} — dropping event {title[:48]!r}", flush=True)
+             continue
+         etype = _plausible_type(e.get("type"))                 # clamp to the allowed enum (unknown → "other")
+@@ -467,7 +592,7 @@ async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_i
+     for i, res in enumerate(results):
+         if res.get("__finish__") == "length":                # block hit the output limit → partial, keep what it gave us
+             partials.append(f"block {i} truncated at limit")
+-        ne = _normalize_events(res, maps[i], blocks[i])      # resolve THIS block's ids + ground evidence against THIS block's text
++        ne = _normalize_events(res, maps[i], blocks[i], page_url)  # resolve THIS block's ids + ground evidence against THIS block's text
+         if ne.get("_error"):                                  # a block that HARD-failed (transport/parse) → real error
+             errs.append(ne["_error"])
+         # DEDUP BY EVENT IDENTITY, not by url overlap. Sharing a url is normal on IR pages — one webcast/registration/
+@@ -580,7 +705,7 @@ async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
+         if res.get("__finish__") == "length":                  # output cut even with Lnn → chunk (split input, merge)
+             print(f"[extract] ✂️  OUTPUT TRUNCATED {url[:70]} — finish=length → chunking", flush=True)
+             return await _extract_events_chunked(raw_text, url, c, use_img)
+-        return _normalize_events(res, tag_map, tagged)         # ground evidence against the page the model read
++        return _normalize_events(res, tag_map, tagged, url)    # ground evidence against the page the model read
+ 
+     routes_r, ev = await asyncio.gather(_route(), _events())   # ROUTING + EXTRACTION concurrently on the GPU
+     return _combine(ev["events"], ev.get("_event_urls") or set(), routes_r["routes"],
+diff --git a/backend/agent/event_agent/scheduler/scan.py b/backend/agent/event_agent/scheduler/scan.py
+index 203f777..c937fe5 100644
+--- a/backend/agent/event_agent/scheduler/scan.py
++++ b/backend/agent/event_agent/scheduler/scan.py
+@@ -136,6 +136,16 @@ async def scan_unit(pool, client, url: str, unit_type: str, company_id=None) ->
+         # [CONFIDENCE: CONFIRMED 100% — engine returns failed_render, this dict did not read it, and worker.py's
+         #  predicate named only extract_errors; all three verified by reading them together.]
+         "failed_render": res.get("failed_render") or 0,      # pages that never loaded (walled / dead / empty)
++        # THE THIRD CATEGORY, which the two above were quietly absorbing. A page robots.txt tells us not to fetch is
++        # coverage DECLINED, not coverage lost — the crawl worked exactly as intended. It arrived here as an empty
++        # render, so it counted as failed_render, so worker.py's `lost` predicate fired, so the unit failed four times
++        # and parked in status='failed'. sap.com/investors/en.html and centrica.com/investors/ are both there right
++        # now, both live, having produced 17 and 16 events before the robots gate existed. Keeping the count separate
++        # is what stops a policy decision from being reported as a malfunction.
++        # {MEASURED 2026-08-01 politeness.url_allowed -> (False, 'robots-denied') for both; their robots.txt carry
++        #  "User-agent: *" then "Disallow: /", centrica's whole file being 25 bytes}
++        # [CONFIDENCE: CONFIRMED 100% — robots bodies fetched and read, parked rows read from work_queue.]
++        "skipped_robots": res.get("skipped_robots") or 0,    # pages we declined to fetch (robots.txt)
+     }
+     await db.log_scan(pool, unit_type, url, stats)           # append to scan_log (the windowed C_R/C_V/hit_rate source)
+     # TITLE HOOK — after every full/incremental scan, curl THIS company's title-less events' URLs and fill what we can
+diff --git a/backend/providers/watercrawl/render.py b/backend/providers/watercrawl/render.py
+index e2b14a2..8563fa5 100644
+--- a/backend/providers/watercrawl/render.py
++++ b/backend/providers/watercrawl/render.py
+@@ -17,7 +17,7 @@ import re
+ import sys
+ import time
+ 
+-from . import config, detection, extract_js, html_inline, page, politeness, runtime, walls
++from . import capacity, config, detection, extract_js, html_inline, page, politeness, runtime, walls
+ 
+ # RENDER STEP INSTRUMENTATION — when WATERCRAWL_RENDER_DEBUG=1, print a timestamped line at EVERY step of a browser
+ # render (context → page → goto → size-gate → settle → break-walls → extract → screenshot) with the elapsed ms. WHY:
+@@ -89,19 +89,20 @@ async def _close_ctx(ctx) -> None:
+ _goto = page.goto
+ _settle = page.settle
+ 
+-# HTTP-FIRST: try the cheap curl_cffi direct fetch BEFORE spinning up the browser (research #1 optimization — static
+-# pages skip the browser + screenshot entirely, served TEXT-ONLY). Env-toggleable. {RESEARCH wv2d0n0v3 "HTTP-first gate
+-# + text-only path ... vision-call 数落到 ~30-50%"} [CONFIDENCE: CONFIRMED — top-ranked cost lever].
+-_HTTP_FIRST = os.environ.get("WATERCRAWL_HTTP_FIRST", "1") not in ("0", "false", "no")
+-# ...EXCEPT events/calendar LISTING pages, forced to the browser+screenshot: the layout table IS the signal there and a
+-# text-only fetch of a JS/image-rendered calendar would miss events. {RESEARCH "/events|/calendar 白名单强制 vision"}.
+-_FORCE_VISION_RE = re.compile(r'/(events?|calendar|ir-calendar|webcasts?)(/|\?|#|$)', re.I)
+-
+-
+-def _force_vision(url: str) -> bool:
+-    """True for pages where the layout screenshot is highest-value (events/calendar listings) → skip HTTP-first, always
+-    render + screenshot. Text-signal is weak on these (image-rendered tables) but layout is strong."""
+-    return bool(_FORCE_VISION_RE.search(url or ""))
++# HTTP-FIRST REMOVED 2026-08-01, switch and all. It fetched with curl_cffi before the browser and kept that result when
++# two static-text heuristics agreed the page looked "real", and both heuristics were measured to be inverted on exactly
++# the page type this crawler exists to read — see the block in render_shot for the evidence. The switch is deleted
++# rather than defaulted to 0 so the function has one path and the heuristics cannot be re-enabled by configuration.
++# Production already ran with WATERCRAWL_HTTP_FIRST=0 in both env files, so no behaviour changes for the fleet.
++# _FORCE_VISION_RE / _force_vision REMOVED with HTTP-first. They existed to force events/calendar listings PAST the
++# cheap fetch and onto the browser; with the browser as the only first attempt there is nothing left to force. Retiring
++# them also retires a boundary bug they carried: the pattern required the token to be followed by / ? # or end-of-string,
++# so `events-and-presentations` (Boeing, Amgen), `ir-events`, `upcoming-event` and `calendar.html` (Shimano) all failed
++# to match — 6,373 of 10,500 distinct event-looking page urls in the corpus, 61%, were never forced. A whitelist that
++# misses the majority of the shapes it targets is worse than none, because it reads as coverage.
++# {MEASURED 2026-08-01 over distinct pages.url: eventish AND forced 4,127 / eventish AND NOT forced 6,373}
++# [CONFIDENCE: CONFIRMED 100% — the regex was run against the live url corpus, and against 12 hand-checked real IR urls
++#  of which 9 failed to match.]
+ 
+ 
+ # Events pages hide their history behind a year-filter / load-more / pagination. Match the ones worth EXPANDING (broader
+@@ -331,6 +332,19 @@ async def _render_shot_one(url: str, wait_ms: int, browser=None) -> tuple[str, l
+     if not ok:
+         _loud(f"refused {url}: {why}")
+         return "", [], "", "", ""
++    # CAPACITY CEILING, before the semaphores for the same reason the policy gate is: a render that has to wait must
++    # wait WITHOUT holding permits, or the queue behind it stalls on a page it was never going to open.
++    # The semaphores bound how many pages run at once; they cannot bound how much MEMORY those pages take, and the
++    # relationship between the two is not fixed — 48 slots hold 8.5GB today across 140 chromium processes, but a
++    # heavy page costs several times an average one. That gap is what took this box down on 2026-07-27, and a static
++    # slot count is a guess at it made in advance. capacity.check reads the machine instead of guessing.
++    # A blocked render is counted, logged and eventually reported as failed_render — never silently absorbed.
++    # {LAUNCH_FLEET.SH:70-82 the 2026-07-27 livelock} {MEASURED 2026-08-01 "140 chromium / 8.5GB / 24.5GB free"}
++    # [CONFIDENCE: CONFIRMED 100% — both read off the host.]
++    _cap_ok, _cap_why = await capacity.wait_for_capacity_async()
++    if not _cap_ok:
++        _loud(f"capacity ceiling held off {url[:60]} for the full budget — {_cap_why}")
++        return "", [], "", "", ""
+     _rlog(url, "want-sems", t0, f"(shot_sem+page_sem; browser={'proxy' if browser else 'pool'})")
+     # When NO_SHOT is set we won't take a screenshot, so DON'T hold _shot_sem (the shot-slot cap of 4) — otherwise text-only
+     # renders would be needlessly throttled to 4-wide and the isolation test couldn't show the real uplift. nullcontext() is
+@@ -442,6 +456,26 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
+     from .engines import impersonate                      # lazy: the curl_cffi fingerprint-bypass engine (optional dep)
+     empty = {"text": "", "links": [], "html": "", "shot_b64": "", "method": "", "inline": ""}
+ 
++    # ROBOTS REFUSAL IS A DECISION, NOT A FAILURE — and it has to be said out loud, here, before any tier runs.
++    # The gate already existed inside page.goto(), where a refusal raises PermissionError, gets caught, and comes back
++    # as an empty render with method="". Nothing downstream can tell that apart from a timeout, so a host we have
++    # deliberately chosen not to crawl costs the full ladder — _RENDER_TRIES attempts, four tiers each, with 2s and 4s
++    # backoffs between — and then engine.py counts failed_render, worker.py calls fail_work, and after four scans the
++    # unit lands in status='failed'. That state means "this is broken, look at it". Nobody needs to look at it: the
++    # answer will be identical tomorrow.
++    # Returning a distinct method makes the refusal terminal and free, and keeps 'failed' meaning what it says.
++    # {MEASURED 2026-08-01 politeness.url_allowed -> (False, 'robots-denied') for www.sap.com/investors/en.html and
++    #  www.centrica.com/investors/ — both robots.txt carry "User-agent: *" then "Disallow: /", centrica's file is
++    #  25 bytes and contains nothing else}
++    # {DB 2026-08-01 both urls sit in work_queue status='failed' attempt=4, having produced 17 and 16 events earlier}
++    # [CONFIDENCE: CONFIRMED 100% — the robots bodies were fetched and read, and the gate's verdict reproduced.]
++    try:
++        _ok, _why = politeness.url_allowed(url)
++    except Exception:                                    # noqa: BLE001 — a broken robots fetch must not block a crawl
++        _ok, _why = True, ""
++    if not _ok:
++        return {"text": "", "links": [], "html": "", "shot_b64": "", "method": "robots-denied", "inline": ""}
++
+     if not runtime.ensure_browser():                     # no browser env → text-only impersonate is all we have
+         try:
+             it, il, ih = impersonate.fetch(url)
+@@ -452,23 +486,28 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
+             pass
+         return dict(empty)
+ 
+-    # ── HTTP-FIRST: try the cheap curl_cffi direct fetch BEFORE the browser. Accept it ONLY when it returned a REAL
+-    # content page (not walled AND not a thin JS shell) — i.e. a prose-rich static page (press release / article). A
+-    # link-dense LISTING is render_thin=True → falls through to the browser (those pages most want the screenshot, and
+-    # events/calendar are force-vision anyway). So content/detail pages go text-only (save a browser spin), discovery
+-    # listings still get the shot. The result is REUSED in the wall-escalation below — never fetched twice.
+-    i_result = None
+-    if _HTTP_FIRST and not _force_vision(url):
+-        try:
+-            it, il, ih = impersonate.fetch(url)
+-            i_result = (it, il, ih)
+-            if not detection.looks_walled(it, il) and not detection.render_thin(it):
+-                return {"text": it, "links": list(il), "html": ih or "", "shot_b64": "",
+-                        "method": "impersonate", "inline": html_inline.to_inline(ih, url)}
+-        except Exception:                                # noqa: BLE001
+-            pass
+-
+-    # 1) headless render + full-page screenshot (dynamic pages / events pages / thin-static HTTP-first didn't serve)
++    # HTTP-FIRST IS GONE — the browser is the only entry point, impersonate is strictly a fallback.
++    #
++    # What it used to do: fetch with curl_cffi BEFORE the browser and accept that result when it was "not walled and not
++    # a thin JS shell". Both halves of that test are unreliable in the direction that matters, and it was measured:
++    #   • `render_thin` counts sentence-ending punctuation. An events LISTING is Title-Case labels with no periods, so
++    #     the pages this crawler exists to read score as "shell" — CECO (7,255 chars, 67 links, 11 dates) and Shimano
++    #     (9 dated events) were both judged thin, while Boeing's genuine JS shell scored 4 terminators and was ACCEPTED.
++    #     On that sample the heuristic was inverted.
++    #   • `looks_walled` returns True whenever a page has fewer than 5 links, so a legitimately small page is
++    #     indistinguishable from a block page.
++    # No static-text heuristic can decide whether JS will add content — that is not information the static text carries.
++    # Firecrawl and Jina both resolve this by not asking: the browser is the default and a plain HTTP client is the last
++    # resort, explicitly because "once chrome-cdp fail, degrading to a plain HTTP client tends to produce bot-walled
++    # content, so we'd rather fail". The env switch is removed rather than defaulted off so there is exactly one path
++    # through this function and no way to re-enable the heuristics by configuration.
++    # {MEASURED 2026-08-01 over 7,080 page traces: render 90.9%, residential 4.8%, impersonate 4.3% — production had
++    #  WATERCRAWL_HTTP_FIRST=0 in both env files already, so this deletes a branch prod never took}
++    # {FIRECRAWL engines/index.ts quality scores — chrome-cdp 50, tlsclient 10, fetch 5; index/cache 1000}
++    # [CONFIDENCE: CONFIRMED 100% — the inversion was reproduced on the three pages named above; the production setting
++    #  was read from /etc/waterevents/fleet.env and /etc/waterevents.env.]
++
++    # 1) headless render + full-page screenshot — the DEFAULT and only first attempt
+     text, links, html, shot, inline = _shot_via(url, wait_ms, browser=None)
+     _walled = detection.looks_walled(text, links)
+     if _RDEBUG:
+@@ -487,25 +526,42 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
+     if not text and not links and detection.dead_host(url):
+         return dict(empty)
+ 
+-    # 2) walled → patchright residential render + screenshot (real browser from a residential IP, beats IP-reputation walls)
++    # 2) walled → curl_cffi impersonate. PROMOTED FROM TIER 3 for two independent reasons.
++    # COST: this is one HTTP request; the residential and camoufox tiers each spin up a browser. Trying the cheapest
++    # fallback first means a wall it can beat never costs a browser at all.
++    # HIT RATE: walls come in three kinds, and the one we have actually measured is precisely this tier's speciality —
++    # a TLS/HTTP2 FINGERPRINT wall, where headless Chrome is recognised and refused while a Chrome-impersonating HTTP
++    # client walks through. CECO returned a 231-char Akamai "Access Denied ... Reference #18.c7fd117" to Chromium and a
++    # clean 7,255-char / 67-link / 11-date page to curl_cffi, from the same host, seconds apart. That is not an
++    # IP-reputation wall (which needs the residential tier) and not a JS challenge (which needs camoufox).
++    # This also matches Firecrawl, whose `tlsclient` ranks ABOVE plain `fetch` — an impersonating client and a naive
++    # HTTP client are different tools, which is a distinction I previously blurred when citing their "we'd rather fail
++    # than degrade to plain HTTP" rule.
++    # {MEASURED 2026-08-01 CECO: BROWSER text=231 links=0 challenge=True / IMPERSONATE text=7255 links=67 challenge=False}
++    # [CONFIDENCE: CONFIRMED 100% — both fetches were run against the live host in one script, printed side by side.]
++    #
++    # ACCEPTANCE IS ABSOLUTE, NOT RELATIVE. The previous test was
++    #     `len(i_links) > len(links) or (i_text and not text)`
++    # which judges this result against the browser's — and we only reach here BECAUSE the browser was walled, so the
++    # baseline is a block page. A challenge interstitial that happens to carry a few links would beat genuinely good
++    # content on link count. What matters is whether THIS result is itself a real page.
++    # `is_challenge` rather than `looks_walled`: the latter also returns True for any page with fewer than 5 links, and
++    # a legitimately small page has few links — Shimano's IR calendar has 4, and carries 9 real dated events.
++    try:
++        i_text, i_links, i_html = impersonate.fetch(url)
++    except Exception:                                    # noqa: BLE001 — optional dep / network; fall through to tier 3
++        i_text, i_links, i_html = "", [], ""
++    if i_text and not detection.is_challenge(i_text):
++        return {"text": i_text, "links": list(i_links or []), "html": i_html or "", "shot_b64": "",
++                "method": "impersonate", "inline": html_inline.to_inline(i_html, url)}
++
++    # 3) still walled → patchright residential render + screenshot (real browser from a residential IP, beats
++    # IP-reputation walls — the kind impersonate cannot help with, because the source address is what is refused)
+     if runtime._browser_proxy is not None:
+         r_text, r_links, r_html, r_shot, r_inline = _shot_via(url, wait_ms, browser=runtime._browser_proxy)
+         if not detection.looks_walled(r_text, r_links):
+             return {"text": r_text, "links": list(r_links), "html": r_html, "shot_b64": r_shot, "method": "residential", "inline": r_inline}
+ 
+-    # 3) still walled → curl_cffi impersonate (different TLS/HTTP2 fingerprint than the browser). REUSE the HTTP-first
+-    # fetch if we already did it above; else fetch now. inline rebuilt from html so its events keep their urls.
+-    if i_result is None:
+-        try:
+-            i_result = impersonate.fetch(url)
+-        except Exception:                                # noqa: BLE001
+-            i_result = None
+-    if i_result:
+-        i_text, i_links, i_html = i_result
+-        if len(i_links) > len(links) or (i_text and not text):
+-            return {"text": i_text, "links": list(i_links), "html": i_html or "", "shot_b64": "",
+-                    "method": "impersonate", "inline": html_inline.to_inline(i_html, url)}
+-
+     # 4) STILL walled → camoufox (stealth Firefox — beats Akamai/Incapsula sensor.js). Content-only: no screenshot.
+     # The tier the refactor dropped from render_shot (kept only in render_full/render_detail). inline rebuilt from html.
+     # {DEBUG 2026-07-23 pepsico Incapsula} [CONFIDENCE: CONFIRMED 100%].
+@@ -522,10 +578,21 @@ def render_shot(url: str, wait_ms: int = config.SETTLE_FIXED_MS) -> dict:   # fi
+     # as a successful render — the caller would feed the block page to the model → 0 events with failed_render=0 (a
+     # degraded run masquerading as clean). Return method="walled" + EMPTY so the caller drops it + counts a render
+     # failure. {DEBUG 2026-07-23 pepsico: block body returned as method="render"} [CONFIDENCE: CONFIRMED 100%].
+-    if detection.is_challenge(text):
++    # CHECK EVERY TEXT FIELD, NOT JUST `text`. This guard existed and did not fire, because the block-page wording does
++    # not always land in `text`: BAE Systems renders to text='\n' (one newline) with the Incapsula body — "Request
++    # unsuccessful. Incapsula incident ID: ..." — sitting in `inline`. is_challenge(text) was therefore False, the
++    # `text or links` line below saw a truthy '\n', and the block page was returned as method="render" with
++    # failed_render=0. That is precisely the "degraded run masquerading as clean" this block is written to prevent, and
++    # it was reachable the whole time through a field the check did not read.
++    # {MEASURED 2026-08-01 investors.baesystems.com — tier1 text=1 links=0 inline=83, is_challenge(text)=False,
++    #  final method="render"; the inline body is the Incapsula interstitial}
++    # [CONFIDENCE: CONFIRMED 100% — every branch predicate was printed for that url in one run.]
++    if any(detection.is_challenge(s) for s in (text, inline, html)):
+         return {"text": "", "links": [], "html": "", "shot_b64": "", "method": "walled", "inline": ""}
+     # merely link-sparse (no challenge body) → a possibly-legit small page → return the thin render we have.
+-    if text or links:
++    # `.strip()` because a render that produced only whitespace is not a small page, it is nothing — and an unstripped
++    # truthiness test on '\n' is what let the case above through to a successful-looking return.
++    if (text or "").strip() or links:
+         return {"text": text, "links": list(links), "html": html, "shot_b64": shot, "method": "render", "inline": inline}
+     return dict(empty)
+ 

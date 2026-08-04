@@ -42,11 +42,14 @@ _NONMEDIA_URL_RE = re.compile(
     re.I)
 
 
-def _merge_urls(known_media: list, new_urls: list, page_url: str) -> list[str]:
-    """The event's full media urls = known ∪ page-discovered, resolved absolute, feed/asset dropped, deduped (order:
-    known first, then new). A relative/protocol-relative new_url is urljoin'd against the page; still-non-http dropped."""
+def _clean_urls(known_media: list, page_url: str) -> list[str]:
+    """The event's media urls = EXACTLY the list event_agent handed us, resolved absolute, feed/asset dropped, deduped.
+
+    用一句话讲完: 不再做 known ∪ page-discovered 的并集 —— URL 集合由 event_agent 一次性给定,media_agent 只做规范化
+    (相对路径 urljoin、去 feed/asset、去重),不增不减。{USER 2026-08-03 "let's just use the original list from the
+    event agent"} [CONFIDENCE: CONFIRMED 100% — direct user directive; the frontier-growth path was deleted with it]."""
     out, seen = [], set()
-    for u in list(known_media or []) + list(new_urls or []):
+    for u in list(known_media or []):
         if not isinstance(u, str) or not u.strip():
             continue
         absu = urljoin(page_url, u.strip()) if not u.strip().lower().startswith("http") else u.strip()
@@ -57,38 +60,31 @@ def _merge_urls(known_media: list, new_urls: list, page_url: str) -> list[str]:
     return out
 
 
-def _apply(reply: dict, acc: dict, known_event: dict, page_url: str, tag_map: dict, skip_basic_info: bool = False) -> None:
+def _apply(reply: dict, acc: dict, known_event: dict, page_url: str, skip_basic_info: bool = False) -> None:
     """FILL-AND-APPEND one model reply into the accumulator acc. Metadata keeps the known non-empty value and only
-    FILLS empties; basic_info blocks + transcript_segments are appended; new_urls (now REF IDs — Lnn) are resolved
-    back to real urls via tag_map and collected into acc['_new'] for a single merge at the end.
-    WHY the tag_map: the model outputs short ids (L7) not urls, so a basic_info md block still carries [anchor](L7) and
-    new_urls is ["L7",...] — both must be expanded here. {DEBUG 2026-07-23 model listed 12/28 media when asked for urls}
-    [CONFIDENCE: CONFIRMED 100% — req dump proved under-listing; ids make listing-all cheap so the drop disappears].
+    FILLS empties; basic_info blocks + transcript_segments are appended.
+
     skip_basic_info=True in ROUTE mode: the deterministic extractor (extract_html) already filled acc['basic_info'], so the
-    VLM's schema has NO basic_info field — we take ONLY its metadata/transcript/new_urls. {DESIGN wf_7b61c8d0 STAGE 9}."""
+    VLM's schema has NO basic_info field — we take ONLY its metadata + transcript. {DESIGN wf_7b61c8d0 STAGE 9}."""
     for f in ("title", "date", "type"):                       # fill ONLY an empty field from the page (trust known)
         if not acc[f] and (reply.get(f) or "").strip():
             acc[f] = (reply.get(f) or "").strip()
     if not skip_basic_info:                                    # LEGACY path only — ROUTE mode's body comes from extract_html
         for b in (reply.get("basic_info") or []):             # ordered content blocks (md / list / table)
             if isinstance(b, dict) and b.get("type"):
-                if b.get("md"):                               # expand any [anchor](Lnn) refs the model kept back to real urls
-                    b = {**b, "md": prompts.resolve_md(b["md"], tag_map)}
                 acc["basic_info"].append(b)
     for s in (reply.get("transcript_segments") or []):        # inline transcript → its OWN slot, never basic_info
         if isinstance(s, dict) and (s.get("text") or "").strip():
             acc["transcript_segments"].append(
                 {"speaker": (str(s.get("speaker") or "").strip() or "SPEAKER_00"), "text": (s.get("text") or "").strip()})
-    # new_urls are REF IDs → resolve to real urls (known id → url, bare http kept, unknown id dropped) before merge.
-    acc["_new"].extend(prompts.resolve_url_list(reply.get("new_urls"), tag_map))
 
 
 def _finalize(acc: dict, known_event: dict, page_url: str) -> dict:
-    """acc → the enriched record the endpoint returns: metadata + merged urls[] + basic_info[] + transcript_segments[]
-    + output_truncated. The single place urls are merged (known ∪ new)."""
+    """acc → the enriched record the endpoint returns: metadata + urls[] + basic_info[] + transcript_segments[]
+    + output_truncated. urls[] is event_agent's own list, normalized — nothing is discovered or added here."""
     return {
         "title": acc["title"], "date": acc["date"], "type": acc["type"],
-        "urls": _merge_urls(known_event.get("media_urls"), acc["_new"], page_url),
+        "urls": _clean_urls(known_event.get("media_urls"), page_url),
         "basic_info": acc["basic_info"],
         "transcript_segments": acc["transcript_segments"],
         "output_truncated": acc["output_truncated"],         # TRUE ⇒ a block was cut even after chunking — DO NOT trust as complete
@@ -99,7 +95,7 @@ def _new_acc(known_event: dict) -> dict:
     """A fresh accumulator seeded with the known metadata (so an all-empty page keeps the known title/date/type)."""
     return {"title": (known_event.get("title") or "").strip(), "date": (known_event.get("date") or "").strip(),
             "type": (known_event.get("type") or "").strip(),
-            "basic_info": [], "transcript_segments": [], "_new": [], "output_truncated": False}
+            "basic_info": [], "transcript_segments": [], "output_truncated": False}
 
 
 async def _vlm(client: QwenClient, page_text: str, page_url: str, image_b64, known_event: dict,
@@ -127,10 +123,9 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
     img = page.get("image_b64") if use_image else None
     # Generous cap — a normal IR page is never trimmed; a pathological one is trimmed but the screenshot still carries it.
     cap = _VISION_TEXT_CHARS if (use_image and img) else _MAX_INPUT_CHARS
-    # TAG every inline [anchor](url) → [anchor](Lnn) BEFORE trimming: the ids (2-3 chars) are far shorter than the urls
-    # they replace, so MORE real content fits the cap AND the model echoes cheap ids instead of re-typing long urls
-    # (which it does lazily — dropped 16/28 media on Block's page). {DEBUG 2026-07-23 req dump} [CONFIDENCE: CONFIRMED 100%].
-    tagged_text, tag_map = prompts.tag_links(page.get("page_text") or "")
+    # Links stay in their natural [anchor](url) form. The Lnn reference-id rewrite that used to happen here existed ONLY
+    # so the model could cheaply LIST discovered urls; url discovery is gone, so the rewrite is dead weight.
+    raw_text = page.get("page_text") or ""
     acc = _new_acc(known_event)
 
     # ── DETERMINISTIC body (STAGE 2-6): trafilatura + pandas own basic_info so the VLM never copies (and overflows on) the
@@ -146,7 +141,7 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
     # impossible (a .pdf rendered to 20769 input tokens + 12000 output = 400; ROUTE requests only 6000 and _fit_input caps
     # input to match). ROUTE mode's body is already deterministic, so a trimmed input only costs some url-routing reach.
     out_tokens = ROUTE_MAX_TOKENS if route else _qcfg.MAX_TOKENS
-    page_text = fit_input(tagged_text[:cap], out_tokens)     # (a) vision/text cap, then (b) context-fit against out_tokens
+    page_text = fit_input(raw_text[:cap], out_tokens)     # (a) vision/text cap, then (b) context-fit against out_tokens
 
     # In ROUTE mode the VLM only confirms metadata + parses transcript + lists media ids → output is tiny, cannot overflow.
     # In LEGACY (empty tier) mode it does the old full copy from text/screenshot.
@@ -171,7 +166,7 @@ async def enrich_page(known_event: dict, page: dict, client: QwenClient | None =
         print(f"[enrich] ⛔ OUTPUT TRUNCATED {page_url[:70]} — finish=length at MAX_TOKENS (mega page). REPORTED not chunked "
               f"— raise QWEN_MAX_TOKENS / --max-model-len. Partial content kept + flagged.", flush=True)
 
-    _apply(reply, acc, known_event, page_url, tag_map, skip_basic_info=route)   # ROUTE: skip basic_info (det owns it)
+    _apply(reply, acc, known_event, page_url, skip_basic_info=route)   # ROUTE: skip basic_info (det owns it)
     if route:                                                 # STAGE 8: drop a det transcript-flagged block ONLY where the VLM
         acc["basic_info"] = suppress_transcript_blocks(       # actually routed it to transcript_segments (no double-listing,
             acc["basic_info"], det["transcript_idx"], acc["transcript_segments"])   # uncovered flagged block STAYS as body)
