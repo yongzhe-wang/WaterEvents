@@ -145,6 +145,12 @@ async def h_health(_request: web.Request) -> web.Response:
     """GET /health → liveness + what the box is doing. `browser` is the real signal: watercrawl self-skips to empty
     results when the browser is unavailable, so a service that answers 200 with browser=false is answering with
     garbage and the client must treat it as down."""
+    # The break log, surfaced rather than left in the log file. `robots_override` is host → count of urls this process
+    # took past an explicit Disallow. Empty when the escape hatch is shut, which is the default. Reporting it HERE is
+    # the point: an override nobody can see afterwards is the failure mode, and a health endpoint is checked, whereas
+    # a log line scrolls away. {POLITENESS.PY "AN OVERRIDE YOU CANNOT SEE AFTERWARDS IS THE THING TO AVOID"}
+    from . import politeness                              # lazy: keeps the health route free of import-order coupling
+    ovr = politeness.override_report()
     return web.json_response({
         "ok": True,
         "browser": bool(browser_available()),
@@ -154,6 +160,9 @@ async def h_health(_request: web.Request) -> web.Response:
         "by_method": _stats["by_method"],
         "browsers": int(os.environ.get("IR_WATERCRAWL_BROWSERS", "3")),
         "shot_concurrency": int(os.environ.get("WATERCRAWL_SHOT_CONCURRENCY", "4")),
+        "ignore_robots": politeness.IGNORE_ROBOTS,
+        "robots_override": ovr,
+        "robots_override_total": sum(ovr.values()),
     })
 
 

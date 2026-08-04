@@ -42,6 +42,25 @@ from . import config
 # [CONFIDENCE: CONFIRMED 100% — a default-on bypass would make the rest of this module decorative.]
 IGNORE_ROBOTS = os.environ.get("WATERCRAWL_IGNORE_ROBOTS", "") in ("1", "true", "yes")
 
+# ── BREAK LOG ──────────────────────────────────────────────────────────────────────────────────────────────────────
+# When the escape hatch above is open, still ASK robots what it would have said, and record every time we went ahead
+# anyway. Default ON whenever IGNORE_ROBOTS is on — an override you cannot see afterwards is the thing to avoid.
+#
+# WHY this exists: the docstring on `allowed` used to claim the override was "logged once per call site upstream". It
+# was not. A grep across the whole backend for IGNORE_ROBOTS finds this file and nothing else, so before this change
+# turning the flag on produced a COMPLETELY SILENT bypass — no way to answer "what did we override, and how often"
+# after the fact, which is exactly the question that gets asked later and cannot be reconstructed from the crawl data.
+# {GREP 2026-08-04 "IGNORE_ROBOTS" ACROSS backend/ → ONLY politeness.py:43,216,232,304 — NO CALL SITE LOGS IT}
+# [CONFIDENCE: CONFIRMED — the claim in the docstring was checked and is false].
+#
+# COST: one robots.txt fetch per host that we would otherwise have skipped entirely. It is cached per origin for
+# _ROBOTS_TTL_S, so it is one fetch per host per hour, not one per url. Set WATERCRAWL_ROBOTS_AUDIT=0 to skip even
+# that — faster, and blind.
+_ROBOTS_AUDIT = os.environ.get("WATERCRAWL_ROBOTS_AUDIT", "1") in ("1", "true", "yes")
+
+_OVERRIDDEN: dict[str, int] = {}                          # host → how many urls we took past a Disallow this process
+_OVERRIDE_LOCK = threading.Lock()
+
 # How long a parsed robots.txt stays trusted. An hour keeps us honest without re-fetching robots.txt once per page:
 # a full BFS of one company is dozens of pages on ONE host, so the cache turns N robots fetches into 1.
 _ROBOTS_TTL_S = float(os.environ.get("WATERCRAWL_ROBOTS_TTL_S", "3600"))
@@ -207,23 +226,56 @@ def _robots_for(url: str) -> urllib.robotparser.RobotFileParser | None:
     return rp
 
 
+def _log_override(url: str) -> None:
+    """Record ONE url taken past an explicit Disallow. This is the break log.
+
+    Per HOST, not per url: these platforms host thousands of issuers each, so a per-url line would bury the signal in
+    its own volume. First hit prints, then every 500th, so a long run still shows the counter moving without the log
+    becoming the workload. The count is what matters afterwards — "which hosts, how many" — not each individual url."""
+    host = (urllib.parse.urlparse(url).hostname or "?").lower()
+    with _OVERRIDE_LOCK:
+        n = _OVERRIDDEN.get(host, 0) + 1
+        _OVERRIDDEN[host] = n
+    if n == 1 or n % 500 == 0:
+        _loud(f"ROBOTS OVERRIDE — {host} disallows this path; proceeding anyway (n={n} this process, "
+              f"WATERCRAWL_IGNORE_ROBOTS=1). first url: {url[:120]}")
+
+
+def override_report() -> dict[str, int]:
+    """host → urls taken past a Disallow, this process. The break log in queryable form, for a health endpoint or a
+    end-of-run summary. Empty dict when nothing was overridden — including when the escape hatch is shut."""
+    with _OVERRIDE_LOCK:
+        return dict(_OVERRIDDEN)
+
+
 def allowed(url: str) -> bool:
     """MAY we fetch this url? True when robots.txt permits it (or there are no rules, or compliance is switched off).
 
     Upstream: `url_allowed` / `url_allowed_async`, which combine this with the scheme check and the SSRF guard and turn a False
     into the "robots-denied" reason token. Downstream: a False means the render coroutine returns empty WITHOUT opening
-    a browser context, so a disallowed url costs one cached lookup rather than a full page load."""
-    if IGNORE_ROBOTS:                                     # explicit operator override; logged once per call site upstream
+    a browser context, so a disallowed url costs one cached lookup rather than a full page load.
+
+    With IGNORE_ROBOTS on we still ASK — and record the answer — before overriding it. The lookup is not wasted work:
+    it is the only thing that makes the override auditable afterwards. See the BREAK LOG block at the top of the file."""
+    # Skip the fetch entirely only when the operator has BOTH opened the hatch and turned the audit off.
+    if IGNORE_ROBOTS and not _ROBOTS_AUDIT:
         return True
+
     rp = _robots_for(url)
     if rp is None:                                        # no rules published (or unreachable, fail-open) → allowed
         return True
     try:
         # Ask under our OWN token first: a site that wants to address us specifically must be able to. `can_fetch`
         # already falls back to the `User-agent: *` group when no group matches this token, so one call covers both.
-        return rp.can_fetch(BOT_TOKEN, url)
+        verdict = rp.can_fetch(BOT_TOKEN, url)
     except Exception:                                     # noqa: BLE001 — a malformed robots.txt must not stop the crawl
         return True
+
+    if IGNORE_ROBOTS:
+        if not verdict:
+            _log_override(url)                            # the ONLY place a real override is recorded
+        return True
+    return verdict
 
 
 def crawl_delay(url: str) -> float:
