@@ -20,6 +20,26 @@ from .fetch import fetch_bytes
 from .transcribe import transcribe
 from .types import AudioResult
 
+# ── REMOTE WHISPER SPLIT ─────────────────────────────────────────────────────────────────────────────────────────
+# Setting WHISPER_REMOTE_URL rebinds transcribe to an HTTP client that runs the SAME function on the RunPod pod's A40.
+# extract_bytes() below resolves the name at CALL time, so rebinding this module global is enough.
+#
+# WHY this one MUST reach a GPU, unlike the Docling split next door: large-v3 at cpu/int8 runs BELOW realtime on a box
+# it also shares with the crawl fleet, so an hour-long earnings call holds a worker for over an hour — a 3-event smoke
+# over the audio stratum completed 0 events in 22 minutes. That is why transcribe.py carries a 15-minute duration cap
+# on CPU at all, and that cap silently drops most earnings calls, which is a direct hit to coverage. On the A40 the
+# same file decodes in minutes, and large-v3 runs through CTranslate2 in ~3.1 GB — it fits the 5.1 GB vLLM leaves free.
+# {MEASURED 2026-08-03 — A 3-EVENT SMOKE OVER THE AUDIO STRATUM PRODUCED 0 COMPLETED EVENTS IN 22 MINUTES}
+# {NVIDIA-SMI 2026-08-04 "NVIDIA A40, 46068 MIB, 40299 MIB USED, 5190 MIB FREE"}
+# [CONFIDENCE: CONFIRMED — the stall was observed; the cap in transcribe.py exists because of it].
+#
+# The client refuses a whisper service that came up on CPU (see tools_remote.whisper_available): degrading to CPU
+# quietly would silently restore the exact problem this split exists to remove.
+import os as _os                                              # noqa: E402 — deliberately after the local imports above
+
+if _os.environ.get("WHISPER_REMOTE_URL", "").strip():
+    from providers.tools_remote import transcribe             # noqa: F811,E402 — intentional rebind, see block comment
+
 __all__ = ["extract", "extract_bytes", "is_audio_url", "maybe_audio_url", "fetch_bytes",
            "transcribe", "AudioResult"]
 

@@ -19,6 +19,22 @@ from .extract import docling_extract
 from .fetch import fetch_bytes
 from .types import DocResult
 
+# ── REMOTE DOCLING SPLIT ─────────────────────────────────────────────────────────────────────────────────────────
+# Setting DOCLING_REMOTE_URL rebinds docling_extract to an HTTP client that runs the SAME function on the RunPod pod,
+# where 96 vCPU sit idle instead of 8 shared with Chromium. extract_bytes() below resolves the name at CALL time, so
+# rebinding this module global is enough — no call site changes, and unsetting the var restores the local path.
+#
+# WHY the pod's CPU and not a GPU: the A40 has 5.1 GB free of 46 GB and is pinned at 100% serving vLLM
+# {NVIDIA-SMI 2026-08-04 "NVIDIA A40, 46068 MIB, 40299 MIB USED, 5190 MIB FREE, 100%"}, so Docling could not fit there
+# even if we wanted it to. The win is core COUNT, not device class: 118s per document at concurrency 4 is ~50 days for
+# the 146,254 pdf urls we hold; the same 118s at concurrency 24 is ~8 days.
+# {MEASURED 2026-08-03 A/B — OCR-OFF MEDIAN 118.0s PER DOCUMENT, CONCURRENCY 4, ON 8 SHARED CORES}
+# [CONFIDENCE: CONFIRMED — matched-pair A/B over identical events, both runs on ir-media-8].
+import os as _os                                              # noqa: E402 — deliberately after the local imports above
+
+if _os.environ.get("DOCLING_REMOTE_URL", "").strip():
+    from providers.tools_remote import docling_extract        # noqa: F811,E402 — intentional rebind, see block comment
+
 __all__ = ["extract", "extract_bytes", "detect_format", "is_office_url", "maybe_office_url",
            "fetch_bytes", "docling_extract", "DocResult"]
 
