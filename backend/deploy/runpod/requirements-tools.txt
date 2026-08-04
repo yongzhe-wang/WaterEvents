@@ -1,0 +1,68 @@
+# requirements-tools.txt — the RunPod pod's venv for tools.service (docling + faster-whisper).
+#
+# 用一句话讲完: 这些 pin 不是洁癖,是把 2026-08-04 那天四轮依赖冲突的结论钉死 —— 每一条下面都写了不钉会炸成什么样。
+# 装法(顺序重要):
+#     python3 -m venv --system-site-packages /opt/we/venv          # 本地盘, 不要 /workspace(见下)
+#     /opt/we/venv/bin/pip install --no-cache-dir -r requirements-tools.txt
+#     /opt/we/venv/bin/pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+#         torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1
+#
+# ── 装在哪 ────────────────────────────────────────────────────────────────────────────────────────────────────
+# venv 和代码放本地 overlay 盘(/opt/we), 模型权重和缓存放 /workspace。按文件形状分, 不是按重要性分。
+# /workspace 是挂在 Montreal 的 MooseFS 网络卷, pip 在上面装几千个小文件会卡死:
+#   {OBSERVED 2026-08-04 — venv 建在 /workspace 时, `pip install --upgrade pip wheel` 跑了 15 分钟仍未结束}
+#   {DF: "OVERLAY 20G 14G 6.6G 68% /"  vs  "MFS#CA-MTL-1.RUNPOD.NET:9421 965T 722T 244T 75% /WORKSPACE"}
+# 反过来模型权重是少数大文件, 网络卷完全够用, 而且本地盘只剩 ~5GB 放不下 whisper large-v3 + docling 的模型。
+# [CONFIDENCE: CONFIRMED — 两次实测].
+#
+# ── 为什么用 --system-site-packages ──────────────────────────────────────────────────────────────────────────
+# pod 上已经有给 vLLM 装的 torch 2.4.1+cu124 等一大堆包, 复用能省掉几 GB 下载。代价是系统那套 CUDA 编译的
+# torchvision/torchaudio 会漏进来, 所以下面必须把 torch 三件套一起在 venv 里覆盖成配套的 CPU 版。
+# **系统的 torch 绝对不能动 —— vLLM 用的就是它, 而 vLLM 是这台机器上唯一在赚钱的服务。**
+
+# ── 主体 ──────────────────────────────────────────────────────────────────────────────────────────────────────
+docling>=2.0            # 文档抽取引擎; 跑 CPU(A40 显存被 vLLM 占满, 只剩 5.1GB)
+faster-whisper>=1.0     # 语音转写; 跑 GPU, 底层是 CTranslate2 不是 torch
+aiohttp>=3.9            # tools.service 的 HTTP 服务端
+pypdf>=4.0              # Docling 两条链都失败时的兜底文本抽取
+
+# ── 唯一一条真正的上界 pin ────────────────────────────────────────────────────────────────────────────────────
+# transformers 5.x 在 torch 2.5.1 上会在 Docling 转换中途炸:
+#   {POD 2026-08-04 transformers 5.14.1 + torch 2.5.1 →
+#    "NAMEERROR: NAME 'TORCH' IS NOT DEFINED" in transformers/utils/output_capturing.py:231,
+#    冒成 "CONVERSIONERROR: CONVERSION FAILED FOR: DOCUMENT.PDF" → 每个 pdf 都退回 pypdf-fallback}
+# 注意 is_torch_available() 当时返回的是 True —— 所以这不是"torch 没装", 是 transformers 5.x 对 torch 的
+# API 假设在 2.5.1 上不成立。docling-ibm-models 自己声明的范围是 >=4.42.0,<6.0.0 且显式排除 5.0-5.3, 说明
+# 5.x 这条线本来就不稳; 4.x 才是 docling 2.x 开发时对着的版本。装到 4.57.6 后同一个 pdf 直接 via='docling:text'。
+# [CONFIDENCE: CONFIRMED — 同一个 pdf, 换版本前 via='pypdf-fallback', 换版本后 via='docling:text' warnings=[]].
+transformers<5
+
+# ── torch 三件套: 必须同版本, 必须 CPU 版, 必须从 pytorch 的 cpu index 装 ──────────────────────────────────
+# 不写在这个文件里, 因为需要 --index-url https://download.pytorch.org/whl/cpu, 见文件头的安装命令。
+#   torch==2.5.1  torchvision==0.20.1  torchaudio==2.5.1
+#
+# 为什么要装 torch(而不是直接用系统那个 2.4.1):
+#   transformers 需要 torch>=2.5 的 torch.distributed.tensor.DTensor
+#   {POD 2026-08-04 "IMPORTERROR: CANNOT IMPORT NAME 'DTENSOR' FROM 'TORCH.DISTRIBUTED.TENSOR'
+#    (/usr/local/lib/python3.11/dist-packages/torch/distributed/tensor/__init__.py)"}
+#
+# 为什么是 CPU 版:
+#   Docling 本来就跑 CPU(GPU 没显存), whisper 走 CTranslate2 根本不用 torch。CUDA 版 torch 要 ~2.5GB,
+#   本地盘只剩 5.2GB; CPU 版 ~200MB。省下的空间是刚需不是优化。
+#
+# 为什么三个都要装、且版本要配套:
+#   只装 torch 的话, 系统那两个 cu124 编译的会漏进来然后炸:
+#   {POD 2026-08-04 只换 torch → "OSERROR: LIBTORCH_CUDA.SO: CANNOT OPEN SHARED OBJECT FILE"}
+#   {POD 2026-08-04 torch 2.13.0+cpu + 系统 torchvision 0.19.1+cu124 →
+#    "MODULENOTFOUNDERROR: COULD NOT IMPORT MODULE 'AUTOIMAGEPROCESSOR'"}
+#
+# 为什么钉 2.5.1 而不是最新:
+#   `torch>=2.5` 会解析到 2.13.0, 那个又太新, 找不到配套的 torchvision。2.5.1/0.20.1/2.5.1 是一组同期发布、
+#   互相兼容、且满足 transformers 4.57 的组合。装完 `from torch.distributed.tensor import DTensor` 可导入。
+# [CONFIDENCE: CONFIRMED — 三个错误都是 pod 上的实际 traceback, 按此组合装完后 AutoImageProcessor
+#  返回 RTDetrImageProcessor, 真实 pdf 走通 docling:text].
+
+# ── 系统层 ────────────────────────────────────────────────────────────────────────────────────────────────────
+# apt-get install -y ffmpeg
+#   pod 镜像里没有 ffmpeg, 而 faster-whisper 靠它解码音频 —— 不装的话每个音频都失败。
+#   {POD 2026-08-04 `which ffmpeg` → 空}

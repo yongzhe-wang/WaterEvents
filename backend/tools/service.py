@@ -117,17 +117,40 @@ async def h_transcribe(request: web.Request) -> web.Response:
                               "duration": duration, "reason": reason})
 
 
+def _device() -> str:
+    """Which accelerator THIS process can actually use, asked of the runtime that will actually do the work.
+
+    ctranslate2 first, and not as a fallback: faster-whisper executes through CTranslate2, NOT through torch, so
+    ctranslate2.get_cuda_device_count() is the only answer that predicts whether transcription will run on the GPU.
+    torch is consulted only if ctranslate2 is absent — and torch's answer can be actively WRONG here, because the venv
+    deliberately carries a CPU-only torch build: docling's transformers dependency needs the torch>=2.5 API surface
+    {IMPORTERROR 2026-08-04 "CANNOT IMPORT NAME 'DTENSOR' FROM 'TORCH.DISTRIBUTED.TENSOR'"}, while the pod's system
+    torch is 2.4.1, and installing a 2.5 CUDA build would cost 2.5 GB against 5.2 GB of free root disk. A CPU torch
+    satisfies the import and costs ~200 MB, and Docling is meant to run on CPU anyway.
+    Asking torch would therefore report 'cpu' for a whisper process that is in fact happily on CUDA — and
+    tools_remote.whisper_available() refuses a CPU whisper by design, so the wrong answer here takes the GPU path
+    offline while it is working perfectly.
+    [CONFIDENCE: CONFIRMED — the ImportError above is the verbatim traceback tail from the pod]."""
+    try:
+        import ctranslate2
+        if ctranslate2.get_cuda_device_count() > 0:
+            return "cuda"
+        return "cpu"
+    except Exception:                                           # noqa: BLE001 — ctranslate2 absent (docling process)
+        pass
+    try:
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:                                           # noqa: BLE001 — neither runtime present
+        return "unknown"
+
+
 async def h_health(_request: web.Request) -> web.Response:
     """GET /health → liveness + which device this process actually got.
 
     `device` is the load-bearing field: the whole point of running two processes is that one is on CPU and one is on
     CUDA, and a whisper process that silently fell back to CPU would still answer 200 while being ~100x too slow."""
-    dev = "unknown"
-    try:
-        import torch
-        dev = "cuda" if torch.cuda.is_available() else "cpu"
-    except Exception:                                           # noqa: BLE001 — torch absent → nothing to report
-        pass
+    dev = _device()
     return web.json_response({
         "ok": True,
         "device": dev,
