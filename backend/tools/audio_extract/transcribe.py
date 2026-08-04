@@ -44,6 +44,19 @@ def _default_max_duration() -> float:
 
 _MAX_DURATION_S = _default_max_duration()
 
+# Beam width for the decoder. 5 is faster-whisper's own default and what this file used to hardcode; 1 is greedy.
+# WHY it is a knob now and not a constant: on the RunPod A40 this model SHARES the card with a vLLM that holds 40.3 GB
+# of 46 GB and sits at 100% utilization, so whisper gets whatever compute is left over — measured at 2.8x realtime for
+# a 63.7-minute earnings call, far below the tens-of-x a dedicated GPU gives. Beam width multiplies decoder work
+# directly, so it is the cheapest lever available that does not involve taking VRAM away from vLLM.
+# {MEASURED 2026-08-04 — 63.7min audio -> 48,705 chars / 1,467 segments in 1375.2s = 2.8x realtime,
+#  large-v3 @ cuda/int8_float16, concurrency 1, alongside vLLM at 100% GPU utilization}
+# [CONFIDENCE: CONFIRMED — end-to-end through the production path; the transcript opens
+#  "Good morning and welcome to Intercorp Financial Services' first quarter 2023 conference call"].
+# Default stays 5 so behaviour is unchanged until an A/B says otherwise — the point of the knob is to MEASURE the
+# quality cost of 1, not to assume it is free.
+_BEAM_SIZE = int(os.environ.get("WHISPER_BEAM_SIZE", "5"))
+
 _models: dict = {}                                              # name → loaded WhisperModel (cache; may hold primary + fallback)
 _lock = threading.Lock()
 
@@ -84,7 +97,7 @@ def _get_model(name: str):
 def _run(model, path: str) -> tuple[str, list[dict], str, float]:
     """Run one model over the temp file → (text, segments, language, duration). Raises on OOM/decode error so the
     caller can fall back."""
-    segments_iter, info = model.transcribe(path, beam_size=5, vad_filter=True)
+    segments_iter, info = model.transcribe(path, beam_size=_BEAM_SIZE, vad_filter=True)
     dur = float(getattr(info, "duration", 0.0) or 0.0)
 
     # DURATION GATE — checked HERE because `segments_iter` is a lazy generator: `info.duration` is known after the
