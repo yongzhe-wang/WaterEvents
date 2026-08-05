@@ -164,6 +164,48 @@ def _table_to_dict(tbl, doc) -> dict:
         return {}
 
 
+def _xls_tables(data: bytes) -> dict | None:
+    """FALLBACK for legacy .xls when Docling refuses it. None when this is not an OLE2 file or the read fails.
+
+    WHY it is needed at all: .xls and .xlsx share a name and nothing else — .xlsx is zip+XML, .xls is the OLE2
+    compound-document format from 1997, and Docling's MsExcelDocumentBackend only speaks the former. The router
+    classifies both as kind='xlsx', so every legacy file went to a parser that cannot read it AND had no fallback
+    behind it, unlike the pdf path:
+      {POD 2026-08-05 — b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1' -> "MsExcelDocumentBackend could not ...",
+       via='none', 0 chars, 0 tables, warnings=['docling-text-crash:ConversionError', 'no-fallback-xlsx']}
+      {DB 2026-08-05 event_media_urls — kind='xlsx': 23 failed, 1 done. The one that worked was a real .xlsx}
+    [CONFIDENCE: CONFIRMED — magic bytes, the backend's own error, and the ledger all agree].
+
+    These are not a rare edge: they are SEC EDGAR's financial-report exhibits, served from
+    d18rn0p25nwr6d.cloudfront.net, and every one of them is a table of numbers — exactly the content this pipeline
+    exists to capture.
+
+    pandas reads them through xlrd. Output is shaped like Docling's so the caller cannot tell which produced it."""
+    if not data or data[:4] != b"\xd0\xcf\x11\xe0":     # OLE2 magic — not a legacy xls, nothing to do here
+        return None
+    try:
+        import io
+        import pandas as pd
+        sheets = pd.read_excel(io.BytesIO(data), sheet_name=None)   # None → every sheet, {name: DataFrame}
+    except Exception as e:                                # noqa: BLE001 — xlrd absent / corrupt file → LOUD, no crash
+        _loud(f"legacy .xls fallback FAILED ({type(e).__name__}: {str(e)[:110]})")
+        return None
+    tables, parts = [], []
+    for name, df in (sheets or {}).items():
+        if df is None or df.empty:
+            continue
+        cols = [str(c) for c in df.columns.tolist()]
+        rows = [[("" if pd.isna(v) else str(v)) for v in r] for r in df.values.tolist()]
+        tables.append({"columns": cols, "rows": rows})
+        # A sheet name is content here, not decoration — EDGAR exhibits label the statement on the tab.
+        parts.append(f"## {name}\n\n[TABLE {len(tables)}]")
+    if not tables:
+        _loud("legacy .xls read but every sheet was empty")
+        return None
+    return {"markdown": "\n\n".join(parts), "tables": tables, "n_pages": len(tables),
+            "n_tables": len(tables), "via": "xlrd-fallback", "warnings": ["docling-cannot-read-legacy-xls"]}
+
+
 def docling_extract(data: bytes, fmt: str, want_structured: bool = False) -> dict:
     """Office-doc bytes → {markdown, tables, n_pages, n_tables, via, warnings, structured?}. FALLBACK CHAIN with
     LOUD failures: Docling (primary) → pypdf (for a PDF when Docling is absent, crashes, or returns EMPTY content on
@@ -219,6 +261,15 @@ def docling_extract(data: bytes, fmt: str, want_structured: bool = False) -> dic
         out = _try(_get_converter(ocr=True), "ocr")
         if out is not None:
             return out
+
+    # ESCALATION 1b — legacy .xls. Docling only reads OOXML, so an OLE2 workbook reaches here with nothing extracted
+    # and, before this, no fallback at all. Checked by MAGIC rather than by the url's extension because the router
+    # already collapsed .xls and .xlsx into one kind and the bytes are the only reliable discriminator.
+    if fmt in ("xlsx", "xls"):
+        xls = _xls_tables(data)
+        if xls is not None:
+            xls["warnings"] = warnings + xls["warnings"]
+            return xls
 
     if _get_converter(ocr=False) is None:
         _loud("docling unavailable → pypdf fallback (pdf only)")
