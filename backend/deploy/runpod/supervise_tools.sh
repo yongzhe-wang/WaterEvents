@@ -10,9 +10,22 @@
 # {NVIDIA-SMI 2026-08-04 "NVIDIA A40, 46068 MIB, 40299 MIB USED, 5190 MIB FREE, 100% UTILIZATION"}
 # [CONFIDENCE: CONFIRMED — read off the live pod; vLLM owns the VRAM, so Docling has nowhere to go but CPU].
 #
-# 用法:  ./supervise_tools.sh docling   8101  ""   24
-#        ./supervise_tools.sh whisper   8102  "0"   2
+# 用法:  ./supervise_tools.sh docling   8101  ""    4
+#        ./supervise_tools.sh whisper   8102  "0"   1
 #        参数: <名字> <端口> <CUDA_VISIBLE_DEVICES> <并发>
+#
+# WHY docling 的并发是 4 而不是"96 核所以开 24":这台 pod 有 96 个空闲 vCPU,但 docling 的 layout 模型跑在
+# **一个 Python 进程的线程池**里,而版面分析/表格识别的热点是 Python 层的 GIL 之内 —— 加线程不加吞吐,只加排队。
+# 实测:1 线程 9.1s/篇;4 线程墙钟 47.8s 跑完 4 篇(等效 12s/篇,延迟可接受);8 线程 186.6s(等效 23s/篇,已经比串行差)。
+# {GIL BENCH 2026-08-05 "1 THREAD 9.1s · 4 THREADS 47.8s WALL FOR 4 · 8 THREADS 186.6s WALL FOR 8"}
+# 把并发开到 24 的那次的实际后果,是这个默认值存在的全部理由:
+# {DOCLING.LOG 2026-08-05 "1987515B → 11258 CHARS, 15 TABLES IN 2551.7S" · "1970177B → 10377 CHARS, 19 TABLES IN 2822.7S" · "IN-FLIGHT: 43"}
+# 同类文档在低并发下是 15 秒量级,并发 24 时变成 40-47 分钟,stage-2 连续 30 分钟零产出 —— 进程还活着、健康检查还 200,
+# 但管线实际已经停摆。这是最难查的那种故障:所有存活信号都是绿的。
+# [CONFIDENCE: CONFIRMED — 基准和事故日志都在同一台 pod 上取的;吞吐要再往上只能加**进程**(见下方 WHY),不能加线程]
+#
+# WHY 不能靠加线程往上顶: 真正的解法是同一份 service.py 起多份(8101/8103/8105...),让每份自己占一个 GIL,
+# 客户端按端口散列分流。那需要改客户端而不是改这一行,所以先把并发钉在拐点上,别让它再退化成隐性停摆。
 #
 # 上游触发: 手工启动或 onstart.sh。下游连接: tools/service.py,再往下是 Docling 单例 / faster-whisper 单例。
 
@@ -20,7 +33,8 @@ set -u
 NAME="${1:?usage: supervise_tools.sh <name> <port> <cuda_visible_devices> <concurrency>}"
 PORT="${2:?}"
 CUDA="${3-}"
-CONC="${4:-8}"
+# 默认 4 = GIL 拐点(见上方基准)。以前默认 8 已经在等效吞吐上劣于串行,是个会安静吃掉产出的默认值。
+CONC="${4:-4}"
 
 # TWO roots, split by file SHAPE, not by importance:
 #   V (local overlay disk) — the venv and the code. Thousands of small files; pip on the network volume crawled and a
