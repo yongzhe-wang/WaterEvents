@@ -61,16 +61,35 @@ _ACCURATE = os.environ.get("OFFICE_TABLE_ACCURATE", "1") == "1"   # TableFormer 
 _OCR_FALLBACK = os.environ.get("OFFICE_OCR_FALLBACK", "1") == "1"   # set 0 to disable the scanned-pdf retry entirely
 
 
+# Threads PER DOCUMENT. This and the service's concurrency are one dial with two halves: their PRODUCT must land near
+# the core count, or the jobs spend their time context-switching instead of converting.
+#
+# We were never passing AcceleratorOptions at all, so docling's own default (num_threads=4) never took effect and torch
+# used ITS default instead — 48 on the pod. At the docling service's concurrency of 24 that is 1,152 threads contending
+# for 96 cores: a 12x oversubscription, paid on every document.
+# {POD 2026-08-04, asked inside the service venv — "docling AcceleratorOptions 默认: num_threads=4"
+#  vs "torch.get_num_threads() = 48"; nproc = 96; docling process held 233 threads while completely idle}
+# [CONFIDENCE: CONFIRMED — both numbers read from the pod's own python, not from docs].
+#
+# 4 × 24 = 96 exactly, which is also docling's own default — that pairing is the intended design, not a coincidence.
+_NUM_THREADS = int(os.environ.get("OFFICE_NUM_THREADS", "4"))
+
+
 def _build(do_ocr: bool):
     """One Docling converter with OCR on or off. Kept separate because the pipeline options are baked in at
     construction — you cannot flip do_ocr per document on a built converter."""
     from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
+    from docling.datamodel.pipeline_options import (AcceleratorDevice, AcceleratorOptions,
+                                                    PdfPipelineOptions, TableFormerMode)
     opts = PdfPipelineOptions()
     opts.do_table_structure = True                                # tables are the point — always on
     opts.do_ocr = do_ocr
     opts.table_structure_options.mode = TableFormerMode.ACCURATE if _ACCURATE else TableFormerMode.FAST
+    # device=CPU is STATED, not left on AUTO. The pod's A40 has ~3 GB free of 46 GB — vLLM owns 40.3 and whisper the
+    # rest — so an AUTO that resolved to CUDA would OOM mid-document. Saying CPU makes the placement a decision.
+    # {NVIDIA-SMI 2026-08-04 — 2985 MiB FREE OF 46068}
+    opts.accelerator_options = AcceleratorOptions(num_threads=_NUM_THREADS, device=AcceleratorDevice.CPU)
     return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
 
 

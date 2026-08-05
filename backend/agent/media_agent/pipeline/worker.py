@@ -48,7 +48,20 @@ _STATS: dict[str, int] = {
     "escaped": 0,               # an exception got past process_event's own try/except and was caught by gather
 }
 _EMPTY_BACKOFF_S = int(os.environ.get("WATEREVENTS_EMPTY_BACKOFF_S", "10"))
+
+# 0 = NEVER exit; poll forever. Any positive value keeps the old "drain then stop" behaviour for one-off runs.
+#
+# WHY a sentinel instead of relying on Restart=always: as a systemd service the old behaviour turns into a restart every
+# 60s whenever the queue is momentarily empty, and each restart rebuilds the asyncpg pool and a fresh QwenClient —
+# throwing away the warm upstream connection this loop deliberately keeps ("One shared QwenClient keeps the RunPod
+# connection warm across the whole run"). Restart=always still belongs in the unit, but as a crash net, not as the
+# mechanism for staying resident. Those are different jobs and conflating them makes the churn invisible.
+#
+# The event_agent fleet has no equivalent because its work_queue is refilled by the pacer; media's work arrives from
+# stage-1's discovery rate instead, so idle gaps are normal and must be cheap.
+# [CONFIDENCE: CONFIRMED — the loop condition and the QwenClient placement are both in this file, a few lines below].
 _MAX_IDLE_ROUNDS = int(os.environ.get("WATEREVENTS_MAX_IDLE_ROUNDS", "6"))
+_FOREVER = _MAX_IDLE_ROUNDS <= 0
 # media wants VISION — the detail-page SCREENSHOT carries chart/table/transcript LAYOUT that text alone loses. But whether
 # render even PRODUCES a screenshot is decided by the SHARED WATERCRAWL_NO_SHOT switch (event_agent defaults it ON = no
 # shot). So couple use_image to that ONE switch: else use_image=True while render (NO_SHOT=1) hands back an EMPTY shot →
@@ -162,11 +175,14 @@ async def worker_loop(pool) -> None:
     QwenClient keeps the RunPod connection warm across the whole run."""
     client = QwenClient()
     idle = 0
-    while idle < _MAX_IDLE_ROUNDS:
+    while _FOREVER or idle < _MAX_IDLE_ROUNDS:
         events = await db.claim_events(pool)             # a batch of discovered/retry-due events (SKIP LOCKED)
         if not events:
             idle += 1
-            print(f"[enrich] queue empty ({idle}/{_MAX_IDLE_ROUNDS}) — backoff {_EMPTY_BACKOFF_S}s", flush=True)
+            # In forever mode say so plainly rather than printing a countdown toward an exit that will never happen —
+            # a log full of "6/6" that never ends is how a healthy idle service gets mistaken for a stuck one.
+            where = "forever" if _FOREVER else f"{idle}/{_MAX_IDLE_ROUNDS}"
+            print(f"[enrich] queue empty ({where}) — backoff {_EMPTY_BACKOFF_S}s", flush=True)
             await asyncio.sleep(_EMPTY_BACKOFF_S)
             continue
         idle = 0

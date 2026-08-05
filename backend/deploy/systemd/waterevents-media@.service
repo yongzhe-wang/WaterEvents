@@ -1,0 +1,53 @@
+[Unit]
+# One media-enrichment worker. Templated like waterevents-worker@ so `systemctl enable waterevents-media@{1..N}` scales
+# stage 2 the same way stage 1 scales.
+#
+# WHY stage 2 needs its own unit at all: the code has been complete for weeks — claim_events (SKIP LOCKED + lease),
+# worker_loop, mark_enriched_media (one transaction, fenced on claim_token) and a __main__ entry all exist. What never
+# existed was a process to run them, so production sat at 259,417 events status='discovered', zero claimed, and all five
+# enrichment tables empty. This file is the whole gap.
+# {DB 2026-08-04 — events.status: discovered 259,417 / enriched_at NOT NULL: 0 / claim_token NOT NULL: 0;
+#  event_content_blocks, event_transcript_segments, event_media_files, event_audio, event_media_urls all 0 rows}
+# [CONFIDENCE: CONFIRMED — read off the live database].
+Description=WaterEvents media enrichment worker %i
+After=network-online.target
+Wants=network-online.target
+PartOf=waterevents-fleet.target
+
+[Service]
+Type=simple
+User=thebigsun
+Group=thebigsun
+WorkingDirectory=/home/thebigsun/WaterEvents/backend
+# The SAME file the crawl workers read. Note this is NOT the path in the repo's worker@.service template
+# (/etc/waterevents.env) — the deployed units read /etc/waterevents/fleet.env, and that is where the three
+# *_REMOTE_URL vars live. Getting this wrong would start the worker with no DOCLING_REMOTE_URL, which fails SILENTLY:
+# the dispatch in tools/officeall/__init__.py simply keeps the local implementation and Docling runs on THIS box again.
+# {SYSTEMCTL CAT waterevents-worker@1 2026-08-04 — "EnvironmentFile=/etc/waterevents/fleet.env"}
+# [CONFIDENCE: CONFIRMED — read from the running unit, not the repo file].
+EnvironmentFile=/etc/waterevents/fleet.env
+
+# 0 = poll forever. Without this the loop exits after 6 empty rounds (60s) and Restart=always turns a normally-idle
+# service into a restart-every-minute loop that discards the warm QwenClient on each cycle.
+Environment=WATEREVENTS_MAX_IDLE_ROUNDS=0
+
+ExecStart=/home/thebigsun/venv/bin/python -m agent.media_agent.pipeline.worker
+Restart=always
+RestartSec=15
+
+# Memory ceiling, same shape and same reason as the crawl workers: the 2026-07-27 outage was a page-cache thrash
+# livelock on a swapless box where the OOM killer never fired. A cgroup limit converts that into "one worker dies and
+# restarts", which claim_events recovers from on its own via the lease-expiry clause.
+#
+# Sized the same as a crawl worker even though this one owns NO browser, because it holds FILES instead: fetch caps a
+# single download at 300 MB and the loop processes ENRICH_BATCH events concurrently, so the theoretical worst case is
+# far above this. That is deliberate — the ceiling is what forces a pathological batch to die and retry rather than
+# take the box down with it. {one choruscall mp3 = 91,723,583 bytes} {WATEREVENTS_ENRICH_BATCH default 16}
+# Once FETCH_REMOTE_URL is deployed the file bytes stop landing here at all and this can come down.
+MemoryHigh=2500M
+MemoryMax=3G
+KillMode=control-group
+TimeoutStopSec=30
+
+[Install]
+WantedBy=waterevents-fleet.target
