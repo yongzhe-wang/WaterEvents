@@ -244,10 +244,11 @@ def _split_blocks(text: str, n: int, overlap: int) -> list[str]:
 
 def _apply_contribution(contrib: dict, chart, page_url: str) -> None:
     """Apply ONE VLM contribution to the chart (confirm metadata, append basic_info, route inline transcript to the
-    transcript slot). Shared by the single-call and chunked paths so both fill the chart identically; chart's own
-    content-hash dedup absorbs overlap between chunks. Discovers nothing — the url set is event_agent's, fixed."""
+    transcript slot). Shared by the single-call and chunked paths so both fill the chart identically; the chunked
+    path's deliberate overlap is absorbed by Chart's SEAM trim (not by global content dedup, which was removed for
+    eating legitimate repeats). Discovers nothing — the url set is event_agent's, fixed."""
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
-    chart.append_basic_info(contrib.get("basic_info") or [])
+    chart.append_basic_info(contrib.get("basic_info") or [], source_url=page_url)
     chart.append_transcript(contrib.get("transcript_segments") or [], source_url=page_url)   # inline transcript → its slot
 
 
@@ -289,7 +290,7 @@ async def _route_html(url: str, page_text: str, img, det: dict, chart, client: Q
                                     user=prompts.build_user(fitted, url, chart_known(chart)),
                                     image_b64=img, guided_json=prompts.SCHEMA_ROUTE, max_tokens=ROUTE_MAX_TOKENS)
     if not contrib or contrib.get("_error"):                    # VLM hard-fail → body kept, urls fall back to the harvest
-        chart.append_basic_info(det["blocks"])
+        chart.append_basic_info(det["blocks"], source_url=url)
         chart.set_status(url, "done:route-vlm-fail")
         print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, only metadata/transcript lost", flush=True)
         return
@@ -297,7 +298,7 @@ async def _route_html(url: str, page_text: str, img, det: dict, chart, client: Q
     chart.append_transcript(contrib.get("transcript_segments") or [], source_url=url)   # transcript → its slot (needed for suppress)
     # STAGE 8: drop a det transcript-flagged block ONLY where the VLM actually routed it (no double-listing; uncovered stays body)
     body = suppress_transcript_blocks(det["blocks"], det["transcript_idx"], contrib.get("transcript_segments") or [])
-    chart.append_basic_info(body)                               # deterministic reading-order body (real urls, no Lnn to resolve)
+    chart.append_basic_info(body, source_url=url)               # deterministic reading-order body (real urls, no Lnn to resolve)
     chart.set_status(url, "done:route")
 
 

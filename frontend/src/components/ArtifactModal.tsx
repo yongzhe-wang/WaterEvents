@@ -14,29 +14,27 @@ import { useEffect, useState } from "react";
 // ── shape mirrors /api/artifact response (contract B) ──────────────────────────────────────
 // Each "rows" array element is typed per kind; we use a discriminated union on kind for safety.
 
-interface BlockRow {
-  ord: number;
-  block_type: string;
-  md: string | null;
-  caption: string | null;
-  // headers + rows are for TABLE blocks — present only when block_type === "table".
-  // Using unknown[] here keeps strict TS happy without pulling in a recursive type;
-  // we render them via JSON.stringify → then reparse for <table> rendering.
-  // {CONTRACT-B 2026-08-05 "headers: jsonb, rows: jsonb"} [CONFIDENCE: CONFIRMED 100%]
-  headers: string[] | null;
-  rows: unknown[][] | null;
-  source_url: string | null;
+// DocRow — ONE source url's (md, blocks) pair, as /api/artifact returns it for kind 'blocks' (html pages) and
+// kind 'files' (office documents). Both kinds are the same shape now; only the `kind` filter differs server-side.
+// {MIGRATION 20260805151246 "EVENT_DOCUMENTS — ONE ROW PER (EVENT, SOURCE URL), HOLDING A PAIR"}
+// [CONFIDENCE: CONFIRMED 100% — schema read back from psql after the migration applied.]
+interface DocBlock {
+  id: number;
+  type: string;                     // 'table' | 'figure'
+  headers?: string[];
+  rows?: unknown[][];
+  caption?: string;
+  alt?: string;
+  src?: string;
 }
-
-interface FileRow {
+interface DocRow {
   url: string;
-  kind: string;
-  markdown: string | null;
-  // tables is a JSON array of {headers, rows} — same structure as event_content_blocks.tables/rows.
-  // {SCHEMA 2026-08-05 "event_media_files.tables jsonb"} [CONFIDENCE: CONFIRMED 100% — psql \d]
-  tables: Array<{ headers: string[]; rows: unknown[][] }> | null;
+  kind: string;                     // 'html' | 'pdf' | 'pptx' | 'docx' | 'xlsx'
+  md: string;                       // prose, with [[TABLE:n]] / [[FIGURE:n]] markers where structures stood
+  blocks: DocBlock[] | null;        // what those markers point at, in the same order
   n_pages: number | null;
-  created_at: string;
+  n_chars: number;
+  n_blocks: number;
 }
 
 interface TranscriptRow {
@@ -74,8 +72,10 @@ interface BasicRow {
 
 // Discriminated union for the /api/artifact response body.
 type ArtifactPayload =
-  | { kind: "blocks";     event_id: string; n: number; rows: BlockRow[] }
-  | { kind: "files";      event_id: string; n: number; rows: FileRow[] }
+  // Both document kinds carry the SAME row shape now — the server filters on `kind`, it does not
+  // return a different structure. {ARTIFACT.JS "IF (KIND === \"BLOCKS\" || KIND === \"FILES\")"}
+  | { kind: "blocks";     event_id: string; n: number; rows: DocRow[] }
+  | { kind: "files";      event_id: string; n: number; rows: DocRow[] }
   | { kind: "transcript"; event_id: string; n: number; rows: TranscriptRow[] }
   | { kind: "audio";      event_id: string; n: number; rows: AudioRow[] }
   | { kind: "urls";       event_id: string; n: number; rows: UrlRow[] }
@@ -120,82 +120,94 @@ function DataTable({ headers, rows }: { headers: string[]; rows: unknown[][] }) 
 // BLOCKS: md text per block; TABLE blocks get a real <table> instead of raw JSON.
 // {CONTRACT-B 2026-08-05 "blocks/basic: md text, monospace; if headers/rows present render <table>"}
 // [CONFIDENCE: CONFIRMED 100%]
-function BlocksView({ rows }: { rows: BlockRow[] }) {
-  return (
-    <div>
-      {rows.map((b, i) => (
-        <div key={i} className="art-block">
-          {/* Block header: ordinal + type pill so the user knows what they're looking at */}
-          <div className="art-block-head">
-            <span className="art-ord">#{b.ord}</span>
-            <span className="chip">{b.block_type}</span>
-            {b.source_url && (
-              <a className="lt-link" href={b.source_url} target="_blank" rel="noreferrer"
-                 style={{ fontSize: 11, marginLeft: 6 }}>{b.source_url}</a>
-            )}
-          </div>
-          {/* TABLE block → real <table>; otherwise render md as monospace pre */}
-          {b.block_type === "table" && b.headers && b.rows ? (
-            <DataTable headers={b.headers} rows={b.rows as unknown[][]} />
-          ) : (
-            <pre className="src-pre">{b.md ?? b.caption ?? "—"}</pre>
-          )}
-          {/* Caption supplemental (non-table blocks may still have a caption alongside md) */}
-          {b.block_type !== "table" && b.caption && b.md && (
-            <div style={{ opacity: 0.6, fontSize: 11, marginTop: 4 }}>↳ {b.caption}</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+// DOCUMENT: one source url's pair, rendered as ONE continuous document — the md with every [[TABLE:n]] marker
+// swapped back for the real table from the blocks json.
+//
+// WHY interleave rather than showing md and json side by side: the pair is a storage decision, not a reading one.
+// Splitting prose from structure is what keeps the md chunkable and the tables exact; putting them back together is
+// what the reader wants. Storage and presentation get to disagree, and this is the seam where they do.
+// {USER 2026-08-05 "ONE MD + PLACEHODLER FOR GRAPHS AND TABELS USING JSON, SO ONE PAIR ... FOR ANY URL LEVEL"}
+// [CONFIDENCE: CONFIRMED 100% — direct user directive.]
+const PLACEHOLDER_RE = /^\s*\[\[(TABLE|FIGURE):(\d+)\]\]\s*$/;
 
-// FILES: per document, a header line "<kind> · <n_pages>p · <url>" then markdown; tables rendered.
-// {CONTRACT-B 2026-08-05 "files: header line '<kind> · <n_pages>p · <url>' then its markdown; tables as <table>s"}
-// [CONFIDENCE: CONFIRMED 100%]
-function FilesView({ rows }: { rows: FileRow[] }) {
+function DocumentView({ rows }: { rows: DocRow[] }) {
   return (
     <div>
-      {rows.map((f, i) => (
-        <div key={i} className="art-block">
-          <div className="art-block-head" style={{ marginBottom: 8 }}>
-            <span className="chip">{f.kind}</span>
-            {f.n_pages != null && <span style={{ opacity: 0.6, fontSize: 12 }}>{f.n_pages}p</span>}
-            {f.url && (
-              <a className="lt-link" href={f.url} target="_blank" rel="noreferrer"
-                 style={{ fontSize: 11 }}>{f.url}</a>
-            )}
-          </div>
-          {/* Markdown from Docling — the parsed text of the document.
-              WHY explicit null/empty check (not falsy guard): empty string is falsy in JS, so
-              `f.markdown && <pre>` silently renders nothing when Docling returned "" — a key debug
-              state (Docling extracted no text, e.g. scanned/image-only PDF) would be invisible.
-              {REVIEW-FINDING-7 2026-08-05 "empty string falsy → FilesView renders nothing with no explanation;
-               empty markdown on a parsed file IS the debug signal that Docling failed text extraction"}
-              [CONFIDENCE: CONFIRMED 100%] */}
-          {f.markdown != null && f.markdown !== ""
-            ? <pre className="src-pre">{f.markdown}</pre>
-            : <div className="artifacts-empty">No text extracted from this document.</div>
+      {rows.map((d, i) => {
+        const blocks = d.blocks || [];
+        // Split the md on placeholder lines, keeping the markers so each can be swapped for its structure.
+        const lines = (d.md || "").split("\n");
+        const parts: Array<{ kind: "text"; text: string } | { kind: "block"; b: DocBlock | null; marker: string }> = [];
+        let buf: string[] = [];
+        const flush = () => { if (buf.length) { parts.push({ kind: "text", text: buf.join("\n") }); buf = []; } };
+        for (const ln of lines) {
+          const m = PLACEHOLDER_RE.exec(ln);
+          if (m) {
+            flush();
+            const want = m[1].toLowerCase();
+            const id = parseInt(m[2], 10);
+            // Match on BOTH type and id — a document can hold [[TABLE:1]] and [[FIGURE:1]] at once, so id alone is
+            // ambiguous. A marker with no matching block renders as a visible break, never silently vanishes:
+            // a missing table the reader cannot see is indistinguishable from a document that never had one.
+            const b = blocks.find((x) => (x.type || "").toLowerCase() === want && x.id === id) || null;
+            parts.push({ kind: "block", b, marker: ln.trim() });
+          } else {
+            buf.push(ln);
           }
-          {/* Embedded tables extracted by Docling — rendered as real HTML tables */}
-          {f.tables && f.tables.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              {f.tables.map((t, ti) => (
-                <div key={ti} style={{ marginBottom: 12 }}>
-                  <div style={{ opacity: 0.5, fontSize: 11, marginBottom: 4 }}>Table {ti + 1}</div>
-                  <DataTable headers={t.headers} rows={t.rows} />
+        }
+        flush();
+        // A block that no marker referenced would otherwise be invisible — surface it rather than drop it.
+        const referenced = new Set(parts.filter((p) => p.kind === "block" && p.b).map((p) => `${(p as {b: DocBlock}).b.type}:${(p as {b: DocBlock}).b.id}`));
+        const orphans = blocks.filter((b) => !referenced.has(`${b.type}:${b.id}`));
+
+        return (
+          <div key={i} className="art-block">
+            <div className="art-block-head" style={{ marginBottom: 8 }}>
+              <span className="chip">{d.kind}</span>
+              {d.n_pages != null && <span style={{ opacity: 0.6, fontSize: 12 }}>{d.n_pages}p</span>}
+              <span style={{ opacity: 0.6, fontSize: 12 }}>
+                {(d.n_chars ?? 0).toLocaleString()} chars · {d.n_blocks ?? 0} structured
+              </span>
+              {d.url && (
+                <a className="lt-link" href={d.url} target="_blank" rel="noreferrer"
+                   style={{ fontSize: 11 }}>{d.url}</a>
+              )}
+            </div>
+            {/* Explicit empty check, not a falsy guard: an empty md is a real and important debug state (the
+                extractor read the source and got nothing) and must not render as a blank gap. */}
+            {!(d.md || "").trim() ? (
+              <div className="artifacts-empty">empty — the extractor produced no text for this source</div>
+            ) : parts.map((p, j) =>
+              p.kind === "text" ? (
+                <pre key={j} className="src-pre">{p.text}</pre>
+              ) : p.b && p.b.type === "table" ? (
+                <DataTable key={j} headers={p.b.headers || []} rows={(p.b.rows as unknown[][]) || []} />
+              ) : p.b ? (
+                <div key={j} className="art-block-head" style={{ opacity: 0.7, fontSize: 12 }}>
+                  🖼 {p.b.caption || p.b.alt || p.b.src || "figure"}
+                </div>
+              ) : (
+                <div key={j} style={{ color: "#f87171", fontSize: 12, padding: "4px 0" }}>
+                  {p.marker} — no matching block in the structured json
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      ))}
+            {orphans.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ color: "#f87171", fontSize: 12 }}>
+                  {orphans.length} structured block(s) with no placeholder in the md:
+                </div>
+                {orphans.map((b, j) => (
+                  <DataTable key={j} headers={b.headers || []} rows={(b.rows as unknown[][]) || []} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// TRANSCRIPT: "[mm:ss] Speaker: text" per segment; handles NULL start_s gracefully.
-// {CONTRACT-B 2026-08-05 "transcript: one line per segment '[mm:ss] <speaker>: <text>' (start_s may be NULL)"}
 // [CONFIDENCE: CONFIRMED 100%]
 function TranscriptView({ rows }: { rows: TranscriptRow[] }) {
   return (
@@ -336,8 +348,8 @@ export default function ArtifactModal({ eventId, kind, title, onClose }: Artifac
     }
     // Discriminated switch — TypeScript narrows d.rows type per branch.
     switch (d.kind) {
-      case "blocks":     return <BlocksView     rows={d.rows} />;
-      case "files":      return <FilesView      rows={d.rows} />;
+      case "blocks":     return <DocumentView   rows={d.rows} />;
+      case "files":      return <DocumentView   rows={d.rows} />;
       case "transcript": return <TranscriptView rows={d.rows} />;
       case "audio":      return <AudioView      rows={d.rows} />;
       case "urls":       return <UrlsView       rows={d.rows} />;

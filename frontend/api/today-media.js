@@ -174,8 +174,12 @@ export default async function handler(_req, res) {
       sbCount("events?select=id&status=eq.rendering"),          // claimed and being worked right now
       sbCount("events?select=id&status=eq.enriched"),
       sbCount("events?select=id&status=eq.failed"),
-      sbCount("event_content_blocks?select=id"),
-      sbCount("event_media_files?select=id"),
+      // Documents, split by source kind. "blocks" kept its name on the wire because the dashboard label is decided
+      // in the UI; what it counts is now html DOCUMENTS, not paragraph fragments.
+      // {MIGRATION 20260805151246 "EVENT_DOCUMENTS — ONE ROW PER (EVENT, SOURCE URL)"}
+      // [CONFIDENCE: CONFIRMED 100% — schema read back from psql after the migration applied.]
+      sbCount("event_documents?select=id&kind=eq.html"),
+      sbCount("event_documents?select=id&kind=neq.html"),
       sbCount("event_transcript_segments?select=id"),
       sbCount("event_audio?select=id"),
       // The url ledger tallied by outcome. This is the highest-signal number on the page: it is the ONLY place a
@@ -188,7 +192,7 @@ export default async function handler(_req, res) {
       sbCount("event_media_urls?select=id&status=eq.failed"),
       sbCount("event_media_urls?select=id&status=eq.skipped"),
       sbCount(`events?select=id&enriched_at=gte.${hourAgo}`),   // throughput, measured on the WRITE timestamp
-      sbCount(`event_content_blocks?select=id&created_at=gte.${hourAgo}`),
+      sbCount(`event_documents?select=id&created_at=gte.${hourAgo}`),
       mediaResources(),
       // The RUNS themselves — what the user opens to inspect. Ordered by enriched_at desc so the newest completed run
       // is first. basic_info is deliberately NOT selected: it is the heaviest column and the row only needs to say

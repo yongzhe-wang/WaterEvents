@@ -134,27 +134,29 @@ async def process_event(pool, client: QwenClient, ev) -> None:
                 chart.set_status(u, f"failed:{type(e).__name__}")   # work; record it loudly and keep going
                 print(f"[enrich] ⚠️ event {eid} url {u[:60]} raised {type(e).__name__}: {str(e)[:80]}", flush=True)
 
-        n_blocks = len(chart.basic_info)
+        # ONE (md, blocks) pair per source url — html pages and office documents in one list, no branch on origin.
+        docs = chart.build_documents()
+        n_docs = len(docs)
+        n_chars = sum(d.get("n_chars", 0) for d in docs)       # total prose extracted, the honest "did we get content"
         n_segs = len(chart.transcript_segments)
-        n_files = sum(len(v) for v in chart.files.values())
         n_audio = len(chart.audio)
         # NOTHING-USABLE is a FAILURE, not an empty success. An event whose every url failed/skipped has no archive to
         # show; marking it 'enriched' would make a dead event indistinguishable from a genuinely content-free one.
-        if not (n_blocks or n_segs or n_files or n_audio):
+        if not (n_docs or n_segs or n_audio):
             statuses = {u: s.get("status", "") for s in chart.urls.values() for u in [s.get("url", "")]}
             print(f"[enrich] ⛔ event {eid} NOTHING-USABLE from {len(media)} urls — {statuses} — fail", flush=True)
             await db.fail_event(pool, eid, tok, "nothing_usable")
             return
 
-        # persist into the NORMALIZED media schema — all FIVE tables now (content blocks / transcript segments /
-        # media files / audio / url ledger), fenced + transactional. The ledger carries each url's REAL outcome.
+        # persist into the NORMALIZED media schema — FOUR tables (documents / transcript segments / audio / url
+        # ledger), fenced + transactional. The ledger carries each url's REAL outcome.
         ok = await db_media.mark_enriched_media(
-            pool, eid, tok, chart.basic_info, chart.transcript_segments,
+            pool, eid, tok, docs, chart.transcript_segments,
             [s["url"] for s in chart.urls.values()], source_url=detail or "",
-            files=chart.files, audio=chart.audio,
+            audio=chart.audio,
             url_status={s["url"]: s.get("status", "") for s in chart.urls.values()})
         print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} ← {len(media)} urls → "
-              f"{n_blocks} blocks, {n_segs} segments, {n_files} files, {n_audio} audio", flush=True)
+              f"{n_docs} docs ({n_chars:,} chars), {n_segs} segments, {n_audio} audio", flush=True)
     except Exception as e:                               # noqa: BLE001 — one event's crash must NOT sink the whole batch
         print(f"[enrich] ⛔ event {eid} UNEXPECTED {type(e).__name__}: {e} — fail (batch continues)", flush=True)
         try:

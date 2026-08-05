@@ -12,7 +12,11 @@ import { sb } from "../lib/_db.js";
 //  we validate earlier to avoid handing any parsed response to unvalidated input].
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// ROW_CAP: maximum rows returned per modal fetch. WHY 500: the largest table (event_content_blocks)
+// ROW_CAP: maximum rows returned per modal fetch. WHY it is far less pressing than it was: event_documents holds
+// ONE row per source url, and an event has a handful of urls — where the old event_content_blocks held one row per
+// paragraph and a single event reached 15,923 of them {psql 2026-08-05 "MD | 15786 | 47"}. The cap stays as a backstop
+// against a pathological event, not as a routine limit.
+// (historical note: the largest table was event_content_blocks)
 // has 23 121 total rows but is filtered by event_id — a single event with >500 blocks would be
 // pathological. The cap prevents a single event from stalling the modal with a huge payload while
 // still covering every realistic case. {SCHEMA ground-truth in task spec: event_content_blocks 23121 rows}.
@@ -39,28 +43,24 @@ export default async function handler(req, res) {
   try {
     let rows;
 
-    if (kind === "blocks") {
-      // event_content_blocks — select all displayable columns EXCEPT content_hash (internal dedup
-      // field, not useful in the UI). Order by ord so blocks appear in reading order.
-      // md can be large per block but is the PRIMARY display content for the modal — we must include it.
-      // Cap at ROW_CAP to protect against pathological events.
-      // {SCHEMA: event_content_blocks(id,event_id,ord,block_type,md,caption,headers,rows,content_hash,source_url,created_at)}
-      // [CONFIDENCE: CONFIRMED — schema from psql ground-truth in task spec].
+    if (kind === "blocks" || kind === "files") {
+      // BOTH kinds now come from event_documents — the table that replaced the per-block rows and the per-file rows
+      // with ONE (md, blocks) pair per source url. 'blocks' means the html pages, 'files' the office documents; that
+      // is the only difference, and it is a filter on `kind`, not a different table.
+      // {MIGRATION 20260805151246 "EVENT_DOCUMENTS — ONE ROW PER (EVENT, SOURCE URL), HOLDING A PAIR: THE PROSE AS
+      //  MARKDOWN, AND THE STRUCTURES THE MARKDOWN'S PLACEHOLDERS POINT AT"}
+      // [CONFIDENCE: CONFIRMED 100% — schema read back from psql after the migration applied.]
+      //
+      // The kind NAMES are kept as-is on the wire even though "blocks" no longer means a content block. Renaming them
+      // would break the buttons the dashboard already renders for no gain — the label the user sees is decided in the
+      // UI, not here.
+      const filter = kind === "blocks" ? "kind=eq.html" : "kind=neq.html";
+      // md and blocks are BOTH selected: they are a pair and the modal renders them interleaved, replacing each
+      // [[TABLE:n]] placeholder with the matching structured table. Fetching one without the other would render a
+      // document full of visible markers.
       rows = await sb(
-        `event_content_blocks?select=ord,block_type,md,caption,headers,rows,source_url` +
-        `&event_id=eq.${encodeURIComponent(id)}&order=ord.asc&limit=${ROW_CAP}`
-      );
-
-    } else if (kind === "files") {
-      // event_media_files — include markdown (the Docling output) and tables (parsed table JSON).
-      // markdown is the heaviest column but is the reason this endpoint exists — the modal shows
-      // the full Docling-extracted text so the user can verify what stage-2 actually produced.
-      // {SCHEMA: event_media_files(id,event_id,url,kind,markdown,tables,n_pages,content_hash,created_at)}
-      // [CONFIDENCE: CONFIRMED — schema from psql ground-truth in task spec].
-      rows = await sb(
-        `event_media_files?select=url,kind,markdown,tables,n_pages,created_at` +
-        `&event_id=eq.${encodeURIComponent(id)}&limit=${ROW_CAP}`
-      );
+        `event_documents?select=url,kind,md,blocks,n_pages,n_chars,n_blocks&${filter}` +
+        `&event_id=eq.${encodeURIComponent(id)}&order=created_at.asc&limit=${ROW_CAP}`);
 
     } else if (kind === "transcript") {
       // event_transcript_segments — whisper output, ordered by ord (reading / time order).
