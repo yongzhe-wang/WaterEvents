@@ -33,6 +33,19 @@ TOTAL = int(os.environ.get("FAIR_TOTAL_SLOTS", "48"))            # total WEIGHTE
 VISION_W = int(os.environ.get("FAIR_VISION_WEIGHT", "4"))        # a vision request costs this many slots (activation-heavy)
 TEXT_W = int(os.environ.get("FAIR_TEXT_WEIGHT", "1"))            # a text request costs this many slots
 
+# The credential the gateway presents UPSTREAM, which is NOT the key a client presents to the gateway.
+#
+# WHY they have to be different: the incoming Authorization is the TENANT IDENTITY — it is what the fair share is
+# accounted against, so event_agent and media_agent must send different ones. vLLM, meanwhile, is started with a
+# single --api-key and rejects anything else {POD 2026-08-05 — vLLM cmdline carries "--api-key sk-waterevents-…",
+# and a request bearing "event_agent" came back {"error":"Unauthorized"}}. Forwarding the client's header verbatim
+# therefore cannot work: either every tenant sends the same string and the share collapses to one bucket, or they
+# send different strings and vLLM refuses them all.
+# The gateway is the trust boundary, so it translates: account against what the client presented, forward what the
+# upstream requires. Clients never hold the real key, which is a small bonus — one place to rotate it.
+# [CONFIDENCE: CONFIRMED — both halves observed: vLLM's own cmdline, and the 401 through the gateway].
+UPSTREAM_KEY = os.environ.get("VLLM_API_KEY", "").strip()
+
 # PER-KEY SHARE WEIGHTS — "event_agent:3,media_agent:7". Absent keys weigh 1.
 #
 # WHY this replaces the equal split: the two agents are not interchangeable tenants, they are two stages of ONE
@@ -123,6 +136,11 @@ def _weight(body: dict) -> float:
 async def _forward(req: web.Request, body_bytes: bytes) -> web.StreamResponse:
     """Stream the request to the upstream vLLM and stream its response straight back (works for stream=True SSE too)."""
     fwd_headers = {k: v for k, v in req.headers.items() if k.lower() not in ("host", "content-length")}
+    # Swap the tenant identity for the upstream credential. Done HERE, at the last moment before the wire, so every
+    # path (GET passthrough included) gets it and no caller can forget. When VLLM_API_KEY is unset the header is
+    # passed through untouched — an unauthenticated upstream keeps working exactly as before.
+    if UPSTREAM_KEY:
+        fwd_headers["Authorization"] = f"Bearer {UPSTREAM_KEY}"
     async with aiohttp.ClientSession() as sess:
         async with sess.request(req.method, UPSTREAM + req.rel_url.path_qs, data=body_bytes,
                                 headers=fwd_headers) as up:
