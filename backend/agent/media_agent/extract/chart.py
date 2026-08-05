@@ -48,6 +48,48 @@ def _hash(obj) -> str:
     return hashlib.md5(blob.encode("utf-8")).hexdigest()          # noqa: S324 — non-security dedup key
 
 
+
+# ── BINARY GUARD ───────────────────────────────────────────────────────────────────────────────────────────────────
+# File magic that must never reach a content block. Routing decides which PARSER to use and it will sometimes guess
+# wrong — an extension-less IR url that HEAD reports as text/html and then serves a pdf is a real case, observed on
+# http://www.largan.com.tw/en/investor/finance, whose blocks landed in the DB as:
+#   "%PDF-1.7 4 0 obj (Identity) endobj 5 0 obj << /Filter /FlateDecode …"
+# followed by pages of decoded FlateDecode bytes.
+# {DB 2026-08-05 event_content_blocks — 85 blocks of raw pdf on one event, block_type='md'}
+# [CONFIDENCE: CONFIRMED — read out of the table].
+#
+# WHY the guard belongs HERE and not in the router: a routing heuristic can always be wrong about the next url, and
+# every wrong guess would need its own fix. "This text begins with %PDF-" is not a guess — it is unambiguous, it is
+# checkable at the last moment before persistence, and one check covers every path that can ever append a block.
+_BINARY_MAGIC = (
+    b"%PDF-",           # pdf
+    b"PK\x03\x04",      # zip container: docx / xlsx / pptx
+    b"\xd0\xcf\x11\xe0",# OLE2: legacy doc / xls / ppt
+    b"\x89PNG", b"GIF8", b"\xff\xd8\xff",   # png / gif / jpeg
+    b"ID3", b"OggS", b"fLaC", b"\x1aE\xdf\xa3",  # mp3 / ogg / flac / matroska
+)
+
+
+def _looks_binary(text: str) -> str:
+    """'' when the text is real prose, else a short reason. Two independent tells, because they catch different
+    failure shapes: a magic prefix catches a whole file decoded as text, while a high ratio of replacement/control
+    characters catches a partially-decoded or wrongly-decoded body that has no recognisable header."""
+    if not text:
+        return ""
+    head = text[:16].encode("utf-8", "surrogateescape")[:8]
+    for magic in _BINARY_MAGIC:
+        if head.startswith(magic):
+            return f"file-magic:{magic[:4]!r}"
+    sample = text[:2000]
+    if not sample:
+        return ""
+    # U+FFFD is what a mis-decoded byte becomes; C0 controls other than tab/newline do not occur in extracted prose.
+    bad = sum(1 for c in sample if c == "\ufffd" or (ord(c) < 32 and c not in "\t\n\r"))
+    if bad / len(sample) > 0.05:
+        return f"undecodable:{100*bad//len(sample)}%"
+    return ""
+
+
 class Chart:
     """One event's growing archive. Seeded from the event_agent event (title/date/type/urls), then FILLED by
     Contributions as the close-loop visits each url. Call to_dict() at the end for the final chart JSON."""
@@ -109,6 +151,13 @@ class Chart:
         added = 0
         for b in blocks or []:
             if not isinstance(b, dict) or not b.get("type"):   # ignore malformed blocks defensively
+                continue
+            # Reject binary before it is hashed or stored. Dropped LOUDLY, not silently: a page that turns out to be
+            # a mis-routed file is a routing signal worth seeing, and a silent drop looks identical to a page that
+            # genuinely had nothing on it.
+            why = _looks_binary(str(b.get("md") or b.get("text") or ""))
+            if why:
+                print(f"[chart] ⛔ dropped {b.get('type')} block — {why} (mis-routed binary, not prose)", flush=True)
                 continue
             h = _hash(b)                                       # content hash → cross-source table/paragraph dedup
             if h in self._block_hashes:
