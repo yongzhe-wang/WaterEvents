@@ -178,46 +178,45 @@ async def process_event(pool, client: QwenClient, ev) -> None:
 _HEARTBEAT_S = float(os.environ.get("WATEREVENTS_HEARTBEAT_S", "300"))
 
 
-async def _lease_heartbeat(pool, eid, tok, work: asyncio.Task) -> None:
-    """Hold the claim open while `work` runs, and cancel `work` the moment the claim is provably gone.
+async def _batch_heartbeat(pool, pairs: list[tuple], tasks: dict) -> None:
+    """ONE heartbeat for the whole claimed batch: renew every live claim in a single statement, and cancel exactly
+    those events whose claim the database says is gone.
 
-    WHY it cancels rather than just logging: once the token is lost, every remaining second is spent producing output
-    that the fenced write will refuse. The reaper has ALREADY handed this event to another worker, so continuing means
-    two workers rendering the same pages and calling the same VLM — the exact duplicate work visible in
-    {DOCLING.LOG 2026-08-05 "3470473B → 11079 CHARS, 5 TABLES IN 1476.5S" AND "3470473B → 11079 CHARS, 5 TABLES IN 1205.5S"}
-    (one document, two full extractions). Cancelling returns the slot to the pool immediately.
-    [CONFIDENCE: CONFIRMED — the duplicate pair is the same byte count and the same table count in the same log.]
+    WHY one task for the batch instead of one per event: the per-event shape cost one pooled connection per concurrent
+    event, and a worker runs ENRICH_BATCH=16 of them against a pool of 4. Twelve of every sixteen renewals timed out —
+    {MEDIA@2 2026-08-05 "08:44:58 ⚠️ EVENT 5E2ECCC0 LEASE RENEWAL ERRORED (TIMEOUTERROR: )" — EXACTLY FOUR SUCH LINES
+     PER TICK, THE POOL SIZE PRINTED THROUGH AS THE GROUP SIZE} — so the leases lapsed anyway and the reaper took the
+    rows back mid-flight. media@2/@3/@5 sat in that state for 40 minutes and committed nothing while media@1/@4/@6,
+    which happened to win the connection race, committed 13/14/11 events.
+    [CONFIDENCE: CONFIRMED — grouping of four per tick matches MAX_SIZE=4; the split in committed counts across the six
+     workers is in the same journal window.]
+
+    Cancelling a genuinely-lost event is deliberate: the reaper has already reissued it to another worker, so finishing
+    would produce output the fenced write must refuse AND duplicate a document another worker is already extracting —
+    {DOCLING.LOG 2026-08-05 "3470473B → 11079 CHARS, 5 TABLES IN 1476.5S" AND "... IN 1205.5S"} is one document
+    extracted twice concurrently, which is exactly that waste.
     """
     while True:
         await asyncio.sleep(_HEARTBEAT_S)
+        # Only renew what is still running — a finished event has already written (or failed) under its own token, and
+        # renewing its lease would hold a row nobody is working on.
+        live = [(eid, tok) for eid, tok in pairs if not tasks[eid].done()]
+        if not live:
+            return                                       # whole batch finished; nothing left to hold open
         try:
-            alive = await db.renew_lease(pool, eid, tok)
-        except Exception as e:                           # noqa: BLE001 — a DB blip is NOT proof the lease is gone;
-            print(f"[enrich] ⚠️ event {eid} lease renewal errored ({type(e).__name__}: {e}) — "  # keep working and
-                  f"keeping the work alive, next attempt in {_HEARTBEAT_S:.0f}s", flush=True)     # retry next tick
+            still_ours = await db.renew_leases(pool, live)
+        except Exception as e:                           # noqa: BLE001 — a DB blip is NOT proof the leases are gone.
+            # This branch is why the batch form matters: the per-event version took this path 12 times per tick under
+            # pool exhaustion, which LOOKS like resilience while the leases quietly expire underneath it.
+            print(f"[enrich] ⚠️ batch lease renewal errored ({type(e).__name__}: {e}) for {len(live)} events — "
+                  f"keeping the work alive, next attempt in {_HEARTBEAT_S:.0f}s", flush=True)
             continue
-        if not alive:
-            _STATS["lease_lost"] += 1
-            print(f"[enrich] ⛔ event {eid} lease LOST mid-flight — abandoning now instead of finishing work that "
-                  f"the fenced write would reject", flush=True)
-            work.cancel()
-            return
-
-
-async def _enrich_with_lease(pool, client, ev) -> None:
-    """Run one event's enrichment with its lease held open underneath it. Wraps process_event without touching it, so
-    the enrichment logic stays unaware of leasing."""
-    eid, tok = ev["id"], ev["claim_token"]
-    work = asyncio.create_task(process_event(pool, client, ev))
-    beat = asyncio.create_task(_lease_heartbeat(pool, eid, tok, work))
-    try:
-        await work
-    except asyncio.CancelledError:
-        # Cancelled BY the heartbeat (lease genuinely lost). The event is already back in another worker's hands, so
-        # there is nothing to fail_event here — writing a failure would clobber the new owner's claim.
-        pass
-    finally:
-        beat.cancel()                                    # normal completion — stop the heartbeat before returning
+        for eid, _tok in live:
+            if eid not in still_ours and not tasks[eid].done():
+                _STATS["lease_lost"] += 1
+                print(f"[enrich] ⛔ event {eid} lease LOST mid-flight — abandoning now instead of finishing work "
+                      f"the fenced write would reject", flush=True)
+                tasks[eid].cancel()
 
 
 async def worker_loop(pool) -> None:
@@ -239,7 +238,15 @@ async def worker_loop(pool) -> None:
         print(f"[enrich] claimed {len(events)} events", flush=True)
         # process_event already self-contains failures (try/except → fail_event); return_exceptions=True is the belt so
         # even an escaped error can't sink the loop + strand the whole batch's claimed rows. {AUDIT 2026-07-23 HIGH}.
-        results = await asyncio.gather(*(_enrich_with_lease(pool, client, ev) for ev in events), return_exceptions=True)
+        # Tasks keyed by event id so the batch heartbeat can cancel ONE event without touching its siblings, and so
+        # it can skip renewing events that have already finished.
+        tasks = {ev["id"]: asyncio.create_task(process_event(pool, client, ev)) for ev in events}
+        pairs = [(ev["id"], ev["claim_token"]) for ev in events]
+        beat = asyncio.create_task(_batch_heartbeat(pool, pairs, tasks))
+        try:
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        finally:
+            beat.cancel()                                # the batch is settled — stop holding its leases open
         # INSPECT the results instead of discarding them. `return_exceptions=True` was already correct, but throwing the
         # list away meant an exception that escaped process_event's own handler was swallowed twice over: the event stays
         # 'rendering' until its lease lapses, and NOTHING said so. That is indistinguishable from healthy-but-slow, which

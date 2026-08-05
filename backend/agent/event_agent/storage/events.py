@@ -202,31 +202,42 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
         )
 
 
-async def renew_lease(pool: asyncpg.Pool, event_id, claim_token) -> bool:
-    """Push a LIVE claim's lease forward. Returns False ONLY when the claim is provably gone (row no longer matches this
-    token), so the caller can stop work it can no longer commit.
+async def renew_leases(pool: asyncpg.Pool, pairs: list[tuple]) -> set:
+    """Renew a WHOLE BATCH of claims in ONE statement on ONE connection. Returns the set of event_ids still owned;
+    anything the caller passed in that is missing from the result has provably lost its claim.
 
-    WHY this exists: the lease is a CRASH detector, but without renewal it silently doubles as a work DEADLINE, and any
-    job slower than the lease has its finished output thrown away. That is what happened in production:
-    {DOCLING.LOG 2026-08-05 "1970177B → 10377 CHARS, 19 TABLES IN 2822.7S"} — a 47-minute document under a 30-minute
-    lease. The worker finished, the fencing UPDATE matched nothing, and the log said
-    {MEDIA@1 2026-08-05 "[ENRICH] ⚠️ LOST-LEASE EVENT AA3CD908-A4A4-47D7-B18B-3C3CDF305FFC ← 5 URLS → 60 BLOCKS, 0 SEGMENTS, 1 FILES"}
-    — 60 extracted blocks discarded. The reaper then re-queued the event, the next worker redid the identical work, and
-    it lapsed again: a LIVELOCK that burns compute at full rate and commits nothing. Enriched count sat at 0 for 30
-    straight minutes while every liveness signal — six active workers, four services at 200 — stayed green.
-    [CONFIDENCE: CONFIRMED — lease TTL, document time and the discard log line were all read off the live system;
-     fencing itself is CORRECT and stays, this only stops the clock from expiring under work that is still running.]
+    WHY batched instead of one call per event: the per-event version of this deadlocked itself against the connection
+    pool. A worker claims ENRICH_BATCH=16 events and runs them concurrently, so 16 heartbeats woke together and each
+    asked for its own connection out of a pool built as {EVENTS.PY:65 "ASYNC DEF CONNECT_POOL(MIN_SIZE: INT = 1, MAX_SIZE: INT = 4)"}.
+    Four succeeded, twelve timed out, and the log shows it with the pool size printed straight through as the group size:
+    {MEDIA@2 2026-08-05 "08:42:58 ⚠️ EVENT 27EEDDDD LEASE RENEWAL ERRORED (TIMEOUTERROR: )" — FOUR SUCH LINES PER TICK,
+     AT 08:39:58 / 08:42:58 / 08:43:58 / 08:44:58, MATCHING MAX_SIZE=4 EXACTLY}
+    The renewals that timed out never reached the database, the leases lapsed, and the reaper reclaimed the rows out
+    from under workers that were still processing them — the same discard this heartbeat exists to prevent, reintroduced
+    by the heartbeat's own connection appetite. Four of six workers spent 40 minutes in that state and committed nothing.
+    [CONFIDENCE: CONFIRMED — the four-per-tick grouping IS the pool size; media@2/@3/@5 logged 104-108 lines and zero ✅
+     over the window while media@1/@4/@6 committed 13/14/11.]
 
-    WHY a DB error is not treated as lease-loss: a transient pool/connection blip would otherwise cancel healthy work.
-    Only a matched-zero-rows UPDATE — the database positively stating the token no longer owns the row — returns False.
+    One query for the batch means one connection per WORKER rather than one per EVENT, so the cost no longer scales
+    with ENRICH_BATCH and cannot exhaust the pool no matter how large a batch grows.
     """
+    if not pairs:
+        return set()
+    ids = [p[0] for p in pairs]
+    toks = [p[1] for p in pairs]
     async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "UPDATE events SET lease_until = now() + ($1 || ' minutes')::interval "
-            "WHERE id=$2 AND claim_token=$3 AND status='rendering' RETURNING id;",
-            str(ENRICH_LEASE_MIN), event_id, claim_token,
+        rows = await conn.fetch(
+            # Match on the (id, claim_token) PAIR, not on id alone — an event reclaimed by the reaper carries a new
+            # token, so pairing is what keeps a stale worker from renewing a lease it no longer owns.
+            """
+            UPDATE events SET lease_until = now() + ($1 || ' minutes')::interval
+            WHERE (id, claim_token) IN (SELECT * FROM unnest($2::uuid[], $3::uuid[]))
+              AND status='rendering'
+            RETURNING id;
+            """,
+            str(ENRICH_LEASE_MIN), ids, toks,
         )
-        return row is not None
+        return {r["id"] for r in rows}
 
 
 async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: str, urls: list[str]) -> bool:
