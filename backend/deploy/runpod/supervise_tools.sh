@@ -59,6 +59,25 @@ export CUDA_VISIBLE_DEVICES="$CUDA"
 # at all. Turning it off here would trade a rare slow document for a permanently unreadable one.
 export OFFICE_OCR_FALLBACK=1
 
+# ── THREAD BUDGET ─────────────────────────────────────────────────────────────────────────────────────────────────
+# threads-per-job × concurrency must land near the core count. extract.py now passes AcceleratorOptions(num_threads),
+# but that only reaches docling's own torch models — RapidOCR runs through onnxruntime, which reads OMP_NUM_THREADS and
+# nothing docling sets. So the cap is applied in BOTH places or the OCR path silently keeps its 48 threads.
+# {POD 2026-08-04 — torch.get_num_threads()=48, nproc=96, docling concurrency=24 → 1,152 threads on 96 cores}
+# [CONFIDENCE: CONFIRMED — read from the pod's own python inside the service venv].
+#
+# Applied ONLY to the CPU process. The whisper process runs on the GPU through CTranslate2, so capping its OMP threads
+# would throttle its host-side work for no benefit — and with its concurrency of 1 the formula would hand it all 96.
+# CONC is the caller's argument, so the product is derived rather than two constants silently drifting apart.
+if [ -z "$CUDA" ]; then
+  CORES=$(nproc 2>/dev/null || echo 96)
+  export OFFICE_NUM_THREADS=${OFFICE_NUM_THREADS:-$(( CORES / CONC > 0 ? CORES / CONC : 1 ))}
+  export OMP_NUM_THREADS=$OFFICE_NUM_THREADS
+  export MKL_NUM_THREADS=$OFFICE_NUM_THREADS
+  export OPENBLAS_NUM_THREADS=$OFFICE_NUM_THREADS
+  export NUMEXPR_NUM_THREADS=$OFFICE_NUM_THREADS
+fi
+
 # On the GPU process, say the device out loud rather than letting transcribe.py infer it. Inference reads
 # torch.cuda.is_available(), which is exactly what CUDA_VISIBLE_DEVICES manipulates — correct, but it means a typo in
 # the unit args would silently produce a CPU whisper that still answers 200 while running ~100x too slow.
@@ -78,10 +97,33 @@ if [ -n "$CUDA" ]; then
   # [CONFIDENCE: CONFIRMED — the OOM and the 9 MiB free reading are both from the live pod].
   export WHISPER_COMPUTE=${WHISPER_COMPUTE:-int8_float16}
 
+  # beam_size 1, not faster-whisper's default 5. Beam search runs the decoder once per beam, so 5 beams is ~5x the
+  # decode compute for a transcript whose downstream consumer is an LLM extracting dates and titles — not a use that
+  # rewards the last fraction of word-error-rate. This is the ONLY audio lever with no quality risk on non-English
+  # content, which matters because 48% of the dataset is non-US markets; switching to distil-large-v3 would be faster
+  # still but that model is English-only, so it would silently degrade half the corpus.
+  # {DATASET tests/datasets/media_100 — 52 US / 48 non-US by construction}
+  # [CONFIDENCE: CONFIRMED on the market split; INFERRED on the speedup magnitude — beam count scales decoder passes,
+  #  but the measured factor for THIS model on THIS card is pending the matched A/B].
+  export WHISPER_BEAM_SIZE=${WHISPER_BEAM_SIZE:-1}
+
   # And only ONE decode at a time on a card we do not own. Two concurrent decodes double the activation footprint
   # against a 3.5 GB ceiling that is already shared with a 100%-utilized vLLM.
   export TOOLS_SERVICE_CONCURRENCY=1
 fi
+
+
+# torch.compile is a net LOSS for docling here. The layout model (RT-DETR v2) takes pixel_values whose first
+# dimension is the page batch, so every distinct page count triggers a fresh compile, and dynamo's cache tops out
+# at 8 — the log shows it hitting exactly that:
+#   "torch._dynamo hit config.cache_size_limit (8) ... function: 'forward'
+#    (transformers/models/rt_detr_v2/modeling_rt_detr_v2.py:1841)
+#    last reason: tensor 'L['pixel_values']' size mismatch at index 0. expected 1, actual 3"
+# The cost is measured, not theoretical: a 55 KB pdf took 4.3s and a 107 KB one took 228.3s in the same run. Twice
+# the bytes, 53x the time — that gap is recompilation, not document difficulty.
+# Eager layout inference is plenty on 96 cores; compilation cannot pay for itself when the shape keeps changing.
+export TORCHDYNAMO_DISABLE=1
+export TORCH_COMPILE_DISABLE=1
 
 fails=0                                        # consecutive FAST (<30s) exits = crash-loop signal, not a transient
 while true; do
