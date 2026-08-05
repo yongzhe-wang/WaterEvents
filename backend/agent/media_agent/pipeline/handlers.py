@@ -83,17 +83,66 @@ async def handle_audio(url: str, chart, proxy: str | None = None) -> None:
 
 
 # ── VIDEO (youtube / webcast / .mp4) → three tiers, each measured ─────────────────────────────────────────────
-def _pick_stream(media: list[str]) -> str:
-    """Best downloadable stream out of what the browser requested. Audio-only beats a manifest beats a video file:
-    an .mp3/.m4a is the cheapest thing whisper can decode, an .m3u8/.mpd is what a live player actually uses, and a
-    progressive .mp4 is the fallback. Segment urls (.ts/.m4s) are SKIPPED — they are pieces, not a playable stream."""
+# A real earnings call is megabytes; a player's UI chrome is kilobytes. This threshold is the whole discriminator,
+# and it is deliberately a SIZE check rather than a url blocklist: the first version of _pick_stream preferred any
+# .mp3 and duly picked YouTube's own "search failed" beep —
+# {LOG 2026-08-05 "🎯 captured 4 media urls on youtube.com/watch?v=jAkSyqggEUY →
+#  https://www.youtube.com/s/search/audio/failure.mp3"} — and a blocklist would then have needed an entry for the
+# next platform's differently-named beep, forever. 200 KB is ~12 seconds of speech at a low bitrate: below any real
+# call, above every ui asset.
+# [CONFIDENCE: CONFIRMED — the url and its selection are both in the live log].
+_MIN_STREAM_BYTES = int(os.environ.get("MEDIA_MIN_STREAM_BYTES", "200000"))
+
+
+def _rank_streams(media: list[str]) -> list[str]:
+    """Every candidate the browser requested, best first — audio-only, then manifest, then progressive video.
+
+    A LIST, not one pick: the best-looking url can turn out to be junk, and the caller needs somewhere to go next.
+    Segment urls (.ts/.m4s) are dropped outright — they are pieces of a stream, not a stream."""
+    out: list[str] = []
     for pat in (r'\.(mp3|m4a|wav|aac)(\?|#|$)', r'\.(m3u8|mpd)(\?|#|$)', r'\.(mp4|webm|mov)(\?|#|$)'):
         for u in media:
-            if re.search(r'\.(ts|m4s)(\?|#|$)', u, re.I):
+            if u in out or re.search(r'\.(ts|m4s)(\?|#|$)', u, re.I):
                 continue
             if re.search(pat, u, re.I):
-                return u
-    return media[0] if media else ""
+                out.append(u)
+    # Anything unmatched still beats giving up — EXCEPT segments, which stay excluded here too. They were skipped by
+    # the pattern loop above and a catch-all that added them back would undo that: a .ts is one slice of a stream, so
+    # handing it to yt-dlp yields a few seconds of audio that looks like a successful transcription.
+    for u in media:
+        if u not in out and not re.search(r'\.(ts|m4s)(\?|#|$)', u, re.I):
+            out.append(u)
+    return out
+
+
+def _stream_too_small(url: str) -> int:
+    """Content-Length in bytes when the server gives one and it is BELOW the floor, else 0 (meaning: proceed).
+
+    A manifest is exempt — an .m3u8 is a few hundred bytes of text that points at hours of audio, so size says
+    nothing about it. Unknown length also proceeds: refusing what we cannot measure would drop every chunked
+    response, which is most real streams."""
+    if re.search(r'\.(m3u8|mpd)(\?|#|$)', url, re.I):
+        return 0
+    try:
+        from curl_cffi import requests as creq
+        r = creq.head(url, impersonate="chrome", timeout=_HEAD_TIMEOUT_S, allow_redirects=True)
+        n = int(r.headers.get("content-length") or 0)
+    except Exception:                                          # noqa: BLE001 — HEAD refused / no curl_cffi → proceed
+        return 0
+    return n if 0 < n < _MIN_STREAM_BYTES else 0
+
+
+def _pick_stream(media: list[str]) -> str:
+    """The best candidate that is actually plausible as a recording. Kept as a single-value entry point so existing
+    callers are unchanged; the size check is what makes it more than a pattern match."""
+    for u in _rank_streams(media):
+        small = _stream_too_small(u)
+        if small:
+            print(f"[media] ⏭ skipping {u[:70]} — {small}B, below {_MIN_STREAM_BYTES}B (ui asset, not a recording)",
+                  flush=True)
+            continue
+        return u
+    return ""
 
 
 async def _transcribe_bytes(url: str, data: bytes, chart, duration: float = 0.0) -> bool:
