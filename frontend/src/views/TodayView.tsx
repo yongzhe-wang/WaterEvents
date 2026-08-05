@@ -12,9 +12,19 @@ interface Sched {
   c_r: number | null; c_v: number | null; hit_rate: number | null;
   inc_hubs: number | null; note: string | null; updated_at: string | null;
 }
+// ResourceRow shape mirrors liveResources() in frontend/api/today.js (contract C).
+// Each key is null when the backing service is down — cards must render "—" without crashing.
+// WHY separate keys rather than a flat object: each service lives on a different host/port, fails
+// independently, and carries different metric axes (CPU load vs GPU mem vs concurrency slots).
+// Flattening them would make null-checks fan out across every metric reference.
+// {CONTRACT-C 2026-08-05 "control/render/docling/whisper/vlm — each key null when service is down"}
+// [CONFIDENCE: CONFIRMED 100% — shape defined in same change that edits this file]
 interface Res {
-  cpu: { cores: number; load: number; pct: number };
-  vlm: { running: number | null; waiting: number | null; kv_pct: number | null } | null;
+  control: { cores: number; load: number; pct: number; mem_used_mb: number; mem_total_mb: number } | null;
+  render:  { cores: number; load: number; pct: number; inflight: number; total: number; by_method: Record<string,number>; browser: string | null; mem_used_mb: number; mem_total_mb: number } | null;
+  docling: { concurrency: number; inflight: number; done: number; errors: number; cores: number; load: number; pct: number } | null;
+  whisper: { device: string; concurrency: number; inflight: number; done: number; errors: number; gpu_mem_used_mb: number; gpu_mem_total_mb: number; gpu_util_pct: number } | null;
+  vlm:     { running: number | null; waiting: number | null; kv_pct: number | null } | null;
 }
 interface Today { scheduler: Sched | null; resources: Res | null; queue: { full: QStat; incremental: QStat }; events: EvRow[]; }
 
@@ -151,12 +161,20 @@ function SchedulerBar({ s, full }: { s: Sched; full?: QStat }) {
   );
 }
 
-// The two BOTTLENECKS, live right now: CPU (render, on the host) + VLM (the GPU, in-flight requests). Colour the value
-// red when saturated so the binding resource jumps out. {USER 2026-07-27 "cpu bottleneck current + vlm parallel running"}.
+// Four live bottleneck cards: render VM (CPU) · docling (RunPod CPU) · whisper (RunPod GPU) · VLM (GPU).
+// Each card independently degrades to "—" when its service is null (down / unreachable).
+// Colour the BIG number red when a resource is hot (≥85% threshold matches the pre-existing VLM convention).
+// WHY four cards: the render-split moved page rendering off this 2-core control box onto a dedicated VM; showing
+// this host's loadavg (the old "CPU · render" card) was misleading because the control box does almost no work.
+// Docling and whisper are new RunPod services that share the same GPU — whisper health can't be read from GPU
+// memory alone (vLLM also holds VRAM); what matters is whether whisper's own concurrency slots are saturated and
+// whether it's throwing errors. {CONTRACT-D 2026-08-05 "retitle render card, add docling + whisper cards"}
+// [CONFIDENCE: CONFIRMED 100% — shape defined in same change that edits this file]
 function ResourceCards({ r, onClick }: { r: Res; onClick: () => void }) {
-  const cpuHot = r.cpu.pct >= 85;
-  const kv = r.vlm?.kv_pct ?? null;
-  const vlmHot = kv != null && kv >= 85;
+  // card() helper — identical signature to the pre-existing one; hot=true turns the BIG value red.
+  // WHY onClick on all cards: the usage chart is a day-level view of the whole fleet, not per-service,
+  // so any card click is a reasonable trigger. {USER 2026-07-27 "click to show a line chart for both usage at the day level"}
+  // [CONFIDENCE: CONFIRMED 100% — existing behaviour; kept unchanged per contract D "keep VLM card exactly as is"]
   const card = (title: string, sub: string, big: ReactNode, hot: boolean, lines: string[]) => (
     <div className="q-card" style={{ flex: 1, cursor: "pointer" }} onClick={onClick} title="click for the day's usage chart">
       <div className="q-card-head"><span className="q-card-title">{title}</span><span className="q-card-sub">{sub}</span></div>
@@ -166,11 +184,90 @@ function ResourceCards({ r, onClick }: { r: Res; onClick: () => void }) {
       </div>
     </div>
   );
+
+  // ── RENDER VM ──────────────────────────────────────────────────────────────────
+  // BIG number = CPU load % on the render VM, because that's what backs up the page-render queue.
+  // Detail line 1: inflight page-render requests right now (direct actionability — spike here = render is the bottleneck).
+  // Detail line 2: cores + raw loadavg, for sanity-checking the % (a 32-core box at 85% != a 4-core box at 85%).
+  // WHY NOT memory: render is CPU-bound (headless Chromium rendering); OOM kills would surface as errors, not latency.
+  // {CONTRACT-C 2026-08-05 "render.cores/load/pct <- host; render.inflight/total/by_method/browser <- inflight/total/..."}
+  // [CONFIDENCE: CONFIRMED 100% — field mapping defined in contract C, same change]
+  const renderHot = (r.render?.pct ?? 0) >= 85;
+
+  // ── DOCLING ────────────────────────────────────────────────────────────────────
+  // BIG number = inflight concurrency (out of total concurrency slots) — tells the operator at a glance whether
+  // docling is idle, busy, or fully saturated. A number near the ceiling means PDF parsing is the bottleneck.
+  // Detail line 1: errors (non-zero = immediate action needed; zero = healthy — same pattern as whisper).
+  // Detail line 2: CPU load % (docling is CPU-bound; high pct confirms saturation vs. idle-but-failing).
+  // WHY NOT total done as BIG: cumulative done is context-free; inflight is the instantaneous health signal.
+  // {CONTRACT-C 2026-08-05 "docling.concurrency / inflight / done / errors / cores / load / pct"}
+  // [CONFIDENCE: CONFIRMED 100% — shape from contract C]
+  const doclingHot = (r.docling?.pct ?? 0) >= 85;
+
+  // ── WHISPER ────────────────────────────────────────────────────────────────────
+  // BIG number = inflight transcription jobs (same reasoning as docling — the instantaneous saturation signal).
+  // WHY NOT raw GPU memory: whisper shares its GPU with vLLM; gpu_mem_used_mb reflects BOTH processes. A high
+  // number could mean "vLLM is busy, whisper has plenty of room" — acting on it would be misleading. Instead:
+  //   • gpu_util_pct as detail line 2 — GPU compute utilisation is a better proxy for whether whisper is actually
+  //     running inference vs. waiting; if util is high and inflight is low, vLLM is the consumer, not whisper.
+  //   • errors as detail line 1 — zero = healthy regardless of who owns the VRAM.
+  // {CONTRACT-C 2026-08-05 "whisper.gpu_mem_used_mb / gpu_mem_total_mb / gpu_util_pct; device / concurrency / inflight / done / errors"}
+  // [CONFIDENCE: CONFIRMED 100% — "GPU is shared with vLLM, so raw GPU memory alone is misleading" per task brief]
+  const whisperHot = (r.whisper?.gpu_util_pct ?? 0) >= 85;
+
+  // ── VLM ────────────────────────────────────────────────────────────────────────
+  // Unchanged from the original card per contract D "keep the existing VLM · GPU card exactly as is".
+  // {CONTRACT-D 2026-08-05 "keep the existing 'VLM · GPU' card exactly as is"}
+  // [CONFIDENCE: CONFIRMED 100% — direct instruction; no shape change applied]
+  const kv = r.vlm?.kv_pct ?? null;
+  const vlmHot = kv != null && kv >= 85;
+
   return (
     <div className="q-row" style={{ marginBottom: 14 }}>
-      {card("CPU · render", "this host · click for chart",
-        <>{r.cpu.pct}%<span className="q-card-big-sub"> load</span></>, cpuHot,
-        [`${r.cpu.cores} cores`, `load ${r.cpu.load}`])}
+      {/* RENDER VM — the page-render bottleneck; was "CPU · render / this host" but that read node's own 2-core
+          loadavg after the render-split moved all rendering to a dedicated VM. Now points at r.render.
+          {CONTRACT-D 2026-08-05 "retitle/repoint to RENDER VM using r.render"} [CONFIDENCE: CONFIRMED 100%] */}
+      {card("CPU · render VM", "render host · click for chart",
+        r.render
+          ? <>{r.render.pct}%<span className="q-card-big-sub"> load</span></>
+          : <>—<span className="q-card-big-sub"> load</span></>,
+        renderHot,
+        [
+          r.render ? `${r.render.inflight} inflight / ${r.render.total} total` : "— inflight",
+          r.render ? `${r.render.cores} cores · load ${r.render.load.toFixed(2)}` : "— cores",
+        ]
+      )}
+
+      {/* DOCLING — RunPod CPU service; BIG = inflight vs concurrency ceiling, detail = errors + CPU load.
+          Degrades to "—" when r.docling is null (service down). */}
+      {card("Docling · PDF", "RunPod CPU · click for chart",
+        r.docling
+          ? <>{r.docling.inflight}<span className="q-card-big-sub">/{r.docling.concurrency} slots</span></>
+          : <>—<span className="q-card-big-sub"> slots</span></>,
+        doclingHot,
+        [
+          r.docling ? `${r.docling.errors} errors · ${r.docling.done} done` : "— errors",
+          r.docling ? `${r.docling.pct}% CPU · load ${r.docling.load.toFixed(2)}` : "— CPU",
+        ]
+      )}
+
+      {/* WHISPER — RunPod GPU service shared with vLLM; BIG = inflight jobs (NOT raw GPU mem, which is shared).
+          gpu_util_pct is the least-ambiguous signal when GPU is shared: high util + low whisper inflight = vLLM busy.
+          Degrades to "—" when r.whisper is null (service down). */}
+      {card("Whisper · GPU", "RunPod GPU (shared) · click for chart",
+        r.whisper
+          ? <>{r.whisper.inflight}<span className="q-card-big-sub">/{r.whisper.concurrency} slots</span></>
+          : <>—<span className="q-card-big-sub"> slots</span></>,
+        whisperHot,
+        [
+          r.whisper ? `${r.whisper.errors} errors · ${r.whisper.done} done` : "— errors",
+          r.whisper
+            ? `${r.whisper.gpu_util_pct}% GPU util · ${r.whisper.gpu_mem_used_mb}/${r.whisper.gpu_mem_total_mb} MB`
+            : "— GPU util",
+        ]
+      )}
+
+      {/* VLM — unchanged per contract D. */}
       {card("VLM · GPU", "in flight now · click for chart",
         <>{r.vlm?.running ?? "—"}<span className="q-card-big-sub"> running</span></>, vlmHot,
         [`${r.vlm?.waiting ?? "—"} waiting`, `${kv ?? "—"}% KV cache`])}

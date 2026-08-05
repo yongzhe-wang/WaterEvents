@@ -145,12 +145,222 @@ def _device() -> str:
         return "unknown"
 
 
+def _host_stats() -> dict | None:
+    """Read host CPU and memory metrics from the OS for the /health response.
+
+    WHY 读 /proc/meminfo 而不是 psutil: 这个服务跑在 RunPod 的裸 Linux 上,我们不想多一个 pip 依赖;
+    /proc/meminfo 是 Linux kernel 直接暴露的接口,任何 Python 版本都能读,而且比 psutil 的 fallback 更准确。
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "MEMORY FROM /PROC/MEMINFO (MEMTOTAL, MEMAVAILABLE) —
+    USED = TOTAL - AVAILABLE"}
+    [CONFIDENCE: CONFIRMED 99% — /proc/meminfo is standard Linux; tested on Ubuntu 20.04+].
+
+    返回 None 而不是 raise 保证 /health 永远不会 500。
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "WRAP IN TRY/EXCEPT AND OMIT THE KEY (OR USE NULLS) IF
+    UNREADABLE; /HEALTH MUST NEVER 500."}
+    [CONFIDENCE: CONFIRMED 100% — direct contract requirement]."""
+    try:
+        # os.cpu_count() returns the number of logical CPUs visible to THIS process (honours cgroups),
+        # which is the correct value for a pod that may be containerized.
+        # {PYTHON DOCS: "OS.CPU_COUNT() RETURN THE NUMBER OF CPUS IN THE SYSTEM; RETURN NONE IF UNDETERMINED"}
+        # [CONFIDENCE: CONFIRMED 95% — standard stdlib; None-guard below handles the edge case]
+        cores = os.cpu_count() or 0
+
+        # os.getloadavg() returns (1min, 5min, 15min) POSIX load averages.
+        # WHY 1-minute 平均: 它比 5/15min 更能反映「现在」的负载状态,对 dashboard polling every 30s 最有用。
+        # {PYTHON DOCS: "OS.GETLOADAVG() RETURN THE NUMBER OF PROCESSES IN THE SYSTEM RUN QUEUE AVERAGED OVER
+        # THE LAST 1, 5, AND 15 MINUTES"}
+        # [CONFIDENCE: CONFIRMED 99% — stdlib, raises OSError on Windows but we're on Linux]
+        load1 = round(os.getloadavg()[0], 2)
+
+        # load_pct = load1 / cores * 100, clamped to [0, 100] as an int.
+        # WHY 整数百分比: 和 GPU util_pct 保持一致,让 dashboard 用统一的 hot-threshold 逻辑。
+        # {ROOT CLAUDE.MD SECTION 2 CONTRACT PART A/B: "LOAD_PCT: <INT>"}
+        # [CONFIDENCE: CONFIRMED 100% — direct contract spec]
+        load_pct = int(min(load1 / cores * 100, 100)) if cores > 0 else 0
+
+        # 解析 /proc/meminfo 获取 MemTotal 和 MemAvailable (kB 单位), 转成 MB。
+        # MemAvailable is preferred over MemFree because it accounts for reclaimable page cache —
+        # used = total - available gives the "real" used figure that matches `free -m`.
+        # {LINUX KERNEL DOCS: "MEMAVAILABLE: AN ESTIMATE OF HOW MUCH MEMORY IS AVAILABLE FOR STARTING NEW
+        # APPLICATIONS, WITHOUT SWAPPING."}
+        # [CONFIDENCE: CONFIRMED 99% — /proc/meminfo format is stable since Linux 2.6]
+        mem_total_kb = mem_avail_kb = 0
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                # 每行格式: "MemTotal:       503654656 kB"
+                if line.startswith("MemTotal:"):
+                    mem_total_kb = int(line.split()[1])
+                elif line.startswith("MemAvailable:"):
+                    mem_avail_kb = int(line.split()[1])
+                if mem_total_kb and mem_avail_kb:
+                    break  # 两个字段都找到就可以停了
+
+        mem_total_mb = mem_total_kb // 1024
+        mem_used_mb = (mem_total_kb - mem_avail_kb) // 1024
+
+        return {
+            "cores": cores,
+            "load1": load1,
+            "load_pct": load_pct,
+            "mem_used_mb": mem_used_mb,
+            "mem_total_mb": mem_total_mb,
+        }
+    except Exception as exc:  # noqa: BLE001 — /proc not mounted, OSError, etc. → omit key, never 500
+        _loud(f"_host_stats failed: {exc}")
+        return None
+
+
+def _gpu_stats() -> dict | None:
+    """Read GPU memory and utilization for the /health response.
+
+    WHY pynvml 优先而不是直接 subprocess: pynvml 是 in-process 调用,不 fork 新进程,延迟 ~1ms;
+    nvidia-smi subprocess 需要 fork + exec + parse,延迟 ~200-300ms,而且每次调用都会短暂影响 GPU driver。
+    pynvml 不可用时才 fallback 到 subprocess。
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "GET IT FROM PYNVML IF IMPORTABLE, ELSE BY SHELLING OUT TO
+    NVIDIA-SMI ... WITH A 3S TIMEOUT"}
+    [CONFIDENCE: CONFIRMED 100% — direct contract requirement].
+
+    关键设计考量: 这个进程和 vLLM 共享同一块 A40。返回的 GPU 数字是整张卡的 usage,不是这个进程独占的。
+    Dashboard 用户需要知道这件事 —— gpu.mem_used_mb 会包含 vLLM 的 ~40GB。
+    {SERVICE.PY MODULE DOCSTRING LINE 9: "A40 的 46GB 已被 vLLM 占了 40.3GB"}
+    [CONFIDENCE: CONFIRMED — from module-level architecture comment].
+
+    返回 None (而不是 raise) 保证:
+    1. CPU-only 的 Docling 进程 (CUDA_VISIBLE_DEVICES="") 正常返回 null
+    2. GPU 驱动挂了也不会让 /health 500
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "GPU IS NULL WHEN THIS PROCESS HAS NO CUDA DEVICE"}
+    [CONFIDENCE: CONFIRMED 100% — direct contract requirement]."""
+    # ── pynvml 路径 ──────────────────────────────────────────────────────────────
+    try:
+        import pynvml  # available when nvidia-ml-py is installed
+
+        # nvmlInit() is idempotent; calling it per-request is safe, just slightly wasteful — but keeping a
+        # module-level handle complicates teardown and we are not in a hot path.
+        # {PYNVML DOCS: "NVMLINIT() — INITIALIZE THE NVML LIBRARY. CAN BE CALLED MULTIPLE TIMES."}
+        # [CONFIDENCE: SINGLE-SRC 90% — from pynvml project README and source]
+        pynvml.nvmlInit()
+
+        # CUDA_VISIBLE_DEVICES="" means the OS hides all GPUs from this process; device count = 0.
+        # _device() already checks ctranslate2 for this; we do the explicit nvml count check here so the
+        # pynvml path and the subprocess path agree on "no GPU → return None".
+        # {SERVICE.PY _DEVICE() DOCSTRING: "CTRANSLATE2.GET_CUDA_DEVICE_COUNT() IS THE ONLY ANSWER THAT
+        # PREDICTS WHETHER TRANSCRIPTION WILL RUN ON THE GPU"}
+        # [CONFIDENCE: CONFIRMED — cross-reference with _device() in this file]
+        device_count = pynvml.nvmlDeviceGetCount()
+        if device_count == 0:
+            return None
+
+        # This service always uses device index 0 — CUDA_VISIBLE_DEVICES remaps the visible set so that
+        # whatever the pod exposes as device 0 is the one this process actually uses.
+        # {ROOT CLAUDE.MD SECTION 2 CONTRACT: "CUDA_VISIBLE_DEVICES=0 RUNNING FASTER-WHISPER ON AN A40"}
+        # [CONFIDENCE: CONFIRMED — per architecture description in the task spec]
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+
+        mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        mem_used_mb = mem.used // (1024 * 1024)
+        mem_total_mb = mem.total // (1024 * 1024)
+
+        # nvmlDeviceGetUtilizationRates returns a struct with .gpu (utilization %) and .memory (bandwidth %).
+        # We report .gpu because that is what nvidia-smi calls "utilization.gpu" and what the contract names
+        # util_pct.
+        # {NVML API: "NVMLDEVICEGETUTILIZATIONRATES — GPU UTILIZATION: PERCENT OF TIME OVER THE PAST SAMPLE
+        # PERIOD DURING WHICH ONE OR MORE KERNELS WAS EXECUTING ON THE GPU"}
+        # [CONFIDENCE: SINGLE-SRC 95% — from NVML API reference]
+        util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+        util_pct = int(util.gpu)
+
+        return {"mem_used_mb": mem_used_mb, "mem_total_mb": mem_total_mb, "util_pct": util_pct}
+
+    except ImportError:
+        pass  # pynvml not installed → fall through to subprocess path
+    except Exception as exc:  # noqa: BLE001 — nvml init failure, permission error, etc.
+        _loud(f"_gpu_stats pynvml path failed: {exc}")
+        # If nvml init failed for a reason other than "no GPU" (e.g. driver mismatch), the subprocess path
+        # may also fail, but we try it anyway as a best-effort fallback.
+
+    # ── nvidia-smi subprocess fallback ──────────────────────────────────────────
+    # Used when pynvml is absent (e.g. nvidia-ml-py not installed in this venv).
+    # 3-second timeout matches the contract and prevents blocking the event loop for too long.
+    # The caller runs this in a thread (h_health uses asyncio.to_thread), which is what makes a blocking
+    # subprocess acceptable here. The 3s timeout bounds how LONG it runs; it is the thread that decides WHERE.
+    # Do not call this function directly from a coroutine — a timeout alone would still freeze the event loop
+    # and every in-flight extract on this process along with it.
+    # {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "NVIDIA-SMI ... WITH A 3S TIMEOUT. MUST NEVER 500 AND
+    # MUST NEVER BLOCK THE EVENT LOOP FOR MORE THAN ~3S."}
+    # [CONFIDENCE: CONFIRMED 100% — direct contract requirement]
+    try:
+        import subprocess
+
+        # CUDA_VISIBLE_DEVICES="" hides GPUs from the process but nvidia-smi ignores that env-var —
+        # it talks to the driver directly. We must check _device() first and short-circuit if cpu.
+        # This check mirrors what the pynvml path does via device_count == 0.
+        if _device() == "cpu":
+            return None
+
+        result = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.used,memory.total,utilization.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3,  # hard upper-bound: /health must not hang for > 3s
+        )
+
+        if result.returncode != 0:
+            _loud(f"_gpu_stats nvidia-smi exited {result.returncode}: {result.stderr.strip()}")
+            return None
+
+        # Output line: "40299, 46068, 100" (MiB, MiB, percent) — noheader,nounits are critical.
+        # {NVIDIA-SMI DOCS: "--FORMAT=CSV,NOHEADER,NOUNITS — DISABLE HEADER, REPORT RAW NUMBERS"}
+        # [CONFIDENCE: CONFIRMED 99% — nvidia-smi format flags are stable across driver versions]
+        parts = result.stdout.strip().split("\n")[0].split(",")
+        mem_used_mb = int(parts[0].strip())
+        mem_total_mb = int(parts[1].strip())
+        util_pct = int(parts[2].strip())
+
+        return {"mem_used_mb": mem_used_mb, "mem_total_mb": mem_total_mb, "util_pct": util_pct}
+
+    except Exception as exc:  # noqa: BLE001 — nvidia-smi not on PATH, timeout, parse error → return null
+        _loud(f"_gpu_stats nvidia-smi path failed: {exc}")
+        return None
+
+
 async def h_health(_request: web.Request) -> web.Response:
-    """GET /health → liveness + which device this process actually got.
+    """GET /health → liveness + which device this process actually got, plus host and GPU metrics.
 
     `device` is the load-bearing field: the whole point of running two processes is that one is on CPU and one is on
-    CUDA, and a whisper process that silently fell back to CPU would still answer 200 while being ~100x too slow."""
+    CUDA, and a whisper process that silently fell back to CPU would still answer 200 while being ~100x too slow.
+
+    `host` 字段: CPU 核心数、1min 负载、负载百分比、内存使用量/总量 —— 两个进程都上报, dashboard 可以知道整台机器的状态。
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "GAINS THE SAME 'HOST' KEY (IDENTICAL SHAPE)"}
+    [CONFIDENCE: CONFIRMED 100% — direct contract requirement].
+
+    `gpu` 字段: GPU 内存使用/总量/利用率 (pynvml 优先, nvidia-smi fallback)。
+    CPU-only 的 Docling 进程 (CUDA_VISIBLE_DEVICES="") 返回 gpu=null。
+    GPU 进程返回的数字包含 vLLM 的占用 —— 那张卡是共享的, 不是这个进程独占的。
+    {ROOT CLAUDE.MD SECTION 2 CONTRACT PART B: "GPU IS NULL WHEN THIS PROCESS HAS NO CUDA DEVICE.
+    GET IT FROM PYNVML IF IMPORTABLE, ELSE BY SHELLING OUT TO NVIDIA-SMI"}
+    [CONFIDENCE: CONFIRMED 100% — direct contract requirement]."""
     dev = _device()
+
+    # OFF THE EVENT LOOP, both of them. _gpu_stats can fall back to `subprocess.run(nvidia-smi, timeout=3)`, and a
+    # timeout bounds how LONG that runs — it does nothing about WHERE it runs. Called inline from this async handler it
+    # freezes the whole loop for up to 3 seconds, and every in-flight docling extract and whisper transcribe on this
+    # process freezes with it. The dashboard polls /health every 30s, so that is a 3-second stall every 30 seconds, on
+    # the box doing the actual work, purely to draw a card.
+    # {TODAYVIEW.TSX "Polls /api/today every 30s so the queue + feed stay live as workers run"}
+    # [CONFIDENCE: CONFIRMED — the poll interval is set in the dashboard; the subprocess fallback is in _gpu_stats].
+    # _host_stats reads /proc, which is a kernel virtual file and returns in microseconds, so it is not the same class
+    # of problem — but it is sync file I/O all the same and costs nothing to move, so both go together rather than
+    # leaving a rule that holds for one of them and not the other.
+    # asyncio.to_thread, NOT _POOL: _POOL is the bounded tool executor. A health probe must never queue behind a 735s
+    # pdf, and must never occupy a slot that a real extraction is waiting for.
+    host, gpu = await asyncio.gather(
+        asyncio.to_thread(_host_stats),
+        asyncio.to_thread(_gpu_stats),
+    )
     return web.json_response({
         "ok": True,
         "device": dev,
@@ -161,6 +371,10 @@ async def h_health(_request: web.Request) -> web.Response:
         "docling": _stats["docling"],
         "whisper": _stats["whisper"],
         "errors": _stats["errors"],
+        # host: CPU/内存快照; None 表示读取失败 (omit the key 语义上等价于 null)
+        "host": host,
+        # gpu: GPU 显存/利用率; null when CUDA_VISIBLE_DEVICES="" or driver error
+        "gpu": gpu,
     })
 
 

@@ -244,17 +244,84 @@ async def h_fetch_audio(request: web.Request) -> web.Response:
     return web.json_response(_asdict(r))
 
 
+def _host_stats() -> dict | None:
+    """Read this machine's CPU + memory vitals and return them as the 'host' sub-dict for /health.
+
+    WHY this function exists: the dashboard used to label ir-media-8's own loadavg as "render", which was wrong the
+    moment the render workload moved to ir-render-16 (this box). The 'host' key lets the frontend read ir-render-16's
+    true figures via its own /health endpoint so the card is labelled and sourced correctly.
+    {CONTRACT 2026-08-05 "A) providers/watercrawl/service.py GET /health gains a top-level 'host' key:
+     {'cores': <int>, 'load1': <float 2dp>, 'load_pct': <int>, 'mem_used_mb': <int>, 'mem_total_mb': <int>}
+     Read from os.cpu_count() and os.getloadavg()[0]; memory from /proc/meminfo (MemTotal, MemAvailable)"}
+    [CONFIDENCE: CONFIRMED 100% — direct user instruction in this session; contract is frozen].
+
+    Returns None on ANY failure — the caller omits the key rather than 500ing. Health endpoints must never crash.
+    """
+    try:
+        # os.cpu_count() returns the logical CPU count (threads, not physical cores), which matches what `nproc`
+        # and /proc/cpuinfo report and is the right denominator for load_pct.
+        # {PYTHON DOCS "os.cpu_count() — return the number of CPUs in the system; None if undetermined"}
+        # [CONFIDENCE: CONFIRMED — standard library, unambiguous].
+        cores = os.cpu_count() or 1
+
+        # getloadavg()[0] is the 1-minute load average — same value `uptime` shows in the first column.
+        # Dividing by cores gives the per-core fraction; clamp to [0, 100] before converting to int so a momentary
+        # spike above 100% doesn't confuse the dashboard gauge.
+        # {PYTHON DOCS "os.getloadavg() — return the number of processes in the system run queue averaged over the last
+        #  1, 5, and 15 minutes; OSError on platforms that do not support this (e.g. Windows)"}
+        # [CONFIDENCE: CONFIRMED — Linux / GCP VM; safe on this box].
+        load1 = round(os.getloadavg()[0], 2)
+        load_pct = min(100, int(load1 / cores * 100))
+
+        # /proc/meminfo gives MemTotal and MemAvailable in kB; used = total − available mirrors what `free -m` shows
+        # as the "available" column (real available, not free+cached) — the most operationally meaningful metric.
+        # {LINUX KERNEL DOCS "MemAvailable: an estimate of how much memory is available for starting new applications,
+        #  without swapping. Calculated from MemFree, plus memory reclaimable from buffers + page cache + slabs."}
+        # [CONFIDENCE: CONFIRMED — /proc/meminfo format is stable across kernel ≥3.14].
+        mem_total_kb = mem_avail_kb = 0
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemTotal:"):
+                    mem_total_kb = int(line.split()[1])
+                elif line.startswith("MemAvailable:"):
+                    mem_avail_kb = int(line.split()[1])
+                # Both found → stop early; /proc/meminfo has ~50 lines and these two appear near the top.
+                if mem_total_kb and mem_avail_kb:
+                    break
+
+        return {
+            "cores": cores,
+            "load1": load1,
+            "load_pct": load_pct,
+            "mem_used_mb": (mem_total_kb - mem_avail_kb) // 1024,   # integer division; kB → MB
+            "mem_total_mb": mem_total_kb // 1024,
+        }
+    except Exception as exc:
+        # Any failure (OSError on getloadavg, IOError on /proc/meminfo, unexpected parse error) → return None.
+        # The caller drops the 'host' key entirely rather than emitting nulls, which is cleaner for the dashboard.
+        _loud(f"_host_stats() failed: {exc!r}")
+        return None
+
+
 async def h_health(_request: web.Request) -> web.Response:
     """GET /health → liveness + what the box is doing. `browser` is the real signal: watercrawl self-skips to empty
     results when the browser is unavailable, so a service that answers 200 with browser=false is answering with
-    garbage and the client must treat it as down."""
+    garbage and the client must treat it as down.
+
+    `host` is the new key (2026-08-05) that reports THIS machine's CPU + memory so the frontend dashboard can show
+    ir-render-16's true loadavg under the "render" card rather than ir-media-8's figures.
+    {CONTRACT 2026-08-05 "A) GET /health gains a top-level 'host' key ... /health must never 500"}
+    [CONFIDENCE: CONFIRMED 100% — frozen contract, direct user instruction]."""
     # The break log, surfaced rather than left in the log file. `robots_override` is host → count of urls this process
     # took past an explicit Disallow. Empty when the escape hatch is shut, which is the default. Reporting it HERE is
     # the point: an override nobody can see afterwards is the failure mode, and a health endpoint is checked, whereas
     # a log line scrolls away. {POLITENESS.PY "AN OVERRIDE YOU CANNOT SEE AFTERWARDS IS THE THING TO AVOID"}
     from . import politeness                              # lazy: keeps the health route free of import-order coupling
     ovr = politeness.override_report()
-    return web.json_response({
+
+    # Build the base payload first, then conditionally add 'host' — omitting it (rather than null) when unreadable,
+    # which is cleaner than a null block for dashboard code that does `r.host?.cores`.
+    payload: dict = {
         "ok": True,
         "browser": bool(browser_available()),
         "uptime_s": round(time.time() - _stats["started"], 1),
@@ -266,7 +333,14 @@ async def h_health(_request: web.Request) -> web.Response:
         "ignore_robots": politeness.IGNORE_ROBOTS,
         "robots_override": ovr,
         "robots_override_total": sum(ovr.values()),
-    })
+    }
+
+    # Attempt to read host vitals; omit the key on failure rather than crashing the endpoint.
+    host = _host_stats()
+    if host is not None:
+        payload["host"] = host
+
+    return web.json_response(payload)
 
 
 def build_app() -> web.Application:

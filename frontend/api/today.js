@@ -4,23 +4,172 @@
 // new events descending by date"}.
 import { sbAll } from "../lib/_db.js";
 import os from "node:os";
+import { readFileSync } from "node:fs";   // /proc/meminfo — see the control block for why not os.freemem()
 
-// LIVE resource usage — the two bottlenecks, right now. CPU (render, on THIS host: loadavg/cores) and VLM (the GPU, via
-// the vLLM Prometheus /metrics through the SSH tunnel at :8000). {USER 2026-07-27 "add two cards: cpu bottleneck current
-// usage + vlm usage current, like the parallel current running"}.
+// LIVE resource usage — four services fan-out concurrently. After the render split (2026-08-05) this webapp runs on
+// ir-media-8 (a 2-core control box); the actual render VM is 10.128.0.11:8100. Reading os.cpus() here is STILL correct
+// but describes the CONTROL HOST, not the render host — the two are separate machines now. {USER 2026-08-05 "render host
+// is a different machine (10.128.0.11) since the render split; correct the assumption, not just the comment"}.
+// Shape returned matches the frozen contract:
+//   { control, render, docling, whisper, vlm }
+// every key is either a populated object or null (never throws, never delays >3s). {CONTRACT SECTION C 2026-08-05
+// "ALL FOUR FETCHES RUN CONCURRENTLY WITH Promise.allSettled AND A 3S ABORTSIGNAL.TIMEOUT EACH."}.
+// [CONFIDENCE: CONFIRMED 100% — contract text supplied verbatim by user 2026-08-05]
 async function liveResources() {
-  const cores = os.cpus().length;
-  const load1 = os.loadavg()[0];                              // 1-min load average of the render host
-  const cpu = { cores, load: +load1.toFixed(2), pct: Math.round((load1 / cores) * 100) };
+  // ── CONTROL ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // This process runs on ir-media-8 (the control/webapp host), NOT on the render VM. os.cpus() and os.loadavg()
+  // correctly describe ir-media-8. The old comment "render host" was wrong after the split; now labelled "control".
+  // {CONTRACT SECTION C 2026-08-05 "control: {cores, load, pct, mem_used_mb, mem_total_mb} | null — THIS HOST (ir-media-8), FROM NODE OS"}
+  // [CONFIDENCE: CONFIRMED 100% — user explicitly called out the wrong assumption in the task description]
+  let control = null;
+  try {
+    const cores = os.cpus().length;                          // how many logical CPUs this control box has
+    const load1 = os.loadavg()[0];                          // 1-min load average of THIS host (ir-media-8), not render
+    // Memory from /proc/meminfo, NOT os.freemem(). On Linux node's freemem() is sysinfo().freeram = MemFree, which
+    // counts page cache as USED and so overstates the number — while the render and tools services both compute
+    // total − MemAvailable per the contract. Three cards labelled "memory used" computed two different ways is the
+    // quiet kind of wrong that misleads without ever looking broken, so this box reads the same file they do.
+    // {CONTRACT SECTION A/B 2026-08-05 "MEMORY FROM /PROC/MEMINFO (MemTotal, MemAvailable) — USED = TOTAL - AVAILABLE"}
+    // [CONFIDENCE: CONFIRMED — node docs define freemem() as the OS free-memory call, which on Linux is MemFree].
+    let memTotalMb = null, memUsedMb = null;
+    try {
+      const mi = readFileSync("/proc/meminfo", "utf8");
+      const kb = (k) => { const m = mi.match(new RegExp("^" + k + ":\\s+(\\d+)", "m")); return m ? +m[1] : null; };
+      const total = kb("MemTotal"), avail = kb("MemAvailable");
+      if (total != null && avail != null) { memTotalMb = Math.round(total / 1024); memUsedMb = Math.round((total - avail) / 1024); }
+    } catch { /* not Linux, or /proc unreadable → leave both null; the card just omits the memory line */ }
+    control = {
+      cores,
+      load: +load1.toFixed(2),
+      pct: Math.round((load1 / cores) * 100),
+      mem_used_mb: memUsedMb,
+      mem_total_mb: memTotalMb,
+    };
+  } catch { control = null; }                               // os module failure → card shows "—"
+
+  // ── RENDER ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // The render VM (10.128.0.11) exposes /health with a "host" sub-object plus render-specific fields. Env override
+  // RENDER_HEALTH_URL allows staging/dev to point elsewhere without code change.
+  // {CONTRACT SECTION C 2026-08-05 "RENDER HTTP://10.128.0.11:8100/HEALTH (OVERRIDE WITH ENV RENDER_HEALTH_URL)"}
+  // [CONFIDENCE: CONFIRMED 100% — verbatim from contract]
+  const renderUrl = process.env.RENDER_HEALTH_URL || "http://10.128.0.11:8100/health";
+
+  // ── DOCLING ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // Docling PDF-parse worker: local tunnel at :8101, or env override.
+  // {CONTRACT SECTION C 2026-08-05 "DOCLING HTTP://127.0.0.1:8101/HEALTH (OVERRIDE WITH ENV DOCLING_HEALTH_URL)"}
+  // [CONFIDENCE: CONFIRMED 100%]
+  const doclingUrl = process.env.DOCLING_HEALTH_URL || "http://127.0.0.1:8101/health";
+
+  // ── WHISPER ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // Whisper transcription worker: local tunnel at :8102, or env override.
+  // {CONTRACT SECTION C 2026-08-05 "WHISPER HTTP://127.0.0.1:8102/HEALTH (OVERRIDE WITH ENV WHISPER_HEALTH_URL)"}
+  // [CONFIDENCE: CONFIRMED 100%]
+  const whisperUrl = process.env.WHISPER_HEALTH_URL || "http://127.0.0.1:8102/health";
+
+  // ── CONCURRENT FAN-OUT ──────────────────────────────────────────────────────────────────────────────────────────────
+  // All four HTTP fetches (render /health, docling /health, whisper /health, vllm /metrics) fire at the same time.
+  // Promise.allSettled means one down service never delays the others — each 3s timeout is independent.
+  // {CONTRACT SECTION C 2026-08-05 "ALL FOUR FETCHES RUN CONCURRENTLY WITH Promise.allSettled AND A 3S
+  // ABORTSIGNAL.TIMEOUT EACH. A SERVICE THAT IS DOWN YIELDS null FOR ITS KEY."} [CONFIDENCE: CONFIRMED 100%]
+  const [renderR, doclingR, whisperR, vlmR] = await Promise.allSettled([
+
+    // fetch render /health; parse the "host" sub-object + render-specific counters from the response JSON.
+    fetch(renderUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()),
+
+    // fetch docling /health; contains concurrency/inflight/done/errors + host sub-object.
+    fetch(doclingUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()),
+
+    // fetch whisper /health; contains concurrency/inflight/done/errors + gpu sub-object (may be null if no CUDA).
+    fetch(whisperUrl, { signal: AbortSignal.timeout(3000) }).then((r) => r.json()),
+
+    // vLLM /metrics is Prometheus text format — parse exactly as before. :8000 is the RunPod SSH tunnel.
+    // This block is UNCHANGED from the previous implementation. {USER 2026-07-27 "add two cards: cpu bottleneck
+    // current usage + vlm usage current"} [CONFIDENCE: CONFIRMED 100% — kept verbatim, only moved into allSettled]
+    fetch("http://127.0.0.1:8000/metrics", { signal: AbortSignal.timeout(3000) }).then((r) => r.text()),
+  ]);
+
+  // ── RENDER PARSE ────────────────────────────────────────────────────────────────────────────────────────────────────
+  // Field mapping: render.cores/load/pct ← host.cores / host.load1 / host.load_pct (computed by the render service).
+  //                render.inflight/total/by_method/browser ← top-level fields from the render /health response.
+  // {CONTRACT SECTION C 2026-08-05 "RENDER.CORES/LOAD/PCT <- HOST.CORES / HOST.LOAD1 / HOST.LOAD_PCT
+  //  RENDER.INFLIGHT/TOTAL/BY_METHOD/BROWSER <- INFLIGHT / TOTAL / BY_METHOD / BROWSER"} [CONFIDENCE: CONFIRMED 100%]
+  let render = null;
+  if (renderR.status === "fulfilled") {
+    try {
+      const d = renderR.value;
+      const h = d.host || {};                               // "host" sub-object from the render service /health
+      render = {
+        cores:       h.cores     ?? null,
+        load:        h.load1     ?? null,                  // load1 = 1-min average, as named in the /health contract
+        pct:         h.load_pct  ?? null,
+        inflight:    d.inflight  ?? null,
+        total:       d.total     ?? null,
+        by_method:   d.by_method ?? null,
+        browser:     d.browser   ?? null,
+        mem_used_mb: h.mem_used_mb  ?? null,
+        mem_total_mb:h.mem_total_mb ?? null,
+      };
+    } catch { render = null; }                             // malformed JSON → degrade to null
+  }
+
+  // ── DOCLING PARSE ───────────────────────────────────────────────────────────────────────────────────────────────────
+  // docling.done ← the "docling" counter in the response (the counter name mirrors the worker type).
+  // {CONTRACT SECTION C 2026-08-05 "DOCLING.DONE <- THE 'DOCLING' COUNTER"} [CONFIDENCE: CONFIRMED 100%]
+  let docling = null;
+  if (doclingR.status === "fulfilled") {
+    try {
+      const d = doclingR.value;
+      const h = d.host || {};                               // "host" sub-object from the docling /health response
+      docling = {
+        concurrency: d.concurrency ?? null,
+        inflight:    d.inflight    ?? null,
+        done:        d.docling     ?? null,                // counter named "docling" per contract field mapping
+        errors:      d.errors      ?? null,
+        cores:       h.cores       ?? null,
+        load:        h.load1       ?? null,
+        pct:         h.load_pct    ?? null,
+      };
+    } catch { docling = null; }
+  }
+
+  // ── WHISPER PARSE ───────────────────────────────────────────────────────────────────────────────────────────────────
+  // whisper.done ← the "whisper" counter; whisper.gpu_* ← gpu sub-object (null when no CUDA device).
+  // {CONTRACT SECTION C 2026-08-05 "WHISPER.DONE <- THE 'WHISPER' COUNTER;
+  //  WHISPER.GPU_* <- GPU.MEM_USED_MB / GPU.MEM_TOTAL_MB / GPU.UTIL_PCT"} [CONFIDENCE: CONFIRMED 100%]
+  let whisper = null;
+  if (whisperR.status === "fulfilled") {
+    try {
+      const d = whisperR.value;
+      const gpu = d.gpu || null;                            // gpu sub-object is null when no CUDA device present
+      whisper = {
+        device:          d.device        ?? null,
+        concurrency:     d.concurrency   ?? null,
+        inflight:        d.inflight      ?? null,
+        done:            d.whisper       ?? null,          // counter named "whisper" per contract field mapping
+        errors:          d.errors        ?? null,
+        gpu_mem_used_mb: gpu?.mem_used_mb  ?? null,
+        gpu_mem_total_mb:gpu?.mem_total_mb ?? null,
+        gpu_util_pct:    gpu?.util_pct     ?? null,
+      };
+    } catch { whisper = null; }
+  }
+
+  // ── VLM PARSE ───────────────────────────────────────────────────────────────────────────────────────────────────────
+  // Prometheus text-format parse — UNCHANGED from the original implementation. kv_cache_usage_perc is the primary key;
+  // gpu_cache_usage_perc is the legacy alias used by older vLLM builds.
+  // {USER 2026-07-27 "ADD TWO CARDS: CPU BOTTLENECK CURRENT USAGE + VLM USAGE CURRENT"} [CONFIDENCE: CONFIRMED 100%]
   let vlm = null;
-  try {                                                       // vLLM /metrics is unauth'd; :8000 is the RunPod tunnel
-    const txt = await (await fetch("http://127.0.0.1:8000/metrics", { signal: AbortSignal.timeout(3000) })).text();
-    const g = (k) => { const m = txt.match(new RegExp(k + "\\{[^}]*\\}\\s+([\\d.eE+-]+)")); return m ? +m[1] : null; };
-    const kv = g("vllm:kv_cache_usage_perc") ?? g("vllm:gpu_cache_usage_perc");
-    vlm = { running: g("vllm:num_requests_running"), waiting: g("vllm:num_requests_waiting"),
-            kv_pct: kv == null ? null : Math.round(kv * 100) };
-  } catch { vlm = null; }                                     // tunnel down / not self-hosted → card shows "—"
-  return { cpu, vlm };
+  if (vlmR.status === "fulfilled") {
+    try {                                                   // vLLM /metrics is unauth'd; :8000 is the RunPod tunnel
+      const txt = vlmR.value;
+      const g = (k) => { const m = txt.match(new RegExp(k + "\\{[^}]*\\}\\s+([\\d.eE+-]+)")); return m ? +m[1] : null; };
+      const kv = g("vllm:kv_cache_usage_perc") ?? g("vllm:gpu_cache_usage_perc");
+      vlm = { running: g("vllm:num_requests_running"), waiting: g("vllm:num_requests_waiting"),
+              kv_pct: kv == null ? null : Math.round(kv * 100) };
+    } catch { vlm = null; }                                // tunnel down / not self-hosted → card shows "—"
+  }
+
+  return { control, render, docling, whisper, vlm };
 }
 
 function hostOf(u) { try { return new URL(u).host.replace(/^www\./, ""); } catch { return u || "—"; } }
