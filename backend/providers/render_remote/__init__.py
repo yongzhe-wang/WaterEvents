@@ -35,6 +35,17 @@ _URL = os.environ.get("RENDER_REMOTE_URL", "").rstrip("/")
 # off renders the server was going to complete — turning a slow success into a false failure.
 # {CONFIG.PY:42 "NAV_TIMEOUT_MS = INT(OS.ENVIRON.GET(\"IR_WATERCRAWL_NAV_TIMEOUT_MS\", \"22000\"))" — ×4 tiers + settle}
 # [CONFIDENCE: INFERRED — 22s nav × 4 tiers + settle + screenshot ≈ 110s worst case; 240s leaves headroom].
+
+# TENANT IDENTITY sent with every request, read from WE_TENANT which each systemd unit sets for its own fleet. The
+# render VM meters browser slots and download bandwidth per tenant, and an unlabelled request lands in a deliberately
+# small 'anon' bucket — small enough that a forgotten label shows up in the numbers rather than silently bypassing the
+# whole scheme, but non-zero so a missing header degrades rather than fails.
+# Same mechanism as the vLLM gateway's per-key share, on purpose: two layers, one mental model.
+# [CONFIDENCE: CONFIRMED — the gate's ANON bucket and its weight are in providers/watercrawl/tenant_gate.py].
+_TENANT = os.environ.get("WE_TENANT", "").strip().lower()
+_HDRS_JSON = {"Content-Type": "application/json"}
+if _TENANT:
+    _HDRS_JSON["X-WE-Tenant"] = _TENANT
 _TIMEOUT = float(os.environ.get("RENDER_REMOTE_TIMEOUT_S", "240"))
 
 # Retries cover ONLY transport-level failures (connection refused / reset while the service restarts). A render that
@@ -65,7 +76,7 @@ def _post(path: str, payload: dict) -> dict | None:
         return None
     body = json.dumps(payload).encode()
     req = urllib.request.Request(f"{_URL}{path}", data=body,
-                                 headers={"Content-Type": "application/json"}, method="POST")
+                                 headers=_HDRS_JSON, method="POST")
     last = ""
     for attempt in range(_RETRIES + 1):
         try:

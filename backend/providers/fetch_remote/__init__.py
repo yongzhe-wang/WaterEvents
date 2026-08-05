@@ -48,6 +48,17 @@ _URL = os.environ.get("FETCH_REMOTE_URL", "").rstrip("/")
 # A40). This timeout covers BOTH legs, so it has to clear the sum of the two worst cases, not either one.
 # {MEASURED 2026-08-04 — whisper 63.7min audio in 1370.3s; docling worst single document 735.2s}
 # [CONFIDENCE: CONFIRMED — both from live runs].
+
+# TENANT IDENTITY sent with every request, read from WE_TENANT which each systemd unit sets for its own fleet. The
+# render VM meters browser slots and download bandwidth per tenant, and an unlabelled request lands in a deliberately
+# small 'anon' bucket — small enough that a forgotten label shows up in the numbers rather than silently bypassing the
+# whole scheme, but non-zero so a missing header degrades rather than fails.
+# Same mechanism as the vLLM gateway's per-key share, on purpose: two layers, one mental model.
+# [CONFIDENCE: CONFIRMED — the gate's ANON bucket and its weight are in providers/watercrawl/tenant_gate.py].
+_TENANT = os.environ.get("WE_TENANT", "").strip().lower()
+_HDRS_JSON = {"Content-Type": "application/json"}
+if _TENANT:
+    _HDRS_JSON["X-WE-Tenant"] = _TENANT
 _TIMEOUT = float(os.environ.get("FETCH_REMOTE_TIMEOUT_S", "2400"))
 _RETRIES = int(os.environ.get("FETCH_REMOTE_RETRIES", "1"))       # ONE retry: these calls are expensive, and a repeat
                                                                   # re-downloads the whole file. Transport blips only.
@@ -66,7 +77,7 @@ def _post(path: str, payload: dict) -> dict | None:
         _loud("FETCH_REMOTE_URL is empty — client called with no endpoint configured")
         return None
     req = urllib.request.Request(f"{_URL}{path}", data=json.dumps(payload).encode(),
-                                 headers={"Content-Type": "application/json"}, method="POST")
+                                 headers=_HDRS_JSON, method="POST")
     last = ""
     for attempt in range(_RETRIES + 1):
         try:

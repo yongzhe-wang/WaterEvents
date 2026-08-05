@@ -316,7 +316,7 @@ async def h_health(_request: web.Request) -> web.Response:
     # took past an explicit Disallow. Empty when the escape hatch is shut, which is the default. Reporting it HERE is
     # the point: an override nobody can see afterwards is the failure mode, and a health endpoint is checked, whereas
     # a log line scrolls away. {POLITENESS.PY "AN OVERRIDE YOU CANNOT SEE AFTERWARDS IS THE THING TO AVOID"}
-    from . import politeness                              # lazy: keeps the health route free of import-order coupling
+    from . import politeness, tenant_gate                # lazy: keeps the health route free of import-order coupling
     ovr = politeness.override_report()
 
     # Build the base payload first, then conditionally add 'host' — omitting it (rather than null) when unreadable,
@@ -333,6 +333,9 @@ async def h_health(_request: web.Request) -> web.Response:
         "ignore_robots": politeness.IGNORE_ROBOTS,
         "robots_override": ovr,
         "robots_override_total": sum(ovr.values()),
+        # per-tenant admission state — inflight, waiting, and the cap each tenant currently sees. The cap
+        # is what makes a queue legible: a tenant sitting AT its cap is being shaped; one below it is not.
+        "tenants": tenant_gate.snapshot(),
     }
 
     # Attempt to read host vitals; omit the key on failure rather than crashing the endpoint.
@@ -343,10 +346,38 @@ async def h_health(_request: web.Request) -> web.Response:
     return web.json_response(payload)
 
 
+
+# ── TENANT GATE MIDDLEWARE ─────────────────────────────────────────────────────────────────────────────────────────
+# One middleware rather than a wrapper in each of the seven handlers. WHY: the gate has to hold for the WHOLE request,
+# and a handler added later would silently escape a per-handler wrapper — which is exactly how expand_events_page
+# escaped the remote rebind and kept a Chromium running on the worker box for hours. A middleware cannot be forgotten.
+# {OBSERVED 2026-08-04 — expand_events_page was not in the rebind list because its name does not say "render", and the
+#  result was 130 chrome processes at 251% CPU on the box the split existed to empty}
+# [CONFIDENCE: CONFIRMED — process ages, parent chain and cgroup read off the live box].
+#
+# Which gate: the download endpoints are metered separately from the browser ones because they are different resources
+# on the same machine, and a multi-minute audio download must not be able to hold a slot a page render is waiting for.
+_FETCH_PATHS = ("/fetch_doc", "/fetch_audio")
+
+
+@web.middleware
+async def tenant_middleware(request: web.Request, handler):
+    """Admit through the per-tenant weighted gate, then run the handler. /health is exempt — a health probe that can
+    queue behind the very saturation it is meant to report is worse than no probe."""
+    from . import tenant_gate
+
+    if request.method != "POST" or not tenant_gate.ENABLED:
+        return await handler(request)
+    gate = tenant_gate.fetch if request.path in _FETCH_PATHS else tenant_gate.browser
+    tenant = tenant_gate.tenant_of(request)
+    async with tenant_gate.hold(gate, tenant):
+        return await handler(request)
+
+
 def build_app() -> web.Application:
     """Wire the routes. client_max_size is raised because a render POST is tiny but nothing stops a caller from sending
     a long url list later; the RESPONSE (shot_b64) is the big direction and is not bounded by this."""
-    app = web.Application(client_max_size=8 * 1024 * 1024)
+    app = web.Application(client_max_size=8 * 1024 * 1024, middlewares=[tenant_middleware])
     app.router.add_post("/render_shot", h_render_shot)
     app.router.add_post("/render_full", h_render_full)
     app.router.add_post("/render_detail", h_render_detail)
