@@ -403,7 +403,7 @@ def main() -> None:
     """Entry point — `python -m tools.service`. Device selection is EXTERNAL (CUDA_VISIBLE_DEVICES in the unit file),
     not a flag here, so it applies to every library in the process including ones we do not call directly."""
     global _POOL
-    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor
 
     # PROCESSES for the CPU (docling) side, THREADS for the GPU (whisper) side. Not a style preference — measured.
     #
@@ -420,14 +420,23 @@ def main() -> None:
     #
     # whisper stays on threads: its concurrency is 1 by necessity (it shares an A40 with a vLLM holding 40 of 46 GB),
     # and CTranslate2 releases the GIL properly, so processes would only add model-loading cost for no parallelism.
-    if _device() == "cuda":
-        _POOL = ThreadPoolExecutor(max_workers=_CONC, thread_name_prefix="tool")
-        kind = "threads"
-    else:
-        # Each worker loads its own docling models on first use — ~2 GB RSS apiece against 503 GB, and one load per
-        # worker for the life of the process rather than per task.
-        _POOL = ProcessPoolExecutor(max_workers=_CONC)
-        kind = "processes"
+    # REVERTED to threads after measuring. The GIL analysis above is correct as far as it goes — threads do serialise
+    # docling's Python work — but processes lost anyway, and by more:
+    #   threads,   docling conc 24   312 events/hour
+    #   processes, docling conc 16    54 events/hour
+    # measured from events.enriched_at timestamps rather than a polling window, because document times span 30-700s
+    # and a five-minute window routinely contains zero completions either way.
+    # The cost that outweighs the GIL is model loading: each pool worker loads ~2 GB of docling weights, and HF_HOME
+    # lives on /workspace, which is MooseFS mounted from Montreal. Sixteen workers is ~32 GB of contended network
+    # reads, and the box showed load dropping to 4.1 of 96 cores with fourteen documents nominally in flight — idle,
+    # waiting on the network, not computing.
+    # The shape that would win both ways is several docling SERVICE processes, each loading models ONCE at startup
+    # and each running few threads. That needs the client to spread across ports and is not a one-line change.
+    # {MEASURED 2026-08-05 — per-minute enriched counts either side of the switch}
+    # [CONFIDENCE: CONFIRMED on the direction; the attribution is muddier than it should be because fetch-gate size
+    #  changed in the same window, which is a mistake worth not repeating — one variable at a time].
+    _POOL = ThreadPoolExecutor(max_workers=_CONC, thread_name_prefix="tool")
+    kind = "threads"
     _loud(f"starting on :{PORT} (concurrency={_CONC} {kind}, CUDA_VISIBLE_DEVICES="
           f"{os.environ.get('CUDA_VISIBLE_DEVICES', '<unset>')!r}, max_body={MAX_BODY // 1024 // 1024}MB)")
     web.run_app(build_app(), host="0.0.0.0", port=PORT, access_log=None)
