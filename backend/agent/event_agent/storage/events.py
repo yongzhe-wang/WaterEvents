@@ -202,6 +202,33 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
         )
 
 
+async def renew_lease(pool: asyncpg.Pool, event_id, claim_token) -> bool:
+    """Push a LIVE claim's lease forward. Returns False ONLY when the claim is provably gone (row no longer matches this
+    token), so the caller can stop work it can no longer commit.
+
+    WHY this exists: the lease is a CRASH detector, but without renewal it silently doubles as a work DEADLINE, and any
+    job slower than the lease has its finished output thrown away. That is what happened in production:
+    {DOCLING.LOG 2026-08-05 "1970177B → 10377 CHARS, 19 TABLES IN 2822.7S"} — a 47-minute document under a 30-minute
+    lease. The worker finished, the fencing UPDATE matched nothing, and the log said
+    {MEDIA@1 2026-08-05 "[ENRICH] ⚠️ LOST-LEASE EVENT AA3CD908-A4A4-47D7-B18B-3C3CDF305FFC ← 5 URLS → 60 BLOCKS, 0 SEGMENTS, 1 FILES"}
+    — 60 extracted blocks discarded. The reaper then re-queued the event, the next worker redid the identical work, and
+    it lapsed again: a LIVELOCK that burns compute at full rate and commits nothing. Enriched count sat at 0 for 30
+    straight minutes while every liveness signal — six active workers, four services at 200 — stayed green.
+    [CONFIDENCE: CONFIRMED — lease TTL, document time and the discard log line were all read off the live system;
+     fencing itself is CORRECT and stays, this only stops the clock from expiring under work that is still running.]
+
+    WHY a DB error is not treated as lease-loss: a transient pool/connection blip would otherwise cancel healthy work.
+    Only a matched-zero-rows UPDATE — the database positively stating the token no longer owns the row — returns False.
+    """
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "UPDATE events SET lease_until = now() + ($1 || ' minutes')::interval "
+            "WHERE id=$2 AND claim_token=$3 AND status='rendering' RETURNING id;",
+            str(ENRICH_LEASE_MIN), event_id, claim_token,
+        )
+        return row is not None
+
+
 async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: str, urls: list[str]) -> bool:
     """Flip an event to `enriched` with its generative basic_info + merged urls. FENCED on claim_token: if the lease
     expired and another worker re-claimed (new token), this UPDATE matches nothing → the stale result never clobbers.

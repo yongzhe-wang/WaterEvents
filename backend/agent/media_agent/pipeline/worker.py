@@ -46,6 +46,9 @@ _WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
 _STATS: dict[str, int] = {
     "fail_event_failed": 0,     # fail_event ITSELF raised → the row stays 'rendering' until its lease lapses
     "escaped": 0,               # an exception got past process_event's own try/except and was caught by gather
+    # A NON-ZERO value here means work is being thrown away, which is the one failure this pipeline cannot detect from
+    # liveness: processes stay up, health checks stay 200, and enrichment output is simply zero. It must be counted.
+    "lease_lost": 0,            # heartbeat found the claim gone mid-flight → the in-progress work was abandoned
 }
 _EMPTY_BACKOFF_S = int(os.environ.get("WATEREVENTS_EMPTY_BACKOFF_S", "10"))
 
@@ -170,6 +173,53 @@ async def process_event(pool, client: QwenClient, ev) -> None:
                   f"'rendering' until its lease lapses; recovery needs reconcile_events to be running", flush=True)
 
 
+# Renew well inside the lease so one failed renewal is not fatal: at 5 minutes against a 30-minute lease, five
+# consecutive renewals must fail before the claim can actually lapse.
+_HEARTBEAT_S = float(os.environ.get("WATEREVENTS_HEARTBEAT_S", "300"))
+
+
+async def _lease_heartbeat(pool, eid, tok, work: asyncio.Task) -> None:
+    """Hold the claim open while `work` runs, and cancel `work` the moment the claim is provably gone.
+
+    WHY it cancels rather than just logging: once the token is lost, every remaining second is spent producing output
+    that the fenced write will refuse. The reaper has ALREADY handed this event to another worker, so continuing means
+    two workers rendering the same pages and calling the same VLM — the exact duplicate work visible in
+    {DOCLING.LOG 2026-08-05 "3470473B → 11079 CHARS, 5 TABLES IN 1476.5S" AND "3470473B → 11079 CHARS, 5 TABLES IN 1205.5S"}
+    (one document, two full extractions). Cancelling returns the slot to the pool immediately.
+    [CONFIDENCE: CONFIRMED — the duplicate pair is the same byte count and the same table count in the same log.]
+    """
+    while True:
+        await asyncio.sleep(_HEARTBEAT_S)
+        try:
+            alive = await db.renew_lease(pool, eid, tok)
+        except Exception as e:                           # noqa: BLE001 — a DB blip is NOT proof the lease is gone;
+            print(f"[enrich] ⚠️ event {eid} lease renewal errored ({type(e).__name__}: {e}) — "  # keep working and
+                  f"keeping the work alive, next attempt in {_HEARTBEAT_S:.0f}s", flush=True)     # retry next tick
+            continue
+        if not alive:
+            _STATS["lease_lost"] += 1
+            print(f"[enrich] ⛔ event {eid} lease LOST mid-flight — abandoning now instead of finishing work that "
+                  f"the fenced write would reject", flush=True)
+            work.cancel()
+            return
+
+
+async def _enrich_with_lease(pool, client, ev) -> None:
+    """Run one event's enrichment with its lease held open underneath it. Wraps process_event without touching it, so
+    the enrichment logic stays unaware of leasing."""
+    eid, tok = ev["id"], ev["claim_token"]
+    work = asyncio.create_task(process_event(pool, client, ev))
+    beat = asyncio.create_task(_lease_heartbeat(pool, eid, tok, work))
+    try:
+        await work
+    except asyncio.CancelledError:
+        # Cancelled BY the heartbeat (lease genuinely lost). The event is already back in another worker's hands, so
+        # there is nothing to fail_event here — writing a failure would clobber the new owner's claim.
+        pass
+    finally:
+        beat.cancel()                                    # normal completion — stop the heartbeat before returning
+
+
 async def worker_loop(pool) -> None:
     """Claim-batch → enrich-in-parallel → repeat until the discovered queue is drained (N idle rounds). One shared
     QwenClient keeps the RunPod connection warm across the whole run."""
@@ -189,7 +239,7 @@ async def worker_loop(pool) -> None:
         print(f"[enrich] claimed {len(events)} events", flush=True)
         # process_event already self-contains failures (try/except → fail_event); return_exceptions=True is the belt so
         # even an escaped error can't sink the loop + strand the whole batch's claimed rows. {AUDIT 2026-07-23 HIGH}.
-        results = await asyncio.gather(*(process_event(pool, client, ev) for ev in events), return_exceptions=True)
+        results = await asyncio.gather(*(_enrich_with_lease(pool, client, ev) for ev in events), return_exceptions=True)
         # INSPECT the results instead of discarding them. `return_exceptions=True` was already correct, but throwing the
         # list away meant an exception that escaped process_event's own handler was swallowed twice over: the event stays
         # 'rendering' until its lease lapses, and NOTHING said so. That is indistinguishable from healthy-but-slow, which
@@ -205,9 +255,11 @@ async def worker_loop(pool) -> None:
                     print(f"[enrich] ⛔ event {ev.get('id')} ESCAPED {type(r).__name__}: {r}", flush=True)
         if any(_STATS.values()):                          # per-batch line only when there is bad news to report
             print(f"[enrich] batch stats — escaped={_STATS['escaped']} "
-                  f"fail_event_failed={_STATS['fail_event_failed']}", flush=True)
+                  f"fail_event_failed={_STATS['fail_event_failed']} "
+                  f"lease_lost={_STATS['lease_lost']}", flush=True)
     print(f"[enrich] {_WORKER_ID} exiting — enrichment queue drained after {_MAX_IDLE_ROUNDS} idle rounds "
-          f"(escaped={_STATS['escaped']}, fail_event_failed={_STATS['fail_event_failed']})", flush=True)
+          f"(escaped={_STATS['escaped']}, fail_event_failed={_STATS['fail_event_failed']}, "
+          f"lease_lost={_STATS['lease_lost']})", flush=True)
 
 
 async def main() -> None:
