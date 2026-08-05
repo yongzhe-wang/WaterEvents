@@ -2,6 +2,12 @@
 // (2) the newest events, descending by date. Polls /api/today every 30s so the queue + feed stay live as workers run.
 // {USER 2026-07-25 "today page: current worker queue (full + deep=1 together) + new events descending by date"}.
 import { useEffect, useState } from "react";
+
+// The artifact inventory type, the button row and its loader are SHARED with the Today · Media page — see
+// components/artifacts.tsx. Same instrument over the same data on both pages.
+import ArtifactModal from "../components/ArtifactModal";
+import { ArtifactButtons, useArtifactInventory } from "../components/artifacts";
+import type { ArtInvMap } from "../components/artifacts";
 import type { ReactNode } from "react";
 
 interface NextRow { company: string; url: string; due_at: string; }   // a next-up queued unit (company + url)
@@ -194,26 +200,9 @@ function ResourceCards({ r, onClick }: { r: Res; onClick: () => void }) {
   // [CONFIDENCE: CONFIRMED 100% — field mapping defined in contract C, same change]
   const renderHot = (r.render?.pct ?? 0) >= 85;
 
-  // ── DOCLING ────────────────────────────────────────────────────────────────────
-  // BIG number = inflight concurrency (out of total concurrency slots) — tells the operator at a glance whether
-  // docling is idle, busy, or fully saturated. A number near the ceiling means PDF parsing is the bottleneck.
-  // Detail line 1: errors (non-zero = immediate action needed; zero = healthy — same pattern as whisper).
-  // Detail line 2: CPU load % (docling is CPU-bound; high pct confirms saturation vs. idle-but-failing).
-  // WHY NOT total done as BIG: cumulative done is context-free; inflight is the instantaneous health signal.
-  // {CONTRACT-C 2026-08-05 "docling.concurrency / inflight / done / errors / cores / load / pct"}
-  // [CONFIDENCE: CONFIRMED 100% — shape from contract C]
-  const doclingHot = (r.docling?.pct ?? 0) >= 85;
-
-  // ── WHISPER ────────────────────────────────────────────────────────────────────
-  // BIG number = inflight transcription jobs (same reasoning as docling — the instantaneous saturation signal).
-  // WHY NOT raw GPU memory: whisper shares its GPU with vLLM; gpu_mem_used_mb reflects BOTH processes. A high
-  // number could mean "vLLM is busy, whisper has plenty of room" — acting on it would be misleading. Instead:
-  //   • gpu_util_pct as detail line 2 — GPU compute utilisation is a better proxy for whether whisper is actually
-  //     running inference vs. waiting; if util is high and inflight is low, vLLM is the consumer, not whisper.
-  //   • errors as detail line 1 — zero = healthy regardless of who owns the VRAM.
-  // {CONTRACT-C 2026-08-05 "whisper.gpu_mem_used_mb / gpu_mem_total_mb / gpu_util_pct; device / concurrency / inflight / done / errors"}
-  // [CONFIDENCE: CONFIRMED 100% — "GPU is shared with vLLM, so raw GPU memory alone is misleading" per task brief]
-  const whisperHot = (r.whisper?.gpu_util_pct ?? 0) >= 85;
+  // Docling and Whisper moved to the Today · Media page along with their cards — they bound stage-2's
+  // enrichment queue, not stage-1's discovery loop, so their saturation belongs beside the queue it explains.
+  // {USER 2026-08-05 "sepraate the stauts display there"} [CONFIDENCE: CONFIRMED 100% — direct directive.]
 
   // ── VLM ────────────────────────────────────────────────────────────────────────
   // Unchanged from the original card per contract D "keep the existing VLM · GPU card exactly as is".
@@ -238,36 +227,6 @@ function ResourceCards({ r, onClick }: { r: Res; onClick: () => void }) {
         ]
       )}
 
-      {/* DOCLING — RunPod CPU service; BIG = inflight vs concurrency ceiling, detail = errors + CPU load.
-          Degrades to "—" when r.docling is null (service down). */}
-      {card("Docling · PDF", "RunPod CPU · click for chart",
-        r.docling
-          ? <>{r.docling.inflight}<span className="q-card-big-sub">/{r.docling.concurrency} slots</span></>
-          : <>—<span className="q-card-big-sub"> slots</span></>,
-        doclingHot,
-        [
-          r.docling ? `${r.docling.errors} errors · ${r.docling.done} done` : "— errors",
-          r.docling ? `${r.docling.pct}% CPU · load ${r.docling.load.toFixed(2)}` : "— CPU",
-        ]
-      )}
-
-      {/* WHISPER — RunPod GPU service shared with vLLM; BIG = inflight jobs (NOT raw GPU mem, which is shared).
-          gpu_util_pct is the least-ambiguous signal when GPU is shared: high util + low whisper inflight = vLLM busy.
-          Degrades to "—" when r.whisper is null (service down). */}
-      {card("Whisper · GPU", "RunPod GPU (shared) · click for chart",
-        r.whisper
-          ? <>{r.whisper.inflight}<span className="q-card-big-sub">/{r.whisper.concurrency} slots</span></>
-          : <>—<span className="q-card-big-sub"> slots</span></>,
-        whisperHot,
-        [
-          r.whisper ? `${r.whisper.errors} errors · ${r.whisper.done} done` : "— errors",
-          r.whisper
-            ? `${r.whisper.gpu_util_pct}% GPU util · ${r.whisper.gpu_mem_used_mb}/${r.whisper.gpu_mem_total_mb} MB`
-            : "— GPU util",
-        ]
-      )}
-
-      {/* VLM — unchanged per contract D. */}
       {card("VLM · GPU", "in flight now · click for chart",
         <>{r.vlm?.running ?? "—"}<span className="q-card-big-sub"> running</span></>, vlmHot,
         [`${r.vlm?.waiting ?? "—"} waiting`, `${kv ?? "—"}% KV cache`])}
@@ -450,6 +409,15 @@ export default function TodayView() {
   // event_date — that column is display-only. {USER 2026-07-26 "by when discovered from the run; date just for visual"}.
   const events = data?.events || [];
 
+  // Artifact inventory for exactly the rows on screen. The hook keys off the id LIST, so it refetches when the feed
+  // turns over rather than on every render, and it fills in AFTER the table has already painted — the buttons must
+  // never hold back the feed.
+  const artInv: ArtInvMap = useArtifactInventory(events.map((e) => e.id));
+
+  // Which event + artifact kind the user clicked. Separate from the page-viewer modal (`src`) so closing one cannot
+  // disturb the other's in-flight fetch.
+  const [artModal, setArtModal] = useState<{ eventId: string; kind: string; title: string } | null>(null);
+
   return (
     <div className="body">
       <div className="events-panel">
@@ -484,7 +452,7 @@ export default function TodayView() {
             <div className="artifacts-empty">No events yet.</div>
           ) : (
             <table className="links-table">
-              <thead><tr><th>Discovered</th><th>Date</th><th>Type</th><th>Title</th><th>Company</th><th>Page</th><th>Event URL</th></tr></thead>
+              <thead><tr><th>Discovered</th><th>Date</th><th>Type</th><th>Title</th><th>Company</th><th>Page</th><th>Artifacts</th><th>Event URL</th></tr></thead>
               <tbody>
                 {events.map((e) => (
                   <tr key={e.id}>
@@ -494,6 +462,11 @@ export default function TodayView() {
                     <td className="lt-title">{e.title || "—"}</td>
                     <td className="lt-company">{e.company}</td>
                     <td><button className="src-btn" onClick={() => openPage(e)}>page</button></td>
+                    {/* One button per artifact kind this event ACTUALLY produced — the column is the stage-2 output
+                        made visible per row. `urls` renders even when everything failed, because an all-failed ledger
+                        is the state most worth opening and would otherwise look identical to "not run yet". */}
+                    <td><ArtifactButtons inv={artInv[e.id]}
+                          onOpen={(kind) => setArtModal({ eventId: e.id, kind, title: e.title || e.company })} /></td>
                     <td>{e.url ? <a className="lt-link" href={e.url} target="_blank" rel="noreferrer">{e.url}</a> : "—"}</td>
                   </tr>
                 ))}
@@ -505,6 +478,11 @@ export default function TodayView() {
 
       {/* PAGE VIEWER modal — the VLM prompt (what we asked) + the rendered page (what the model read), per event. Same as
           EventsView, now on the Today feed too. {USER 2026-07-27 "raw page visualizer ... create a new col"}. */}
+      {artModal && (
+        <ArtifactModal eventId={artModal.eventId} kind={artModal.kind} title={artModal.title}
+                       onClose={() => setArtModal(null)} />
+      )}
+
       {src && (
         <div className="src-overlay" onClick={() => setSrc(null)}>
           <div className="src-modal" onClick={(ev) => ev.stopPropagation()}>

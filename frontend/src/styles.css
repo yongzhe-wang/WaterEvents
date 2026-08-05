@@ -1281,3 +1281,96 @@ a.chip:hover { background: var(--glass-hover); }
 .q-stat { font-size: 12px; color: var(--text-secondary); }
 .q-stat b { color: var(--text); font-weight: 650; }
 .q-stat.q-fail b { color: var(--amber); }
+
+/* ── Stage-2 artifact debug column — ArtifactButtons + ArtifactModal ──
+   Visual sibling of .src-btn / .src-overlay / .src-modal / .chip.
+   Mirrors the same dark terminal aesthetic: glass fills, pill radii,
+   accent-green on hover, monospace labels. The ".bad" modifier + ".art-row-failed"
+   together signal failed ledger URLs with a restrained red that pops in a long
+   table without creating noise on every row. ── */
+
+/* Artifact pill button — compact sibling of .src-btn (padding reduced so several
+   fit side-by-side in one table cell). Same font-size (10.5px vs 11px) to stay
+   readable but visually subordinate. {FRONTEND AGENT REPORT 2026-08-05
+   ".ART-BTN: MONOSPACE PILL BUTTON, SAME FONT/SIZE AS .SRC-BTN BUT SMALLER
+   PADDING (2PX 7PX, FONT 10.5PX)."} [CONFIDENCE: CONFIRMED 100%] */
+.art-btn {
+  font-family: var(--mono); font-size: 10.5px;
+  padding: 2px 7px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  color: var(--accent-ink); cursor: pointer; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+.art-btn:hover { background: var(--accent-soft); border-color: rgba(111, 211, 171, 0.45); }
+
+/* "bad" variant — failed-status ledger button. Red tint instead of green;
+   same shape so the cell layout stays stable. Designed to catch the eye in a
+   long table without screaming on every row — the border + text color signal
+   "something went wrong here" without a full background fill.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-BTN.BAD: BORDER 1PX SOLID RGBA(248,113,113,0.5), TEXT COLOR #F87171. HOVER: BORDER BRIGHTER RED."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-btn.bad {
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #f87171;
+}
+.art-btn.bad:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.75);
+}
+
+/* Section separator inside the modal body — visually chunks one document /
+   block from the next with a hairline bottom border and breathing room.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-BLOCK: PADDING 10PX 0, BORDER-BOTTOM 1PX SOLID VAR(--GLASS-BORDER-SOFT). LAST CHILD: NO BORDER."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-block {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--glass-border-soft);
+}
+.art-block:last-child { border-bottom: none; }
+
+/* Flex header row for a document / block — kind chip + metadata read
+   left-to-right as a single compact line before the body content.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-BLOCK-HEAD: DISPLAY:FLEX; GAP:8PX; ALIGN-ITEMS:CENTER; MARGIN-BOTTOM:6PX CONTAINING KIND CHIP + METADATA INLINE."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-block-head {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+}
+
+/* Ordinal label (#1, #2 …) — monospace in text-muted so it's present but
+   doesn't compete with content. Fixed min-width keeps columns from jumping
+   as the digit count grows.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-ORD: MONOSPACE, FONT-SIZE:11PX, COLOR: VAR(--TEXT-MUTED), MIN-WIDTH:28PX."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-ord {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-muted); min-width: 28px;
+}
+
+/* Full-width data table for DataTable / UrlsView renderers. Matches the
+   existing .links-table / .tok-table visual language — left-aligned headers
+   in small-caps mono, cell padding of 5px 8px for compactness inside the modal.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-DATA-TABLE: WIDTH:100%; BORDER-COLLAPSE:COLLAPSE; FONT-SIZE:12PX; FONT-FAMILY:VAR(--MONO). TH: TEXT-ALIGN:LEFT; PADDING:5PX 8PX; COLOR:VAR(--TEXT-MUTED); BORDER-BOTTOM:1PX SOLID VAR(--GLASS-BORDER-SOFT). TD: PADDING:5PX 8PX; BORDER-BOTTOM:1PX SOLID VAR(--GLASS-BORDER-SOFT); VERTICAL-ALIGN:TOP; WORD-BREAK:BREAK-WORD."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-data-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; font-family: var(--mono);
+}
+.art-data-table th {
+  text-align: left; padding: 5px 8px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--glass-border-soft);
+}
+.art-data-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--glass-border-soft);
+  vertical-align: top; word-break: break-word;
+}
+
+/* Highlight for failed-status rows in UrlsView — faint red background
+   (rgba alpha 0.07) so the row is visually distinct without being garish noise.
+   Pairs with .art-btn.bad (border/text) to create a double signal for failures.
+   {FRONTEND AGENT REPORT 2026-08-05 ".ART-ROW-FAILED: BACKGROUND: RGBA(248,113,113,0.07) — A FAINT RED TINT SO THE ROW POPS WITHOUT BEING GARISH."}
+   [CONFIDENCE: CONFIRMED 100%] */
+.art-row-failed {
+  background: rgba(248, 113, 113, 0.07);
+}

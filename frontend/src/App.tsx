@@ -6,7 +6,11 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import TodayView from "./views/TodayView";
 import EventsView from "./views/EventsView";
-import MediaView from "./views/MediaView";
+// Today · Media replaces the old flat MediaView in the nav: it is strictly more useful (same runs, plus the stage-2
+// status strip and the artifact buttons). MediaView itself stays importable but is no longer routed.
+// {USER 2026-08-05 "let's keep two pages one is today events and one is today media"}
+// [CONFIDENCE: CONFIRMED 100% — direct user directive.]
+import MediaTodayView from "./views/MediaTodayView";
 import IrUrlsView from "./views/IrUrlsView";
 import ApiDocsView from "./views/ApiDocsView";
 
@@ -69,16 +73,16 @@ export default function App() {
           <span className="os-ver">live</span>
         </div>
         <nav className="nav">
-          <NavItem label="Today" icon={ICONS.today} active={view === "today"} href={ROUTES.today} onClick={() => setView("today")} />
+          <NavItem label="Today · Events" icon={ICONS.today} active={view === "today"} href={ROUTES.today} onClick={() => setView("today")} />
           <NavItem label="Events" icon={ICONS.events} active={view === "events"} href={ROUTES.events} onClick={() => setView("events")} />
-          <NavItem label="Media" icon={ICONS.media} active={view === "media"} href={ROUTES.media} onClick={() => setView("media")} />
+          <NavItem label="Today · Media" icon={ICONS.media} active={view === "media"} href={ROUTES.media} onClick={() => setView("media")} />
           <NavItem label="IR_URLS" icon={ICONS.irurls} active={view === "irurls"} href={ROUTES.irurls} onClick={() => setView("irurls")} />
           <NavItem label="API" icon={ICONS.apidocs} active={view === "apidocs"} href={ROUTES.apidocs} onClick={() => setView("apidocs")} />
         </nav>
       </aside>
       <main className="stage">
         {view === "today" ? <TodayView />
-          : view === "media" ? <MediaView />
+          : view === "media" ? <MediaTodayView />
           : view === "irurls" ? <IrUrlsView />
           : view === "apidocs" ? <ApiDocsView />
           : <EventsView />}

@@ -97,10 +97,13 @@ const STATIC_ROUTES = {
   "/api/media": "./api/media.js",     // Media tab — server-side paginated (was an unbounded full-table scan)
   "/api/health": "./api/health.js",   // liveness probe
   "/api/today": "./api/today.js",     // Today dashboard: work_queue state + newest events (this session)
+  "/api/today-media": "./api/today-media.js",  // Today · Media: stage-2 queue depth + lanes + finished runs
   "/api/usage": "./api/usage.js",     // day-level render/VLM usage history for the click-to-chart modal
   "/api/events": "./api/events.js",   // events list (EventsView) — was missing from the shim (prod-only)
   "/api/page": "./api/page.js",       // source-page content per event (EventsView modal)
   "/api/irurls": "./api/irurls.js",   // per-company IR entry urls (ir_url + ir_url_agent's event_hubs) — IR_URLS tab
+  "/api/artifacts": "./api/artifacts.js", // batch artifact INVENTORY for a list of event_ids — Today dashboard debug column
+  "/api/artifact": "./api/artifact.js",   // single-artifact CONTENT by event_id+kind — modal data source
   // QUEUE ADMIN — the only WRITE routes in this server. All three are token-gated (fail-closed) and go through a
   // column-scoped Postgres role, never the anon key (which is read-only) and never service_role. They change only
   // work_queue.priority/due_at on `queued` rows, so a live crawl is never interrupted. {lib/_queue_admin.js}.
@@ -134,9 +137,6 @@ function route(pathname) {
   // [CONFIDENCE: CONFIRMED — read vercel.json + confirmed no api/companies/ dir exists].
   const m = pathname.match(/^\/api\/companies\/([^/]+)$/);
   if (m) return { relPath: "./api/companies.js", params: { ticker: decodeURIComponent(m[1]) } };
-  // /api/artifact/<ID> — one artifact's FULL content, lazy-loaded when an artifact is expanded.
-  const am = pathname.match(/^\/api\/artifact\/([^/]+)$/);
-  if (am) return { relPath: "./api/artifact/[id].js", params: { id: decodeURIComponent(am[1]) } };
   // No route matched.
   return null;
 }
