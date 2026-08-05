@@ -58,7 +58,10 @@ async def _blocking(fn, *args, **kw):
     have NO internal semaphore — nothing else would stop 200 queued pdfs from each grabbing threads at once."""
     _stats["inflight"] += 1
     try:
-        return await asyncio.get_running_loop().run_in_executor(_POOL, lambda: fn(*args, **kw))
+        # functools.partial, not a lambda: ProcessPoolExecutor pickles what it submits and a lambda is not
+        # picklable, so the thread-only version of this line would raise the moment the CPU side used processes.
+        import functools
+        return await asyncio.get_running_loop().run_in_executor(_POOL, functools.partial(fn, *args, **kw))
     finally:
         _stats["inflight"] -= 1
 
@@ -400,9 +403,32 @@ def main() -> None:
     """Entry point — `python -m tools.service`. Device selection is EXTERNAL (CUDA_VISIBLE_DEVICES in the unit file),
     not a flag here, so it applies to every library in the process including ones we do not call directly."""
     global _POOL
-    from concurrent.futures import ThreadPoolExecutor
-    _POOL = ThreadPoolExecutor(max_workers=_CONC, thread_name_prefix="tool")
-    _loud(f"starting on :{PORT} (concurrency={_CONC}, CUDA_VISIBLE_DEVICES="
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+    # PROCESSES for the CPU (docling) side, THREADS for the GPU (whisper) side. Not a style preference — measured.
+    #
+    # docling's convert() is Python-heavy, so threads serialise on the GIL and then do WORSE than serial, because
+    # contention and cache thrash add to the serialisation. Same document, same box, warm models:
+    #   1 thread    9.1s   →  0.110 docs/sec
+    #   4 threads  47.8s   →  0.084 docs/sec   (-24% vs one)
+    #   8 threads 186.6s   →  0.043 docs/sec   (-61% vs one)
+    # Perfect serialisation would hold throughput flat at 0.110; it FELL. That is also why the box showed 369% CPU —
+    # 3.7 of 96 cores — while 24 documents were nominally in flight: torch's numeric kernels release the GIL and
+    # supply those few cores, while everything around them queues on it.
+    # {MEASURED 2026-08-05 on the pod, threads only, models pre-warmed}
+    # [CONFIDENCE: CONFIRMED — throughput measured at three thread counts on identical input].
+    #
+    # whisper stays on threads: its concurrency is 1 by necessity (it shares an A40 with a vLLM holding 40 of 46 GB),
+    # and CTranslate2 releases the GIL properly, so processes would only add model-loading cost for no parallelism.
+    if _device() == "cuda":
+        _POOL = ThreadPoolExecutor(max_workers=_CONC, thread_name_prefix="tool")
+        kind = "threads"
+    else:
+        # Each worker loads its own docling models on first use — ~2 GB RSS apiece against 503 GB, and one load per
+        # worker for the life of the process rather than per task.
+        _POOL = ProcessPoolExecutor(max_workers=_CONC)
+        kind = "processes"
+    _loud(f"starting on :{PORT} (concurrency={_CONC} {kind}, CUDA_VISIBLE_DEVICES="
           f"{os.environ.get('CUDA_VISIBLE_DEVICES', '<unset>')!r}, max_body={MAX_BODY // 1024 // 1024}MB)")
     web.run_app(build_app(), host="0.0.0.0", port=PORT, access_log=None)
 
