@@ -45,6 +45,27 @@ _CHUNK_OVERLAP = int(os.environ.get("MEDIA_CHUNK_OVERLAP", "1500"))          # b
 _CHUNK_MAX_DEPTH = int(os.environ.get("MEDIA_CHUNK_MAX_DEPTH", "3"))         # re-split a still-truncating chunk, ≤3 deep
 _HEAD_TIMEOUT_S = int(os.environ.get("MEDIA_HEAD_TIMEOUT_S", "10"))          # content-type sniff timeout
 
+# ── WHICH EXTRACTOR LANES ARE ON ────────────────────────────────────────────────────────────────────────────────────
+# 用一句话讲完: 只有列在这里的 url kind 会被真正处理,其余记 `skipped:kind-disabled` —— 不是 done(那等于谎称读过),
+# 也不是 failed(那等于把我们的配置问题赖给来源)。默认只开 html,因为另外两条车道现在是单进程瓶颈。
+#
+# WHY html-only by default: the three lanes have wildly different capacity and two of them stall the queue for the
+# third. Measured on the live fleet with all lanes enabled:
+#   {POD /health 2026-08-06 "WHISPER CONCURRENCY=1 INFLIGHT=12"}   — 11 audio urls queued behind ONE slot
+#   {POD /health 2026-08-06 "DOCLING CONCURRENCY=4 INFLIGHT=0"} with {ps "225% (2.2 CORES)"} on {nproc "96"}
+#   {POD /proc/loadavg "6.49"} — 93% of a 96-core machine idle behind those two limits
+# The per-event cost of leaving them on:
+#   {RUN LOG 2026-08-06 "EV_016_HTML_ONLY 21.6S" · "EV_018_HTML_ONLY 32.9S"}  vs
+#   {RUN LOG 2026-08-06 "EV_007_AUDIO 557.7S" · "EV_006_AUDIO 1039.5S"}       — a 26-48x spread, nearly all queueing.
+# [CONFIDENCE: CONFIRMED 100% — every figure read off the running fleet or its own run log.]
+#
+# Turning a lane back on is an env change, not a code change: MEDIA_KINDS="html,pdf,pptx,docx,xlsx" once docling runs
+# multi-process, plus "audio,video" once whisper has VRAM or CPU headroom. Until then, enabling them buys nothing and
+# makes the html lane wait behind them.
+# {USER 2026-08-06 "add infra so we can only extract basic info right now, no docling no whipser just info"}
+_ENABLED_KINDS = frozenset(
+    k.strip() for k in os.environ.get("MEDIA_KINDS", "html").split(",") if k.strip())
+
 
 # ── OFFICE (pdf / pptx / docx / xlsx) → tools/officeall (Docling) ──────────────────────────────────────────────
 async def handle_office(url: str, chart, proxy: str | None = None) -> None:
@@ -406,6 +427,14 @@ async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
     frontier 已删除。{USER 2026-08-03 "let's just use the original list from the event agent"}
     [CONFIDENCE: CONFIRMED 100% — direct user directive]."""
     kind = await _refine_kind(url, kind)                      # H3: extensionless html → maybe pdf/audio via content-type
+
+    # KIND GATE — run only the lanes this deployment has capacity for; record the rest honestly. See _ENABLED_KINDS.
+    # `other` is deliberately NOT gated here: it already has its own recorded-only outcome below, and routing it
+    # through this branch would relabel a genuinely-unfetchable url (mailto, feed, asset) as a config decision.
+    if kind not in _ENABLED_KINDS and kind != router.KIND_OTHER:
+        chart.set_status(url, "skipped:kind-disabled")
+        return
+
     if kind == router.KIND_HTML:
         await handle_html(url, chart, client or QwenClient(), use_image=use_image)
     elif kind in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):   # H2: xlsx now routed

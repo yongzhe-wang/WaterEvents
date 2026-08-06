@@ -144,6 +144,18 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         # show; marking it 'enriched' would make a dead event indistinguishable from a genuinely content-free one.
         if not (n_docs or n_segs or n_audio):
             statuses = {u: s.get("status", "") for s in chart.urls.values() for u in [s.get("url", "")]}
+            # Separate OUR choice from the event's problem. When every url was gated off by MEDIA_KINDS, this event was
+            # never attempted — calling that `nothing_usable` would blame the source for our configuration AND, because
+            # failures are retried, would burn the retry budget re-deciding not to look. `deferred:kind-disabled` says
+            # the work is still owed, so re-enabling a lane and requeueing picks these up as a clean batch.
+            # {HANDLERS.PY "_ENABLED_KINDS" — the gate that produced these statuses}
+            # [CONFIDENCE: CONFIRMED 100% — the status string is written by that gate and nothing else emits it.]
+            vals = list(statuses.values())
+            if vals and all(s.startswith("skipped:kind-disabled") for s in vals):
+                print(f"[enrich] ⏸ event {eid} DEFERRED — all {len(media)} urls are disabled kinds "
+                      f"(MEDIA_KINDS gate); not a failure, work still owed", flush=True)
+                await db.fail_event(pool, eid, tok, "deferred:kind-disabled")
+                return
             print(f"[enrich] ⛔ event {eid} NOTHING-USABLE from {len(media)} urls — {statuses} — fail", flush=True)
             await db.fail_event(pool, eid, tok, "nothing_usable")
             return
