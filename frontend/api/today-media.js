@@ -17,7 +17,7 @@
 //  there ... i want to autall inspect the medai runs"}
 //
 // 上游触发: MediaTodayView 每 30s 拉一次。下游连接: Supabase PostgREST(waterevents schema)+ 三个服务的 /health。
-import { sb } from "../lib/_db.js";
+import { sb, sbAll } from "../lib/_db.js";
 
 // Same service addresses /api/today uses, same env-override shape. Duplicated as constants rather than imported because
 // today.js does not export them; keeping them literal here means this endpoint keeps working if today.js is refactored.
@@ -203,7 +203,13 @@ export default async function handler(_req, res) {
 
     // company_id -> ticker, so a run is identifiable without a second lookup per row. The companies table is ~2,785 rows
     // and this is the same join /api/today already does. {API/TODAY.JS:199 "CONST HOST = OBJECT.FROMENTRIES(...)"}
-    const companies = await sb("companies?select=id,ticker,ir_url&limit=5000");
+    // sbAll, not sb: PostgREST caps a response at 1000 rows REGARDLESS of the limit clause, and there are 2,785
+    // companies — so `sb(... limit=5000)` silently returned 1,000 and 64% of runs rendered their company as "—".
+    // {MEASURED 2026-08-06 REST "companies?select=id&limit=5000" -> 1000 rows}
+    // {MEASURED 2026-08-06 REST "companies?select=id" WITH Prefer:count=exact -> "content-range: 0-0/2785"}
+    // The endpoint next door already knew this: {API/TODAY.JS:194 "SBALL(\"COMPANIES?SELECT=ID,IR_URL,TICKER\")"}.
+    // [CONFIDENCE: CONFIRMED 100% — both figures curl'd against the live REST endpoint.]
+    const companies = await sbAll("companies?select=id,ticker,ir_url");
     const label = Object.fromEntries((companies || []).map((c) => [c.id, c.ticker || hostOf(c.ir_url)]));
 
     const runs = (recent || []).map((e) => ({

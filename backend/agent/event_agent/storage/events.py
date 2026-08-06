@@ -193,7 +193,11 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                 WHERE status='discovered'
                    OR (status='rendering' AND lease_until < now())               -- reclaim a crashed enrichment worker
                    OR (status='failed' AND (next_retry_at IS NULL OR next_retry_at < now()))
-                ORDER BY next_retry_at NULLS FIRST
+                -- enrich_priority first: a chosen batch (a test set, a customer's backlog) is pushed to the front
+                -- without disturbing anything else. Every row defaults to 0, so with no batch enqueued this orders
+                -- exactly as it did before. next_retry_at stays the tiebreaker so backed-off failures still sink
+                -- below fresh rows within the same priority. {MIGRATION 20260806025158 "ENRICH_PRIORITY"}
+                ORDER BY enrich_priority DESC, next_retry_at NULLS FIRST
                 FOR UPDATE SKIP LOCKED LIMIT $2
             )
             RETURNING id, claim_token, title, event_date, event_type, media_urls;

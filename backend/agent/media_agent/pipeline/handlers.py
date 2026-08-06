@@ -70,6 +70,32 @@ _ENABLED_KINDS = frozenset(
     k.strip() for k in os.environ.get("MEDIA_KINDS", "html").split(",") if k.strip())
 
 
+# A `file-magic:` reason from _looks_binary → the kind that header identifies. Only headers that name ONE kind are
+# listed: `PK\x03\x04` is the zip container shared by docx/xlsx/pptx and `\xd0\xcf\x11\xe0` the OLE2 container
+# shared by their legacy forms, so neither can be resolved from the header alone and both are deliberately absent —
+# an unresolvable header falls through to the honest "unidentifiable" outcome rather than a coin flip.
+# {CHART.PY "_BINARY_MAGIC = (B\"%PDF-\", B\"PK\\X03\\X04\\", B\"\\XD0\\XCF\\X11\\XE0\", …)"}
+# [CONFIDENCE: CONFIRMED 100% — the reason strings are produced by _looks_binary in that same module.]
+_MAGIC_KIND = {
+    "%PDF": router.KIND_PDF,
+    "ID3": router.KIND_AUDIO, "OggS": router.KIND_AUDIO, "fLaC": router.KIND_AUDIO,
+}
+
+
+def _kind_from_magic(reason: str) -> str:
+    """Map a `_looks_binary` reason to a url kind, or "" when the bytes do not name one kind.
+
+    The reason format is `file-magic:b'%PDF'` (header found) or `undecodable:54%` (no header, just garbage). Only the
+    first form can identify anything; the second means we know it is not text and nothing more.
+    """
+    if not reason.startswith("file-magic:"):
+        return ""
+    for needle, kind in _MAGIC_KIND.items():
+        if needle in reason:
+            return kind
+    return ""
+
+
 # ── OFFICE (pdf / pptx / docx / xlsx) → tools/officeall (Docling) ──────────────────────────────────────────────
 async def handle_office(url: str, chart, proxy: str | None = None) -> None:
     """Parse an office document via tools/officeall and append it to chart.files[kind]. {OFFICEALL extract(url)->DocResult}."""
@@ -360,9 +386,33 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
     # keeps the url's outcome honest and skips an extraction and a VLM call that cannot produce anything.
     why = _looks_binary(page_text)
     if why:
+        # NAME the real kind when the bytes identify themselves, and hand the url back to the same gate every other
+        # url passes through. A `%PDF-` header is not an error — it is a correct answer to "what is this", arriving
+        # later than we would like. Treating it as a failure would put a perfectly good pdf into the retry-and-then-
+        # dead-letter path, so that turning the docling lane on later would never reach it.
+        # {CHART.PY "_BINARY_MAGIC = (B\"%PDF-\", B\"PK\\X03\\X04\", B\"\\XD0\\XCF\\X11\\XE0\", …)"} — the same table
+        # the sniffer matches against, so the two cannot disagree about what a header means.
+        # [CONFIDENCE: CONFIRMED 100% — magic list read from the sniffer; the reason string is its own output format.]
+        real = _kind_from_magic(why)
+        if real and real not in _ENABLED_KINDS:
+            chart.set_status(url, "skipped:kind-disabled")
+            print(f"[media] ↪ misrouted {url[:70]} — served {real} under an html content-type; "
+                  f"deferred with the rest of that lane", flush=True)
+            return
+        if real:
+            # The lane IS enabled — the url was simply mis-typed upstream, so run the handler it should have had.
+            print(f"[media] ↪ misrouted {url[:70]} — served {real} under an html content-type; "
+                  f"re-routing to its own handler", flush=True)
+            if real in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):
+                return await handle_office(url, chart, proxy=proxy)
+            if real == router.KIND_AUDIO:
+                return await handle_audio(url, chart, proxy=proxy)
+            if real == router.KIND_VIDEO:
+                return await handle_video(url, chart, proxy=proxy)
+        # Undecodable with no recognisable header — we genuinely do not know what this is, and saying so is the only
+        # honest outcome. This stays a failure because there is no lane to defer it to.
         chart.set_status(url, f"failed:misrouted-binary:{why}")
-        print(f"[media] ⛔ misrouted {url[:70]} — served binary under an html content-type ({why}); "
-              f"not rendered as a page", flush=True)
+        print(f"[media] ⛔ misrouted {url[:70]} — binary under an html content-type, unidentifiable ({why})", flush=True)
         return
 
     img = render.get("shot_b64", "") if use_image else None
