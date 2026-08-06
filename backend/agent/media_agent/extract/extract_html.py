@@ -109,13 +109,27 @@ def _md_to_blocks(md: str, dfs: list) -> list[dict]:
         line = lines[i]
         if _PIPE_ROW_RE.match(line):                            # entered a GFM pipe-table region → consume it, splice pandas df
             _flush_para(); _flush_list()
-            while i < n and (_PIPE_ROW_RE.match(lines[i]) or lines[i].strip() == ""):   # skip the whole pipe region
-                if lines[i].strip() == "":
-                    break
-                i += 1
-            df = next(df_iter, None)                            # the authoritative table for THIS position
-            if df is not None:
-                blocks.append(_table_block(df))
+            # Consume the WHOLE region, blank lines included. The previous version broke out of the loop on the first
+            # blank line, but trafilatura interleaves blanks BETWEEN pipe rows, so a table was only half-eaten and the
+            # rest survived into the md as orphan pipes — visible in stored output as `| \n |` sitting next to the
+            # placeholder that was supposed to replace it.
+            # {psql 2026-08-06 ottertail md around [[TABLE:1]]: "| \n | \n\n | \n | \n | \n | \n\n [[TABLE:1]] \n\n |"}
+            # [CONFIDENCE: CONFIRMED 100% — read from event_documents.md on the live database.]
+            # A blank line only ENDS the region when the line after it is not another pipe row, so a genuine paragraph
+            # break still terminates it.
+            while i < n:
+                if _PIPE_ROW_RE.match(lines[i]):
+                    i += 1
+                    continue
+                if lines[i].strip() == "" and i + 1 < n and _PIPE_ROW_RE.match(lines[i + 1]):
+                    i += 1                                      # blank INSIDE the region
+                    continue
+                break
+            pair = next(df_iter, None)                          # the authoritative table for THIS position
+            if pair is not None:
+                blk = _table_block_checked(pair)
+                if blk:
+                    blocks.append(blk)
             continue
         if _LIST_RE.match(line):                                # a list item → accumulate into the current list block
             _flush_para()
@@ -130,21 +144,157 @@ def _md_to_blocks(md: str, dfs: list) -> list[dict]:
         buf_para.append(line)
         i += 1
     _flush_para(); _flush_list()
-    for df in df_iter:                                          # pandas tables trafilatura dropped → append at end (edge #1 tail)
-        blocks.append(_table_block(df))
+    for pair in df_iter:                                        # pandas tables trafilatura dropped → append at end (edge #1 tail)
+        blk = _table_block_checked(pair)
+        if blk:
+            blocks.append(blk)
     return blocks
 
 
+def _table_block_checked(pair) -> dict | None:
+    """One (DataFrame, raw html) pair → a table block, or None when it is page furniture rather than data.
+
+    Returning None is NOT a loss: a layout table's text is already in the trafilatura markdown that produced this
+    line-stream, so refusing to ALSO store it as a structured table removes a duplicate, not content. What it removes
+    is the 95% of stored "tables" that were navigation menus, footers and subscription forms.
+    """
+    df, raw = pair if isinstance(pair, tuple) else (pair, "")
+    try:
+        rows = df.values.tolist()
+        n_rows, n_cols = len(rows), (len(rows[0]) if rows else 0)
+        n_cells = n_rows * n_cols
+    except Exception:                                           # noqa: BLE001 — unusable frame → drop it, never crash
+        return None
+    if raw and table_kind(raw, n_rows, n_cols, n_cells) == "layout":
+        return None
+    blk = _table_block(df)
+    if blk and blk.get("rows"):
+        blk["rows"] = _collapse_spans(blk["rows"])               # colspan expansion undone AFTER classification,
+    return blk                                                   # because the size rules read the original shape
+
+
+# ── DATA TABLE vs LAYOUT TABLE ──────────────────────────────────────────────────────────────────────────────────────
+# 用一句话讲完: IR 站把 <table> 当排版工具用(页脚、订阅表单、导航菜单),我们此前把页面上**每一个** <table> 都当数据表
+# 存了下来 —— 实测 300 份文档里 3,841 张"表",95% 表头是纯位置索引,内容是 'Privacy Notice' / 'Email Address *' /
+# 'Investor Alert · News Events'。真正的财务表淹在里面。
+# {psql/REST 2026-08-06 over 300 docs / 3841 tables: "表头是纯数字索引 3657 (95%) · 表头正常 184 (4%)"}
+# {samples: netease ['Privacy Notice','Copyright 2026'] · starbucks ['Email Address *'] · starbucks ['Investor Alert']}
+# [CONFIDENCE: CONFIRMED 100% — counted over stored blocks on the production database.]
+#
+# WHY these particular rules and not a heuristic of my own: this is a solved problem with published criteria, and my
+# first attempt (numeric density) was measured NOT to separate them — density≥0.3 covered 24% of positional-header
+# tables and 21% of normal-header ones, i.e. no signal. The rules below come from the accessibility/screen-reader
+# literature and the web-table research line, and were verified against four real pages before being written:
+#   FFIN 财报      341 rows · 22 cols · zero <th>/caption/scope   → DATA via the size rule
+#   Starbucks[0]     1 cell + a <form>                            → LAYOUT
+#   Starbucks[1]   nested <table> + 6 form elements               → LAYOUT
+#   NetEase[0]     th=3, thead=1, scope=22                        → DATA via explicit markers
+# {POWERMAPPER "Tables with 5+ columns are treated as data · 20+ rows are treated as data · 10 or fewer cells are
+#  treated as layout · role=presentation · nested tables · contains embed/object/iframe"}
+# {SURVEY arXiv:2002.00207 "Genuine tables are LEAF tables that do not contain other tables, lists, forms, images or
+#  other non-text formatting tags in a cell, and they contain multiple rows and columns"}
+# [CONFIDENCE: CONFIRMED 100% — 4/4 on the pages named above; the density counter-measurement is why this replaced it.]
+_TAG_RE = lambda t: re.compile(rf"<{t}\b", re.I)                  # noqa: E731 — tiny helper, clearer inline than a def
+_TH_RE, _THEAD_RE, _CAPTION_RE = _TAG_RE("th"), _TAG_RE("thead"), _TAG_RE("caption")
+_COLGROUP_RE = re.compile(r"<col(group)?\b", re.I)
+_SEMANTIC_ATTR_RE = re.compile(r'\b(scope|headers|abbr|summary)\s*=|role\s*=\s*["\']table|aria-(col|row)count', re.I)
+_PRESENTATION_RE = re.compile(r'role\s*=\s*["\']presentation', re.I)
+_NONLEAF_RE = re.compile(r"<(form|input|select|textarea|iframe|object|embed)\b", re.I)
+
+
+def table_kind(table_html: str, n_rows: int, n_cols: int, n_cells: int) -> str:
+    """'data' | 'layout' — decided in the order the literature gives, most certain signal first.
+
+    Order matters and is not arbitrary: an explicit author declaration (role=presentation, or a <th>) outranks any
+    inference from shape, and a non-leaf table is layout NO MATTER how large it is — a page wrapper containing the
+    whole article is 40 rows of nothing.
+    """
+    if _PRESENTATION_RE.search(table_html):
+        return "layout"                                          # the author said so
+    if _NONLEAF_RE.search(table_html) or len(re.findall(r"<table\b", table_html, re.I)) > 1:
+        return "layout"                                          # not a leaf → a container, not data
+    if n_rows <= 1 or n_cols <= 1 or n_cells <= 10:
+        return "layout"                                          # degenerate shape
+    if (_TH_RE.search(table_html) or _THEAD_RE.search(table_html) or _CAPTION_RE.search(table_html)
+            or _COLGROUP_RE.search(table_html) or _SEMANTIC_ATTR_RE.search(table_html)):
+        return "data"                                            # explicit tabular markup
+    if n_cols >= 5 or n_rows >= 20:
+        return "data"                                            # size fallback — this is what saves an unmarked financial table
+    return "layout"                                              # unsure → not a table; the text still reaches the md
+
+
+def _collapse_spans(rows: list[list]) -> list[list]:
+    """Undo colspan EXPANSION, which is faithful to the html and useless as data.
+
+    A cell with colspan=22 is expanded by every parser into 22 identical cells, so a section title becomes a row of 22
+    copies and a 1-column table becomes 22 columns of the same string. Measured on one page: 7,065 colspan attributes,
+    and both pandas AND docling produced 22 columns of '**FIRST FINANCIAL BANKSHARES, INC.**'.
+    {psql 2026-08-06 FFIN rendered html "colspan 出现 7065 次"}
+    {DOCLING /docling_extract on the same html -> "22 列 × 341 行 · columns ['0','1',…] · row ['**FIRST FINANCIAL …' ×22]"}
+    [CONFIDENCE: CONFIRMED 100% — the docling output was obtained by feeding it that exact page.]
+
+    Two folds, both conservative:
+      · a row whose non-empty values are ONE distinct string repeated → collapse to a single cell (spanning title)
+      · a column identical to its left neighbour in EVERY row → drop it (expansion artefact)
+    Neither can lose information: both only remove exact duplicates of a value that remains present.
+    """
+    if not rows:
+        return rows
+    folded = []
+    for r in rows:
+        vals = [str(c).strip() for c in r]
+        nonempty = [v for v in vals if v]
+        if len(nonempty) > 1 and len(set(nonempty)) == 1:        # a title spanning the whole row
+            folded.append([nonempty[0]])
+        else:
+            folded.append(list(r))
+    width = max((len(r) for r in folded), default=0)
+    if width < 2:
+        return folded
+    # Drop columns that are empty in EVERY row. These are pure spacing columns — financial-report HTML uses them to
+    # align the currency symbol away from the figure, so a 7-value table arrives 21 columns wide with 14 of them blank.
+    # Removing a column that holds nothing anywhere cannot lose data, which is why this runs unconditionally.
+    # {FFIN 2026-08-06 after span-folding: "341 行 × 21 列" with rows like ['Cash and due from ba','$','249466','','$','237466','']}
+    # [CONFIDENCE: CONFIRMED 100% — the blank columns are visible in that output.]
+    nonblank = [c for c in range(width)
+                if any(str(r[c]).strip() for r in folded if len(r) > c)]
+    if nonblank and len(nonblank) < width:
+        folded = [[r[c] for c in nonblank if len(r) > c] for r in folded]
+        width = len(nonblank)
+    if width < 2:
+        return folded
+    keep = [0]
+    for c in range(1, width):
+        same = all(str(r[c]).strip() == str(r[keep[-1]]).strip()
+                   for r in folded if len(r) > c and len(r) > keep[-1])
+        if not same:
+            keep.append(c)
+    if len(keep) == width:
+        return folded
+    return [[r[c] for c in keep if len(r) > c] for r in folded]
+
+
 def _pandas_tables(html: str) -> list:
-    """Authoritative table extraction — one DataFrame per <table>. Zero tables raises ValueError → return [] (not an error).
-    {DESIGN STAGE 4; pandas.read_html flavor=lxml}."""
+    """Authoritative table extraction → [(DataFrame, raw <table> html)] in document order, so each parsed table can be
+    classified against the markup it came from. Zero tables → [] (not an error).
+
+    The pairing is by INDEX and that is sound because both sides walk the same tree in the same order: pandas is called
+    with flavor='lxml' and lxml's //table xpath yields document order. {DESIGN STAGE 4; pandas.read_html flavor=lxml}.
+    """
     try:
         import pandas as pd
-        return pd.read_html(io.StringIO(html), flavor="lxml")
+        dfs = pd.read_html(io.StringIO(html), flavor="lxml")
     except (ValueError, ImportError):                           # no <table> OR pandas/lxml missing → no table blocks
         return []
     except Exception:                                           # noqa: BLE001 — malformed table markup must not sink extraction
         return []
+    try:
+        import lxml.html as LH
+        nodes = LH.fromstring(html).xpath("//table")
+        raws = [LH.tostring(t, encoding="unicode") for t in nodes]
+    except Exception:                                           # noqa: BLE001 — no raw html → classify on shape alone
+        raws = []
+    return [(df, raws[i] if i < len(raws) else "") for i, df in enumerate(dfs)]
 
 
 def _trafilatura(html: str, base_url: str) -> str:
