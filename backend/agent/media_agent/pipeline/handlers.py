@@ -86,7 +86,15 @@ _MAX_ADOPTED_DOCS = int(os.environ.get("MEDIA_MAX_ADOPTED_DOCS", "8"))
 # "sec-filings" segment at all).
 # {psql/REST 2026-08-06 — ledger rows like "d18rn0p25nwr6d.cloudfront.net/CIK-0001318220/e0574656-….pdf"}
 # [CONFIDENCE: CONFIRMED 100% — url shape read from event_media_urls on the live database.]
-_SEC_DOC_RE = re.compile(r"/CIK-\d|/sec-filings/|/edgar/|sec\.gov/", re.I)
+# `sec\.irpass\.cc` is matched by SUBDOMAIN, not by domain, and the distinction is load-bearing. irpass.cc is B2i
+# Technologies' content CDN for IR websites, and it serves two different things from the same S3 bucket family:
+#   sec.irpass.cc        → SEC filings, named by accession number — {psql "…/2476/0001104659-26-070536.htm"}
+#   b2icontent.irpass.cc → ordinary IR material — {psql "…/653/200672.pdf  CMC Q3 FISCAL 2026 EARNINGS CONFERENCE CALL"
+#                          · "…/2475/rl162995.pdf  BBVA ARGENTINA ANNOUNCES FOURTH QUARTER"}
+# Blocking the domain would take the earnings decks and press releases with the filings; blocking the subdomain takes
+# only what EDGAR already serves better.
+# [CONFIDENCE: CONFIRMED 100% — both url shapes and their event titles read from the live database.]
+_SEC_DOC_RE = re.compile(r"/CIK-\d|/sec-filings/|/edgar/|sec\.gov/|sec\.irpass\.cc/", re.I)
 
 
 def _canon_link(u: str) -> str:
