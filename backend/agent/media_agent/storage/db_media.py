@@ -22,6 +22,7 @@ from ..extract.router import classify              # url → KIND_* (html/pdf/pp
 
 async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict],
                               transcript_segments: list[dict], urls: list[str], source_url: str = "",
+                              meta: dict | None = None,
                               audio: list[dict] | None = None,
                               url_status: dict | None = None) -> bool:
     """Flip event→enriched AND write its normalized media rows, fenced on claim_token, in ONE transaction. Returns True
@@ -51,10 +52,27 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                     media_urls = (
                         SELECT coalesce(jsonb_agg(DISTINCT u), '[]'::jsonb)
                         FROM jsonb_array_elements(events.media_urls || $3::jsonb) AS u
-                    )
+                    ),
+                    -- METADATA REPAIR. Each field is written only when the model supplied a NON-EMPTY value that
+                    -- differs from what is stored — the prompt instructs it to return "" to keep a good existing
+                    -- value, so an empty string means "no opinion", not "blank it out".
+                    -- {PROMPTS.PY SYSTEM_ROUTE "LEAVE A FIELD \"\" TO KEEP THE ALREADY-KNOWN VALUE — DO NOT OVERWRITE GOOD INFO"}
+                    -- [CONFIDENCE: CONFIRMED 100% — the instruction is in the prompt this value comes from.]
+                    title      = CASE WHEN coalesce($4,'') <> '' AND $4 <> title      THEN $4 ELSE title      END,
+                    event_date = CASE WHEN coalesce($5,'') <> '' AND $5 <> event_date THEN $5 ELSE event_date END,
+                    event_type = CASE WHEN coalesce($6,'') <> '' AND $6 <> event_type THEN $6 ELSE event_type END,
+                    -- ...and record what was REPLACED, keyed by field. Storing the previous value rather than a flag
+                    -- is what makes a repair auditable later and a bad repair recoverable.
+                    meta_fixed = NULLIF(coalesce(events.meta_fixed, '{}'::jsonb) || (
+                        (CASE WHEN coalesce($4,'') <> '' AND $4 <> title      THEN jsonb_build_object('title', title)      ELSE '{}'::jsonb END) ||
+                        (CASE WHEN coalesce($5,'') <> '' AND $5 <> event_date THEN jsonb_build_object('date',  event_date) ELSE '{}'::jsonb END) ||
+                        (CASE WHEN coalesce($6,'') <> '' AND $6 <> event_type THEN jsonb_build_object('type',  event_type) ELSE '{}'::jsonb END)
+                    ), '{}'::jsonb)
                 WHERE id=$1 AND claim_token=$2 RETURNING id;
                 """,
                 event_id, claim_token, json.dumps(urls or []),
+                (meta or {}).get('title') or None, (meta or {}).get('date') or None,
+                (meta or {}).get('type') or None,
             )
             if row is None:                               # re-claimed by another worker → do NOT write orphan child rows
                 return False

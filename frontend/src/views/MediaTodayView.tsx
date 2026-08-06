@@ -31,6 +31,7 @@ interface Whisper { concurrency: number | null; inflight: number | null; done: n
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
   totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null };
+  meta: { title_fixed: number | null; date_fixed: number | null };
   ledger: { done: number | null; failed: number | null; skipped: number | null };
   recent: { enriched_1h: number | null; blocks_1h: number | null };
 }
@@ -90,11 +91,13 @@ function PipelineBar({ p }: { p: Pipeline }) {
       </div>
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 6 }}>
         {cell("Backlog", num(p.backlog), "events waiting to be enriched")}
+        {/* The three VLM tasks, each shown by what it PRODUCED rather than by how often it ran. A count of calls says
+            nothing about whether the call was worth making; a count of repairs and extractions does. */}
+        {cell("Titles fixed", num(p.meta.title_fixed), "stage-1 title replaced by the page's own")}
+        {cell("Dates fixed", num(p.meta.date_fixed), "stage-1 date replaced by the page's own")}
+        {cell("Basic info", num(p.totals.blocks), "pages whose prose was extracted")}
+        {cell("Docling", num(p.totals.files), "pdf / xlsx / pptx / docx parsed")}
         {cell("In flight", num(p.inflight), "claimed by a worker right now")}
-        {cell("Enriched", num(p.enriched), `${num(p.recent.enriched_1h)} in the last hour`)}
-        {cell("Failed", num(p.failed), "open one to see why")}
-        {cell("Content blocks", num(p.totals.blocks), `${num(p.recent.blocks_1h)} in the last hour`)}
-        {cell("Documents", num(p.totals.files), `${num(p.totals.segments)} transcript segments`)}
       </div>
     </div>
   );

@@ -233,6 +233,9 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         ok = await db_media.mark_enriched_media(
             pool, eid, tok, docs, chart.transcript_segments,
             [s["url"] for s in chart.urls.values()], source_url=detail or "",
+            # The metadata task's output finally reaches the row it describes. It was computed on every ROUTE call and
+            # then discarded: the writer's UPDATE never named title/date/event_type.
+            meta={"title": chart.title, "date": chart.date, "type": chart.type},
             audio=chart.audio,
             url_status={s["url"]: s.get("status", "") for s in chart.urls.values()})
         print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} ← {len(media)} urls → "

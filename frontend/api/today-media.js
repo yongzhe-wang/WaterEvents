@@ -165,6 +165,7 @@ export default async function handler(_req, res) {
     // is polled every 30s and a serial chain of a dozen round-trips to us-west-2 would not fit inside that budget.
     const [
       backlog, inflight, enriched, failed,
+      titleFixed, dateFixed,
       blocks, files, segments, audio,
       ledgerDone, ledgerFailed, ledgerSkipped,
       enriched1h, blocks1h,
@@ -174,6 +175,14 @@ export default async function handler(_req, res) {
       sbCount("events?select=id&status=eq.rendering"),          // claimed and being worked right now
       sbCount("events?select=id&status=eq.enriched"),
       sbCount("events?select=id&status=eq.failed"),
+      // WHAT THE METADATA TASK ACTUALLY REPAIRED. A key is present in meta_fixed only when that field was replaced,
+      // and its value is what it was replaced FROM — so these two counts are the task's real output rather than "how
+      // many events we called the model on". Until 2026-08-06 the answer was structurally zero: the writer's UPDATE
+      // never named title/date/event_type, so every correction the model returned was discarded.
+      // {MIGRATION 20260806095419 "EVENTS.META_FIXED — STAGE-2 METADATA REPAIRS: {\"TITLE|DATE|TYPE\": \"<VALUE BEFORE>\"}"}
+      // [CONFIDENCE: CONFIRMED 100% — the discarding UPDATE was read from db_media.py before this column existed.]
+      sbCount("events?select=id&meta_fixed->>title=not.is.null"),
+      sbCount("events?select=id&meta_fixed->>date=not.is.null"),
       // Documents, split by source kind. "blocks" kept its name on the wire because the dashboard label is decided
       // in the UI; what it counts is now html DOCUMENTS, not paragraph fragments.
       // {MIGRATION 20260805151246 "EVENT_DOCUMENTS — ONE ROW PER (EVENT, SOURCE URL)"}
@@ -228,6 +237,9 @@ export default async function handler(_req, res) {
     res.json({
       pipeline: {
         backlog, inflight, enriched, failed,
+        // `blocks` counts html documents = the pages whose prose we extracted; `files` counts office documents = the
+        // docling lane. Naming them by what produced them beats naming them by table.
+        meta: { title_fixed: titleFixed, date_fixed: dateFixed },
         totals: { blocks, files, segments, audio },
         ledger: { done: ledgerDone, failed: ledgerFailed, skipped: ledgerSkipped },
         recent: { enriched_1h: enriched1h, blocks_1h: blocks1h },
