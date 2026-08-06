@@ -218,11 +218,22 @@ async def process_event(pool, client: QwenClient, ev) -> None:
             # the work is still owed, so re-enabling a lane and requeueing picks these up as a clean batch.
             # {HANDLERS.PY "_ENABLED_KINDS" — the gate that produced these statuses}
             # [CONFIDENCE: CONFIRMED 100% — the status string is written by that gate and nothing else emits it.]
+            # OUR OWN choices, as opposed to anything the source did. An event every one of whose urls we declined to
+            # fetch was never attempted, so calling it nothing_usable both mislabels it and burns its retry budget.
+            # The first version of this check listed only kind-disabled, and the omission was measurable: a mixed event
+            # (one url on a disabled lane, one filtered as an SEC filing) failed the all() and landed in the failure
+            # path — 812 rows in the first prioritised batch.
+            # {psql 2026-08-06 over enrich_priority=100 "FAILED | NOTHING_USABLE | 812" beside "DEFERRED |
+            #  DEFERRED:KIND-DISABLED | 1106", with the ledger showing both skip reasons interleaved on those events}
+            # [CONFIDENCE: CONFIRMED 100% — status/reason breakdown read from the live database.]
+            _OURS = ("skipped:kind-disabled", "skipped:sec-filing")
             vals = list(statuses.values())
-            if vals and all(s.startswith("skipped:kind-disabled") for s in vals):
-                print(f"[enrich] ⏸ event {eid} DEFERRED — all {len(media)} urls are disabled kinds "
-                      f"(MEDIA_KINDS gate); not a failure, work still owed", flush=True)
-                await db.defer_event(pool, eid, tok, "deferred:kind-disabled")
+            if vals and all(s.startswith(_OURS) for s in vals):
+                why = "deferred:sec-filing" if all(s.startswith("skipped:sec-filing") for s in vals) \
+                    else "deferred:kind-disabled"
+                print(f"[enrich] ⏸ event {eid} DEFERRED — all {len(media)} urls were declined by us "
+                      f"({why}); not a failure, work still owed", flush=True)
+                await db.defer_event(pool, eid, tok, why)
                 return
             print(f"[enrich] ⛔ event {eid} NOTHING-USABLE from {len(media)} urls — {statuses} — fail", flush=True)
             await db.fail_event(pool, eid, tok, "nothing_usable")
