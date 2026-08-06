@@ -58,7 +58,7 @@ _USE_IMAGE = not _NO_SHOT
 _PROXY = os.environ.get("WEBSHARE_PROXY") or None
 
 
-def _trace(entry: dict, chart: Chart, per_url: list[dict], wall: float) -> str:
+def _trace(entry: dict, chart: Chart, per_url: list[dict], wall: float, docs: list[dict]) -> str:
     """One event's full trace — what went in, what each url cost, what came out. Written per event so a bad result is
     debuggable without re-running (the whole point of the harness)."""
     m = entry.get("meta", {})
@@ -71,13 +71,21 @@ def _trace(entry: dict, chart: Chart, per_url: list[dict], wall: float) -> str:
     for r in per_url:
         L.append(f"  [{r['kind']:6}] {r['secs']:7.1f}s  {r['status']:38}  {r['url'][:90]}")
     L += ["", "--- PRODUCED ---",
-          f"  basic_info blocks : {len(chart.basic_info)}  "
-          f"({', '.join(b.get('type', '?') for b in chart.basic_info[:12])})",
+          f"  documents         : {len(docs)}  "
+          f"({', '.join(d.get('kind', '?') for d in docs[:12])})",
+          f"  total chars       : {sum(d.get('n_chars', 0) for d in docs):,}",
+          f"  structured blocks : {sum(d.get('n_blocks', 0) for d in docs)}",
           f"  transcript segs   : {len(chart.transcript_segments)}",
-          f"  files             : { {k: len(v) for k, v in chart.files.items() if v} }",
           f"  audio             : {len(chart.audio)}",
-          "", "--- BASIC_INFO (first 3 blocks) ---"]
-    for b in chart.basic_info[:3]:
+          "", "--- DOCUMENTS (md head + structured count, per source) ---"]
+    # One entry per SOURCE URL now, not per block — the whole point of the change. Print the md head so the trace
+    # shows what was actually extracted, and the placeholder count so a table that lost its structure is visible.
+    for d in docs:
+        L += [f"  [{d.get('kind')}] {str(d.get('url'))[:96]}",
+              f"    {d.get('n_chars', 0):,} chars · {d.get('n_blocks', 0)} structured · "
+              f"{str(d.get('md', '')).count('[[TABLE:')} table markers",
+              "    " + (str(d.get("md", ""))[:400].replace("\n", "\n    ")), ""]
+    for b in []:
         if b.get("type") == "table":
             L.append(f"  [TABLE] {b.get('caption', '')} headers={b.get('headers')} rows={len(b.get('rows') or [])}")
         else:
@@ -86,7 +94,7 @@ def _trace(entry: dict, chart: Chart, per_url: list[dict], wall: float) -> str:
         L += ["", "--- TRANSCRIPT (first 3 segments) ---"]
         for s in chart.transcript_segments[:3]:
             L.append(f"  {s.get('speaker')}: {(s.get('text') or '')[:220]}")
-    for kind, items in chart.files.items():
+    for kind, items in {}.items():
         for f in items:
             L += ["", f"--- FILE {kind} {f['url'][:80]} ---",
                   f"  n_pages={f.get('n_pages')} tables={len(f.get('tables') or [])}",
@@ -116,23 +124,27 @@ async def run_event(entry: dict, client: QwenClient, sem: asyncio.Semaphore) -> 
                 print(f"[run] ⚠️ {entry['id']} {u[:60]} raised {type(e).__name__}: {str(e)[:90]}", flush=True)
             per_url.append({"url": u, "kind": kind, "secs": time.monotonic() - tu, "status": status})
         wall = time.monotonic() - t0
+        # ONE (md, blocks) pair per source url. Computed once here and passed down, rather than rebuilt inside the
+        # trace writer — the join walks every block of every source, so doing it twice per event is real work.
+        docs = chart.build_documents()
 
         d = os.path.join(_OUT, entry["id"])
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "trace.txt"), "w", encoding="utf-8") as fh:
-            fh.write(_trace(entry, chart, per_url, wall))
+            fh.write(_trace(entry, chart, per_url, wall, docs))
         with open(os.path.join(d, "chart.json"), "w", encoding="utf-8") as fh:
             json.dump(chart.to_dict(), fh, ensure_ascii=False, indent=2)
 
         rec = {"id": entry["id"], "stratum": m.get("stratum"), "ticker": m.get("ticker"),
                "market": m.get("market"), "type": known.get("type"), "wall": wall,
                "n_urls": len(urls), "per_url": per_url,
-               "n_blocks": len(chart.basic_info), "n_segs": len(chart.transcript_segments),
-               "n_files": sum(len(v) for v in chart.files.values()), "n_audio": len(chart.audio)}
-        ok = bool(rec["n_blocks"] or rec["n_segs"] or rec["n_files"] or rec["n_audio"])
+               "n_docs": len(docs), "n_chars": sum(d.get("n_chars", 0) for d in docs),
+               "n_struct": sum(d.get("n_blocks", 0) for d in docs),
+               "n_segs": len(chart.transcript_segments), "n_audio": len(chart.audio)}
+        ok = bool(rec["n_docs"] or rec["n_segs"] or rec["n_audio"])
         rec["usable"] = ok
         print(f"[run] {'✅' if ok else '⛔'} {entry['id']:22} {wall:7.1f}s  {len(urls)} urls → "
-              f"{rec['n_blocks']}b {rec['n_segs']}s {rec['n_files']}f {rec['n_audio']}a", flush=True)
+              f"{rec['n_docs']}doc {rec['n_chars']:,}ch {rec['n_struct']}st {rec['n_segs']}s {rec['n_audio']}a", flush=True)
         return rec
 
 
@@ -141,7 +153,8 @@ def summarize(recs: list[dict]) -> str:
     the kind rows are what decide whether Docling and whisper need a GPU."""
     L = ["", "=" * 100, f"SUMMARY  n={len(recs)}  concurrency={_CONC}", "=" * 100, "",
          "--- BY STRATUM (event wall-clock) ---",
-         f"  {'stratum':12} {'n':>3} {'usable':>7} {'p50':>8} {'p95':>8} {'max':>8}  {'blocks':>7} {'segs':>6} {'files':>6} {'audio':>6}"]
+         f"  {'stratum':12} {'n':>3} {'usable':>7} {'p50':>8} {'p95':>8} {'max':>8}  "
+         f"{'docs':>7} {'chars':>9} {'struct':>6} {'segs':>6}"]
     by_s: dict[str, list] = {}
     for r in recs:
         by_s.setdefault(r["stratum"] or "?", []).append(r)
@@ -149,8 +162,8 @@ def summarize(recs: list[dict]) -> str:
         w = sorted(r["wall"] for r in rs)
         L.append(f"  {s:12} {len(rs):>3} {sum(1 for r in rs if r['usable']):>4}/{len(rs):<2} "
                  f"{statistics.median(w):>8.1f} {w[max(0, int(len(w)*0.95)-1)]:>8.1f} {w[-1]:>8.1f}  "
-                 f"{sum(r['n_blocks'] for r in rs):>7} {sum(r['n_segs'] for r in rs):>6} "
-                 f"{sum(r['n_files'] for r in rs):>6} {sum(r['n_audio'] for r in rs):>6}")
+                 f"{sum(r['n_docs'] for r in rs):>7} {sum(r['n_chars'] for r in rs):>9,} "
+                 f"{sum(r['n_struct'] for r in rs):>6} {sum(r['n_segs'] for r in rs):>6}")
 
     L += ["", "--- BY URL KIND (per-url latency — THE gpu-sizing numbers) ---",
           f"  {'kind':8} {'n':>4} {'p50':>8} {'p95':>8} {'max':>8}   top statuses"]
