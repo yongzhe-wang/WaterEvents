@@ -27,6 +27,9 @@ from providers.qwen_llm import QwenClient            # VLM transport (reused, un
 from .render_retry import render_with_retry
 
 from ..extract import prompts, router
+# The page-level misroute check reuses the SAME sniffer the block guard uses, so "is this binary" has exactly one
+# definition in the codebase and the two checks can never disagree about the same bytes.
+from ..extract.chart import _looks_binary
 # DETERMINISTIC body + shared input-overflow guard — the production worker path (dispatch→handle_html) gets the SAME
 # trafilatura+pandas body extraction as enrich.enrich_page, so an earnings page's financial tables never overflow the VLM.
 from ..extract.extract_html import extract_html, suppress_transcript_blocks, fit_input, ROUTE_MAX_TOKENS
@@ -339,6 +342,29 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
         print(f"[media] ⛔ empty render {url[:70]} after retries — walled/dead/no content", flush=True)
         return
     page_text = render.get("inline") or render.get("text", "")
+
+    # MISROUTE CHECK — the url said html, the HEAD said html, and the bytes say otherwise. Believe the bytes.
+    #
+    # Some IR platforms serve documents from extension-less urls AND label them text/html. The HEAD refine cannot see
+    # through that; measured on two of them from the VM, using this module's own sniffer:
+    #   {VM 2026-08-06 "HTTPS://INVESTOR.LILLY.COM/STATIC-FILES/4AC75EE3-… HEAD CONTENT-TYPE = 'TEXT/HTML; CHARSET=UTF-8'
+    #    → REFINE 结果 = HTML"}  and the same for investors.biogen.com — both actually serve PDFs.
+    # Rendering one produces a page of undecodable bytes, which the block-level guard then discarded one at a time:
+    #   {MEDIA@1 2026-08-06 "[CHART] ⛔ DROPPED MD BLOCK — UNDECODABLE:54% (MIS-ROUTED BINARY, NOT PROSE)"} — 1,162 such
+    #   lines in ten minutes across two workers.
+    # [CONFIDENCE: CONFIRMED 100% — both the HEAD headers and the drop lines were read off the running fleet.]
+    #
+    # WHY catch it HERE rather than letting the block guard handle it: the block guard's verdict was correct but its
+    # SCOPE was wrong. It dropped the content and left the url recorded `done:route`, so a page we could not read at all
+    # was indistinguishable from one that was simply empty — and the ledger claimed success. Deciding at the page level
+    # keeps the url's outcome honest and skips an extraction and a VLM call that cannot produce anything.
+    why = _looks_binary(page_text)
+    if why:
+        chart.set_status(url, f"failed:misrouted-binary:{why}")
+        print(f"[media] ⛔ misrouted {url[:70]} — served binary under an html content-type ({why}); "
+              f"not rendered as a page", flush=True)
+        return
+
     img = render.get("shot_b64", "") if use_image else None
     text_cap = _VISION_TEXT_CHARS if img else _MAX_INPUT_CHARS
 

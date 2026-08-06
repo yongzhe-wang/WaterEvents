@@ -131,9 +131,19 @@ _CT_KIND = [
     ("application/pdf", KIND_PDF),
     ("presentationml", KIND_PPTX), ("vnd.ms-powerpoint", KIND_PPTX),
     ("wordprocessingml", KIND_DOCX), ("msword", KIND_DOCX),
+    # SPREADSHEETS — absent until 2026-08-06, which meant an extension-less xlsx download refined to... html, and was
+    # then rendered as a web page. The HEAD sniff worked; its answer was discarded for want of a table row:
+    # {VM 2026-08-06 "HTTPS://IR.SYMBOTIC.COM/STATIC-FILES/3466E2D6-… HEAD CONTENT-TYPE = 'APPLICATION/VND.MS-EXCEL'
+    #  → REFINE 结果 = HTML"}
+    # Both spellings are needed: `spreadsheetml` is the OOXML .xlsx type and `vnd.ms-excel` the legacy OLE2 .xls one;
+    # IR platforms serve both. [CONFIDENCE: CONFIRMED 100% — the ms-excel header was read off the live url from the VM.]
+    ("spreadsheetml", KIND_XLSX), ("vnd.ms-excel", KIND_XLSX),
     ("audio/", KIND_AUDIO),
     ("video/", KIND_VIDEO),
     ("text/html", KIND_HTML), ("application/xhtml", KIND_HTML),
+    # DELIBERATELY ABSENT: application/octet-stream and application/zip. Both are honest but useless — octet-stream
+    # means "bytes", and zip is the container for xlsx/pptx/docx alike. Mapping either would be a guess dressed up as a
+    # classification; leaving them unmatched returns the caller's fallback and lets the content itself decide later.
 ]
 
 
