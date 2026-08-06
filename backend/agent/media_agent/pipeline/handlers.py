@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from providers.qwen_llm import QwenClient            # VLM transport (reused, unchanged)
 
@@ -32,7 +32,10 @@ from ..extract import prompts, router
 from ..extract.chart import _looks_binary
 # DETERMINISTIC body + shared input-overflow guard — the production worker path (dispatch→handle_html) gets the SAME
 # trafilatura+pandas body extraction as enrich.enrich_page, so an earnings page's financial tables never overflow the VLM.
-from ..extract.extract_html import extract_html, suppress_transcript_blocks, fit_input, ROUTE_MAX_TOKENS
+# suppress_transcript_blocks is no longer imported: with transcript_segments gone from SCHEMA_ROUTE the
+# suppressor had nothing to suppress, and its own fail-safe branch (empty segments → keep every block)
+# is exactly the behaviour we now want unconditionally — a transcript stays in the body.
+from ..extract.extract_html import extract_html, fit_input, ROUTE_MAX_TOKENS
 
 # A webcast platform url that is a REGISTRATION / signup form, not a playable stream (wsw.com /register.aspx ×9, Zoom
 # /webinar/register/…). yt-dlp has nothing to fetch here — it's a gate — so we record it and skip WITHOUT a doomed
@@ -68,6 +71,25 @@ _HEAD_TIMEOUT_S = int(os.environ.get("MEDIA_HEAD_TIMEOUT_S", "10"))          # c
 # {USER 2026-08-06 "add infra so we can only extract basic info right now, no docling no whipser just info"}
 _ENABLED_KINDS = frozenset(
     k.strip() for k in os.environ.get("MEDIA_KINDS", "html").split(",") if k.strip())
+
+# Cap on documents adopted from ONE page. A press-release page carries its own file (usually 1, occasionally the same
+# content as pdf+doc+xls); an archive page carries dozens that are not this event's. The model is asked to discriminate,
+# and this is the backstop for when it does not — measured shape: pages with a document had a median of 1, while the
+# archive-shaped ones ran to 8+ candidates of which none belonged.
+# {psql/probe 2026-08-06 — single_doc n=12 (1 doc each) vs many_docs n=10 (5..8 docs, site furniture)}
+# [CONFIDENCE: CONFIRMED 100% — counted over the 47-page labelled sample.]
+_MAX_ADOPTED_DOCS = int(os.environ.get("MEDIA_MAX_ADOPTED_DOCS", "8"))
+
+
+def _canon_link(u: str) -> str:
+    """Compare-key for "is this url on the page". Only case+fragment+trailing-slash are normalised — query strings are
+    KEPT, because IR download endpoints routinely carry the document id there (?FilingId=…, ?docid=…) and stripping it
+    would let a proposal for one filing match a link to another."""
+    try:
+        p = urlsplit(u.strip())
+        return urlunsplit((p.scheme.lower(), p.netloc.lower(), p.path.rstrip("/"), p.query, ""))
+    except Exception:                                    # noqa: BLE001 — unparseable → compare raw, never crash the gate
+        return (u or "").strip()
 
 
 # A `file-magic:` reason from _looks_binary → the kind that header identifies. Only headers that name ONE kind are
@@ -329,30 +351,79 @@ async def _chunked_html(page_text: str, page_url: str, chart, client: QwenClient
             _apply_contribution(contrib, chart, page_url)
 
 
-async def _route_html(url: str, page_text: str, img, det: dict, chart, client: QwenClient) -> None:
+async def _route_html(url: str, page_text: str, img, det: dict, chart, client: QwenClient,
+                      page_links: list | None = None) -> None:
     """ROUTE-mode html (deterministic body exists): the trafilatura+pandas blocks ARE the body; a SHRUNK VLM call only
-    confirms metadata + parses transcript + lists media-url ids → its output is tiny, so NO overflow, NO chunking. Mirrors
-    enrich.enrich_page's route path. {DESIGN wf_7b61c8d0} [CONFIDENCE: CONFIRMED — validated on prologis: 14 tables, no length].
-    On VLM failure the deterministic body STILL lands (only metadata/routing lost) and the exhaustive url harvest backstops
-    the frontier — recall is never sacrificed to a flaky call."""
+    does the three things that need a model — classify the page, confirm metadata, and pick out the event's own document
+    links. Its output is tiny, so NO overflow, NO chunking. {DESIGN wf_7b61c8d0}
+    On VLM failure the deterministic body STILL lands (only the three judgements are lost) — recall is never sacrificed
+    to a flaky call."""
     fitted = fit_input(page_text[:(_VISION_TEXT_CHARS if img else _MAX_INPUT_CHARS)], ROUTE_MAX_TOKENS)  # cap, then context-fit
     contrib = await client.send_one(system=prompts.SYSTEM_ROUTE,
                                     user=prompts.build_user(fitted, url, chart_known(chart)),
                                     image_b64=img, guided_json=prompts.SCHEMA_ROUTE, max_tokens=ROUTE_MAX_TOKENS)
-    if not contrib or contrib.get("_error"):                    # VLM hard-fail → body kept, urls fall back to the harvest
+    if not contrib or contrib.get("_error"):                    # VLM hard-fail → body kept, judgements lost
         chart.append_basic_info(det["blocks"], source_url=url)
         chart.set_status(url, "done:route-vlm-fail")
-        print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, only metadata/transcript lost", flush=True)
+        print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, page_kind/metadata/documents lost",
+              flush=True)
         return
+
+    # PAGE KIND — recorded on the chart, acted on by the worker. Deciding here would be wrong: this function owns ONE
+    # url, while dropping an event or promoting a hub is an EVENT-level decision that also needs the claim token.
+    chart.set_page_kind(url, contrib.get("page_kind") or "")
+
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
-    chart.append_transcript(contrib.get("transcript_segments") or [], source_url=url)   # transcript → its slot (needed for suppress)
-    # STAGE 8: drop a det transcript-flagged block ONLY where the VLM actually routed it (no double-listing; uncovered stays body)
-    body = suppress_transcript_blocks(det["blocks"], det["transcript_idx"], contrib.get("transcript_segments") or [])
-    chart.append_basic_info(body, source_url=url)               # deterministic reading-order body (real urls, no Lnn to resolve)
+    chart.append_basic_info(det["blocks"], source_url=url)      # deterministic reading-order body (real urls, no Lnn)
+
+    # DOCUMENTS — the model SELECTS from links that are on the page; it never GENERATES a url.
+    _adopt_documents(url, contrib.get("documents") or [], page_links, chart)
     chart.set_status(url, "done:route")
 
 
-async def handle_html(url: str, chart, client: QwenClient, use_image: bool = True) -> None:
+def _adopt_documents(page_url: str, proposed: list, page_links: list | None, chart) -> int:
+    """Add the model's chosen document links to this event's url set. Returns how many were adopted.
+
+    THE HALLUCINATION GATE IS THE POINT. Every proposed url must already appear in the links this page actually
+    carries; anything else is dropped loudly. That single check turns the task from generation into selection, so the
+    worst case is a MISS (we fail to find a document) rather than a FABRICATION (we fetch a url that never existed).
+    Verified on a live page: the model returned the one real pdf and it was present in the page's 194 links.
+    {DEMO 2026-08-06 "✅ 在页面上 https://www.veolia.com/sites/g/files/…/Finance_PR_shares_voting_rights_12-03-2025.pdf"}
+    [CONFIDENCE: CONFIRMED 100% — run against the production render + VLM path on that page.]
+
+    HTML LINKS ARE REFUSED even if the model proposes one. Following a page to another page is crawling, and stage-2's
+    url set is event_agent's by design {USER 2026-08-03 "let's just use the original list from the event agent"}. Only
+    FILES are adopted, and a file yields no further links — so the depth of this whole mechanism is 2 by construction,
+    not by a budget someone has to remember to enforce.
+    """
+    allowed = {_canon_link(u) for u in (page_links or [])}
+    adopted = 0
+    for d in proposed:
+        u = (d or {}).get("url") if isinstance(d, dict) else None
+        if not isinstance(u, str) or not u.startswith("http"):
+            continue
+        if _canon_link(u) not in allowed:
+            # Loud, because a hallucinated url is a model-behaviour signal worth seeing, not noise to swallow.
+            print(f"[media] ⛔ dropped proposed doc NOT on the page: {u[:90]} (from {page_url[:50]})", flush=True)
+            continue
+        kind = router.classify(u)
+        if kind == router.KIND_HTML or kind == router.KIND_OTHER:
+            print(f"[media] ⏭ proposed doc is not a file ({kind}): {u[:80]} — refused (stage-2 does not crawl)",
+                  flush=True)
+            continue
+        if adopted >= _MAX_ADOPTED_DOCS:
+            print(f"[media] ⏭ doc cap {_MAX_ADOPTED_DOCS} reached on {page_url[:60]} — remaining proposals ignored",
+                  flush=True)
+            break
+        if chart.add_url(u, kind=kind, status="pending"):      # False = already known → no double work
+            adopted += 1
+            why = ((d.get("why") or "")[:70]) if isinstance(d, dict) else ""
+            print(f"[media] ＋ adopted {kind}: {u[:84]}  ⟵ {why}", flush=True)
+    return adopted
+
+
+async def handle_html(url: str, chart, client: QwenClient, use_image: bool = True,
+                      proxy: str | None = None) -> None:
     """Render an html page + get THIS page's contribution and FILL the chart. Two paths by extract_html tier: ROUTE
     (deterministic body exists → shrunk VLM, no overflow) vs LEGACY (JS-shell/thin page, tier=='empty' → full-copy VLM
     with the two truncation twins). Discovers no urls — the set is event_agent's, fixed."""
@@ -422,7 +493,8 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
     # is impossible by construction). tier=='empty' ⇒ JS-shell/thin → fall through to the LEGACY full-copy path below.
     det = extract_html(render.get("html", ""), base_url=url, links=render.get("links"))
     if det["tier"] != "empty":
-        return await _route_html(url, page_text, img, det, chart, client)
+        return await _route_html(url, page_text, img, det, chart, client,
+                                 page_links=render.get("links") or [])
 
     # ── LEGACY full-copy path (empty tier only): the VLM reproduces basic_info from text/screenshot, with both twins ──
     # TWIN A — INPUT over cap: a plain call would SILENTLY trim the tail (and its content/links). Chunk the FULL text.
@@ -512,7 +584,7 @@ async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
         return
 
     if kind == router.KIND_HTML:
-        await handle_html(url, chart, client or QwenClient(), use_image=use_image)
+        await handle_html(url, chart, client or QwenClient(), use_image=use_image, proxy=proxy)
     elif kind in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):   # H2: xlsx now routed
         await handle_office(url, chart, proxy=proxy)
     elif kind == router.KIND_AUDIO:

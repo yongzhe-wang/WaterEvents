@@ -28,7 +28,8 @@ import uuid
 
 from providers.qwen_llm import QwenClient
 
-from agent.event_agent.storage import events as db                       # the SHARED WaterEvents DB layer (companies + events tables, claim/fail)
+from agent.event_agent.storage import events as db
+from agent.event_agent.storage import queue as q      # hub promotion reuses the scheduler's own enqueue                       # the SHARED WaterEvents DB layer (companies + events tables, claim/fail)
 from ..extract import router                          # url → kind, so each of the event's urls reaches the right handler
 from ..extract.chart import Chart                      # the per-event accumulator (fill-and-append + content-hash dedup)
 from ..storage import db_media                         # media_agent's normalized-schema writer (all 5 media tables)
@@ -78,6 +79,10 @@ _USE_IMAGE = not _NO_SHOT                                                       
 _PROXY = os.environ.get("WEBSHARE_PROXY") or None
 # a media ASSET (the thing itself), not the detail PAGE to render — we render the HTML detail page, not the pdf/audio.
 _ASSET_RE = re.compile(r"\.(pdf|mp3|wav|m4a|zip|xlsx?|docx?|pptx?)(\?|#|$)", re.I)
+# Verbatim copy of seed_incremental's exclusion — a hub the VLM finds must clear the SAME policy bar a
+# hub the scheduler finds has to clear. {SEED.PY hub filter} [CONFIDENCE: CONFIRMED — copied literally.]
+_HUB_EXCLUDE_RE = re.compile(r"/(sec-filings|edgar|financials/(sec|quarterly|annual|financial-results)"
+                             r"|regulatory)", re.I)
 
 
 def _as_list(v) -> list:
@@ -104,6 +109,30 @@ def _detail_url(media_urls: list[str]) -> str | None:
     return None
 
 
+async def _promote_hub(pool, ev, hub_url: str) -> None:
+    """Put a mis-classified listing page into the incremental hub rotation, then let the caller delete the event.
+
+    Dedup is the queue's own UNIQUE(type,url) — re-adding an existing hub is a no-op that keeps its live status and
+    due_at. {QUEUE.PY "ON CONFLICT (TYPE, URL) DO NOTHING"} so this can run on every hub verdict without bookkeeping.
+    [CONFIDENCE: CONFIRMED 100% — read from the enqueue statement.]
+
+    The seed filter's EXCLUSION is honoured here rather than bypassed. Stage-1 deliberately refuses to monitor filings
+    archives, and a model verdict must not overrule a policy decision the user already made:
+    {SEED.PY "AND source_url !~* '/(sec-filings|edgar|financials/(sec|quarterly|annual|financial-results)|regulatory)'"}
+    {USER 2026-07-25 "big filling hub is def not the ones we should monitor"}
+    [CONFIDENCE: CONFIRMED 100% — the exclusion is in seed_incremental and its reason is recorded there.]
+    """
+    if not hub_url:
+        return
+    if _HUB_EXCLUDE_RE.search(hub_url):
+        print(f"[enrich] ⏭ hub {hub_url[:70]} matches the filings-archive exclusion — not enqueued", flush=True)
+        return
+    try:
+        await q.enqueue(pool, [{"company_id": ev.get("company_id"), "url": hub_url, "type": "incremental"}])
+    except Exception as e:                                   # noqa: BLE001 — enqueue failing must not block the delete;
+        print(f"[enrich] ⚠️ hub enqueue failed for {hub_url[:60]} ({type(e).__name__}: {e})", flush=True)
+
+
 async def process_event(pool, client: QwenClient, ev) -> None:
     """Enrich ONE claimed event: render its detail page + VLM → basic_info, write back fenced. Every failure path is
     LOUD (fail_event with a reason) so a page we couldn't render / the VLM couldn't parse is NEVER marked enriched. The
@@ -126,13 +155,52 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         chart = Chart({"title": ev["title"], "date": ev["event_date"], "type": ev["event_type"], "urls": media})
         detail = _detail_url(media)                          # the HTML page, for provenance stamping on blocks/segments
 
-        for u in media:
+        async def _run(u: str) -> None:
             kind = router.classify(u)
             try:
                 await dispatch(u, kind, chart, client=client, use_image=_USE_IMAGE, proxy=_PROXY)
             except Exception as e:                           # noqa: BLE001 — ONE bad url must not lose the other urls'
                 chart.set_status(u, f"failed:{type(e).__name__}")   # work; record it loudly and keep going
                 print(f"[enrich] ⚠️ event {eid} url {u[:60]} raised {type(e).__name__}: {str(e)[:80]}", flush=True)
+
+        # PASS 1 — the urls event_agent gave us. Rendering an html page here may ALSO make the model name document
+        # links that belong to this event; those land in the chart's ledger as new pending urls.
+        for u in media:
+            await _run(u)
+
+        # PAGE VERDICT — decided before pass 2, because a hub has nothing worth fetching and a dead page has nothing
+        # at all. Acting here rather than inside the handler is deliberate: dropping an event and promoting a hub are
+        # EVENT-level acts that need the claim token, which the per-url handler does not have.
+        verdict = chart.verdict()
+        if verdict == "hub":
+            # Not a failure — a MISCLASSIFICATION by stage-1, and a useful one. The page is a listing, so it belongs in
+            # the incremental hub rotation; the event minted from it does not exist and is deleted. Net effect of the
+            # mistake is one more monitored listing, not one more dead row.
+            # Measured before this shipped: on 40 urls carrying exactly one event, 8 were listings, and every one of
+            # those 8 was unambiguous (one url literally ends `?page=3`).
+            # {PROBE 2026-08-06 "SINGLE_EV N=40 {'EVENT': 32, 'HUB': 8}"} with 95% recall on 20 confirmed hubs
+            # {PROBE 2026-08-06 "KNOWN_HUB N=20 {'HUB': 19, 'EVENT': 1}"}
+            # [CONFIDENCE: CONFIRMED 100% — live run; each of the 8 was read individually and none was a real event.]
+            await _promote_hub(pool, ev, detail or (media[0] if media else ""))
+            gone = await db.delete_event(pool, eid, tok)
+            print(f"[enrich] 🗂 event {eid} is a HUB not an event — url promoted to incremental, "
+                  f"event {'deleted' if gone else 'NOT deleted (lease lost)'}", flush=True)
+            return
+        if verdict == "dead":
+            # A dead page is the site's problem and may be temporary, so this goes through the retry path rather than
+            # the delete path. The two verdicts must not share a disposition: one means "never an event", the other
+            # means "not readable right now".
+            print(f"[enrich] 💀 event {eid} page is DEAD (error/wall/empty) — failing for retry", flush=True)
+            await db.fail_event(pool, eid, tok, "page_dead")
+            return
+
+        # PASS 2 — documents the model picked off the page. They are dispatched but discover nothing further: a file is
+        # not a page, so it yields no links. The depth of this whole mechanism is 2 BY CONSTRUCTION, not by a budget.
+        fresh = [u for u in chart.pending_urls() if u not in set(media)]
+        for u in fresh:
+            await _run(u)
+        if fresh:
+            print(f"[enrich] ↳ event {eid} pass-2 on {len(fresh)} adopted document url(s)", flush=True)
 
         # ONE (md, blocks) pair per source url — html pages and office documents in one list, no branch on origin.
         docs = chart.build_documents()

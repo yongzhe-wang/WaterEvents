@@ -266,6 +266,8 @@ class Chart:
         # for the measurement that condemned it. Dedup now happens at the DOCUMENT level only: one row per (event, url),
         # which is a property of the schema rather than a filter that silently eats repeated prose.
         self._seg_hashes: set[str] = set()     # transcript segments keep their own guard (timestamped segments only)
+        self.page_kind: dict[str, str] = {}    # canon(url) → 'event' | 'hub' | 'dead', as judged by the VLM
+        self._page_kind_order: list[str] = []  # judgement order, so verdict() can prefer the detail page
 
         for u in (event.get("urls") or []):    # seed the ledger with the event's known urls (status starts pending)
             self.add_url(u, status="pending")
@@ -291,6 +293,40 @@ class Chart:
                 self.urls[ck]["kind"] = kind
             self.urls[ck]["status"] = status
         return is_new
+
+    def set_page_kind(self, url: str, kind: str) -> None:
+        """Record what the model judged this page to BE (event / hub / dead). Stored per url, not per event, because
+        one event can carry several urls and only the DETAIL page's verdict is meaningful.
+
+        WHY the Chart only records and never acts: dropping an event or promoting a hub is an EVENT-level decision that
+        needs the claim token and the DB pool, neither of which belong in an accumulator. Keeping the judgement and the
+        consequence apart is also what makes the verdict inspectable in a trace before anything irreversible happens.
+        """
+        if kind:
+            k = _canon(url)
+            if k not in self.page_kind:
+                self._page_kind_order.append(k)
+            self.page_kind[k] = kind
+
+    def verdict(self) -> str:
+        """The event-level page verdict: the DETAIL page's kind. '' when no page was judged.
+
+        Takes the FIRST recorded verdict rather than a vote: the detail page is dispatched first and is the page the
+        event claims to be about, so a later asset's verdict must not override it.
+        """
+        for k in self._page_kind_order:
+            v = self.page_kind.get(k)
+            if v:
+                return v
+        return ""
+
+    def pending_urls(self) -> list[str]:
+        """Urls recorded on this chart that no handler has run yet — i.e. the documents adopted from a rendered page.
+
+        Reads the ledger's own `status` rather than keeping a separate list, so a url can never be pending in one place
+        and done in another. Order follows insertion, which is the order the model named them.
+        """
+        return [v["url"] for v in self.urls.values() if (v.get("status") or "pending") == "pending"]
 
     def set_status(self, url: str, status: str) -> None:
         """Mark a url done/failed/skipped after its handler ran."""

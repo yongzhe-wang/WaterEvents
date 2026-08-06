@@ -265,6 +265,30 @@ async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: s
         return row is not None
 
 
+async def delete_event(pool: asyncpg.Pool, event_id, claim_token) -> bool:
+    """Delete an event that turned out NOT to be an event. Returns True if the row was ours and is gone.
+
+    WHY delete rather than park it in a status: the row is not a failed event, it is a MISTAKE — stage-1 read a listing
+    page and minted an event from it. Keeping it would leave a permanent phantom in every count, and every later pass
+    would re-examine it to reach the same conclusion. The url itself is not wasted: the caller promotes it to the
+    incremental hub queue first, so the page keeps being watched — as the listing it always was.
+    {USER 2026-08-06 "we should just add it to the incermetnal hubs after dedup and delete the event here"}
+    [CONFIDENCE: CONFIRMED 100% — direct user directive.]
+
+    The delete is COMPLETE, not partial: all six child tables cascade, so no artifact of the phantom survives.
+    {psql 2026-08-06 — event_documents / event_media_urls / event_transcript_segments / event_audio and the two arch
+     tables all report "CASCADE 级联删" on events; none is RESTRICT or NO ACTION}
+    [CONFIDENCE: CONFIRMED 100% — read from pg_constraint on the production database before this was written.]
+
+    Fenced on claim_token like every other completion path — a worker that lost its lease must not delete a row the new
+    owner is working on.
+    """
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("DELETE FROM events WHERE id=$1 AND claim_token=$2 RETURNING id;",
+                                  event_id, claim_token)
+        return row is not None
+
+
 async def defer_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) -> None:
     """Park an event we CHOSE not to process. Not a failure: fail_count is untouched and no retry is scheduled.
 

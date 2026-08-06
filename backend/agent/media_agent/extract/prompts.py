@@ -50,37 +50,73 @@ Output STRICT JSON only, no prose. If the page has no usable content, return \
 # SHRINKS the VLM's job to what only a model can do. With no basic_info OUTPUT field it can NEVER overflow by copying tables.
 # {USER 2026-07-24 "for basic info don't have the VLM copy everything, use trafilatura + other deterministic extractors"}
 # [CONFIDENCE: CONFIRMED 100% — direct instruction; prologis output_truncated=length proved the copy-overflow].
-SYSTEM_ROUTE = """You are given ONE web page belonging to a KNOWN investor-relations event (its rendered text and a \
-screenshot). THIS PAGE'S READABLE CONTENT (paragraphs, headings, lists, financial TABLES) HAS ALREADY BEEN EXTRACTED \
+SYSTEM_ROUTE = """You are given ONE web page from a company's investor-relations site, plus what our crawler believes \
+it to be. THIS PAGE'S READABLE CONTENT (paragraphs, headings, lists, financial TABLES) HAS ALREADY BEEN EXTRACTED \
 SEPARATELY AND DETERMINISTICALLY — do NOT reproduce it, do NOT copy tables, do NOT summarize the body. Your job is ONLY \
-the two things that need a model. Output ONE JSON object with:
+the three things that need a model. Output ONE JSON object with:
 
-1) "title" / "date" / "type": only to CONFIRM or FILL metadata the page shows more clearly. Leave a field "" to keep \
+1) "page_kind": exactly one of
+   "event" — the page is ABOUT ONE specific investor-relations event or disclosure (a press release, one earnings call, \
+one filing, one meeting notice). It may link to other things, but its own subject is that single item.
+   "hub"   — the page is a LISTING / INDEX / CALENDAR of MANY events (a news archive, an events-and-presentations page, \
+a filings list). Its subject is the collection, not any one item. A page showing many dated headlines side by side is a \
+hub EVEN IF one of them matches what our crawler expected.
+   "dead"  — the page carries no usable content: an error page, "access denied", a login or consent wall, an empty shell.
+
+2) "title" / "date" / "type": only to CONFIRM or FILL metadata the page shows more clearly. Leave a field "" to keep \
 the already-known value — do not overwrite good info. "type" ∈ [earnings|press_release|presentation|filing|webcast|\
 conference|shareholder_meeting|dividend|other].
 
-2) "transcript_segments": IF this page contains an earnings-call / webcast TRANSCRIPT (speaker-attributed dialogue), \
-extract it HERE as [{"speaker": "<name or role as shown>", "text": "<their words, verbatim>"}] in order. This is the ONE \
-kind of body content you DO extract, because routing speaker turns needs a model. If the page has no transcript, return [].
+3) "documents": links on THIS page to FILES THAT ARE THIS EVENT'S OWN CONTENT — the press-release PDF, the results \
+spreadsheet, the slide deck. Copy each url EXACTLY as it appears in the page's [anchor](url) markdown; NEVER invent, \
+complete or guess one. Two situations, judged differently — do not apply the wrong rule:
+   (a) The page offers ONE document, or labels its links only "Download" / "PDF" / "View". A generic label is NOT \
+evidence against the link — sites omit labels precisely when there is nothing to disambiguate. Here the page's own \
+headline and body ARE the label: if this page is about the KNOWN EVENT and offers a download, that download is the \
+event's content. Take it.
+   (b) The page lists SEVERAL documents with DESCRIPTIVE labels ("Q3 2025 Results", "2024 Annual Report", "Dividend \
+Info, 4th Quarter"). Those labels exist because they must be told apart — use them. Take only the ones naming THIS \
+event's subject or period; leave other quarters, other years, annual archives, policies and site navigation alone.
+   When the SAME document is offered in several formats (Download PDF / DOC / XLS), take ALL of them — they are one \
+content in different representations and each parses differently downstream.
+   Give a SHORT "why" quoting whatever you matched on (the anchor text, or the headline above it).
+   Return [] when the page's content is fully in the html and it offers no document of its own.
 
-Output STRICT JSON only, no prose: {"title":"","date":"","type":"","transcript_segments":[]}."""
+Output STRICT JSON only, no prose: {"page_kind":"","title":"","date":"","type":"","documents":[]}."""
 
 
-# ROUTE schema — basic_info REMOVED (deterministic side owns it); only metadata + transcript. Guided decoding on this
-# schema CANNOT emit a body-copy field, so the output stays tiny (a few dozen bytes) and the earnings-table overflow is
-# impossible by construction. {DESIGN wf_7b61c8d0} [CONFIDENCE: CONFIRMED — no basic_info key].
+# ROUTE schema — basic_info REMOVED (deterministic side owns it). Guided decoding on this schema CANNOT emit a
+# body-copy field, so the output stays tiny and the earnings-table overflow is impossible by construction.
+# {DESIGN wf_7b61c8d0} [CONFIDENCE: CONFIRMED — no basic_info key].
+#
+# transcript_segments REMOVED 2026-08-06. It was the one body-content task the model kept, but the pipeline is being
+# narrowed to html-only extraction and speaker-splitting is not on that path. Removing it is LOSSLESS: the transcript
+# stays in the deterministic body, because the suppressor only deletes a flagged block when the VLM actually covered it
+# {EXTRACT_HTML.PY "IF NOT VLM_SEGMENTS: RETURN BLOCKS  # VLM EMITTED NO TRANSCRIPT → KEEP EVERYTHING AS BODY"}.
+# {USER 2026-08-06 "we just want this, so no whisper no dolcing no anything"}
+# [CONFIDENCE: CONFIRMED 100% — direct user directive; the fail-safe branch is in the suppressor itself.]
+#
+# page_kind ADDED 2026-08-06 — measured before it was written, on 60 pages with 20 confirmed hubs as positive controls:
+# {PROBE 2026-08-06 "KNOWN_HUB N=20 {'HUB': 19, 'EVENT': 1}"} = 95% recall, and the single dissent was the label being
+# wrong (that url is /events/event-details/<one-event>, structurally a detail page).
+# {PROBE 2026-08-06 "SINGLE_EV N=40 {'EVENT': 32, 'HUB': 8}"} — all 8 were unambiguous listings (one url literally
+# ends `?page=3`), i.e. zero false positives on the judgement that deletes an event.
+# [CONFIDENCE: CONFIRMED 100% — both figures from a live run whose per-url output was read individually.]
 SCHEMA_ROUTE = {
     "type": "object",
     "properties": {
+        # enum is load-bearing: guided decoding cannot emit a fourth category, so the worker's dispatch on this value
+        # is total by construction and needs no "unknown" branch that would silently do nothing.
+        "page_kind": {"type": "string", "enum": ["event", "hub", "dead"]},
         "title": {"type": "string"},
         "date": {"type": "string"},
         "type": {"type": "string"},
-        "transcript_segments": {"type": "array", "items": {"type": "object", "properties": {
-            "speaker": {"type": "string"},
-            "text": {"type": "string"},
-        }, "required": ["text"]}},
+        "documents": {"type": "array", "items": {"type": "object", "properties": {
+            "url": {"type": "string"},
+            "why": {"type": "string"},
+        }, "required": ["url"]}},
     },
-    "required": ["transcript_segments"],
+    "required": ["page_kind"],
 }
 
 
