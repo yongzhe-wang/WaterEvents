@@ -63,9 +63,13 @@ a filings list). Its subject is the collection, not any one item. A page showing
 hub EVEN IF one of them matches what our crawler expected.
    "dead"  — the page carries no usable content: an error page, "access denied", a login or consent wall, an empty shell.
 
-2) "title" / "date" / "type": only to CONFIRM or FILL metadata the page shows more clearly. Leave a field "" to keep \
-the already-known value — do not overwrite good info. "type" ∈ [earnings|press_release|presentation|filing|webcast|\
-conference|shareholder_meeting|dividend|other].
+2) "title" / "date" / "type": CONFIRM, FILL, or REPAIR the metadata above using what the page itself shows. Leave a \
+field "" to keep a value that is already correct — but the known value is NOT always correct, and when it is plainly \
+broken you MUST replace it. A known title is broken when it is empty, is a bare url path segment or file name \
+("html", "default", "node/26501"), is an error or block-page notice ("Access denied", "Page not found", "used \
+Cloudflare to restrict access", "Just a moment"), or is the site's own name rather than this item's headline. In \
+those cases give the page's real headline. Do the same for a missing or obviously wrong date. \
+"type" ∈ [earnings|press_release|presentation|filing|webcast|conference|shareholder_meeting|dividend|other].
 
 3) "documents": links on THIS page to FILES THAT ARE THIS EVENT'S OWN CONTENT — the press-release PDF, the results \
 spreadsheet, the slide deck. Copy each url EXACTLY as it appears in the page's [anchor](url) markdown; NEVER invent, \
