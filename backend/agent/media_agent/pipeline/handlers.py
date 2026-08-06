@@ -80,6 +80,14 @@ _ENABLED_KINDS = frozenset(
 # [CONFIDENCE: CONFIRMED 100% — counted over the 47-page labelled sample.]
 _MAX_ADOPTED_DOCS = int(os.environ.get("MEDIA_MAX_ADOPTED_DOCS", "8"))
 
+# An SEC filing DOCUMENT, recognised by the EDGAR CDN's CIK path or by a filings-page url. Kept beside the claim-side
+# SEC_URL_EXCLUDE rather than merged with it: that one matches the PAGE an event came from, this one matches a FILE a
+# page links to, and the two see different url shapes (d18rn0p25nwr6d.cloudfront.net/CIK-0001318220/<uuid>.pdf has no
+# "sec-filings" segment at all).
+# {psql/REST 2026-08-06 — ledger rows like "d18rn0p25nwr6d.cloudfront.net/CIK-0001318220/e0574656-….pdf"}
+# [CONFIDENCE: CONFIRMED 100% — url shape read from event_media_urls on the live database.]
+_SEC_DOC_RE = re.compile(r"/CIK-\d|/sec-filings/|/edgar/|sec\.gov/", re.I)
+
 
 def _canon_link(u: str) -> str:
     """Compare-key for "is this url on the page". Only case+fragment+trailing-slash are normalised — query strings are
@@ -406,6 +414,15 @@ def _adopt_documents(page_url: str, proposed: list, page_links: list | None, cha
             # Loud, because a hallucinated url is a model-behaviour signal worth seeing, not noise to swallow.
             print(f"[media] ⛔ dropped proposed doc NOT on the page: {u[:90]} (from {page_url[:50]})", flush=True)
             continue
+        if _SEC_DOC_RE.search(u):
+            # Same reason the claim predicate excludes filings pages: EDGAR serves these completely and structurally,
+            # so adopting one here would fetch a worse copy of something already reachable in bulk. This check is
+            # separate from the claim-side one because a NON-filings press page can still link an EDGAR CDN document.
+            # {REST 2026-08-06 "event_media_urls?url=ilike.*CIK-*" -> 1466 of 8068} — 18% of the ledger was this.
+            # [CONFIDENCE: CONFIRMED 100% — count read from the live REST endpoint.]
+            print(f"[media] ⏭ proposed doc is an SEC filing: {u[:80]} — refused (EDGAR is the systematic route)",
+                  flush=True)
+            continue
         kind = router.classify(u)
         if kind == router.KIND_HTML or kind == router.KIND_OTHER:
             print(f"[media] ⏭ proposed doc is not a file ({kind}): {u[:80]} — refused (stage-2 does not crawl)",
@@ -575,6 +592,20 @@ async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
     frontier 已删除。{USER 2026-08-03 "let's just use the original list from the event agent"}
     [CONFIDENCE: CONFIRMED 100% — direct user directive]."""
     kind = await _refine_kind(url, kind)                      # H3: extensionless html → maybe pdf/audio via content-type
+
+    # SEC GATE — filings never enter this pipeline, whichever door they arrive at. The claim predicate keeps out events
+    # whose SOURCE page is a filings list, and _adopt_documents refuses filings the model proposes; this catches the
+    # third door — a filing sitting in the ORIGINAL media_urls of an otherwise-ordinary press event. Measured after the
+    # first two gates shipped: 14 of 259 newly-written ledger rows were still SEC urls arriving by exactly this route.
+    # {psql 2026-08-06 "重启后新增台账行 259 | 其中sec 14"}
+    # [CONFIDENCE: CONFIRMED 100% — counted on rows written after the restart that deployed the other two gates.]
+    #
+    # Recorded as skipped WITH a reason rather than silently dropped: the url is real and belongs to the event, we are
+    # simply not the right mechanism for it. EDGAR serves these completely and structurally.
+    # {USER 2026-08-06 "we can sysmeticlaly process those url ther is no need for us to do it here"}
+    if _SEC_DOC_RE.search(url):
+        chart.set_status(url, "skipped:sec-filing")
+        return
 
     # KIND GATE — run only the lanes this deployment has capacity for; record the rest honestly. See _ENABLED_KINDS.
     # `other` is deliberately NOT gated here: it already has its own recorded-only outcome below, and routing it

@@ -51,6 +51,24 @@ ENRICH_BATCH = int(os.environ.get("WATEREVENTS_ENRICH_BATCH", "16"))    # events
 # [CONFIDENCE: CONFIRMED 100% — same env key + same default; claim_events is the sole remaining reader].
 ENRICH_LEASE_MIN = int(os.environ.get("WATEREVENTS_LEASE_MIN", "30"))
 
+# SEC filings are EXCLUDED from this pipeline — not because they are low value, but because scraping them here is the
+# wrong mechanism for them. EDGAR publishes the same documents through a complete, structured, bulk API
+# (data.sec.gov submissions + full-text search), so a 10-K reached by rendering one IR page at a time is a fragile,
+# partial copy of something that can be fetched systematically and in full. Whatever this pipeline extracts from a
+# filings page is strictly worse than what the official route yields.
+# {USER 2026-08-06 "we can sysmeticlaly process those url ther is no need for us to do it here"}
+# [CONFIDENCE: CONFIRMED 100% — direct user directive.]
+#
+# The pattern is the SAME one the hub seeder already applies, kept as ONE constant so the two places cannot drift:
+# {SEED.PY "AND source_url !~* '/(sec-filings|edgar|financials/(sec|quarterly|annual|financial-results)|regulatory)'"}
+# {USER 2026-07-25 "big filling hub is def not the ones we should monitor"} — the earlier, narrower version of the
+# same call, applied then to monitoring and now to enrichment as well.
+# Scale of what this removes from stage-2's queue:
+# {REST 2026-08-06 count=exact "events?source_url=ilike.*sec-filings*" -> 40530 of 282498} = 14.3% of all events,
+# and {REST "event_documents?url=ilike.*sec-filings*" -> 1052 of 4853} = 21.7% of everything extracted so far.
+# [CONFIDENCE: CONFIRMED 100% — both counts read from the live REST endpoint.]
+SEC_URL_EXCLUDE = r"/(sec-filings|edgar|financials/(sec|quarterly|annual|financial-results)|regulatory)"
+
 
 # WaterEvents lives in its OWN schema so it starts from scratch WITHOUT touching the decommissioned ir-pipeline's
 # cluttered `public` (60+ tables incl. shared api_keys/api_jobs + dozens of *_arch_* snapshots). Old data stays
@@ -190,9 +208,13 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                 lease_until=now() + ($1 || ' minutes')::interval
             WHERE id IN (
                 SELECT id FROM events
-                WHERE status='discovered'
-                   OR (status='rendering' AND lease_until < now())               -- reclaim a crashed enrichment worker
-                   OR (status='failed' AND (next_retry_at IS NULL OR next_retry_at < now()))
+                WHERE (status='discovered'
+                       OR (status='rendering' AND lease_until < now())           -- reclaim a crashed enrichment worker
+                       OR (status='failed' AND (next_retry_at IS NULL OR next_retry_at < now())))
+                  -- SEC filings never enter stage-2: EDGAR serves them completely and structurally, so rendering an
+                  -- IR filings page to reconstruct them is the wrong mechanism. Filtering at CLAIM rather than at
+                  -- dispatch means the fleet never spends a render slot on one. See SEC_URL_EXCLUDE.
+                  AND source_url !~* $3
                 -- enrich_priority first: a chosen batch (a test set, a customer's backlog) is pushed to the front
                 -- without disturbing anything else. Every row defaults to 0, so with no batch enqueued this orders
                 -- exactly as it did before. next_retry_at stays the tiebreaker so backed-off failures still sink
@@ -202,7 +224,7 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
             )
             RETURNING id, claim_token, title, event_date, event_type, media_urls;
             """,
-            str(ENRICH_LEASE_MIN), limit,
+            str(ENRICH_LEASE_MIN), limit, SEC_URL_EXCLUDE,
         )
 
 
