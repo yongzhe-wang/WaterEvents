@@ -154,7 +154,7 @@ async def process_event(pool, client: QwenClient, ev) -> None:
             if vals and all(s.startswith("skipped:kind-disabled") for s in vals):
                 print(f"[enrich] ⏸ event {eid} DEFERRED — all {len(media)} urls are disabled kinds "
                       f"(MEDIA_KINDS gate); not a failure, work still owed", flush=True)
-                await db.fail_event(pool, eid, tok, "deferred:kind-disabled")
+                await db.defer_event(pool, eid, tok, "deferred:kind-disabled")
                 return
             print(f"[enrich] ⛔ event {eid} NOTHING-USABLE from {len(media)} urls — {statuses} — fail", flush=True)
             await db.fail_event(pool, eid, tok, "nothing_usable")

@@ -261,6 +261,34 @@ async def mark_enriched(pool: asyncpg.Pool, event_id, claim_token, basic_info: s
         return row is not None
 
 
+async def defer_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) -> None:
+    """Park an event we CHOSE not to process. Not a failure: fail_count is untouched and no retry is scheduled.
+
+    WHY this is not fail_event with a nicer reason string: fail_event bumps fail_count and dead-letters on the third
+    strike {EVENTS.PY "STATUS = CASE WHEN FAIL_COUNT + 1 >= 3 THEN 'DEAD_LETTER' ELSE 'FAILED' END"}, and dead_letter
+    is absent from claim_events' predicate — so an event deferred three times would be stranded, invisible to the very
+    requeue that is supposed to rescue it once its lane is enabled. Forty rows landed in that state within 45 seconds
+    of the kind gate going live {psql 2026-08-06 "FAILED | DEFERRED:KIND-DISABLED | 40"} before this existed.
+    [CONFIDENCE: CONFIRMED 100% — the dead_letter branch and the claim predicate are both in this file.]
+
+    `deferred` is deliberately NOT claimable. Parking these back in `discovered` would not work: the claim predicate
+    checks next_retry_at only for `failed`, so a `discovered` row is claimed unconditionally and would loop instantly.
+    Re-enabling a lane is one UPDATE flipping `deferred` back to `discovered`.
+
+    Fenced on claim_token, like every other completion path — a worker that lost its lease must not park a row the
+    new owner is already working.
+    """
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            UPDATE events SET status='deferred', fail_reason=$3, claim_token=NULL,
+                              lease_until=NULL, next_retry_at=NULL
+            WHERE id=$1 AND claim_token=$2;
+            """,
+            event_id, claim_token, (reason or "")[:200],
+        )
+
+
 async def fail_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) -> None:
     """Enrichment FAILED on this event → fail-loud: record fail_reason, bump fail_count, and either requeue with
     exponential backoff+jitter (fail_count<3) or send to dead_letter (≥3 — a persistently-failing event is human-review,
