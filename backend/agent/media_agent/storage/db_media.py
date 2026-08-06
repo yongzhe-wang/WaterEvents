@@ -123,11 +123,16 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                 if not isinstance(u, str) or not u.lower().startswith(("http://", "https://")):
                     continue
                 raw = (url_status or {}).get(u) or "done"
+                # `status` is the coarse enum the CHECK constraint allows; `reason` carries the full string. Splitting
+                # them is what lets the ledger answer BOTH "how many were skipped" and "skipped for what" — before
+                # `reason` existed the suffix was truncated away and those two questions collapsed into one.
+                # {MIGRATION 20260723145355 "CHECK (STATUS IN ('PENDING','DONE','FAILED','SKIPPED'))"}
+                # [CONFIDENCE: CONFIRMED 100% — the constraint is why this truncation exists at all.]
                 st = next((s for s in ("done", "failed", "skipped", "pending") if raw.startswith(s)), "done")
                 await conn.execute(
-                    """INSERT INTO event_media_urls (event_id, url, canon_key, kind, status)
-                       VALUES ($1,$2,$3,$4,$5)
+                    """INSERT INTO event_media_urls (event_id, url, canon_key, kind, status, reason)
+                       VALUES ($1,$2,$3,$4,$5,$6)
                        ON CONFLICT (event_id, canon_key) DO NOTHING;""",
-                    event_id, u, _canon(u), classify(u), st,
+                    event_id, u, _canon(u), classify(u), st, (raw if raw != st else None),
                 )
         return True
