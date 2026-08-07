@@ -59,6 +59,33 @@ _NONEVENT_URL_RE = re.compile(
     r'|/content/dam/|/sites/[^/]+/files/|/media/documents?/',
     re.I)
 
+# CLICK-TRACKING REDIRECTS — kept SEPARATE from _NONEVENT_URL_RE above so the two reasons stay distinguishable: that
+# one drops things that are not documents (feeds, assets); this one drops things that ARE links to documents but do not
+# resolve to one. A tracker is designed to record the click and then send the visitor somewhere generic.
+#
+# 用一句话讲完: `globenewswire.com/Tracker?data=<blob>` 看起来是这条新闻的链接,实际 302 到公司**首页** —— 渲染它
+# 得到的是一张导航菜单,而这份垃圾同时污染了标题(url 最后一段就是 "Tracker")。
+#
+# Measured on the live redirect rather than assumed:
+# {CURL 2026-08-07 "https://www.globenewswire.com/Tracker?data=nppKI9POHN_…" → "HTTP/2 302 / location:
+#  https://investors.csx.com/" → final url "https://investors.csx.com/" status 403}
+# The damage it had already done, from this database:
+# {psql 2026-08-07 "含追踪url的事件 2536 · 去掉后就没url了 1750 · 追踪url总数 3945"}
+# {psql 2026-08-07 "SELECT title, count(*) … → TRACKER | 86", every one of them with meta_fixed IS NULL — the VLM was
+#  asked to repair the title while looking at the navigation menu the tracker had redirected it to.}
+# [CONFIDENCE: CONFIRMED 100% — the redirect chain was followed live and the counts read off the production database.]
+#
+# Patterns are ENDPOINT shapes, not host names: a tracker is identified by what the path/query does, so this survives
+# a vendor change. `utm_` is deliberately NOT here — it is a query parameter attached to otherwise-real content urls,
+# and dropping those would discard the document along with the campaign tag.
+_TRACKER_URL_RE = re.compile(
+    r'/Tracker\?'                       # GlobeNewswire — the one measured above
+    r'|/track(er)?/[^/]*\?'             # generic /track/<id>? and /tracker/<id>?
+    r'|//(link|click|ct|email|e|mailer)\.[^/]+/'   # tracking subdomains used by mail/PR distributors
+    r'|/(redirect|goto|linkclick)\.(aspx|php|jsp)'  # classic redirector endpoints
+    r'|doubleclick\.net|/pagead/',      # ad-network click counters
+    re.I)
+
 
 # The page_text feeds links INLINE as `[anchor](url)`, and the model SOMETIMES copies that whole markdown wrapper into
 # a url field instead of the bare url — e.g. "[Webcast](https://...)". A bare startswith("http") check then rejects it,
@@ -83,9 +110,16 @@ def _clean_urls(raw: list) -> list[str]:
     out, seen = [], set()
     for u in raw or []:
         u = _unwrap_url(u)
-        if u.startswith("http") and u not in seen and not _NONEVENT_URL_RE.search(u):
-            seen.add(u)
-            out.append(u)
+        if not u.startswith("http") or u in seen or _NONEVENT_URL_RE.search(u):
+            continue
+        # Loud, because this drop can empty an event's url list entirely and that outcome must be attributable to a
+        # decision rather than looking like the model found nothing. 1,750 of the 2,536 affected events have NO other
+        # url. {psql 2026-08-07 "去掉后就没url了 | 1750"}
+        if _TRACKER_URL_RE.search(u):
+            print(f"[extract] ⊘ tracker url dropped — {u[:88]}", flush=True)
+            continue
+        seen.add(u)
+        out.append(u)
     return out
 
 
@@ -397,17 +431,27 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "", page_url: s
             # "July 28, 2026 at 3:30 PM (JST) Announcement of Financial Results 2nd Quarter for FY2026" and eight more —
             # with only 4 links on the whole page (home, IR, and two year anchors). Every one of those 9 died here, and
             # the company reads as 0 events with no error, no partial, and no drop counter anywhere.
-            # The page itself is the honest source for such a row, so it becomes the event's url.
-            # BOTH date AND title are required for this fallback, which is stricter than the general rule below (date OR
-            # title). Without a date, a nav label the model mis-read as an event would now be admitted instead of
-            # dropped — the url requirement was doing that filtering as a side effect, so tightening here is what keeps
-            # the footer-chrome guard as strong as it was.
             # {MEASURED 2026-08-01 shimano.com/en/ir/calendar.html — 9 dated rows in the text the model received,
             #  events_kept=0, _error=None, _partial=None}
-            # [CONFIDENCE: CONFIRMED 100% — the full page text and the extraction result were printed side by side.]
-            if page_url and date and title:
-                urls = [page_url]
-            else:
+            #
+            # The row is KEPT — with NO url. It used to be kept with `urls = [page_url]`, and that one line is where
+            # 6,878 events acquired the LISTING page as their only "content" url. Stage-2 then rendered a hub for each
+            # of them and stored the navigation menu as the event's body:
+            # {psql 2026-08-07 "jsonb_array_length(media_urls)=1 AND media_urls->>0 = source_url → 6878"}
+            # {psql 2026-08-07 event_documents.md FOR ONE SUCH EVENT → "SKIP TO MAIN CONTENT / OVERVIEW / FINANCIALS /
+            #  QUARTERLY RESULTS / ANNUAL REPORTS / SEC FILINGS / METRICS / …" — 2,124 chars, zero prose}
+            # source_url is a HUB by construction, not this row's detail page — only 4% of events have one to
+            # themselves, while 2,321 listing urls account for 128,844 events:
+            # {psql 2026-08-07 ">20 个共用 → 明显是 hub | 2321 | 128844" vs "1 个事件独占 | 9651 | 9651"}
+            # {USER 2026-08-07 "we shouldnt faillback to source url at all there is no info there and waste render
+            #  compute"}
+            # [CONFIDENCE: CONFIRMED 100% — the sharing histogram, the stored navigation-menu body, and the 6,878
+            #  count were all read from the production database before this line was changed.]
+            #
+            # BOTH date AND title stay required here, stricter than the general rule below (date OR title). The url
+            # requirement was doing that filtering as a side effect; without this the footer-chrome guard would weaken
+            # exactly as the deleted fallback's comment warned.
+            if not (date and title):
                 continue
         # PLAUSIBILITY (injection defence layer (c)) — grounding proves the model COPIED from the page; it cannot prove
         # the PAGE is honest, because a poisoner controls the grounding corpus too. So an event must ALSO survive a

@@ -33,7 +33,7 @@ from agent.event_agent.storage import queue as q      # hub promotion reuses the
 from ..extract import router                          # url → kind, so each of the event's urls reaches the right handler
 from ..extract.chart import Chart                      # the per-event accumulator (fill-and-append + content-hash dedup)
 from ..storage import db_media                         # media_agent's normalized-schema writer (all 5 media tables)
-from .handlers import dispatch                         # (url, kind) → the handler that owns that kind
+from .handlers import _TRACKER_URL_RE, dispatch        # (url, kind) → its handler; + the tracker pattern dispatch gates on
 
 _WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
 
@@ -101,10 +101,13 @@ def _as_list(v) -> list:
 
 
 def _detail_url(media_urls: list[str]) -> str | None:
-    """Pick the event's DETAIL PAGE to render: the first http url that is NOT a media asset (pdf/mp3/…). The assets are
-    recorded as urls but we don't render them — the HTML detail page is where basic_info + newly-linked media live."""
+    """Pick the event's DETAIL PAGE to render: the first http url that is neither a media asset (pdf/mp3/…) nor a
+    click-tracking redirect. Assets are recorded as urls but not rendered — the HTML detail page is where basic_info
+    and newly-linked media live. Trackers are skipped because they resolve somewhere generic, so rendering one yields
+    the site's navigation rather than this event (see _TRACKER_URL_RE for the measured case)."""
     for u in media_urls or []:
-        if isinstance(u, str) and u.lower().startswith("http") and not _ASSET_RE.search(u):
+        if isinstance(u, str) and u.lower().startswith("http") \
+                and not _ASSET_RE.search(u) and not _TRACKER_URL_RE.search(u):
             return u
     return None
 

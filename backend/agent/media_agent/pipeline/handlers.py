@@ -94,6 +94,31 @@ _MAX_ADOPTED_DOCS = int(os.environ.get("MEDIA_MAX_ADOPTED_DOCS", "8"))
 # Blocking the domain would take the earnings decks and press releases with the filings; blocking the subdomain takes
 # only what EDGAR already serves better.
 # [CONFIDENCE: CONFIRMED 100% — both url shapes and their event titles read from the live database.]
+# CLICK-TRACKING REDIRECTS. Same pattern as event_agent/crawl/extract.py's — the crawler now refuses to RECORD these,
+# this gate stops stage-2 FETCHING the 3,945 already in the database {psql 2026-08-07 "追踪url总数 | 3945"}.
+#
+# 用一句话讲完: 追踪端点按设计不指向内容 —— 它记一次点击,然后把你送到某个泛化的地方(通常是公司首页),
+# 所以渲染它拿回来的是站点导航,而那份导航同时把标题污染成 url 的最后一段。
+#
+# Measured end to end on the case that exposed it:
+# {CURL 2026-08-07 "https://www.globenewswire.com/Tracker?data=nppKI9POHN_…" → "HTTP/2 302 / location:
+#  https://investors.csx.com/"} — the company HOMEPAGE, not the press release it was linked from.
+# {psql event_documents.md FOR THAT EVENT → "SKIP TO MAIN CONTENT / OVERVIEW / FINANCIALS / QUARTERLY RESULTS /
+#  ANNUAL REPORTS / SEC FILINGS / METRICS / …" — 2,124 chars, zero prose}
+# {psql "TITLE='TRACKER' → 86 EVENTS", every one with meta_fixed IS NULL — the VLM was asked to repair the title
+#  against that navigation menu and had nothing to replace it with.}
+# [CONFIDENCE: CONFIRMED 100% — redirect followed live; stored body and both counts read off production.]
+#
+# `utm_` is deliberately absent: it is a campaign tag bolted onto otherwise-real content urls, so matching it would
+# discard the document along with the tag.
+_TRACKER_URL_RE = re.compile(
+    r'/Tracker\?'                                     # GlobeNewswire — the endpoint measured above
+    r'|/track(er)?/[^/]*\?'                           # generic /track/<id>? and /tracker/<id>?
+    r'|//(link|click|ct|email|e|mailer)\.[^/]+/'      # tracking subdomains used by mail / PR distributors
+    r'|/(redirect|goto|linkclick)\.(aspx|php|jsp)'    # classic redirector endpoints
+    r'|doubleclick\.net|/pagead/',                    # ad-network click counters
+    re.I)
+
 _SEC_DOC_RE = re.compile(r"/CIK-\d|/sec-filings/|/edgar/|sec\.gov/|sec\.irpass\.cc/", re.I)
 
 
@@ -599,6 +624,13 @@ async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
     用一句话讲完: URL 集合由 event_agent 一次性给定,dispatch 只负责"这一条交给谁处理",不再产生新 URL —— 闭环
     frontier 已删除。{USER 2026-08-03 "let's just use the original list from the event agent"}
     [CONFIDENCE: CONFIRMED 100% — direct user directive]."""
+    # TRACKER GATE — FIRST, before _refine_kind, because refining issues a HEAD that would itself follow the redirect
+    # and report the destination's content-type. Gating here spends nothing at all on a url that cannot carry content.
+    # Recorded with a reason, not dropped: the link was really on the page, it just does not resolve to this event.
+    if _TRACKER_URL_RE.search(url):
+        chart.set_status(url, "skipped:tracker-redirect")
+        return
+
     kind = await _refine_kind(url, kind)                      # H3: extensionless html → maybe pdf/audio via content-type
 
     # SEC GATE — filings never enter this pipeline, whichever door they arrive at. The claim predicate keeps out events

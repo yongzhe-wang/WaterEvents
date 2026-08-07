@@ -215,6 +215,20 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                   -- IR filings page to reconstruct them is the wrong mechanism. Filtering at CLAIM rather than at
                   -- dispatch means the fleet never spends a render slot on one. See SEC_URL_EXCLUDE.
                   AND source_url !~* $3
+                  -- AN EVENT WITH NO URL HAS NO ENRICHMENT WORK, so it must never occupy a render slot. This is the
+                  -- claim-side half of the change that stopped writing the LISTING page in as an event's url: those
+                  -- rows now carry `[]` honestly instead of `[<hub>]`, and that honesty only pays off if the claim
+                  -- predicate reads it. Without this line the same rows get claimed, find nothing to do, and are
+                  -- written back as failures — paying the full claim/lease/heartbeat cost to learn what the column
+                  -- already said.
+                  -- {psql 2026-08-07 "jsonb_array_length(media_urls)=1 AND media_urls->>0 = source_url → 6878"} is the
+                  --  population that fallback created, each one costing a render that returned a navigation menu.
+                  -- {USER 2026-08-07 "if there is no medai url in stage 2 then we just discad the event in stage 1"}
+                  -- The ROW is kept: its title and date came off a text-only IR calendar and are real data; what it
+                  -- lacks is anything for stage-2 to fetch. Dropping it from the QUEUE and dropping it from the
+                  -- DATABASE are different decisions, and only the first is needed to stop the waste.
+                  -- [CONFIDENCE: CONFIRMED 100% — count read from production; one such nav-menu body was read in full.]
+                  AND jsonb_array_length(media_urls) > 0
                 -- enrich_priority first: a chosen batch (a test set, a customer's backlog) is pushed to the front
                 -- without disturbing anything else. Every row defaults to 0, so with no batch enqueued this orders
                 -- exactly as it did before. next_retry_at stays the tiebreaker so backed-off failures still sink
