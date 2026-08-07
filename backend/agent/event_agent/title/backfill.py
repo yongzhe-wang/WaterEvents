@@ -66,8 +66,28 @@ def _junk(t: str) -> bool:
     lt = s.lower()
     if _ACCESSION.match(s) or _HEXUUID.match(s):
         return True
-    if lt in ("default", "index", "document", "viewer"):
-        return True
+    # REMOVED: a four-word blacklist ("default", "index", "document", "viewer").
+    #
+    # 用一句话讲完: 这几个词本身是合法的标题成分,不是垃圾标记 —— 判断一个标题好不好,不该靠"它含不含某个词",
+    # 那条路一旦被放宽成子串匹配就会开始误杀真文档;这件事交给下游的 VLM,它的 prompt 里本来就写着这条任务。
+    #
+    # {USER 2026-08-07 "this is wrong, some title might containt htes words and valid remove this, we should leave
+    #  at at it for future"}
+    # The words appear in real IR document titles — "Universal Registration Document" is the EU's standard prospectus:
+    # {psql 2026-08-07 "2025 UNIVERSAL REGISTRATION DOCUMENT | 11" · "BBVA'S REGISTRY DOCUMENT FOR THE SPANISH
+    #  NATIONAL STOCK EXCHANGE (CNMV) | 6" · "UNIVERSAL REGISTRATION DOCUMENT | 4"}
+    # Exact matching spared those today, which is exactly what made the line a trap rather than a bug: it reads as a
+    # junk-word list and the obvious "improvement" is to loosen it.
+    #
+    # THE COST, measured before removing rather than discovered after:
+    # {psql 2026-08-07 — title-less events whose filename would now become the title: "DEFAULT | 966", "INDEX | 9",
+    #  "VIEWER | 4"; 5,382 stored urls have the /default.aspx shape Q4-hosted IR sites use for every page.}
+    # Those 966 hold an EMPTY title right now, so both before and after they are broken; what changes is that the
+    # breakage becomes visible instead of blank. Both forms are on the repair list the VLM already works from:
+    # {PROMPTS.PY SYSTEM_ROUTE "A KNOWN TITLE IS BROKEN WHEN IT IS EMPTY, IS A BARE URL PATH SEGMENT OR FILE NAME
+    #  (\"HTML\", \"DEFAULT\", \"NODE/26501\") …"} — "default" is named there verbatim.
+    # [CONFIDENCE: CONFIRMED 100% — both the valid-title counts and the 979-event cost were read from production
+    #  before the line was deleted; the prompt clause was read from the file.]
     if lt.startswith("error |") or lt.startswith("error -") or lt == "error":
         return True
     if "attention required" in lt or lt == "cloudflare" or "just a moment" in lt:
