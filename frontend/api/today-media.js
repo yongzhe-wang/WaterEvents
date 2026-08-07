@@ -130,9 +130,18 @@ async function mediaResources() {
         queued:      d.inflight != null && d.concurrency != null ? Math.max(0, d.inflight - d.concurrency) : null,
         done:        d.docling     ?? null,
         errors:      d.errors      ?? null,
+        // `cores` is the CGROUP QUOTA now, not the host's core count, and the two are carried separately because on
+        // the pod they differ by 12.5x — a gap that silently inverted this card's reading for as long as it existed.
+        // {POD /health 2026-08-07 "\"CORES\": 7.65, \"CORES_HOST\": 96, \"QUOTA_SRC\": \"CGROUP-V1\", \"LOAD_PCT\": 274"}
+        // The same endpoint previously returned {"CORES": 96, "LOAD_PCT": 19} for that identical machine state.
+        // [CONFIDENCE: CONFIRMED 100% — both readings taken from this service, before and after the fix.]
         cores:       h.cores       ?? null,
+        cores_host:  h.cores_host  ?? null,
         load:        h.load1       ?? null,
         pct:         h.load_pct    ?? null,
+        // Ceiling-hit rate. load_pct alone cannot distinguish "busy" from "stopped at the gate half the time", and it
+        // is the second one that says the box has no headroom left to give. {POD /health "THROTTLED_PCT": 43.5}
+        throttled:   h.throttle?.throttled_pct ?? null,
       };
     } catch { docling = null; }
   }

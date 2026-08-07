@@ -148,6 +148,68 @@ def _device() -> str:
         return "unknown"
 
 
+def _cpu_quota() -> tuple[float, str]:
+    """How many cores this process may actually use, and where that number came from.
+
+    用一句话讲完: 容器里 `nproc` / `os.cpu_count()` 报的是**宿主机**的核数(/proc 直接透传),真正的上限写在 cgroup 的
+    quota 文件里 —— 两者可以差一个数量级,而所有容量判断都建立在这个分母上。
+
+    Read order, most authoritative first:
+      1. cgroup v2 `/sys/fs/cgroup/cpu.max` — "<quota> <period>", or "max <period>" when uncapped
+      2. cgroup v1 `/sys/fs/cgroup/cpu/cpu.cfs_quota_us` ÷ `cpu.cfs_period_us` — -1 quota means uncapped
+      3. `os.sched_getaffinity(0)` — a cpuset pin, which caps just as hard as a quota does
+      4. `os.cpu_count()` — the host count; correct ONLY on a bare VM
+
+    The RunPod pod is case 2 and the gap is not subtle:
+    {POD 2026-08-07 "CFS_QUOTA_US : 765000" · "CFS_PERIOD_US : 100000" · "NPROC(HOST VISIBLE): 96"} → 7.65 vs 96.
+    The GCP VMs are case 4 — {IR-RENDER-16 2026-08-07 "cgroup quota = none (裸 VM)" · "cores = 16"} — so the fallback
+    chain has to end somewhere honest rather than assuming a quota file exists.
+    [CONFIDENCE: CONFIRMED 100% — every path in this chain was read off a live machine before being written.]
+    """
+    try:                                                        # 1. cgroup v2
+        raw = open("/sys/fs/cgroup/cpu.max").read().split()
+        if raw[0] != "max":
+            return round(int(raw[0]) / int(raw[1]), 2), "cgroup-v2"
+        return float(os.cpu_count() or 0), "cgroup-v2-uncapped"
+    except Exception:                                           # noqa: BLE001 — v2 path absent → try v1
+        pass
+    try:                                                        # 2. cgroup v1
+        quota = int(open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read())
+        if quota > 0:                                           # -1 = no limit set on this cgroup
+            period = int(open("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read())
+            return round(quota / period, 2), "cgroup-v1"
+    except Exception:                                           # noqa: BLE001 — v1 path absent too → affinity
+        pass
+    try:                                                        # 3. cpuset pin — caps as hard as a quota
+        n = len(os.sched_getaffinity(0))
+        if n and n != (os.cpu_count() or 0):
+            return float(n), "affinity"
+    except Exception:                                           # noqa: BLE001 — not available on this platform
+        pass
+    return float(os.cpu_count() or 0), "host"                   # 4. bare VM — the host count IS the limit
+
+
+def _cpu_throttle() -> dict:
+    """Share of scheduling periods in which the cgroup hit its ceiling — the signal load average cannot carry.
+
+    A load of 18.9 on a 7.65-core quota and a load of 18.9 on a 24-core box look identical in `load1`; only this
+    counter says the first one spent nearly half its periods stopped at the gate:
+    {POD 2026-08-07 /sys/fs/cgroup/cpu/cpu.stat "NR_PERIODS 3022527" · "NR_THROTTLED 1317241"} = 43.6%.
+    Empty dict on a machine with no quota — an uncapped box cannot be throttled, so there is nothing to report.
+    [CONFIDENCE: CONFIRMED 100% — counters read from the running pod.]
+    """
+    for path in ("/sys/fs/cgroup/cpu.stat", "/sys/fs/cgroup/cpu/cpu.stat"):
+        try:
+            kv = dict(ln.split()[:2] for ln in open(path) if len(ln.split()) >= 2)
+            periods, throttled = int(kv.get("nr_periods", 0)), int(kv.get("nr_throttled", 0))
+            if periods:
+                return {"periods": periods, "throttled": throttled,
+                        "throttled_pct": round(throttled / periods * 100, 1)}
+        except Exception:                                       # noqa: BLE001 — absent/unreadable → try the next path
+            continue
+    return {}
+
+
 def _host_stats() -> dict | None:
     """Read host CPU and memory metrics from the OS for the /health response.
 
@@ -162,11 +224,14 @@ def _host_stats() -> dict | None:
     UNREADABLE; /HEALTH MUST NEVER 500."}
     [CONFIDENCE: CONFIRMED 100% — direct contract requirement]."""
     try:
-        # os.cpu_count() returns the number of logical CPUs visible to THIS process (honours cgroups),
-        # which is the correct value for a pod that may be containerized.
-        # {PYTHON DOCS: "OS.CPU_COUNT() RETURN THE NUMBER OF CPUS IN THE SYSTEM; RETURN NONE IF UNDETERMINED"}
-        # [CONFIDENCE: CONFIRMED 95% — standard stdlib; None-guard below handles the edge case]
-        cores = os.cpu_count() or 0
+        # THE CGROUP QUOTA, not the host's core count. The previous line here was `os.cpu_count()` under a comment
+        # claiming it "honours cgroups" — it does not, and on this pod the difference is the whole reading:
+        #   {POD 2026-08-07 "CFS_QUOTA_US : 765000" · "CFS_PERIOD_US : 100000"} → 7.65 cores actually allowed
+        #   {POD 2026-08-07 "NPROC(HOST VISIBLE): 96"}                          → what os.cpu_count() returned
+        # so /health reported {"CORES": 96, "LOAD1": 18.93, "LOAD_PCT": 19} for a box whose true occupancy was
+        # 18.93/7.65 = 247%. Every capacity decision taken off that number was taken off a 12.5x overstatement.
+        # [CONFIDENCE: CONFIRMED 100% — both figures read from the pod's own /sys and /proc in the same session.]
+        cores, quota_src = _cpu_quota()
 
         # os.getloadavg() returns (1min, 5min, 15min) POSIX load averages.
         # WHY 1-minute 平均: 它比 5/15min 更能反映「现在」的负载状态,对 dashboard polling every 30s 最有用。
@@ -175,11 +240,12 @@ def _host_stats() -> dict | None:
         # [CONFIDENCE: CONFIRMED 99% — stdlib, raises OSError on Windows but we're on Linux]
         load1 = round(os.getloadavg()[0], 2)
 
-        # load_pct = load1 / cores * 100, clamped to [0, 100] as an int.
-        # WHY 整数百分比: 和 GPU util_pct 保持一致,让 dashboard 用统一的 hot-threshold 逻辑。
-        # {ROOT CLAUDE.MD SECTION 2 CONTRACT PART A/B: "LOAD_PCT: <INT>"}
-        # [CONFIDENCE: CONFIRMED 100% — direct contract spec]
-        load_pct = int(min(load1 / cores * 100, 100)) if cores > 0 else 0
+        # load_pct = load1 / cores * 100. NO LONGER CLAMPED TO 100 — the clamp was hiding the one state an operator
+        # most needs to see. A throttled cgroup does not stop at 100%; it queues, and 247% is a different situation
+        # from 100% that the old int(min(…, 100)) rendered identically.
+        # [CONFIDENCE: CONFIRMED 100% — 18.93 on a 7.65-core quota was displayed as the same "100" a healthy-but-full
+        #  box would show, had the denominator been right.]
+        load_pct = int(load1 / cores * 100) if cores > 0 else 0
 
         # 解析 /proc/meminfo 获取 MemTotal 和 MemAvailable (kB 单位), 转成 MB。
         # MemAvailable is preferred over MemFree because it accounts for reclaimable page cache —
@@ -202,9 +268,12 @@ def _host_stats() -> dict | None:
         mem_used_mb = (mem_total_kb - mem_avail_kb) // 1024
 
         return {
-            "cores": cores,
+            "cores": cores,                     # the QUOTA — what this process may use
+            "cores_host": os.cpu_count() or 0,  # the host's count, kept so the gap is legible rather than hidden
+            "quota_src": quota_src,             # which of the four reads produced `cores`, so the number is auditable
             "load1": load1,
             "load_pct": load_pct,
+            "throttle": _cpu_throttle(),        # {} on an uncapped box; the ceiling-hit rate on a capped one
             "mem_used_mb": mem_used_mb,
             "mem_total_mb": mem_total_mb,
         }

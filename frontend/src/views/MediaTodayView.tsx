@@ -26,7 +26,7 @@ import type { ArtInvMap } from "../components/artifacts";
 
 // ── Shapes returned by /api/today-media ──────────────────────────────────────────────────────────────────────────────
 interface FetchLane { enabled: boolean | null; total: number | null; inflight: number; waiting: number; cap_now: number | null; weights: Record<string, number> | null; }
-interface Docling { concurrency: number | null; inflight: number | null; queued: number | null; done: number | null; errors: number | null; cores: number | null; load: number | null; pct: number | null; }
+interface Docling { concurrency: number | null; inflight: number | null; queued: number | null; done: number | null; errors: number | null; cores: number | null; cores_host: number | null; load: number | null; pct: number | null; throttled: number | null; }
 interface Whisper { concurrency: number | null; inflight: number | null; done: number | null; errors: number | null; gpu_mem_used_mb: number | null; gpu_mem_total_mb: number | null; gpu_util_pct: number | null; }
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
@@ -137,7 +137,11 @@ function MediaResourceCards({ r }: { r: MediaToday["resources"] }) {
   // A queue behind the gate is the throttle signal — mark it, but only when work is actually waiting.
   const fetchHot = (f?.waiting ?? 0) > 0;
   const d = r.docling;
-  const doclingHot = (d?.queued ?? 0) > 0;
+  // A queue behind the gate marks the card hot — and so does a THROTTLED cgroup, because the second state produces no
+  // queue at all yet has strictly less capacity to give. The pod sits at 43.5% throttled with an empty docling queue,
+  // so queue-depth alone would paint it green. {POD /health 2026-08-07 "\"THROTTLED_PCT\": 43.5" with "INFLIGHT": 0}
+  // [CONFIDENCE: CONFIRMED 100% — both fields read from the same live response.]
+  const doclingHot = (d?.queued ?? 0) > 0 || (d?.throttled ?? 0) >= 10;
   const w = r.whisper;
   const whisperHot = (w?.errors ?? 0) > 0;
 
@@ -160,7 +164,13 @@ function MediaResourceCards({ r }: { r: MediaToday["resources"] }) {
         d ? [
           `${d.queued ?? 0} queued`,
           `${num(d.done)} done · ${num(d.errors)} errors`,
-          d.pct != null ? `${d.pct}% cpu · ${d.cores ?? "—"} cores` : "cpu —",
+          // `cores` is the cgroup QUOTA. The host count is printed beside it ONLY when they disagree, which is the
+          // whole point — on the pod this line reads "274% cpu · 7.65 cores (host 96)" where it used to read
+          // "19% cpu · 96 cores" for the identical machine state.
+          d.pct != null
+            ? `${d.pct}% cpu · ${d.cores ?? "—"} cores${d.cores_host && d.cores_host !== d.cores ? ` (host ${d.cores_host})` : ""}`
+            : "cpu —",
+          d.throttled != null ? `${d.throttled}% of periods throttled` : "throttle —",
         ] : ["docling unreachable"])}
 
       {card("Whisper · audio", "RunPod GPU (shared with VLM)",
