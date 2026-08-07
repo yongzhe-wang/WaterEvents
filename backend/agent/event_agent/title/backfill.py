@@ -157,12 +157,44 @@ async def fetch_title(client: httpx.AsyncClient, url: str) -> str:
     return _fname_or_blank(url)
 
 
-def _primary_url(media_urls, source_url: str) -> str:
+# Click-tracking redirects, the SAME pattern crawl/extract.py refuses to record and media_agent refuses to fetch.
+# Duplicated as a literal rather than imported: this module is also run standalone as a backfill script, and a
+# cross-package import would make a title repair depend on the media pipeline being importable.
+_TRACKER_URL_RE = re.compile(
+    r'/Tracker\?'
+    r'|/track(er)?/[^/]*\?'
+    r'|//(link|click|ct|email|e|mailer)\.[^/]+/'
+    r'|/(redirect|goto|linkclick)\.(aspx|php|jsp)'
+    r'|doubleclick\.net|/pagead/',
+    re.I)
+
+
+def _primary_url(media_urls, source_url: str) -> str:      # noqa: ARG001 — source_url kept for call-site compatibility
+    """The url whose title should become this event's title, or "" when the event has none.
+
+    用一句话讲完: 只在这个事件**自己的** url 里找,找不到就返回空 —— 绝不回退到 source_url,因为那是列表页。
+
+    WHY NO source_url FALLBACK: source_url is the LISTING page the crawler was reading when it extracted this row,
+    shared by every other row on the same page. Fetching it yields the hub's own title, which is the same string for
+    hundreds of events and describes none of them:
+      {psql 2026-08-07 — 2,321 source_urls account for 128,844 events; the top one, investor.trinet.com/investor-
+       relations/, is the source of 522}
+    {USER 2026-08-07 "we shouldnt faillback to source url at all there is no info there and waste render compute"}
+
+    WHY TRACKERS ARE SKIPPED: this is exactly how 86 events came to be titled "Tracker". _primary_url returned
+    globenewswire.com/Tracker?data=…, fetch_title followed it to the company homepage, got nothing usable, and fell
+    through to _fname_or_blank — which returns the url's last path segment.
+      {CURL 2026-08-07 "globenewswire.com/Tracker?data=nppKI9POHN_… → 302 → https://investors.csx.com/" → 403}
+      {psql 2026-08-07 "86 个 Tracker 事件: 52 个只有 1 个 url,就是 Tracker 链接"}
+    [CONFIDENCE: CONFIRMED 100% — redirect followed live; both counts read off production.]
+
+    Returning "" is safe: _fill already treats a falsy url as "nothing to fetch" and leaves the row alone.
+    """
     a = media_urls if isinstance(media_urls, list) else (json.loads(media_urls) if media_urls else [])
     for u in a:
-        if isinstance(u, str) and u.startswith("http"):
+        if isinstance(u, str) and u.startswith("http") and not _TRACKER_URL_RE.search(u):
             return u
-    return source_url or ""
+    return ""
 
 
 async def _fill(pool, rows, conc: int) -> int:
