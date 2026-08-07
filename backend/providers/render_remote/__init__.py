@@ -108,20 +108,33 @@ def render_shot(url: str, wait_ms: int = 0) -> dict:
 
 
 def _tuple_call(path: str, url: str, wait_ms: int) -> tuple[str, list, str]:
-    """Shared body for render_full / render_detail, which return a tuple the wire has to name and rebuild."""
+    """Shared body for render_full / render_detail, which return a tuple the wire has to name and rebuild.
+
+    The third field is read from `html`, renamed from `method` on both ends together — the local functions return
+    {ORCHESTRATOR.PY "RETURN TEXT, LINKS, HTML"} and this wire name is the only place that ever called it anything
+    else. `method` is still ACCEPTED as a fallback so a render VM running the pre-rename service keeps working through
+    a rolling deploy; drop the fallback once every box is past it.
+    [CONFIDENCE: CONFIRMED 100% — the rename covers service.py:_h_tuple and this function, the only two sites.]
+
+    "transport-error" stays in the third slot on failure. It is not html and never was — it is this module's
+    fail-loud marker, and the contract at the top of this file names it explicitly
+    {THIS FILE "传输层失败返回 method=\"transport-error\",绝不返回 \"\""}. Callers test that string; the field it
+    rides in was renamed, the sentinel was not.
+    """
     out = _post(path, {"url": url, "wait_ms": wait_ms})
     if out is None:
         return "", [], "transport-error"
-    return out.get("text", "") or "", list(out.get("links") or []), out.get("method", "") or ""
+    html = out.get("html") or out.get("method") or ""          # `method` = a pre-rename service still in rotation
+    return out.get("text", "") or "", list(out.get("links") or []), html
 
 
 def render_full(url: str, wait_ms: int = 0) -> tuple[str, list, str]:
-    """Remote twin of watercrawl.render_full → (text, links, method). ir_url_agent's IR-homepage nav harvest."""
+    """Remote twin of watercrawl.render_full → (text, links, html). ir_url_agent's IR-homepage nav harvest."""
     return _tuple_call("/render_full", url, wait_ms)
 
 
 def render_detail(url: str, wait_ms: int = 0) -> tuple[str, list, str]:
-    """Remote twin of watercrawl.render_detail → (text, links, method). The deep-page variant."""
+    """Remote twin of watercrawl.render_detail → (text, links, html). The deep-page variant."""
     return _tuple_call("/render_detail", url, wait_ms)
 
 

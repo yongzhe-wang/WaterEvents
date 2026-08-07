@@ -110,6 +110,13 @@ const STATIC_ROUTES = {
   "/api/queue/boost": "./api/queue-boost.js",       // POST — move chosen full units to the front
   "/api/queue/unboost": "./api/queue-unboost.js",   // POST — put them back at the default priority
   "/api/queue/boosted": "./api/queue-boosted.js",   // GET  — what is boosted + what it has produced so far
+  // PLAYGROUND — the hand-testing surface. Reaches OUT to the fleet's own services rather than the database, which is
+  // why the three sit together: /render drives ir-render-16, /chat streams from the vLLM fair gateway, /prompts reads
+  // the pipeline's python source. Each runs under a dedicated `playground` tenant so a human at a keyboard is metered
+  // beside the two agents instead of competing with them invisibly.
+  "/api/render": "./api/render.js",   // POST — one url through a real render entry, output returned untouched
+  "/api/chat": "./api/chat.js",       // POST — SSE passthrough to vLLM; the ONLY streaming route in this server
+  "/api/prompts": "./api/prompts.js", // GET  — the live SYSTEM/SYSTEM_ROUTE text, parsed out of prompts.py
 };
 
 // Cache the dynamically-imported handler modules so we hit disk once per route.
@@ -195,17 +202,38 @@ const server = createServer(async (rawReq, rawRes) => {
   }
   const req = { query, method: rawReq.method, url: rawReq.url, headers: rawReq.headers, body };
 
-  // Minimal `res` shim covering the only three methods the handlers call:
-  // setHeader / status / json. {grep "res.json | res.setHeader | res.status"}
+  // Minimal `res` shim over node's ServerResponse. Two response SHAPES are supported, mutually exclusive per request:
+  //   buffered — setHeader / status / json                          (every handler written before the playground)
+  //   streamed — setHeader / status / flushHeaders / write / end    (api/chat.js, which proxies SSE)
+  //
+  // WHY streaming needs its own three methods: json() writes the head AND ends the response in one call, so a handler
+  // that wants to send the head first and then push chunks for the next thirty seconds cannot express itself through
+  // it. These are not a local invention — they are the same methods Vercel's `res` already exposes, so a handler
+  // written against them behaves identically here and in production. Adding them keeps this a SHIM rather than a fork.
+  // [CONFIDENCE: CONFIRMED 100% — the shim had exactly setHeader/status/json before this, and api/chat.js is the first
+  //  handler that must stream; no existing handler's contract changes.]
   let statusCode = 200;
+  let headSent = false;                      // guards the one thing node throws on: writing the head twice
+  const sendHead = (extra) => {
+    if (headSent) return;
+    headSent = true;
+    rawRes.writeHead(statusCode, extra);
+  };
   const res = {
     setHeader: (k, v) => rawRes.setHeader(k, v),
     // status() must return `this` so `res.status(502).json(...)` chains.
     status(code) { statusCode = code; return this; },
     json(body) {
-      rawRes.writeHead(statusCode, { "Content-Type": "application/json" });
+      sendHead({ "Content-Type": "application/json" });
       rawRes.end(JSON.stringify(body));
     },
+    // Commit status + headers NOW, before any body exists. An SSE client renders nothing until the head arrives, so
+    // deferring it to the first chunk makes a slow first token indistinguishable from a dead endpoint.
+    flushHeaders() { sendHead(); rawRes.flushHeaders?.(); },
+    // Returns node's backpressure boolean unchanged. A proxy that ignores it can outrun a slow client and grow the
+    // socket buffer without bound, so the caller has to be able to see it.
+    write(chunk) { sendHead(); return rawRes.write(chunk); },
+    end(chunk) { sendHead(); rawRes.end(chunk); },
   };
 
   // Run the handler; any throw becomes a 500 so the dev server never crashes.

@@ -114,26 +114,42 @@ async def h_render_shot(request: web.Request) -> web.Response:
 
 
 async def _h_tuple(request: web.Request, fn, name: str) -> web.Response:
-    """Shared handler for the two orchestrator entries, which return a TUPLE (text, links, method) rather than a dict.
+    """Shared handler for the two orchestrator entries, which return a TUPLE (text, links, html) rather than a dict.
     JSON has no tuple, so it is named on the wire and the client re-tuples it — keeping the local call signature
-    byte-identical for callers {ORCHESTRATOR.PY:51 "DEF RENDER_FULL(URL: STR, WAIT_MS: INT = 0) -> TUPLE[STR, LIST, STR]"}."""
+    byte-identical for callers {ORCHESTRATOR.PY:51 "DEF RENDER_FULL(URL: STR, WAIT_MS: INT = 0) -> TUPLE[STR, LIST, STR]"}.
+
+    THE THIRD FIELD IS `html`, AND IT USED TO BE NAMED `method`. Both orchestrator entries put the page HTML there —
+    {ORCHESTRATOR.PY "SYNC ENTRY: RENDER URL → (TEXT, LINKS, HTML) FOR THE DISCOVERY FETCH"} and its literal
+    {ORCHESTRATOR.PY "RETURN TEXT, LINKS, HTML"} — so the old name described nothing that was in it. The round trip was
+    self-consistent (render_remote read `method` back out as the third element), which is precisely why it survived:
+    wrong in NAME only, nothing broke. It mattered anyway, because /render_shot next door returns a REAL `method`
+    field {SERVICE.PY "POST /RENDER_SHOT {URL, WAIT_MS?} → {TEXT, LINKS, HTML, SHOT_B64, METHOD, INLINE}"} whose values
+    are 'render' / 'impersonate' / 'camoufox' / 'walled' / 'empty'. One key name, two unrelated things, three
+    endpoints. Renamed when the playground put both on screen together and the collision became visible. Both ends of
+    this wire are ours — service.py here, render_remote._tuple_call there — so there is no third-party consumer to
+    keep compatible.
+    [CONFIDENCE: CONFIRMED 100% — the orchestrator return statements were read directly, and grep for '"method"'
+     across the repo returns only these two files plus render_shot's genuine use.]
+    """
     body = await request.json()
     url, wait = _args(body, 0)
     if not url:
         return web.json_response({"error": "missing url"}, status=400)
-    text, links, method = await _call(fn, url, wait)
+    text, links, html = await _call(fn, url, wait)
+    # html LENGTH is the diagnostic when text is empty, and it separates two failures that look identical from outside:
+    # 0 bytes = the page never loaded at all; large = it loaded and yielded no readable prose (a wall, or a JS shell).
     if not text:
-        _loud(f"{name}({url}) → EMPTY (method={method!r})")
-    return web.json_response({"text": text, "links": list(links or []), "method": method or ""})
+        _loud(f"{name}({url}) → EMPTY (html={len(html or '')}B)")
+    return web.json_response({"text": text, "links": list(links or []), "html": html or ""})
 
 
 async def h_render_full(request: web.Request) -> web.Response:
-    """POST /render_full {url, wait_ms?} → {text, links, method}. ir_url_agent's IR-homepage nav-link harvest."""
+    """POST /render_full {url, wait_ms?} → {text, links, html}. ir_url_agent's IR-homepage nav-link harvest."""
     return await _h_tuple(request, _render_full, "render_full")
 
 
 async def h_render_detail(request: web.Request) -> web.Response:
-    """POST /render_detail {url, wait_ms?} → {text, links, method}. The deep-page variant of the same chain."""
+    """POST /render_detail {url, wait_ms?} → {text, links, html}. The deep-page variant of the same chain."""
     return await _h_tuple(request, _render_detail, "render_detail")
 
 

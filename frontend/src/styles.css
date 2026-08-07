@@ -1374,3 +1374,101 @@ a.chip:hover { background: var(--glass-hover); }
 .art-row-failed {
   background: rgba(248, 113, 113, 0.07);
 }
+
+/* ── PLAYGROUND ───────────────────────────────────────────────────────────────────────────────────────────────────
+   两块独立面板(Render / LLM)共用的原子样式。刻意只加 pg- 前缀的新类,不改动任何既有类 —— 这一页是测试工具,
+   不该有能力回头影响 Today / Events 那几页的观感。
+
+   WHY monospace almost everywhere below: every string this page shows is machine output — rendered page text, urls,
+   raw json, model tokens. Proportional type re-flows them into something easier to read and harder to trust, and the
+   entire purpose of the page is to see exactly what the pipeline saw. */
+.pg-panel { flex: none; margin-bottom: 14px; }
+.pg-row { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; }
+.pg-wrap { flex-wrap: wrap; align-items: center; }
+.pg-grow { flex: 1 1 auto; min-width: 0; }
+.pg-spacer { flex: 1 1 auto; }
+.pg-meta { gap: 6px; row-gap: 6px; }
+
+.pg-input {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+  border-radius: 8px; padding: 7px 10px; outline: none;
+}
+.pg-input:focus { border-color: var(--accent-soft); background: var(--glass-hover); }
+.pg-input::placeholder { color: var(--text-faint); }
+.pg-filter { width: 100%; margin-top: 8px; }
+.pg-knob { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+.pg-knob-in { width: 78px; padding: 4px 7px; }
+
+.pg-btn {
+  font-family: var(--mono); font-size: 11.5px; white-space: nowrap;
+  padding: 7px 13px; border-radius: 8px; cursor: pointer;
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft); color: var(--accent-ink);
+  transition: background 0.12s, border-color 0.12s;
+}
+.pg-btn:hover:not(:disabled) { background: var(--glass-hover); border-color: var(--glass-border); }
+.pg-btn:disabled { opacity: 0.4; cursor: default; }
+.pg-btn-go { background: var(--accent-soft); border-color: var(--accent-soft); }
+.pg-btn-bridge { font-size: 11px; padding: 4px 10px; margin-left: auto; }
+.pg-send-col { display: flex; flex-direction: column; gap: 6px; }
+
+.pg-radio {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+  padding: 4px 9px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft);
+}
+.pg-radio.on { color: var(--accent-ink); border-color: var(--accent-soft); background: var(--accent-soft); }
+.pg-radio input { accent-color: var(--accent); margin: 0; }
+.pg-help { font-size: 11px; color: var(--text-muted); margin-top: 7px; }
+
+.pg-tabs, .pg-sys { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.pg-tab {
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  background: var(--glass-2); border: 1px solid var(--glass-border-soft); color: var(--text-secondary);
+}
+.pg-tab.on { color: var(--accent-ink); border-color: var(--accent-soft); background: var(--accent-soft); }
+
+/* Output panes cap their height rather than growing without bound: one render can return 240 KB of html, and a page
+   that scrolls for a full screen-height per field makes the two halves impossible to use together. */
+.pg-out {
+  margin-top: 9px; max-height: 460px; overflow: auto;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.55; color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.22); border: 1px solid var(--glass-border-soft); border-radius: 8px;
+  padding: 11px 13px; white-space: pre-wrap; word-break: break-word;
+}
+.pg-links { padding: 6px; }
+.pg-link {
+  font-size: 11px; padding: 3px 7px; border-radius: 5px;
+  color: var(--text-secondary); word-break: break-all;
+}
+.pg-link:nth-child(odd) { background: rgba(255, 255, 255, 0.022); }
+.pg-shot { margin-top: 9px; max-width: 100%; border-radius: 8px; border: 1px solid var(--glass-border-soft); }
+.pg-sys-box { width: 100%; min-height: 130px; margin-top: 8px; resize: vertical; line-height: 1.5; }
+.pg-ask { resize: vertical; line-height: 1.5; }
+
+.pg-err {
+  margin-top: 10px; padding: 9px 12px; border-radius: 8px;
+  background: var(--red-soft); border: 1px solid var(--red); color: var(--text);
+  font-family: var(--mono); font-size: 11.5px;
+}
+.pg-err-detail { margin-top: 5px; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+.pg-chip-warn { background: var(--amber-soft); color: var(--amber); }
+
+.pg-chat { margin-top: 11px; max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; }
+.pg-msg { border-radius: 9px; padding: 9px 12px; border: 1px solid var(--glass-border-soft); }
+.pg-msg-user { background: var(--glass-2); }
+.pg-msg-assistant { background: rgba(0, 0, 0, 0.22); }
+.pg-msg-role {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 5px;
+}
+.pg-msg-body {
+  margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+}
+/* A blinking caret is the only signal that a stream is alive but between tokens — without it a slow generation and a
+   dead connection render identically. */
+.pg-caret { color: var(--accent); animation: pg-blink 1s steps(2, start) infinite; }
+@keyframes pg-blink { to { visibility: hidden; } }

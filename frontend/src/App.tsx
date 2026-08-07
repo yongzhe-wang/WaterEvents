@@ -13,6 +13,10 @@ import EventsView from "./views/EventsView";
 import MediaTodayView from "./views/MediaTodayView";
 import IrUrlsView from "./views/IrUrlsView";
 import ApiDocsView from "./views/ApiDocsView";
+// Playground is a TEST surface, not a data view: it drives the render VM and the LLM by hand so a human can see
+// exactly what each one returns for a given input. It sits last in the nav because it is a tool, not a report.
+// {USER 2026-08-07 "create a new sidebar for testing purpose ... so i can test myself with prompts"}
+import PlaygroundView from "./views/PlaygroundView";
 
 // Minimal stroke icons (currentColor) matching the old glass nav.
 const svg = (inner: ReactNode): ReactNode => (
@@ -27,17 +31,20 @@ const ICONS = {
   irurls: svg(<><path d="M6.5 9.5a2.8 2.8 0 004 0l2.2-2.2a2.8 2.8 0 00-4-4l-.9.9" /><path d="M9.5 6.5a2.8 2.8 0 00-4 0L3.3 8.7a2.8 2.8 0 004 4l.9-.9" /></>),
   // angle-brackets + slash — the page documents an HTTP surface for other programs, not another data view.
   apidocs: svg(<><path d="M5.2 4.5L2 8l3.2 3.5M10.8 4.5L14 8l-3.2 3.5M9.3 3l-2.6 10" /></>),
+  // beaker — the page is where you try something and watch what comes out, which is what the other five are not.
+  playground: svg(<><path d="M6.2 1.8v4.1L2.6 12a1.4 1.4 0 001.2 2.2h8.4A1.4 1.4 0 0013.4 12L9.8 5.9V1.8" /><path d="M5.2 1.8h5.6M4.6 9.6h6.8" /></>),
 };
 
 // Real routes so each page is deep-linkable + back/forward works (a minimal history-API router, no react-router).
-type View = "today" | "events" | "media" | "irurls" | "apidocs";
-const ROUTES: Record<View, string> = { today: "/today", events: "/events", media: "/media", irurls: "/ir-urls", apidocs: "/api-docs" };
+type View = "today" | "events" | "media" | "irurls" | "apidocs" | "playground";
+const ROUTES: Record<View, string> = { today: "/today", events: "/events", media: "/media", irurls: "/ir-urls", apidocs: "/api-docs", playground: "/playground" };
 function pathToView(p: string): View {
   const s = p.replace(/\/+$/, "");
   if (s === "/events") return "events";
   if (s === "/media") return "media";
   if (s === "/ir-urls") return "irurls";
   if (s === "/api-docs") return "apidocs";
+  if (s === "/playground") return "playground";
   return "today";                                  // "/" and "/today" → Today is the default landing page
 }
 
@@ -78,6 +85,7 @@ export default function App() {
           <NavItem label="Today · Media" icon={ICONS.media} active={view === "media"} href={ROUTES.media} onClick={() => setView("media")} />
           <NavItem label="IR_URLS" icon={ICONS.irurls} active={view === "irurls"} href={ROUTES.irurls} onClick={() => setView("irurls")} />
           <NavItem label="API" icon={ICONS.apidocs} active={view === "apidocs"} href={ROUTES.apidocs} onClick={() => setView("apidocs")} />
+          <NavItem label="Playground" icon={ICONS.playground} active={view === "playground"} href={ROUTES.playground} onClick={() => setView("playground")} />
         </nav>
       </aside>
       <main className="stage">
@@ -85,6 +93,7 @@ export default function App() {
           : view === "media" ? <MediaTodayView />
           : view === "irurls" ? <IrUrlsView />
           : view === "apidocs" ? <ApiDocsView />
+          : view === "playground" ? <PlaygroundView />
           : <EventsView />}
       </main>
     </div>
