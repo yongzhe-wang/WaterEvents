@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import time as _time
 
 import aiohttp
 from aiohttp import web
