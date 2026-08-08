@@ -486,12 +486,15 @@ class Chart:
         Fill-and-append across MULTIPLE pages still holds: a later page returning "" cannot erase what an earlier page
         established, because "" is never assigned.
         """
-        if title.strip():
-            self.title = title.strip()
-        if date.strip():
-            self.date = date.strip()
-        if type_.strip():
-            self.type = type_.strip()
+        # str() before strip(): guided decoding declares these as strings, but `contrib.get("title", "")` returns the
+        # KEY'S value when the key is present-and-null, so a `{"title": null}` reply hands None straight through and a
+        # bare .strip() would raise inside the handler. The predecessor short-circuited on falsiness and never had to
+        # care; this version does, and an AttributeError here would cost the page its judgements for a null field.
+        # [CONFIDENCE: CONFIRMED 100% — dict.get returns None for a present null key regardless of the default.]
+        for attr, val in (("title", title), ("date", date), ("type", type_)):
+            v = str(val or "").strip()
+            if v:
+                setattr(self, attr, v)
 
     # ── finalize ─────────────────────────────────────────────────────────────────────────────────────────────
     def to_dict(self) -> dict:
