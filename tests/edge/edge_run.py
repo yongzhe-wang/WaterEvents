@@ -10,14 +10,27 @@ validate.py 做逐字证据校验 → 每个事件写一个 <id>/ 目录(trace.t
 {USER 2026-07-23 "dont rely on ground truth read the output yourself ... structure the output so each page
 as txt + full prompt + all the trace"}。所以每个事件都落完整 prompt 和模型原始输出, 而不只是解析后的结果。
 
-## 正文截断是硬约束不是调优旋钮
+## 长正文分块, 不截断
 
-线上模型 Qwen2.5-14B-Instruct-AWQ 的 max_model_len = 32,768 token, 而数据集正文最长 47,737 字符。
-超了 vLLM 直接 400。所以必须截, 截多少由「模型窗口 − 输出预算 − prompt 模板」倒推, 不是拍脑袋。
-截断的事实会写进 trace 和汇总 —— 被截过的样本, 它漏掉的边不算模型的错。
-{curl /v1/models 2026-08-08 "root":"Qwen/Qwen2.5-14B-Instruct-AWQ","max_model_len":32768}
-{client.py 注释 "input 20769 + max 12000 > 32768 → 400" —— 超窗是硬失败, 不是降级}
-[CONFIDENCE: CONFIRMED 100% — 端点 /v1/models 实测返回]
+线上模型 Qwen2.5-14B-Instruct-AWQ 的 max_model_len = 32,768 token, 装不下长文档。
+**但截断是在丢数据** —— 一份 60k 字的年报截到 28k, 后面那半的边就永远读不出来, 而且丢得静默。
+所以改成分块跑, 每块单独抽, 结果合并去重。
+
+分块参数直接复用项目现成的(handlers.py, 生产验证过), 不另造一套:
+  _CHUNK_TARGET_CHARS = 18000   每块目标输入
+  _CHUNK_OVERLAP      = 1500    向后重叠, 防止块边界把一句话/一个表切断
+
+块数上限按真实长度分布定, 不是拍脑袋:
+{PSQL 2026-08-08 event_documents n_chars 分位 "p50 2,727 · p75 6,814 · p90 17,811 ·
+ p95 26,762 · p99 174,028 · max 3,771,299"}
+按 18,000/块 → p95 只需 2 块, p99 需 10 块 → 上限取 12 块(约 216k 字符)覆盖到 p99 之外。
+超过 12 块的不是"长文档"而是另外两类东西, 硬跑没有意义:
+  ① 提取失败 —— md 里存的是 RTF 控制码而非正文
+     {PSQL 实测 最长两条 "{\rtf1\adeflang1025\ansi\ansicpg1252..." 3,771,299 / 2,744,391 字符}
+  ② SEC 10-K/10-Q 全文 —— 这类本就该走 FocusAlpha 的 item-splitter, 不进这条通用管道
+     {tests/datasets/media_100/README.md "focusalpha-backend 已经把 SEC 做得好得多"}
+     {PSQL 实测 "UNITED STATES SECURITIES AND EXCHANGE COMMISSION ... FORM 10-Q" 1,621,106 字符}
+[CONFIDENCE: CONFIRMED 100% — 分位数与样本开头均为全表实测]
 
 ## 跑法
 
@@ -33,13 +46,15 @@ import collections
 import glob
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"))
 
 from providers.qwen_llm import QwenClient                      # 复用项目的并发传输层, 不自己造轮子
-from tests.edge.prompts import STEP1_PROMPT, STEP1_SCHEMA
+from tests.edge.prompts import STEP1_PROMPT, STEP1_RETRY_PROMPT, STEP1_SCHEMA, _RETRY_MAX
+from tests.edge.levels import PENDING_AT, WRITE_MAX, prompt_block
 from tests.edge.validate import check_step1
 
 _DATASET = os.environ.get("EDGE_DATASET",
@@ -47,43 +62,142 @@ _DATASET = os.environ.get("EDGE_DATASET",
 _OUT = os.environ.get("EDGE_OUT", "/tmp/edge_out")
 _LIMIT = int(os.environ.get("EDGE_LIMIT", "0"))                # >0 时只跑前 N 条, 用于快速试跑
 
-# 正文字符上限。倒推自模型窗口:
-#   32,768 token 窗口 − 4,000 输出预算 − 约 800 prompt 模板 ≈ 28,000 token
-#   英文约 4 字符/token, 但正文含 CJK(样本里日/韩/中文占比不低)按 2 字符/token 保守估
-#   → 28,000 × 2 ≈ 56,000, 再留一半余量 → 28,000 字符
-# 数据集里 n_chars 中位 5,012, 只有极少数会被截。
-_BODY_MAX = int(os.environ.get("EDGE_BODY_MAX", "28000"))
+# 分块参数 —— 与 handlers.py 对齐, 不另造一套
+_CHUNK_CHARS = int(os.environ.get("EDGE_CHUNK_CHARS", "18000"))   # 每块目标输入
+_CHUNK_OVERLAP = int(os.environ.get("EDGE_CHUNK_OVERLAP", "1500"))  # 向后重叠, 防切断
+# 块数上限。见模块 docstring: p99=174k → 10 块, 取 12 覆盖到 p99 之外。
+# 超过的标记 too_long 挂起, 不硬跑 —— 那些是提取失败(RTF 源码)或 SEC 全文, 都不该走这条管道。
+_MAX_BLOCKS = int(os.environ.get("EDGE_MAX_BLOCKS", "12"))
+
+# 提取失败的特征: md 里是 RTF/富文本控制码而不是正文。分块只会把垃圾切成 N 份垃圾,
+# 所以在分块之前先挡掉, 并且明确记 too_long/not_text 而不是静默跳过。
+# {PSQL 2026-08-08 最长两条 md 以 "{\rtf1\adeflang1025\ansi..." 开头, 3,771,299 与 2,744,391 字符}
+_NOT_TEXT = re.compile(r"^\s*\{\\rtf\d|^\s*%PDF-|^\s*PK\x03\x04")
 
 
-def _build_job(rec: dict) -> tuple[dict, bool]:
-    """把一条样本拼成一个 QwenClient job。返回 (job, 是否截断过正文)。
+def _split_blocks(text: str) -> list[str]:
+    """把长正文切成带重叠的块。重叠是为了不让一句话/一张表正好落在块边界上。
 
-    上游: edge_200 的 ev_*.json。下游: QwenClient.send_many。
+    上游: _build_jobs。下游: 每块各调一次 Step 1, 结果按 evidence 去重后合并。
+    n 用 ceil-div 算, 保证每块实际长度 <= _CHUNK_CHARS(而不是恰好等于, 那样最后一块会溢出)。
+    """
+    if len(text) <= _CHUNK_CHARS:
+        return [text]
+    n = -(-len(text) // _CHUNK_CHARS)                      # ceil-div
+    step = -(-len(text) // n)                              # 每块步进
+    out = []
+    for i in range(n):
+        start = max(0, i * step - (_CHUNK_OVERLAP if i else 0))
+        out.append(text[start:(i + 1) * step])
+    return out
+
+
+def _build_jobs(rec: dict) -> tuple[list[dict], dict]:
+    """把一条样本拼成 1..N 个 QwenClient job(长正文分块)。返回 (jobs, meta)。
+
+    上游: edge_200 的 ev_*.json。下游: QwenClient.send_many + _merge。
     guided_json 用 STEP1_SCHEMA 强约束输出结构 —— vLLM 侧做语法约束比事后解析可靠得多。
+
+    meta.skip 非空时 jobs 为空: 这条不进模型, 但**会被记录**而不是静默消失 ——
+    not_text(提取失败, md 是 RTF 控制码)与 too_long(>12 块, 多半是 SEC 全文)
+    都是需要人看的信号, 不是可以忽略的边角。
     """
     i = rec["input"]
     body = i.get("body") or ""
-    truncated = len(body) > _BODY_MAX
-    if truncated:
-        body = body[:_BODY_MAX]
-    user = STEP1_PROMPT.format(
+
+    # ① 非正文先挡: 分块只会把 RTF 垃圾切成 N 份垃圾, 还白烧 N 次 LLM
+    if _NOT_TEXT.search(body[:200]):
+        return [], {"n_blocks": 0, "skip": "not_text", "n_chars": len(body)}
+
+    blocks = _split_blocks(body)
+
+    # ② 块数超限 → 挂起。这类不是"长文档"而是 SEC 全文或提取异常, 硬跑没有意义
+    if len(blocks) > _MAX_BLOCKS:
+        return [], {"n_blocks": len(blocks), "skip": "too_long", "n_chars": len(body)}
+
+    common = dict(
         ticker=(i.get("company") or {}).get("ticker") or "?",
         ir_url=(i.get("company") or {}).get("ir_url") or "?",
         title=i.get("title") or "",
         etype=i.get("type") or "",
         date=i.get("date") or "",
         precision=i.get("date_precision") or "unknown",
-        body=body,
     )
-    return ({
+    jobs = [{
         "system": "You extract entities and relationships from investor-relations text. Output JSON only.",
-        "user": user,
+        "user": STEP1_PROMPT.format(body=b, level_block=prompt_block(), **common),
         "guided_json": STEP1_SCHEMA,
-    }, truncated)
+    } for b in blocks]
+    return jobs, {"n_blocks": len(blocks), "skip": None, "n_chars": len(body)}
+
+
+def _merge(outs: list[dict]) -> dict:
+    """把同一事件多个块的抽取结果合并成一份。
+
+    去重键的选择是有讲究的:
+      mention 按 name 去重 —— 同一实体会在多个块里各出现一次(重叠区更是必然)
+      edge 按 (subject, predicate, object) 去重 —— 同一条关系在重叠区会被抽两遍
+    保留**先出现的那个**: 块是按正文顺序切的, 先出现的通常在更完整的上下文里。
+    title_body_mismatch 取 or —— 任何一块认为不符就是不符。
+    """
+    mentions, edges, seen_m, seen_e = [], [], set(), set()
+    mismatch, reasons = False, []
+    for o in outs:
+        if not isinstance(o, dict):
+            continue
+        for m in o.get("mentions") or []:
+            k = (m.get("name") or "").strip().lower()
+            if k and k not in seen_m:
+                seen_m.add(k)
+                mentions.append(m)
+        for e in o.get("edges") or []:
+            k = ((e.get("subject") or "").lower(), (e.get("predicate") or "").lower(),
+                 (e.get("object") or "").lower())
+            if k not in seen_e:
+                seen_e.add(k)
+                edges.append(e)
+        mismatch = mismatch or bool(o.get("title_body_mismatch"))
+        if o.get("no_edge_reason"):
+            reasons.append(o["no_edge_reason"])
+    return {"mentions": mentions, "edges": edges,
+            "title_body_mismatch": mismatch,
+            "no_edge_reason": " | ".join(reasons[:3]) or None}
+
+
+async def _retry_failed(client, rec: dict, out: dict, chk: dict) -> tuple[dict, dict]:
+    """对逐字校验失败的条目做一轮定向重试。返回 (合并后的 out, 新的 chk)。
+
+    上游: main 拿到首轮 chk 后, 若 dropped 非空则调用。
+    下游: 合并结果重新走 check_step1, 仍失败的才真正丢弃。
+
+    只把**失败的条目**回给模型, 不重跑整篇 —— 通过的部分再问一次只会让模型改动已经对的答案。
+    正文用第一块(重试针对的是抄写而不是重新阅读; 若原文在后面的块里, 模型会诚实地不返回该条,
+    那正是我们要的行为)。
+    """
+    lines = []
+    for name, why in chk["dropped"]["mentions"]:
+        src = next((m for m in (out.get("mentions") or []) if m.get("name") == name), {})
+        lines.append(f'- mention "{name}" — 你给的 evidence: "{(src.get("evidence") or "")[:200]}"')
+    for pair, why in chk["dropped"]["edges"]:
+        lines.append(f'- edge {pair} — 你给的 evidence 在正文里找不到')
+    if not lines:
+        return out, chk
+
+    body = rec["input"]["body"]
+    r = await client.send_one(
+        system="You correct evidence quotes. Output JSON only.",
+        user=STEP1_RETRY_PROMPT.format(body=body[:_CHUNK_CHARS], failed_block="\n".join(lines[:20])),
+        guided_json=STEP1_SCHEMA)
+    if not isinstance(r, dict) or r.get("__error__"):
+        return out, chk
+
+    # 合并: 重试结果里通过校验的条目补回原结果。_merge 的去重键会挡掉重复。
+    merged = _merge([out, r])
+    return merged, check_step1(merged, body)
 
 
 def _write_trace(d: str, rec: dict, job: dict, raw: dict | None, chk: dict | None,
-                 truncated: bool, err: str | None) -> None:
+                 blkmeta: dict, err: str | None) -> None:
     """给一个事件写它的可调试目录: prompt.txt(完整输入) + raw.json(模型原始输出) + trace.txt(人读)。
 
     WHY 三个文件都要: 只存解析后的结果, 人就无法判断「模型读错了」还是「我们 prompt 问错了」。
@@ -101,7 +215,8 @@ def _write_trace(d: str, rec: dict, job: dict, raw: dict | None, chk: dict | Non
          f"ticker      {(i.get('company') or {}).get('ticker')}",
          f"title       {i.get('title')}",
          f"type/date   {i.get('type')}  {i.get('date')} ({i.get('date_precision')})",
-         f"n_chars     {m['n_chars']}" + ("   ★ 正文被截断" if truncated else ""),
+         f"n_chars     {m['n_chars']}   块数 {blkmeta.get('n_blocks')}"
+         + (f"   ★ 前置挡下: {blkmeta['skip']}" if blkmeta.get("skip") else ""),
          f"锚点        {m.get('exchange_tags')}",
          f"doc_url     {m.get('doc_url')}", ""]
     if err:
@@ -149,41 +264,94 @@ async def main() -> int:
     recs = [json.load(open(f)) for f in files]
     print(f"跑 {len(recs)} 条  →  {_OUT}", flush=True)
 
-    jobs, trunc = [], []
-    for r in recs:
-        j, t = _build_job(r)
-        jobs.append(j)
-        trunc.append(t)
+    # 一个事件可能产出多个块 → 多个 job。用 owner 记录每个 job 属于哪条样本,
+    # 跑完再按样本聚回去合并。被 skip 的样本不产 job, 但仍会写 trace(见下)。
+    jobs: list[dict] = []
+    owner: list[int] = []
+    metas: list[dict] = []
+    for idx, r in enumerate(recs):
+        js, mt = _build_jobs(r)
+        metas.append(mt)
+        for jb in js:
+            jobs.append(jb)
+            owner.append(idx)
+
+    n_blk = sum(m["n_blocks"] for m in metas if not m["skip"])
+    n_skip = sum(1 for m in metas if m["skip"])
+    print(f"  {len(recs)} 条 → {n_blk} 个块要跑, {n_skip} 条被前置挡下", flush=True)
 
     # send_many 一次性提交全部, 由 QwenClient 的全局信号量控并发(vLLM continuous-batching 在 GPU 侧批处理)。
-    # 返回顺序与 jobs 一致 —— asyncio.gather 保序, 所以可以按下标对回样本。
+    # 返回顺序与 jobs 一致 —— asyncio.gather 保序, 所以能按 owner 聚回样本。
     client = QwenClient()
-    outs = await client.send_many(jobs)
+    outs = await client.send_many(jobs) if jobs else []
+
+    # 按样本聚合各块的输出
+    by_rec: dict[int, list] = collections.defaultdict(list)
+    for oi, o in zip(owner, outs):
+        by_rec[oi].append(o)
 
     agg = collections.Counter()
+    preds: collections.Counter = collections.Counter()   # predicate → 出现次数, 用于算复用度
+    lv: collections.Counter = collections.Counter()      # level → 边数, 用于看确定度分布
     per_stratum: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
 
-    for rec, job, out, tr in zip(recs, jobs, outs, trunc):
+    for idx, rec in enumerate(recs):
         d = os.path.join(os.path.abspath(_OUT), rec["id"])
         st = rec["meta"]["stratum"]
-        # send_many 对失败的 job 返回带 __error__ 的 dict, 不抛异常 —— 单条失败不该中断整批
-        err = (out or {}).get("__error__") if isinstance(out, dict) else "no output"
-        if err:
-            agg["failed"] += 1
-            per_stratum[st]["failed"] += 1
-            _write_trace(d, rec, job, out, None, tr, str(err))
+        mt = metas[idx]
+
+        # ① 前置挡下的(not_text / too_long)—— 记录而不是静默跳过
+        if mt["skip"]:
+            agg["skipped"] += 1
+            agg[f"skip_{mt['skip']}"] += 1
+            per_stratum[st]["skipped"] += 1
+            _write_trace(d, rec, {"user": "(前置挡下, 未进模型)"}, None, None, mt,
+                         f"前置挡下: {mt['skip']}  ({mt['n_chars']} 字符 / {mt['n_blocks']} 块)")
             continue
 
+        blocks_out = by_rec.get(idx, [])
+        # send_many 对失败的 job 返回带 __error__ 的 dict, 不抛异常 —— 单块失败不该毁掉整条
+        ok_blocks = [o for o in blocks_out if isinstance(o, dict) and not o.get("__error__")]
+        n_failed_blocks = len(blocks_out) - len(ok_blocks)
+        if not ok_blocks:
+            agg["failed"] += 1
+            per_stratum[st]["failed"] += 1
+            _write_trace(d, rec, jobs[owner.index(idx)] if idx in owner else {"user": ""},
+                         None, None, mt, f"全部 {len(blocks_out)} 块都失败")
+            continue
+
+        out = _merge(ok_blocks)
         chk = check_step1(out, rec["input"]["body"])
-        _write_trace(d, rec, job, out, chk, tr, None)
+
+        # 逐字校验失败 → 定向重试一轮。区分「抄写手滑」和「凭空编造」:
+        # 给了具体反馈还找不到原句的, 才判定为编造并真正丢弃。
+        n_retried = 0
+        for _ in range(_RETRY_MAX):
+            if not (chk["dropped"]["mentions"] or chk["dropped"]["edges"]):
+                break
+            before = len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])
+            out, chk = await _retry_failed(client, rec, out, chk)
+            n_retried += 1
+            agg["retry_recovered"] += (len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])) - before
+        # prompt 存第一块的(多块时其余块只是 body 不同), 完整 body 在数据集里
+        _write_trace(d, rec, {"user": jobs[owner.index(idx)]["user"]}, out, chk, mt, None)
         with open(os.path.join(d, "out.json"), "w") as f:
-            json.dump({"id": rec["id"], "stratum": st, "truncated": tr,
+            json.dump({"id": rec["id"], "stratum": st,
+                       "n_blocks": mt["n_blocks"], "n_failed_blocks": n_failed_blocks,
                        "kept": chk["kept"], "dropped": chk["dropped"],
                        "stats": chk["stats"],
                        "no_edge_reason": out.get("no_edge_reason")}, f, ensure_ascii=False, indent=1)
 
+        for e_ in chk["kept"]["edges"]:
+            preds[(e_.get("predicate") or "?").strip().lower()] += 1
+            # 用 -1 表示「模型没给这个字段」—— 与「模型判定为 5」是完全不同的信号:
+            # 前者是 prompt 没说清, 后者是模型诚实地表示不确定。混成一个值会让
+            # 「85% 挂起」这种假象掩盖掉真正的 prompt 缺陷。
+            lv[int(e_["level"]) if e_.get("level") is not None else -1] += 1
+
         s = chk["stats"]
-        for k, c in (("events", 1), ("truncated", int(tr)),
+        for k, c in (("events", 1), ("blocks", mt["n_blocks"]),
+                     ("chunked", int(mt["n_blocks"] > 1)), ("failed_blocks", n_failed_blocks),
                      ("mentions_in", s["mentions_in"]), ("mentions_kept", s["mentions_kept"]),
                      ("edges_in", s["edges_in"]), ("edges_kept", s["edges_kept"]),
                      ("mismatch", int(s["title_body_mismatch"])),
@@ -193,12 +361,39 @@ async def main() -> int:
 
     print("\n════════ 汇总 ════════")
     e = max(agg["events"], 1)
-    print(f"  成功 {agg['events']}  失败 {agg['failed']}  正文被截 {agg['truncated']}")
+    print(f"  成功 {agg['events']}  失败 {agg['failed']}  前置挡下 {agg['skipped']}"
+          f" (not_text {agg['skip_not_text']} / too_long {agg['skip_too_long']})")
+    print(f"  总块数 {agg['blocks']}  其中分块处理的事件 {agg['chunked']} 条  块级失败 {agg['failed_blocks']}")
     print(f"  mention  抽出 {agg['mentions_in']} → 逐字校验通过 {agg['mentions_kept']} "
           f"({100 * agg['mentions_kept'] // max(agg['mentions_in'], 1)}%)")
     print(f"  edge     抽出 {agg['edges_in']} → 逐字校验通过 {agg['edges_kept']} "
           f"({100 * agg['edges_kept'] // max(agg['edges_in'], 1)}%)")
+    print(f"  重试救回 {agg['retry_recovered']} 条 —— 这些是抄写手滑而非编造, 直接丢会误杀")
     print(f"  每条平均产边 {agg['edges_kept'] / e:.2f}   标题正文不符 {agg['mismatch']}")
+    # level 分布 —— 这决定有多少能进主图、多少要挂起。
+    # WaterEvents 这条线产不出 level 0(那是 SEC 结构化字段的专属), 所以正常分布应集中在 1-3;
+    # 若大量落在 4-5, 说明要么文本本身弱, 要么模型在滥用高等级回避判断。
+    if lv:
+        tot = sum(lv.values())
+        print(f"\n  ── 确定度分布(边) ──")
+        for k in sorted(lv):
+            bar = "█" * (30 * lv[k] // max(tot, 1))
+            tag = "  ★ 模型未给该字段(prompt 问题, 不是模型不确定)" if k < 0 else ""
+            print(f"  level {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {bar}{tag}")
+        writable = sum(c for k, c in lv.items() if 0 <= k <= WRITE_MAX)
+        print(f"  可写入主图(level<={WRITE_MAX}) {writable}  ·  挂起(level>={PENDING_AT}) {tot - writable}")
+
+    # predicate 复用度 —— 判断模型是在给「类型」还是在写「句子」。
+    # 只出现一次的 predicate 占比高, 说明它在复述这句话而不是给可聚合的关系类型。
+    # 这比「限制词数」是更直接的判据: 词数短但每条都不同, 一样聚不起来。
+    if preds:
+        uniq = len(preds)
+        once = sum(1 for _, c in preds.items() if c == 1)
+        print(f"\n  ── predicate 复用度 ──")
+        print(f"  不同 predicate {uniq} 个 / 边总数 {sum(preds.values())}"
+              f"   只出现一次的占 {100 * once // max(uniq, 1)}%")
+        print("  最常见: " + " · ".join(f"{k}×{c}" for k, c in preds.most_common(8)))
+
     print("\n  ── 按层 ──")
     print(f"  {'stratum':18s} {'条数':>5s} {'产边':>6s} {'无边':>6s} {'逐字通过率':>10s}")
     for st, c in per_stratum.items():

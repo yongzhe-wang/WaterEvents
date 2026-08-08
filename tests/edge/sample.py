@@ -86,6 +86,7 @@ select e.id::text            as event_id,
        e.title, e.event_type, e.event_date, e.source_url,
        c.ticker, c.ir_url,
        d.url                 as doc_url,
+       d.kind                as doc_kind,
        d.n_chars,
        d.md
   from waterevents.events e
@@ -183,6 +184,16 @@ async def main() -> int:
                 "stratum": st,
                 "db_event_id": r["event_id"],
                 "n_chars": r["n_chars"],
+                # 文档来源类型。现在库里只有 html —— 但那是 MEDIA_KINDS 环境变量的当前值,
+                # 不是永久事实。pdf/xlsx/docx/audio 的 handler 都存在, 等 docling 多进程和
+                # whisper 有余量就会打开, 届时 pdf 一条道就有 11,851 个事件。
+                # 记下 kind 是为了: ① 抽样能按 kind 分层 ② 抽边效果能按 kind 分开评估
+                # (pdf 经 docling 出来的 markdown 带表格结构, 与 html 形态不同, 抽边表现未必一样)
+                # {PSQL 2026-08-08 event_media_urls "html 31,268 / pdf 19,190 / video 3,180 /
+                #  xlsx 1,411 / audio 260 / docx 75", 而 event_documents 只有 html 26,943}
+                # {handlers.py:72 "_ENABLED_KINDS = os.environ.get('MEDIA_KINDS', 'html')"}
+                # [CONFIDENCE: CONFIRMED 100% — 两表分别 group by kind 实测]
+                "doc_kind": r["doc_kind"],
                 "doc_url": r["doc_url"],
                 "source_url": r["source_url"],
                 # 自动评测锚点: 正文里出现的交易所标记原文。auto_verifiable 层必非空。
@@ -192,11 +203,19 @@ async def main() -> int:
         with open(os.path.join(out, f"{rid}.json"), "w") as f:
             json.dump(rec, f, ensure_ascii=False, indent=1)
 
+    kind_count: dict[str, int] = {}
+    for r in picked:
+        k = r["doc_kind"] or "?"
+        kind_count[k] = kind_count.get(k, 0) + 1
+
     manifest = {
         "name": "edge_200",
         "n": len(picked),
         "purpose": "LLM 抽节点与边的实验集 —— 分层目的是把评测切成「机器能自动判对错」和「只能人读」两半",
         "strata": strata_count,
+        # 文档类型分布。只有 html 不是数据集的选择, 是 MEDIA_KINDS 当前只开了 html;
+        # pdf lane 打开后应重抽, 那时这里会出现 pdf 且需要单独评估抽边表现。
+        "doc_kinds": kind_count,
         "auto_verifiable_note": "该层正文含 (NYSE:/NASDAQ:…) 标记, ticker 即 ground truth, 无需人工标注",
         "no_ground_truth": "其余层不含标注 —— 按 {USER 2026-07-23 'dont rely on ground truth read the output yourself'} 人读判质量",
         "deterministic": "order by md5(event_id::text), 同库重跑得到同一批",

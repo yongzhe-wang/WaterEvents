@@ -88,6 +88,12 @@ def check_step1(out: dict, body: str) -> dict:
         if not ev or norm(ev) not in nbody:
             dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "evidence 不是正文逐字子串"))
             continue
+        # object 为空 = 这句话没有客体(公司在说自己)。prompt 已要求这类不产边,
+        # 这里是兜底 —— 上一轮模型把「不产边」执行成了「产边但 object 留空」。
+        # {实测 ev_001/ev_002 输出 "Getlink→None" / "Otter Tail Corporation→None"}
+        if not (e.get("object") or "").strip() or (e.get("object") or "").strip().lower() in ("none", "null"):
+            dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "object 为空(公司自述不是关系)"))
+            continue
         # 引用完整性: 边的两端必须是留下来的 mention。指向被丢弃的 mention 的边一并丢弃 ——
         # 否则会产生指向不存在节点的悬空边。
         if e.get("subject") not in names or e.get("object") not in names:
