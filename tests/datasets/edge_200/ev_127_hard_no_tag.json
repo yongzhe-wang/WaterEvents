@@ -1,0 +1,22 @@
+{
+ "id": "ev_127_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "MBGYY",
+   "ir_url": "https://group.mercedes-benz.com/investors/"
+  },
+  "title": "Interim Report Q3 2026",
+  "type": "press_release",
+  "date": "2026-10-28",
+  "date_precision": "day",
+  "body": "**Mercedes-Benz Cars** posted adjusted EBIT of €909 million in the second quarter (Q2 2025: €1,228 million), corresponding to an adjusted return on sales (RoS) of 4.0% (Q2 2025: 5.1%) and thus within the full-year guidance range of 3% to 5%. The year-on-year development reflected intensified market pressure, especially in China, a less favourable model mix, product lifecycle measures and launch-campaign-related costs, partly offset by continued efficiency gains.\n\nReported EBIT amounted to €49 million (Q2 2025: €783 million) and included impairments of €704 million in connection with Chinese equity-method investments. The effects did not result in a corresponding cash outflow in the second quarter and were excluded from adjusted EBIT. The Chinese market and customers in China remain of high strategic importance to Mercedes-Benz.\n\nMercedes-Benz continued to advance its largest-ever model launch programme, comprising more than 40 new models between 2025 and 2027. Mercedes-Benz Cars BEV sales increased by 51% year-on-year to 52,852 units in the second quarter (Q2 2025: 35,027 units), driven by growth of 87% in Europe. Overall, Mercedes-Benz Cars sold 417,765 vehicles in the second quarter (Q2 2025: 453,674 vehicles). Sales increased by 4% in Europe and by 10% in the United States. This partly offset a 30% sales decline in China, where intense competition, subdued demand and the portfolio-wide model changeover continued to affect sales. Excluding China, global car sales increased by 2% year-on-year.\n\nThe Top-End segment accounted for 13.9% of global sales in the second quarter. The share reached 14.3% in the first half of 2026, within the full-year target range of 14% to 15%.\n\nThe ramp-up of recently launched models is increasingly translating into sales, with the all-new CLA and GLB making a tangible contribution and high order volumes for the all-new electric GLC expected to support further deliveries in the second half of the year. The new S-Class has made a successful start in Europe, with more regions to follow in the coming months. Order books also opened for a broad range of further models, including the all-new electric C-Class, the new GLE and GLS and the Mercedes-AMG GLE 53 and GLC 53 model families. Further product highlights included the world premiere of the all-new Mercedes-AMG GT 4-Door Coupé variants and the debuts of the new Mercedes-Maybach GLS (Mercedes‑Maybach GLS 680 | energy consumption combined: 13.7–13.3 l/100 km | CO₂ emissions combined: 312–304 g/km | CO₂ class: G*) as well as the Mercedes-AMG GLE 63 S 4MATIC+ as SUV (Mercedes AMG GLE 63 S 4MATIC+ SUV | energy consumption combined: 13.6–13.2 l/100 km | CO₂ emissions combined: 308–299 g/km | CO₂ class: G*) and Coupé (Mercedes AMG GLE 63 S 4MATIC+ Coupé | energy consumption combined: 13.4–13.1 l/100 km | CO₂ emissions combined: 303–297 g/km | CO₂ class: G*) and the Mercedes-AMG GLS 63 4MATIC+ SUV (Mercedes AMG GLS 63 4MATIC+ SUV | energy consumption combined: 13.7–13.4 l/100 km | CO₂ emissions combined: 312–305 g/km | CO₂ class: G*), all powered by new V8 engines. The model launch plan will continue with the world premiere and start of sales of the all-new electric GLA at the end of July. Following China and the United States, Mercedes-Benz is also targeting the introduction of point-to-point assisted driving in the first German cities by the end of 2026.\n\nIn July, Mercedes-Benz marked the [expansion of its Kecskemét plant in Hungary](/company/production/production-network/extendition-plant-kecskemet.html). Investments of around €1 billion have doubled the site’s footprint and increased its production flexibility for electrified combustion-engine, plug-in hybrid and all-electric models. The plant is producing the all-new electric C-Class (Mercedes‑Benz C 400 4MATIC electric | energy consumption combined: 18.5–14.1 kWh/100 km | CO₂ emissions combined: 0 g/km | CO₂ class: A*), the first all-electric Core model built at the site."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "ed97b3c9-da1c-4abc-9b8c-3a05b592fdab",
+  "n_chars": 3968,
+  "doc_url": "https://group.mercedes-benz.com/investors/reports-news/interim-reports/q2-2026/",
+  "source_url": "https://group.mercedes-benz.com/investors/events/",
+  "exchange_tags": []
+ }
+}

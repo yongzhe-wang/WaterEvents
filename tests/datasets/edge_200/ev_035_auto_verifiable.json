@@ -1,0 +1,25 @@
+{
+ "id": "ev_035_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "GFL",
+   "ir_url": "https://investors.gflenv.com/English/home/default.aspx"
+  },
+  "title": "GFL Environmental Inc. Announces Results from Annual General Meeting of Shareholders",
+  "type": "press_release",
+  "date": "2025-05-14",
+  "date_precision": "day",
+  "body": "[View all news](https://investors.gflenv.com/news/default.aspx)\n\n[Voir toutes les nouvelles](https://investors.gflenv.com/French/nouvelles/default.aspx)\n\n### GFL Environmental Inc. Announces Results from Annual General Meeting of Shareholders\n\nVAUGHAN, ON, May 14, 2025 /PRNewswire/ - GFL Environmental Inc. (NYSE: GFL) (TSX: GFL) (\"GFL\" or the \"Company\") announced the voting results from its annual general meeting of shareholders held today virtually via live audio webcast.\n\nShareholders of the Company voted in favour of all items of business, including the election of each of the director nominees as follows:\n\n[[TABLE:1]]\n\nFinal voting results on all matters voted on at the meeting will be filed on SEDAR+ at [www.sedarplus.ca](https://c212.net/c/link/?t=0&l=en&o=4427012-1&h=2036847204&u=https%3A%2F%2Fwww.sedarplus.ca%2F&a=www.sedarplus.ca) and on EDGAR at [www.sec.gov](https://c212.net/c/link/?t=0&l=en&o=4427012-1&h=419381910&u=http%3A%2F%2Fwww.sec.gov%2F&a=www.sec.gov).\n\nGFL, headquartered in Vaughan, Ontario, is the fourth largest diversified environmental services company in North America, providing a comprehensive line of solid waste management services through its platform of facilities throughout Canada and in 18 U.S. states. Across its organization, GFL has a workforce of approximately 15,000 employees.\n\nFor more information:\n\nPatrick Dovigi\n\n+1 905 326-0101[pdovigi@gflenv.com](mailto:pdovigi@gflenv.com)\n\nView original content to download multimedia:[https://www.prnewswire.com/news-releases/gfl-environmental-inc-announces-results-from-annual-general-meeting-of-shareholders-302455796.html](https://www.prnewswire.com/news-releases/gfl-environmental-inc-announces-results-from-annual-general-meeting-of-shareholders-302455796.html)\n\nSOURCE GFL Environmental Inc.\n\n[View all news](https://investors.gflenv.com/news/default.aspx)\n\n[Voir toutes les nouvelles](https://investors.gflenv.com/French/nouvelles/default.aspx)"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "97820f19-8447-48dc-a84b-09b38204f730",
+  "n_chars": 1948,
+  "doc_url": "https://investors.gflenv.com/English/news/news-details/2025/GFL-Environmental-Inc--Announces-Results-from-Annual-General-Meeting-of-Shareholders/default.aspx",
+  "source_url": "https://investors.gflenv.com/English/news/default.aspx",
+  "exchange_tags": [
+   "(NYSE: GFL)",
+   "(TSX: GFL)"
+  ]
+ }
+}

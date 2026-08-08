@@ -1,0 +1,24 @@
+{
+ "id": "ev_096_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "SWKS",
+   "ir_url": "https://investors.skyworksinc.com"
+  },
+  "title": "Press Release Skyworks Sets Date for Third Quarter Fiscal 2026 Earnings Release and Conference Call",
+  "type": "press_release",
+  "date": "2026-07-15",
+  "date_precision": "day",
+  "body": "## \n        Skyworks Sets Date for Third Quarter Fiscal 2026 Earnings Release and Conference Call\n\n**July 28 at 4:30 p.m. EDT**\n\nAfter the close of the market on [www.skyworksinc.com/investors.](https://www.globenewswire.com/Tracker?data=YI4czfT0vtsFl7ZHBLocF4JsPySIuCsGH1lKudMeaOj7XiMU2Xg1I4dD55z5S3JiNAr6uVFa4tiAO5UYKtGvU2tsvK74izX_3uSgpQxdnMEfp3uLk26CJfhtTcyCloKb)\n\nTo listen to the conference call, please visit the investor relations section of Skyworks’ website at [https://investors.skyworksinc.com/events-presentations](https://www.globenewswire.com/Tracker?data=IzMKbqmKbXXYYowFb6kZ3FduRu_7iRjMbgSx4g64Oz4yqDz7-MDiCIfY1vDY6JWp_tkGQorvz59r94PvXmTS9EwwfmjqST907GWFjr1rSOMeHVB1NyepHbBhkDbhNnDC8BkL4irL1zts78WVqlfXeo4S0cENwvuLNHMvkZuqNNMQSF0JuxIEoEhU3CQ7mIA5). Playback of the conference call will be available on Skyworks’ website at [www.skyworksinc.com/investors](https://www.globenewswire.com/Tracker?data=YI4czfT0vtsFl7ZHBLocF4JsPySIuCsGH1lKudMeaOgMEDpUw94f6jjyj8z-AHFj9rQ2pIqp1xAN9TwdEyklTLaxI7IwSK_iQIcrvZ3UptBSfmU20e8udkYEj-IkrDve) beginning at 9 p.m. EDT on\n\n**About Skyworks**\n\nSkyworks Solutions, Inc. is empowering the wireless networking revolution. Our highly innovative analog and mixed-signal semiconductors are connecting people, places and things spanning a number of new and previously unimagined applications, including aerospace, automotive, broadband, cellular infrastructure, connected home, defense, entertainment and gaming, industrial, medical, smartphone, tablet and wearables.\n\nSkyworks is a global company with engineering, marketing, operations, sales and support facilities located throughout Asia, Europe and North America and is a member of the S&P 500® market index (Nasdaq: SWKS). For more information, please visit Skyworks’ website at: www.skyworksinc.com.\n\n**Safe Harbor Statement**\n\nAny forward-looking statements contained in this press release are intended to qualify for the safe harbor from liability established by the Private Securities Litigation Reform Act of 1995. Forward-looking statements include without limitation information relating to future events, results and expectations of Skyworks. Forward-looking statements can often be identified by words such as “anticipates,” “expects,” “forecasts,” “intends,” “believes,” “plans,” “may,” “will” or “continue,” and similar expressions and variations or negatives of these words. Actual events and/or results may differ materially and adversely from such forward-looking statements as a result of certain risks and uncertainties, including those identified in the “Risk Factors” section of Skyworks' most recent Annual Report on Form 10-K (and/or Quarterly Report on Form 10-Q) as filed with the Securities and Exchange Commission (“SEC”). Copies of Skyworks' SEC filings can be obtained, free of charge, on Skyworks' website (www.skyworksinc.com) or at the SEC's website (www.sec.gov). Any forward-looking statements contained in this press release are made only as of the date hereof, and we undertake no obligation to update or revise the forward-looking statements, whether as a result of new information, future events or otherwise.\n\n*Note to Editors: Skyworks and the Skyworks symbol are trademarks or registered trademarks of Skyworks Solutions, Inc., or its subsidiaries in the United States and other countries. Third-party brands and names are for identification purposes only and are the property of their respective owners.*\n\nAn image accompanying this announcement is available at [https://www.globenewswire.com/NewsRoom/AttachmentNg/7388e035-bad7-4503-9a05-e66a6aa9589b](https://www.globenewswire.com/Tracker?data=IzMKbqmKbXXYYowFb6kZ3Bu9RYMxlAdZ7qhB3Tn1o3EBZIhmkJx0j7WdTR-nQ26tf8jQChuxqVYz411FLrEWENX0eUzcOOWEKfScn6Ed90sDo2W2UoFW6B41dnyqGSC15dn_0RQgbLr-hSjfX86RRN3VxFLO_c5mrKW6wDs8M_iucbIhXCZ5ECeF-Nb-nFRYB5cEbEyyPoGU3FOtOCLKZc9KY1ydwnAf2YSZMHWfsJwUizOjSVWULFhEXCtRoghFg5_0u6nxOjLKb79UvT4HVQ==)\n\nMedia Relations: Constance Griffiths (949) 230-4867 Constance.Griffiths@skyworksinc.com Investor Relations: Raji Gill (949) 508-0973 Raji.Gill@skyworksinc.com"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "b2238cb2-501a-4c12-8f3d-1b0170b06bac",
+  "n_chars": 4074,
+  "doc_url": "https://investors.skyworksinc.com/news-releases/news-release-details/skyworks-sets-date-third-quarter-fiscal-2026-earnings-release",
+  "source_url": "https://investors.skyworksinc.com",
+  "exchange_tags": [
+   "(Nasdaq: SWKS)"
+  ]
+ }
+}

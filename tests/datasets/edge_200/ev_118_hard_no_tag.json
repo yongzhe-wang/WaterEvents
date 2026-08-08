@@ -1,0 +1,22 @@
+{
+ "id": "ev_118_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "HENOY",
+   "ir_url": "https://www.henkel.com/investors-and-analysts"
+  },
+  "title": "Henkel optimizes organizational structure of Adhesive Technologies business unit",
+  "type": "press_release",
+  "date": "2023-04-05",
+  "date_precision": "day",
+  "body": "Henkel has established the current organizational structure of its Adhesive Technologies business comprising four business areas overseeing eleven underlying strategic business units in 2020. In the past years, the previous structure proved itself in a volatile environment. Going forward, the company wants to drive even better and faster tailor-made, high-impact and future-oriented innovations together with our customers. That is why Adhesive Technologies will be set up with three strong and similarly sized business areas, in which Henkel will actively shape relevant megatrends such as mobility, sustainability and connectivity through its innovative solutions.\n\nIn addition, Henkel will – analogous to the already communicated future reporting structure of the newly created Consumer Brands business unit – also report key sales figures at business area level for the Adhesive Technologies business unit from the first quarter of 2023, thus increasing transparency. Specifically, Henkel will report sales as well as nominal and organic sales growth.\n\nAs part of the amendments in the reporting for the Adhesive Technologies and Consumer Brands business units, Henkel will also slightly adapt its regional reporting. From the first quarter 2023 onwards, Henkel will comment on its business performance along the regions Europe, IMEA, North America, Latin America and Asia-Pacific.\n\n*This document contains statements referring to future business development, financial performance and other events or developments of future relevance for Henkel that may constitute forward-looking statements. Statements with respect to the future are characterized by the use of words such as expect, intend, plan, anticipate, believe, estimate, and similar terms. Such statements are based on current estimates and assumptions made by the corporate management of Henkel AG & Co. KGaA. These statements are not to be understood as in any way guaranteeing that those expectations will turn out to be accurate. Future performance and results actually achieved by Henkel AG & Co. KGaA and its affiliated companies depend on a number of risks and uncertainties and may therefore differ materially (both positively and negatively) from the forward-looking statements. Many of these factors are outside Henkel’s control and cannot be accurately estimated in advance, such as the future economic environment and the actions of competitors and others involved in the marketplace. Henkel neither plans nor undertakes to update forward-looking statements.*\n\n*This document includes supplemental financial indicators that are not clearly defined in the applicable financial reporting framework and that are or may be alternative performance measures. These supplemental financial indicators should not be viewed in isolation or as alternatives to measures of Henkel’s net assets and financial position or results of operations as presented in accordance with the applicable financial reporting framework in its Consolidated Financial Statements. Other companies that report or describe similarly titled alternative performance measures may calculate them differently.*\n\nThis document has been issued for information purposes only and is not intended to constitute an investment advice or an offer to sell, or a solicitation of an offer to buy, any securities."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "3c9d1b7d-b1f3-4ebb-b08d-f386eff95902",
+  "n_chars": 3339,
+  "doc_url": "https://www.henkel.com/investors-and-analysts/investor-relations-news/2023-04-05-henkel-optimizes-organizational-structure-of-adhesive-technologies-business-unit-1815104",
+  "source_url": "https://www.henkel.com/investors-and-analysts/investor-relations-news",
+  "exchange_tags": []
+ }
+}

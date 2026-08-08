@@ -1,0 +1,22 @@
+{
+ "id": "ev_197_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "FLEX",
+   "ir_url": "https://investors.flex.com/overview/default.aspx"
+  },
+  "title": "Flex Third Quarter Fiscal 2026 Earnings Call",
+  "type": "webcast",
+  "date": "2026-02-04",
+  "date_precision": "day",
+  "body": "Cookies on this website.\n\nWe use cookies on q4inc.com to provide you with the best possible experience. If you wish to review the cookies we store, please select the Cookie Preferences option on this banner. After your preferences are saved, you can use the cookie icon at the left to modify your selections at any time. For more information, you can review our [Privacy Policy](https://investors.flex.com/privacy-policy/default.aspx) and [Cookie Policy](https://investors.flex.com/cookies-policy/default.aspx).\n\nQ4INC.COM Cookie Preferences\n\nPlease use the following sections to learn more about the types of cookies we use, and how you can opt out of those you do not wish to be stored. At q4inc.com, we respect your privacy and are committed to protecting your information. For more information, you can review our [Privacy Policy](https://investors.flex.com/privacy-policy/default.aspx) and [Cookie Policy](https://investors.flex.com/cookies-policy/default.aspx).\n\nCookie settings saved   Necessary Cookies\n\nThese cookies are necessary for the services and viewing experience of this site, and cannot be opted out of via this tool. If you still wish to remove these, you may do using your browser settings. A description of these technologies is provided in our [Privacy Policy](https://investors.flex.com/privacy-policy/default.aspx) and [Cookie Policy](https://investors.flex.com/cookie-policy/default.aspx)."
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "ad5cbc82-145f-4b79-9005-cafb24abb8fb",
+  "n_chars": 1414,
+  "doc_url": "https://investors.flex.com/events/events/event-details/2026/Flex-Third-Quarter-Fiscal-2026-Earnings-Call-2026-HgHZ0BSa9n/default.aspx",
+  "source_url": "https://investors.flex.com/events/default.aspx",
+  "exchange_tags": []
+ }
+}

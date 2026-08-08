@@ -1,0 +1,22 @@
+{
+ "id": "ev_113_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "0R1E.L",
+   "ir_url": "https://www.nintendo.co.jp/ir/en/index.html"
+  },
+  "title": "News Release : Nov. 27, 2025 \"Acquisition of Shares in a Singapore-Based Entity to Strengthen Development Structure\"",
+  "type": "press_release",
+  "date": "2025-11-12",
+  "date_precision": "day",
+  "body": "- Language\n\nClose\n\nNovember 27, 2025\n\nTo Whom It May Concern\n\nNintendo Co., Ltd.\n\nto Strengthen Development Structure\n\nNintendo Co., Ltd. (HQ: Kyoto, Japan; President and Representative Director: Shuntaro Furukawa; hereinafter “Nintendo”) hereby announces that it has entered into a share transfer agreement with Bandai Namco Studios Inc. (HQ: Koto-ku, Tokyo; President: Daisuke Uchiyama) to acquire shares of Bandai Namco Studios Singapore Pte. Ltd. (HQ: Singapore; CEO: Makoto Ishii; hereinafter “BNSS”) for the purpose of strengthening its development structure.\n\nAs a result of this acquisition of shares, BNSS will become a subsidiary of Nintendo and will continue its development operations under the new name Nintendo Studios Singapore Pte. Ltd.\n\nBNSS was established as one of Bandai Namco Group’s overseas bases and is a development company with strong expertise in creating in-game art assets. It has contributed to the development of Nintendo titles, including the Splatoon series, and has an ongoing business relationship with Nintendo.\n\nConsidering this business record, Nintendo has made the decision to acquire shares in BNSS to strengthen the development structure of the Nintendo Group.\n\nSubject to the satisfaction of all relevant customary conditions for transactions of this nature, Nintendo plans to acquire 80% of BNSS shares on April 1, 2026. The remaining shares will be acquired after a certain period, once the subsidiary’s operations have stabilized.\n\n[[TABLE:1]]\n\n* Following the acquisition of shares, Bandai Namco Studios Singapore Pte. Ltd. will be renamed Nintendo Studios Singapore Pte. Ltd.\n\nThis acquisition will have only a minor effect on Nintendo’s results for this fiscal year.\n\nNintendo Co., Ltd., headquartered in Kyoto, Japan, has been providing a wide range of entertainment products and experiences since its founding in 1889, beginning with the manufacture and sale of Hanafuda playing cards.\n\nSince the 1983 release of the Family Computer (Famicom) system in Japan, and continuing through Nintendo Switch 2, Nintendo’s focus has been the development, manufacturing, and sale of its gaming systems and software. To date, Nintendo has sold more than 6 billion video games and over 870 million hardware units globally, and has created franchises such as Mario™, Donkey Kong™, The Legend of Zelda™, Pokémon™, Metroid™, Kirby™, Animal Crossing™, Pikmin™, and Splatoon™.\n\nNintendo’s continuing mission is to create reasons to choose Nintendo for unique, family-friendly entertainment that puts smiles on the faces of everyone it touches.\n\n© Nintendo"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "9709b589-7b87-454e-8b68-cefde4c01d22",
+  "n_chars": 2589,
+  "doc_url": "https://www.nintendo.co.jp/corporate/release/en/2025/251127.html",
+  "source_url": "https://www.nintendo.co.jp/ir/en/index.html",
+  "exchange_tags": []
+ }
+}

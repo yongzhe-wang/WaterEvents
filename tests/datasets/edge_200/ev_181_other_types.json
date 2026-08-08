@@ -1,0 +1,22 @@
+{
+ "id": "ev_181_other_types",
+ "input": {
+  "company": {
+   "ticker": "FRHC",
+   "ir_url": "https://ir.freedomholdingcorp.com/"
+  },
+  "title": "144 - 07/22/2026 - Freedom Holding Corp.",
+  "type": "filing",
+  "date": "2026-07-22",
+  "date_precision": "day",
+  "body": "## 144: Filer Information\n\n|\n\n| Form 144 Filer Information | UNITED STATES SECURITIES AND EXCHANGE COMMISSION Washington, D.C. 20549 Form 144 \n\t\t\t\t\t\t\tNOTICE OF PROPOSED SALE OF SECURITIES\n\t\t\t\t\t\t\t PURSUANT TO RULE 144 UNDER THE SECURITIES ACT OF 1933 | |\n\n|\n\n| \n\t\t\t\t\t\tSee the definition of \"person\" in paragraph (a) of Rule 144. Information is to be given not only as to the person for whose account  \n\t\t\t\t\t\tthe securities are to be sold but also as to all other persons included in that definition. In addition, information shall be given \n\t\t\t\t\t\tas to sales by all persons whose sales are required by paragraph (e) of Rule 144 to be aggregated with sales  \n\t\t\t\t\t\tfor the account of the person filing this notice.\n\nFurnish the following information with respect to the acquisition of the securities to be sold and with respect to the payment\n\t\t\t\tof all or any part of the purchase price or other consideration therefor:\n\nFurnish the following information as to all securities of the issuer sold during the past 3 months by the person for whose account the securities are to be sold.\n\n|\n\n|"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "71aeaa85-0ac1-45e1-a290-a94549440585",
+  "n_chars": 1087,
+  "doc_url": "https://ir.freedomholdingcorp.com/all-sec-filings/content/0000929638-26-002668/primary_doc.html?TB_iframe=true&height=auto&width=auto&preload=false",
+  "source_url": "https://ir.freedomholdingcorp.com/all-sec-filings",
+  "exchange_tags": []
+ }
+}

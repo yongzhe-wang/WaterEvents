@@ -1,0 +1,22 @@
+{
+ "id": "ev_199_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "MWA",
+   "ir_url": "https://ir.muellerwaterproducts.com/"
+  },
+  "title": "[Q3 2016 Mueller Water Products Earnings Conference Call]",
+  "type": "webcast",
+  "date": "2016-Q3",
+  "date_precision": "quarter",
+  "body": "skip to main content\nSearch\n.\nWhere Intelligence Meets Infrastructure®\nPress\nReleases\nEvents &\nPresentations\nAnnual Reports\nFinancial\nInformation\nSEC\nFilings\nAnnual Reports\n& Proxies\nQuarterly\nResults\nFundamentals\nStock\nInformation\nStock Quote\n& Chart\nHistorical Price\nLookup\nInvestment\nCalculator\nDividend\nHistory\nAnalyst\nCoverage\nForm\n8937\nSpinoff\nInformation\nCorporate\nGovernance\nGovernance\nDocuments\nManagement\nBoard\nof Directors\nCommittee\nComposition\nIR\nResources\nInvestor\nFAQs\nSafe Harbor\nStatement\nEmail\nAlert\nInvestor\nContact\nAbout\nOur Core Values\nLeadership\nBoard of Directors\nSustainability\nHistory\nBrands\nPatents & Trademarks\nInvestor Relations\nPress Releases\nEvents & Presentations\nAnnual Reports\nFinancial Information\nStock Information\nCorporate Governance\nIR Resources\nPress\nReleases\nEvents &\nPresentations\nAnnual Reports\nFinancial\nInformation\nStock\nInformation\nCorporate\nGovernance\nIR\nResources\nNews\nSmart Water Handbook\nCase Studies\nCoronavirus COVID-19\nCareers\nContact\nPress\nReleases\nEvents &\nPresentations\nAnnual Reports\nFinancial\nInformation\nSEC\nFilings\nAnnual Reports\n& Proxies\nQuarterly\nResults\nFundamentals\nStock\nInformation\nStock Quote\n& Chart\nHistorical Price\nLookup\nInvestment\nCalculator\nDividend\nHistory\nAnalyst\nCoverage\nForm\n8937\nSpinoff\nInformation\nCorporate\nGovernance\nGovernance\nDocuments\nManagement\nBoard\nof Directors\nCommittee\nComposition\nIR\nResources\nInvestor\nFAQs\nSafe Harbor\nStatement\nEmail\nAlert\nInvestor\nContact\ntoggle menu\nAbout\nMission & Core Values\nLeadership\nBoard of Directors\nEnvironment, Health & Safety\nSustainability\nCorporate Citizenship\nHistory\nBrands\nMueller Co.\nPatents & Trademarks\nInvestor Relations\nPress\nReleases\nEvents &\nPresentations\nAnnual Reports\nFinancial\nInformation\nSEC\nFilings\nAnnual Reports\n& Proxies\nQuarterly\nResults\nFundamentals\nStock\nInformation\nStock Quote\n& Chart\nHistorical Price\nLookup\nInvestment\nCalculator\nDividend\nHistory\nAnalyst\nCoverage\nForm\n8937\nSpinoff\nInformation\nCorporate\nGovernance\nGovernance\nDocuments\nManagement\nBoard\nof Directors\nCommittee\nComposition\nIR\nResources\nInvestor\nFAQs\nSafe Harbor\nStatement\nEmail\nAlert\nInvestor\nContact\nNews\nDrought Solutions Handbook\nCase Studies\nGlossary\nCareers\nContact\nLocations\nIntelligent Water Technology\nWater Technology\nInnovation\nCancel\n.\nEvents &\nPresentations\nHome\n/\nInvestor Relations\n/\nEvents &\nPresentations\nEvents & Presentations\n08-04-2016\nQ3 2016 Mueller Water Products Earnings Conference Call\nListen to webcast\nView presentation\nStock Price\nView Stock Price Information\n2014 Annual Report\nDownload Now"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "6314b1fd-e238-41e2-ba74-585d339edb3c",
+  "n_chars": 2533,
+  "doc_url": "https://ir.muellerwaterproducts.com/events-and-presentations/08-04-2016",
+  "source_url": "https://ir.muellerwaterproducts.com/financial-information/quarterly-results",
+  "exchange_tags": []
+ }
+}

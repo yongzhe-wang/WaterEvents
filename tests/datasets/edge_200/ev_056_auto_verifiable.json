@@ -1,0 +1,25 @@
+{
+ "id": "ev_056_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "GFL",
+   "ir_url": "https://investors.gflenv.com/English/home/default.aspx"
+  },
+  "title": "GFL Environmental Inc. Announces Quarterly Dividend",
+  "type": "press_release",
+  "date": "2024-01-04",
+  "date_precision": "day",
+  "body": "[View all news](https://investors.gflenv.com/news/default.aspx)\n\n[Voir toutes les nouvelles](https://investors.gflenv.com/French/nouvelles/default.aspx)\n\n### GFL Environmental Inc. Announces Quarterly Dividend\n\nVAUGHAN, ON, Jan. 4, 2024 /PRNewswire/ - GFL Environmental Inc. (NYSE: GFL) (TSX: GFL) (\"GFL\" or the \"Company\") today announced that the Board of Directors of the Company has declared a cash dividend of US$0.013 for each outstanding subordinate voting share and multiple voting share of the Company for the fourth quarter of 2023.\n\nThe cash dividend will be paid on January 31, 2024 to shareholders of record at the close of business on January 17, 2024. The Company has designated this dividend as an eligible dividend within the meaning of the *Income Tax**Act* (Canada).\n\n**About GFL**\n\nGFL, headquartered in Vaughan, Ontario, is the fourth largest diversified environmental services company in North America, providing a comprehensive line of solid waste management, liquid waste management and soil remediation services through its platform of facilities throughout Canada and in more than half of the U.S. states. Across its organization, GFL has a workforce of more than 20,000 employees.\n\n**Forward Looking Statements **\n\nThis release includes certain \"forward-looking statements\", which are not guarantees or assurances of future performance. Because forward-looking statements are related to the future, they are subject to inherent uncertainties, risks and changes in circumstances that may differ materially from those contemplated by the forward-looking statements. GFL undertakes no obligation to publicly update any forward-looking statement, except as required by applicable securities laws. The declaration, timing, amount and payment of any future dividends remains at the discretion of GFL's Board of Directors.\n\nFor more information:\n\nPatrick Dovigi\n\n+1 905-326-0101[pdovigi@gflenv.com](mailto:pdovigi@gflenv.com)\n\nView original content to download multimedia:[https://www.prnewswire.com/news-releases/gfl-environmental-inc-announces-quarterly-dividend-302026235.html](https://www.prnewswire.com/news-releases/gfl-environmental-inc-announces-quarterly-dividend-302026235.html)\n\nSOURCE GFL Environmental Inc.\n\n[View all news](https://investors.gflenv.com/news/default.aspx)\n\n[Voir toutes les nouvelles](https://investors.gflenv.com/French/nouvelles/default.aspx)"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "23cda1f6-b036-4b57-8005-e8070ef07d1e",
+  "n_chars": 2392,
+  "doc_url": "https://investors.gflenv.com/English/news/news-details/2024/GFL-Environmental-Inc.-Announces-Quarterly-Dividend/default.aspx",
+  "source_url": "https://investors.gflenv.com/English/news/default.aspx",
+  "exchange_tags": [
+   "(NYSE: GFL)",
+   "(TSX: GFL)"
+  ]
+ }
+}

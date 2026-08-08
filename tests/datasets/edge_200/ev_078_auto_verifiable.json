@@ -1,0 +1,26 @@
+{
+ "id": "ev_078_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "SII",
+   "ir_url": "https://sprott.com/investor-relations/"
+  },
+  "title": "[Sprott Physical Uranium Trust Raises US$25.55 Million Through Non-Brokered Private Placement](L8)",
+  "type": "press_release",
+  "date": "2025-05-12",
+  "date_precision": "day",
+  "body": "5/12/2025\n\nTORONTO, May 12, 2025 (GLOBE NEWSWIRE) -- Sprott Inc. (NYSE/TSX: SII) (“Sprott”) on behalf of the Sprott Physical Uranium Trust (TSX: U.UN) (TSX: U.U) (“SPUT” or the “Trust”) today announced that SPUT has completed a US$25.55 million non-brokered private placement of trust units. The proceeds are expected to be used to cover general operating expenses of the Trust for the next year.\n\n“We launched SPUT with the objective of providing investors with the most liquid and efficient way to invest in physical uranium,” said John Ciampaglia, CEO of Sprott Asset Management. “Since the Trust was launched in 2021, it has purchased approximately 48 million pounds of U3O8 and not sold or loaned out a single pound. I would like to take this opportunity to strongly reiterate that SPUT has the tools, including this private placement, to deliver on its intention not to sell any of the physical uranium that SPUT holds on behalf of thousands of investors. Sprott Asset Management participated in this placement alongside the subscribers and we thank all our unitholders for their continued support of SPUT.”\n\n**Key SPUT Statistics Pro Forma for the Offering: **\n\n- World’s largest physical uranium fund1\n- 66.2 million pounds of physical uranium in U3O8form\n- US$31.4 million of net cash\n- Net asset value of US$4.64 billion\n- Storage locations in Canada, the United States and France\n\n**About Sprott **\n\nSprott is a global asset manager focused on precious metals and critical materials investments. We are specialists. We believe our in-depth knowledge, experience and relationships separate us from the generalists. Our investment strategies include Exchange Listed Products, Managed Equities and Private Strategies. Sprott has offices in Toronto, New York, Connecticut and California and the company’s common shares are listed on the New York Stock Exchange and the Toronto Stock Exchange under the symbol “SII”. For more information, please visit www.sprott.com.\n\n**About SPUT**\n\nImportant information about SPUT, including its investment objectives and strategies, applicable management fees, and expenses, can be found on its website at www.sprott.com. Commissions, management fees, or other charges and expenses may be associated with investing in the Trust. The performance of the Trust is not guaranteed, its value changes frequently and past performance is not an indication of future results.\n\n**Caution Regarding Forward-Looking Statements**\n\nThis press release contains forward-looking information within the meaning of applicable Canadian securities laws (“forward looking statements”). Forward-looking statements in this press release include, without limitation, the intended use of proceeds and the Trust’s intentions with respect to the sale of physical uranium. With respect to the forward-looking statements contained in this press release, the Trust has made numerous assumptions regarding, among other things: the uranium and nuclear energy market. While the Trust considers these assumptions to be reasonable, these assumptions are inherently subject to significant business, economic, competitive, market and social uncertainties and contingencies. Additionally, there are known and unknown risk factors that could cause the Trust’s actual results, performance or achievements to be materially different from any future results, performance or achievements expressed or implied by the forward-looking statements contained in this press release. A discussion of risks and uncertainties facing the Trust appears in the Trust’s continuous disclosure filings, which are available at www.sedarplus.ca. All forward-looking statements herein are qualified in their entirety by this cautionary statement, and the Trust disclaims any obligation to revise or update any such forward-looking statements or to publicly announce the result of any revisions to any of the forward-looking statements contained herein to reflect future results, events or developments, except as required by law.\n\n**Investor Contact:**\n\nGlen Williams\n\nSenior Managing Partner\n\nInvestor and Institutional Client Relations\n\nDirect: 416-943-4394\n\ngwilliams@sprott.com\n\n________________________1 Based on Morningstar's universe of listed commodity funds. Data as of 12/31/2024."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "0c125c84-e967-462b-9c30-231ad78880b3",
+  "n_chars": 4271,
+  "doc_url": "https://sprott.com/investor-relations/press-releases/sprott-physical-uranium-trust-raises-us-2555-million-through-non-brokered-private-placement/",
+  "source_url": "https://sprott.com/investor-relations/press-releases/?year=2025#pressReleases",
+  "exchange_tags": [
+   "(NYSE/TSX: SII)",
+   "(TSX: U.U)",
+   "(TSX: U.UN)"
+  ]
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "id": "ev_138_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "KIGRY",
+   "ir_url": "https://www.kiongroup.com/en/Investor-Relations/"
+  },
+  "title": "Press Releases Detail",
+  "type": "press_release",
+  "date": "2023-04-19",
+  "date_precision": "day",
+  "body": "# KION GROUP AG: Change of the Chief Financial Officer\n\n[back to Overview](javascript:window.history.back();)\n\n2023-07-06 / 16:52:47\n\nDISCLOSURE OF INSIDE INFORMATION PURSUANT TO ARTICLE 17 OF REGULATION (EU) NO. 596/2014\n\nKION GROUP AG\n\nThea-Rasche-Straße 8\n\n60549 Frankfurt am Main\n\nISIN DE000KGX8881\n\n**Change of the Chief Financial Officer**\n\nThe Chief Financial Officer of KION GROUP AG, Marcus Wassenberg, has left the company with immediate effect. The Supervisory Board of KION GROUP AG has appointed Christian Harm as the new Chief Financial Officer for a period of three years with immediate effect. Christian Harm has been with the company and its predecessor company for more than 20 years. He most recently held the position of the Executive Vice President Finance of the KION Group's operating unit KION ITS EMEA.\n\nContact for investors:\n\nSebastian Ubert\n\nVice President Investor Relations\n\nPhone +49 (0)69 201 107 329[sebastian.ubert@kiongroup.com](mailto:sebastian.ubert@kiongroup.com)\n\nRaj Junginger\n\nSenior Manager Investor Relations\n\nPhone +49 (0)69 201 107 942[raj.junginger@kiongroup.com](mailto:raj.junginger@kiongroup.com)\n\n### Key figures at the Online Annual Report\n\n[back to Overview](javascript:window.history.back();)\n\nYour contact persons for all Investor Relations related topics."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "25252356-b4a9-4a12-87e7-e32e9b158bc0",
+  "n_chars": 1310,
+  "doc_url": "https://www.kiongroup.com/en/Investors/Events-Publications/Financial-News/Press-Releases-Detail.html?id=2549487&type=adhoc&title=KION%20GROUP%20AG:%20Change%20of%20the%20Chief%20Financial%20Officer",
+  "source_url": "https://www.kiongroup.com/en/Investors/Events-Publications/Financial-News/",
+  "exchange_tags": []
+ }
+}

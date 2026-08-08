@@ -1,0 +1,22 @@
+{
+ "id": "ev_198_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "KMI",
+   "ir_url": "https://ir.kindermorgan.com/home/default.aspx"
+  },
+  "title": "Bernstein Strategic Decisions Conference",
+  "type": "webcast",
+  "date": "2026-05-27",
+  "date_precision": "day",
+  "body": "Skip to main content\nAbout Us\nOur Values\nHistory\nGovernance\nManagement\nKinder Morgan Foundation\nOperations Management System\nPolicy Papers\nOperations\nAsset Map\nCO\n2\nNatural Gas\nProducts Pipelines\nTerminals\nKinder Morgan Treating\nKinder Morgan Gas Marketing\nProjects\nTariffs\nInteractive Website(EBB)\nEnergy Transition\nRenewable Natural Gas\nCCUS\nMidwest Liquefied Natural Gas\nMidwest Retail Gas Marketing\nSafety & Environment\nESG\nESG Reports\nEHS Performance\nLower Carbon Initiatives\nCommunity Engagement\nPublic Awareness\nContractor Safety and Operator Qualification\nInvestors\nNewsroom\nPress Releases\nIn the News\nBlog: Energy Delivered\nCareers\nCareers Home\nLife at KM\nInternships\nContact Us\nEvent\nDetails\nInvestor Overview\nEvents & Presentations\nStock Information\nStock Quote\nStock Chart\nHistorical Stock Quote\nInvestment Calculator\nDividend History\nDividend Tax Information\nFinancials\nQuarterly Results\nAnnual Reports\nSEC Filings\nPipeCo Financial Statements\nHistorical Tax Info\nGovernance\nGovernance Documents\nExecutive Management\nBoard of Directors\nESG / Sustainability\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nInvestor Contacts\nRSS Feeds\nAbout Us\nOur Values\nHistory\nGovernance\nManagement\nKinder Morgan Foundation\nOperations Management System\nPolicy Papers\nOperations\nAsset Map\nCO\n2\nNatural Gas\nProducts Pipelines\nTerminals\nKinder Morgan Treating\nKinetrex Energy\nProjects\nTariffs\nInteractive Website(EBB)\nSafety & Environment\nESG\nESG Reports\nEHS Performance\nLow Carbon Solutions\nCommunity Engagement\nPublic Awareness\nContractor Safety and Operator Qualification\nInvestors\nNewsroom\nPress Releases\nIn the News\nHow America Works\nCareers\nWorking at Kinder Morgan\nJob Opportunities\nContact Us\nInvestor Relations\nInvestor Overview\nEvents & Presentations\nStock Information\nStock Quote\nStock Chart\nHistorical Stock Quote\nInvestment Calculator\nDividend History\nDividend Tax Information\nFinancials\nQuarterly Results\nAnnual Reports\nSEC Filings\nPipeCo Financial Statements\nHistorical Tax Info\nGovernance\nGovernance Documents\nExecutive Management\nBoard of Directors\nESG / Sustainability\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nInvestor Contacts\nRSS Feeds\nBernstein Strategic Decisions Conference\nMay 27, 2026 10:00 AM ET\nWebcast\n(opens in new window)"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "af325a1f-be58-457c-9fa4-9d85b1790d32",
+  "n_chars": 2297,
+  "doc_url": "https://ir.kindermorgan.com/events-and-presentations/event-details/2026/Bernstein-Strategic-Decisions-Conference-2026-ekOLqhECiO/default.aspx",
+  "source_url": "https://ir.kindermorgan.com/home/default.aspx",
+  "exchange_tags": []
+ }
+}

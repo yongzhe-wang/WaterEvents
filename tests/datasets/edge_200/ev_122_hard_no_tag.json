@@ -1,0 +1,22 @@
+{
+ "id": "ev_122_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "028260.KS",
+   "ir_url": "https://www.samsungcnt.com/eng/ir/overview.do"
+  },
+  "title": "Amendment to Pyeongtaek V2L Upper Ph3/Lower Building Finishing Work Contract",
+  "type": "press_release",
+  "date": "2022.12.21",
+  "date_precision": "unknown",
+  "body": "## Amendment to Pyeongtaek V2L Upper Ph3/Lower Building Finishing Work Contract\n\n2022. 12. 21\n\nSamsung C&T has signed an amended contract for Pyeongtaek V2L Upper Ph3/Lower Building Finishing Work with the contract owner, Samsung Electronics Co., Ltd.\n\n- Contract amount: before change) KRW 897 billion\n\nafter change) KRW 959 billion\n\n※ Overview of Project\n\n- Title of Project: Pyeongtaek V2L Upper Ph3/Lower Building Finishing Work\n\n- Contract Amount: KRW 959,486,000,000\n\n- Contract Owner: Samsung Electronics Co., Ltd\n\n- Construction Period: January 22, 2021 – March 15, 2023\n\n- The amendment was made for 'Pyeongtaek V2L Upper Ph3/Lower Building Finishing Work' contract with Samsung Electronics concluded on the date of January 22, 2021 (KRW 17 billion, 0.05% of the sales based on the FY 2019 year-end consolidated financial statements).\n\n- The above contract price includes the previous contract amount and the VAT.\n\n- The construction period and contract price, etc. are subject to change in the course of performing the construction work."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "4de76e6a-2369-4d82-bf25-fbb274c4cc1a",
+  "n_chars": 1047,
+  "doc_url": "https://www.samsungcnt.com/eng/ir/disclosure/view.do?seq=523",
+  "source_url": "https://www.samsungcnt.com/eng/ir/overview.do",
+  "exchange_tags": []
+ }
+}

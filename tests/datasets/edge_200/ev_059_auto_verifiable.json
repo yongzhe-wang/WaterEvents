@@ -1,0 +1,24 @@
+{
+ "id": "ev_059_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "HCMLY",
+   "ir_url": "https://www.holcim.com/investors"
+  },
+  "title": "Q1 2026 Results",
+  "type": "press_release",
+  "date": "2026-Q1",
+  "date_precision": "quarter",
+  "body": "Holcim CEO, Miljan Gutovic, and CFO, Steffen Kindler, lead the Q1 2026 Trading Update presentation, discussion and Q&A with analysts and investors.\n\nApril 24, 2026\n\nHolcim CEO, Miljan Gutovic, and CFO, Steffen Kindler, lead the Q1 2026 Trading Update presentation, discussion and Q&A with analysts and investors.\n\nHolcim (SIX: HOLN) is the leading partner for sustainable construction with net sales of CHF 16.2 billion1 in 2024, creating value across the built environment from infrastructure and industry to buildings. Headquartered in Zug, Switzerland, Holcim has more than 45,000 employees in 44 attractive markets – across Europe, Latin America and Asia, Middle East & Africa. Holcim offers high-value end-to-end Building Materials and Building Solutions, from foundations and flooring to roofing and walling – powered by premium brands including ECOPlanet, ECOPact, and ECOCycle®.\n\n1 Net sales 2024 restated following spin-off; excludes net sales to Amrize.\n\n© HOLCIM 2024"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "656dc789-9678-4f05-8877-fe56e47bcdf5",
+  "n_chars": 978,
+  "doc_url": "https://video.holcim.com/video/126422693/q1-2026-trading-update-strong-start",
+  "source_url": "https://www.holcim.com/investors",
+  "exchange_tags": [
+   "(SIX: HOLN)"
+  ]
+ }
+}

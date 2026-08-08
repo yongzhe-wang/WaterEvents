@@ -1,0 +1,25 @@
+{
+ "id": "ev_079_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "SUN",
+   "ir_url": "https://www.sunocolp.com/investor-relations/"
+  },
+  "title": "[Sunoco LP Extends Exchange Offers of its 4.875% Senior Notes due 2023, 5.500% Senior Notes due 2026 and 5.875% Senior Notes due 2028]",
+  "type": "press_release",
+  "date": "2018-11-15",
+  "date_precision": "day",
+  "body": "# Sunoco LP Extends Exchange Offers of its 4.875% Senior Notes due 2023, 5.500% Senior Notes due 2026 and 5.875% Senior Notes due 2028\n\nDALLAS, Nov. 19, 2018 /PRNewswire/ -- Sunoco LP (NYSE: SUN) (\"Sunoco\") announced today that it has further extended the expiration date for its previously announced exchange offers relating to its outstanding 4.875% Senior Notes due 2023 (the \"2023 Notes\"), 5.500% Senior Notes due 2026 (the \"2026 Notes\") and 5.875% Senior Notes due 2028 (the \"2028 Notes\" and, together with the 2023 Notes and the 2026 Notes, the \"Notes\"), which commenced on October 12, 2018.\n\nThe registered exchange offers, which were scheduled to expire at 5:00 p.m., New York City time, on November 16, 2018, have been extended until 5:00 p.m., New York City time, on November 30, 2018, unless further extended. Holders of the Notes previously tendered for exchange have the right to withdraw tenders of the Notes at any time prior to the expiration of the exchange offers. As of November 16, 2018, holders of 99.94% of the outstanding principal amount of the 2023 Notes, 99.88% of the outstanding principal amount of the 2026 Notes and 99.75% of the outstanding principal of the 2028 Notes had tendered their Notes in the exchange.\n\n**About Sunoco LP **Sunoco LP (NYSE: SUN) is a master limited partnership distributes motor fuel to approximately 10,000 convenience stores, independent dealers, commercial customers and distributors located in more than 30 states. Sunoco's general partner is owned by Energy Transfer Operating, L.P., a subsidiary of Energy Transfer LP (NYSE: ET).\n\n**Cautionary Statement Relevant to Forward-Looking Information **This press release may include certain statements concerning expectations for the future that are forward-looking statements as defined by federal law. Such forward-looking statements are subject to a variety of known and unknown risks, uncertainties, and other factors that are difficult to predict and many of which are beyond management's control. An extensive list of factors that can affect future results are discussed in Sunoco's Annual Report on Form 10-K and other documents filed from time to time with the Securities and Exchange Commission. Sunoco undertakes no obligation to update or revise any forward-looking statement to reflect new information or events.\n\nThe information contained in this press release is available on our website at [www.SunocoLP.com](https://www.sunocolp.com/)\n\n**\n       Contacts\n    **\n\n**Investors: **Scott Grischow\n\nSenior Director – Investor Relations and Treasury\n\n(214) 840-5660,\n\n[scott.grischow@sunoco.com](mailto:scott.grischow@sunoco.com)\n\nDerek Rabe, CFA\n\nManager – Investor Relations, Growth and Strategy\n\n(214) 840-5553, [derek.rabe@sunoco.com](mailto:derek.rabe@sunoco.com)\n\nView original content to download multimedia:[https://www.prnewswire.com/news-releases/sunoco-lp-extends-exchange-offers-of-its-4-875-senior-notes-due-2023--5-500-senior-notes-due-2026-and-5-875-senior-notes-due-2028--300752610.html](https://www.prnewswire.com/news-releases/sunoco-lp-extends-exchange-offers-of-its-4-875-senior-notes-due-2023--5-500-senior-notes-due-2026-and-5-875-senior-notes-due-2028--300752610.html)\n\nSOURCE Sunoco LP"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "935ae3a4-7ea6-47f3-b190-0cba7bc330b8",
+  "n_chars": 3225,
+  "doc_url": "https://www.sunocolp.com/press-release/item/47ae9c48-5f97-426a-b75f-99c074056ff6",
+  "source_url": "https://www.sunocolp.com/investor-relations/",
+  "exchange_tags": [
+   "(NYSE: ET)",
+   "(NYSE: SUN)"
+  ]
+ }
+}

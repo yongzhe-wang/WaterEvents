@@ -1,0 +1,24 @@
+{
+ "id": "ev_160_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "TLTZY",
+   "ir_url": "https://www.tele2.com/investors/"
+  },
+  "title": "Annual & Sustainability report 2011",
+  "type": "press_release",
+  "date": "2011",
+  "date_precision": "year",
+  "body": "# Tele2 AB : Annual Report 2011 and Corporate Responsibility Report 2011\n\n**Stockholm - Tele2 AB (Tele2), (NASDAQ OMX Stockholm: TEL2 A and TEL2 B) today announced**** that its Annual Report 2011 and Corporate Responsibility Report 2011 are now available at www.tele2.com.**\n\n## Contacts\n\nLars Torstensson, Investor Inquiries, Telephone: +46 702 73 48 79\n\nPernilla Oldmark, Press Inquiries, Telephone: +46 704 26 45 45\n\n**TELE****2 IS ONE OF EUROPE'S LEADING TELECOM OPERATORS, ALWAYS PROVIDING THE BEST DEAL**. We have 34 million customers in 11 countries. Tele2 offers mobile services, fixed broadband and telephony, data network services, cable TV and content services. Ever since Jan Stenbeck founded the company in 1993, it has been a tough challenger to the former government monopolies and other established providers. Tele2 has been listed on the NASDAQ OMX Stockholm since 1996. In 2011, we had net sales of SEK 41 billion and reported an operating profit (EBITDA) of SEK 10.9 billion."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "b28eef8e-8520-4935-a661-34aa2961761c",
+  "n_chars": 994,
+  "doc_url": "https://www.tele2.com/investors/reports-and-presentations/tele2-ab--annual-report-2011-and-corporate-responsibility-report-2011/",
+  "source_url": "https://www.tele2.com/sv/investerare/rapporter/",
+  "exchange_tags": [
+   "(NASDAQ OMX Stockholm: TEL2 A and TEL2 B)"
+  ]
+ }
+}

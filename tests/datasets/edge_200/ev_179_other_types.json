@@ -1,0 +1,22 @@
+{
+ "id": "ev_179_other_types",
+ "input": {
+  "company": {
+   "ticker": "TRMK",
+   "ir_url": "https://investorrelations.trustmark.com/corporate-overview/default.aspx"
+  },
+  "title": "Current report filing",
+  "type": "filing",
+  "date": "2026-04-29",
+  "date_precision": "day",
+  "body": "Corporate Overview\nOverview\nCorporate Overview\nAnnual Meeting of Shareholders\nNews & Events\nPress Releases\nEvent Calendar\nPresentations\nMergers & Acquisitions\nFilings & Financials\nDocuments\nInsider Filings\nStock Info\nStock Quote\nHistoric Prices\nDividends\nCovering Analysts\nCorporate Governance\nGovernance Documents\nCorporate Officers\nBoard of Directors\nCommittee Structure\nContact the Board\nWhistleblower Procedures\nExecutive Strategy Committee\nCommunity Market Advisory Directors\nResources\nTransfer Agent\nDividend Reinvestment\nInformation Request\nEmail Notification\nFAQ\nIR Site Map\nHome\nFilings & Financials\nDocuments\nDocument Details\nMenu\nOverview\nCorporate Overview\nAnnual Meeting of Shareholders\nNews & Events\nPress Releases\nEvent Calendar\nPresentations\nMergers & Acquisitions\nFilings & Financials\nDocuments\nInsider Filings\nStock Info\nStock Quote\nHistoric Prices\nDividends\nCovering Analysts\nCorporate Governance\nGovernance Documents\nCorporate Officers\nBoard of Directors\nCommittee Structure\nContact the Board\nWhistleblower Procedures\nExecutive Strategy Committee\nCommunity Market Advisory Directors\nResources\nTransfer Agent\nDividend Reinvestment\nInformation Request\nEmail Notification\nFAQ\nIR Site Map\nView all documents\nDocument Details\nFiling Type\n8-K\nDescription\nCurrent report filing\nFiling Date\n04/29/2026\nDownload\nHTML\nPDF\nXLS\nZIP\nXBRL"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "9b2ba324-dc29-4c37-96f8-18964f6576f7",
+  "n_chars": 1344,
+  "doc_url": "https://investorrelations.trustmark.com/filings-financials/documents/sec-filings-details/default.aspx?FilingId=19387889",
+  "source_url": "https://investorrelations.trustmark.com/filings-financials/documents/default.aspx",
+  "exchange_tags": []
+ }
+}

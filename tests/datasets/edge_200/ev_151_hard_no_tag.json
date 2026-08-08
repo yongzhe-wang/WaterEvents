@@ -1,0 +1,22 @@
+{
+ "id": "ev_151_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "DASTY",
+   "ir_url": "https://investor.3ds.com/"
+  },
+  "title": "Dassault Systèmes Publishes Its First Impact Report, Highlighting Sustainabili…",
+  "type": "press_release",
+  "date": "2026-07-23",
+  "date_precision": "day",
+  "body": "# Dassault Systèmes Publishes Its First Impact Report, Highlighting Sustainability Role of Virtual Twins\n\nDassault Systèmes has published its first [Impact Report](https://www.3ds.com/about/corporate-responsibility/impact-report), detailing the progress and outcomes of its sustainability strategy across operations and customers in 2025.   Centered around three pillars - footprint, handprint and human capital - the report highlights the measurable impacts of the company’s internal and external approaches to mitigate climate change, and the pivotal role of virtual twins in achieving decarbonization targets.\n\nThe Dassault Systèmes Impact Report explores ways customers have used virtual twins to imagine, test and optimize products, operations and business models for the Generative Economy, while also tracing the progress of its own environmental, social and governance performance across multiple targets and commitments. Highlights from the report include:\n\n- Use cases summarizing measurable customer gains in key economic sectors:- Consumer goods packaging clients that used 18% less plastic and 76% more recycled materials;\n- Manufacturer that saved 50% of components from scrap, and generated $45 million in savings through systemized part reuse;\n- Wind turbine manufacturer that avoided 7,995 tons of carbon dioxide emissions;\n- Housing construction that achieved an A++++ energy label.\n\n- Strong improvements in Dassault Systèmes’ ESG performance:- 50.4% of suppliers have set science-based emissions reduction targets;\n- 78.3% reduction in Scope 1 and 2 emissions compared with 2019;\n- 42.9% of revenue is aligned with the EU Taxonomy while 69.9% is eligible;\n- 41.7% of the executive team are women.\n\nThe full report can be found [here](https://www.3ds.com/about/corporate-responsibility/impact-report).\n\nFor more information on how Dassault Systèmes commits to sustainability to advance its purpose to harmonize product, nature and life, visit:  [https://www.3ds.com/about/corporate-responsibility/sustainability-commitment](https://www.3ds.com/about/corporate-responsibility/sustainability-commitment)"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "4b04a38e-7514-4258-84d7-d71ce7e797f2",
+  "n_chars": 2120,
+  "doc_url": "https://www.3ds.com/newsroom/media-alerts/dassault-systemes-publishes-its-first-impact-report-highlighting-sustainability-role-virtual-twins",
+  "source_url": "https://www.3ds.com/press-releases/",
+  "exchange_tags": []
+ }
+}

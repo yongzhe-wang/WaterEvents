@@ -1,0 +1,22 @@
+{
+ "id": "ev_154_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "CRM",
+   "ir_url": "https://investor.salesforce.com/overview/default.aspx"
+  },
+  "title": "Salesforce Grants Equity Awards to Cimulate Under Its Inducement Equity Incentive Plan",
+  "type": "press_release",
+  "date": "2026-05-06",
+  "date_precision": "day",
+  "body": "- ### General Information\n- ### Required Cookies\n- ### Functional Cookies\n- ### Advertising Cookies\n\nWe use three kinds of cookies on our websites: required, functional, and advertising. You can choose whether functional and advertising cookies apply. Click on the different cookie categories to find out more about each category and to change the default settings.\n            [Privacy Statement](https://www.salesforce.com/company/privacy/full_privacy/)\n\nAlways Active\n\nRequired cookies are necessary for basic website functionality. Some examples include: session cookies needed to transmit the website, authentication cookies, and security cookies.\n\nFunctional cookies enhance functions, performance, and services on the website. Some examples include: cookies used to analyze site traffic, cookies used for market research, and cookies used to display advertising that is not directed to a particular individual.\n\nAdvertising cookies track activity across websites in order to understand a viewer’s interests, and direct them specific marketing. Some examples include: cookies used for remarketing, or interest-based advertising.\n\nConsent Leg.Interest\n\nlabel\n\nlabel\n\nlabel\n\n- label"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "f2a937fb-1d2e-49d9-a22e-eb7f6e42a741",
+  "n_chars": 1186,
+  "doc_url": "https://investor.salesforce.com/news/news-details/2026/Salesforce-Grants-Equity-Awards-to-Cimulate-Under-Its-Inducement-Equity-Incentive-Plan/default.aspx",
+  "source_url": "https://investor.salesforce.com/news/default.aspx",
+  "exchange_tags": []
+ }
+}

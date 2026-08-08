@@ -1,0 +1,22 @@
+{
+ "id": "ev_177_other_types",
+ "input": {
+  "company": {
+   "ticker": "UHAL",
+   "ir_url": "https://investors.uhaul.com/overview/default.aspx"
+  },
+  "title": "CL King Best Ideas Conference Participation",
+  "type": "conference",
+  "date": "2006-09-18",
+  "date_precision": "day",
+  "body": "We use cookies on [investors.uhaul.com](https://investors.uhaul.com/) to provide you with the best possible experience. If you wish to review the cookies we store, please select the Cookie Preferences option on this banner. After your preferences are saved, you can use the cookie icon at the left to modify your selections at any time. For more information, you can review our [Privacy Policy](https://www.uhaul.com/Legal/PrivacyPolicy/).\n\nYour preferences can be changed at any time by clicking on “Cookie preferences” at the very bottom of the site. All changes will be saved automatically.\n\nCookie preferences are saved\n          Necessary cookies are required to make sure your experience on this website runs smoothly and cannot be opted out of.\n\nOptional cookies help us understand how you use this website to further optimize your browsing experience.\n\nOn\n\nGoogle Analytics will track your tracking event, click, session data for this website.\n\nOn\n\nThese cookies are required for the website to function.\n\nOn\n\nThese cookies are required for the website to function."
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "57164375-c191-4cc0-8860-5291749c6ca8",
+  "n_chars": 1073,
+  "doc_url": "https://investors.uhaul.com/events-and-presentations/event-details/2006/AMERCO-to-Participate-in-CL-King-Best-Ideas-Conference/default.aspx",
+  "source_url": "https://investors.uhaul.com/events-and-presentations/default.aspx",
+  "exchange_tags": []
+ }
+}

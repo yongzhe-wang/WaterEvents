@@ -1,0 +1,22 @@
+{
+ "id": "ev_135_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "ALC",
+   "ir_url": "https://investor.alcon.com/home/default.aspx"
+  },
+  "title": "[New Product Launches Drive Alcon's First-Quarter 2026 Growth as Momentum from Unity and Tryptyr Builds](L29)",
+  "type": "press_release",
+  "date": "2026-05-05",
+  "date_precision": "day",
+  "body": "This website uses cookies and similar tracking technologies to improve your experience and to analyze site performance and traffic. By clicking “Accept,” you consent to the collection, use, storage, and sharing of your information, including interactions with health-related webpages, with our social media, advertising, and analytics partners. If your browser has sent an opt-out preference signal, we will honor it. You can customize or withdraw your consent by adjusting your cookie settings. For more details, please refer to our [Cookie Notice](https://www.alcon.com/cookie-notice/?hidebanner=true) and [Privacy Notice](https://preferences.myalcon.com/privacy-notice/?hidebanner=true).\n\nYour Opt Out Preference Signal is Honored\n\nWhen you visit our website, we store cookies on your browser to collect information. The information collected might relate to you, your preferences or your device, and is mostly used to make the site work as you expect it to and to provide a more personalized web experience. However, you can choose to allow or not to allow certain types of cookies, which may impact your experience of the site and the services we are able to offer. Click on the different category headings to find out more and change our default settings according to your preference. You cannot opt-out of our First Party Strictly Necessary Cookies as they are deployed in order to ensure the proper functioning of our website (such as prompting the cookie banner and remembering your settings, to log into your account, to redirect you when you log out, etc.). For more information about the First and Third Party Cookies used please follow this link.\n\n[Cookie Notices](https://www.alcon.com/cookie-notice/?hidebanner=true)\n\nAlways Active\n\nThese cookies are necessary for the website to function and cannot be switched off in our systems. They are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or filling in forms. You can set your browser to block or alert you about these cookies, but some parts of the site will not then work. These cookies do not store any personally identifiable information.\n\nThese cookies enable the website to provide enhanced functionality and personalisation. They may be set by us or by third party providers whose services we have added to our pages. If you do not allow these cookies then some or all of these services may not function properly.\n\nThese cookies allow us to count visits and traffic sources so we can measure and improve the performance of our site. They help us to know which pages are the most and least popular and see how visitors move around the site. All information these cookies collect is aggregated and therefore anonymous. If you do not allow these cookies we will not know when you have visited our site, and will not be able to monitor its performance.\n\nThese cookies may be set through our site by our advertising partners. They may be used by those companies to build a profile of your interests and show you relevant adverts on other sites. They do not store directly personal information, but are based on uniquely identifying your browser and internet device. If you do not allow these cookies, you will experience less targeted advertising.\n\n- label\n\nConsent Leg.Interest\n\nlabel\n\nlabel\n\nlabel\n\n[[TABLE:1]]\n\n[[TABLE:2]]\n\n[[TABLE:3]]\n\n[[TABLE:4]]\n\n[[TABLE:5]]\n\n[[TABLE:6]]\n\n[[TABLE:7]]\n\n[[TABLE:8]]\n\n[[TABLE:9]]\n\n[[TABLE:10]]\n\n[[TABLE:11]]\n\n[[TABLE:12]]\n\n[[TABLE:13]]"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "8e1139a1-a94b-4e67-8eb9-cef199c9cd89",
+  "n_chars": 3536,
+  "doc_url": "https://investor.alcon.com/news-and-events/press-releases/news-details/2026/New-Product-Launches-Drive-Alcons-First-Quarter-2026-Growth-as-Momentum-from-Unity-and-Tryptyr-Builds/default.aspx",
+  "source_url": "https://investor.alcon.com/news-and-events/press-releases/default.aspx",
+  "exchange_tags": []
+ }
+}

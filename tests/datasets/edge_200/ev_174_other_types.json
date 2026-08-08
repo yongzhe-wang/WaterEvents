@@ -1,0 +1,24 @@
+{
+ "id": "ev_174_other_types",
+ "input": {
+  "company": {
+   "ticker": "MA",
+   "ir_url": "https://investor.mastercard.com/overview/default.aspx"
+  },
+  "title": "Mastercard to Participate in Upcoming Investor Conferences",
+  "type": "conference",
+  "date": "2026-04-28",
+  "date_precision": "day",
+  "body": "### Mastercard to Participate in Upcoming Investor Conferences\n\nPURCHASE, N.Y.--(BUSINESS WIRE)-- Mastercard Incorporated (NYSE: MA) today announced its participation in the following investor conferences:\n\nOn Tuesday, May 19, Sachin Mehra, chief financial officer, will present at the *J.P. Morgan Global Technology, Media and Communications Conference *in Boston, MA. The discussion will begin at 11:25 a.m. Eastern Time and last for approximately 35 minutes.\n\nOn Thursday, May 28, Michael Miebach, chief executive officer, will present at the *Bernstein Strategic Decisions Conference *in New York, NY. The discussion will begin at 2:30 p.m. Eastern Time and last for approximately 50 minutes.\n\nThere will be a live audio webcast of the discussion and replay will be archived for 30 days at [investor.mastercard.com](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Finvestor.mastercard.com%2Foverview%2Fdefault.aspx&esheet=54524311&newsitemid=20260428468928&lan=en-US&anchor=investor.mastercard.com&index=1&md5=ba36bd4c6626a7ddf4ce606806798f01).\n\n**About Mastercard Incorporated (NYSE: MA), ****www.mastercard.com**\n\nMastercard powers economies and empowers people in 200+ countries and territories worldwide. Together with our customers, we’re building a resilient economy where everyone can prosper. We support a wide range of digital payments choices, making transactions secure, simple, smart and accessible. Our technology and innovation, partnerships and networks combine to deliver a unique set of products and services that help people, businesses and governments realize their greatest potential.\n\n*Investor Relations: Devin Corr,  investor.relations@mastercard.com, 914-249-4565 \n*\n\n*Communications: Seth Eisen,*"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "dc542a5c-79d0-4cf0-b430-33d7b0aad4b8",
+  "n_chars": 1742,
+  "doc_url": "https://investor.mastercard.com/investor-news/investor-news-details/2026/Mastercard-to-Participate-in-Upcoming-Investor-Conferences-09e6bd954/default.aspx",
+  "source_url": "https://investor.mastercard.com/investor-news/default.aspx",
+  "exchange_tags": [
+   "(NYSE: MA)"
+  ]
+ }
+}

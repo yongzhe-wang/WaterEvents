@@ -1,0 +1,22 @@
+{
+ "id": "ev_166_other_types",
+ "input": {
+  "company": {
+   "ticker": "3665.TW",
+   "ir_url": "https://www.bizlinktech.com/financial-information"
+  },
+  "title": "Upcoming June 22, 2026 Automate 2026",
+  "type": "conference",
+  "date": "2026-06-22",
+  "date_precision": "day",
+  "body": "# Automate 2026\n\n**Experience the Future at Automate**\n\n**Automate** is North America’s largest and most influential robotics and automation event. It is the ultimate platform to take your ideas from insight to impact, bringing together an incredible community of over\n\n**1,000 exhibitors**and more than\n\n**50,000 visitors**from around the globe.\n\nThe show floor features the world’s leading solutions—from **AI and robotics** to **motion control and vision systems**. Combined with a world-class educational conference led by the industry's brightest minds, Automate offers everything you need to transform the way you work.\n\nBizLink invites you to see our latest automation solutions and services involving industrial cables suitable for torsion and drag chain applications, custom training for automation systems, cable management systems for industrial and collaborative robots and customized cable and systems solutions for various applications. Below please find summaries of what you can expect to see at this year’s Automate show.\n\n**Products and Services Demonstrations:**\n\nLearn about our innovative products and services, and discover how BizLink can benefit your any automation applications today:\n\n- **Industrial Cables for Torsion & Drag Chains:**Automation systems rely on high-performance cables to deliver power, media, and data. We will showcase specialized- **Bus and Motion Control cables**designed to withstand up to- **10 million bending cycles**in demanding drag chain and torsion applications.\n\n- **Robotic Cable Management:**Comprehensive dresspack systems and management solutions for both industrial and collaborative robots (cobots), ensuring maximum protection and longevity in motion.\n\n- **care DP :**Experience our cutting-edge solution for- **digitalized condition monitoring**. This system provides real-time insights into the health of your robotic dresspacks, helping you prevent downtime through predictive maintenance.\n\n- **The elocab \"Extreme Performance\" Advantage:**For applications that exceed standard limits, our- **High Performance Flex (HPF)**solutions are engineered to withstand the most extreme mechanical stresses. These custom designs can achieve up to- **150 million bending cycles**at tight radii.\n\n- **Cleanroom & Semiconductor Excellence:**We provide specialized cable solutions for sensitive environments, including- **ISO Class 1 cleanroom-certified**designs and- **vacuum-compatible**assemblies.\n\n- **Advanced Hybrid Integration:**Beyond standard power and data, we offer- **bespoke hybrid cables**that integrate fiber optics, coaxial signals, and air/fluid tubes into a single, compact system tailored to your technical requirements.\n\n##### Exbition information\n\n- Date: June 22 - 25, 2026\n- Location: McCormick Place, 2301 S Martin Luther King Dr., Chicago, IL 60616, USA\n- Booth No.: 16053\n- Contact: [Sales Representative](mailto:WebSupport@bizlinktech.com)"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "9a770252-858d-4e52-8438-4019533420e9",
+  "n_chars": 2918,
+  "doc_url": "https://www.bizlinktech.com/events/automate-2026",
+  "source_url": "https://www.bizlinktech.com/events/odcc-2025",
+  "exchange_tags": []
+ }
+}

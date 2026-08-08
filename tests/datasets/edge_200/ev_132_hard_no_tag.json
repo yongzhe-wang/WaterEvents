@@ -1,0 +1,22 @@
+{
+ "id": "ev_132_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "ERNXY",
+   "ir_url": "https://www.euronext.com/en/investor-relations"
+  },
+  "title": "[Euronext announces 2026 quarterly review results of the BEL® Family indices](L5)",
+  "type": "press_release",
+  "date": "2026-06-10",
+  "date_precision": "day",
+  "body": "**Brussels – 10 June 2026 -** Euronext today announced the results of the June 2026 quarterly review for the BEL 20®, BEL Mid®, BEL Small® and BEL® ESG, which will be implemented after markets close on Friday 19 June 2026 and will be effective from Monday 22 June 2026.\n\n**Results of the Quarterly Review**\n\n**BEL 20®**\n\nNo changes in the composition of the index.\n\n**BEL Mid®**\n\nNo changes in the composition of the index.\n\n**BEL Small ®**\n\n**BEL ® ESG**\n\nThe Independent Supervisor retains the right to change the published selection, for instance in the case of a removal due to a takeover, until the publication of the final data after close of Wednesday 17 June 2026.\n\nAll events taking place after that date will not result in the replacement of any company that may need to be removed from the final index selection.\n\n**Review BEL® Family**\n\nThe BEL 20®, BEL Mid®, BEL Small® and BEL® ESG are reviewed quarterly (March, June, September, December). The full annual review is in March.\n\nNext Index Steering Committee Review: Wednesday 9 September 2026.\n\n**CONTACTS **"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "c868e03f-cf04-4f4d-a626-9a412b0844f3",
+  "n_chars": 1072,
+  "doc_url": "https://www.euronext.com/en/about/media/euronext-press-releases/euronext-announces-2026-quarterly-review-results-belr-family",
+  "source_url": "https://www.euronext.com/en/euronext-indices/press-releases",
+  "exchange_tags": []
+ }
+}

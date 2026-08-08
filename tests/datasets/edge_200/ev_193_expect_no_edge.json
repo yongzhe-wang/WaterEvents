@@ -1,0 +1,22 @@
+{
+ "id": "ev_193_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "KAI",
+   "ir_url": "https://investor.kadant.com/"
+  },
+  "title": "Q4 2025 Kadant Earnings Conference Call",
+  "type": "webcast",
+  "date": "2026-02-19",
+  "date_precision": "day",
+  "body": "Press Option+1 for screen-reader mode, Option+0 to cancel\nAccessibility Screen-Reader Guide, Feedback, and Issue Reporting | New window\nSkip to main navigation\nAbout Us\nInnovation\nAcquisition Strategy\nAutomation\nSustainability\nOur Businesses\nFlow Control\nIndustrial Processing\nMaterial Handling\nInvestors\nOverview\nNews & Events\nFinancial Information\nStock Information\nCorporate Governance\nInvestor Information\nCareers\nNews\nBlog\nMaintenance\nRotary Joints & Unions\nAuxiliary Steam Equipment\nEvents\nSteam\nOptimization\nRoll Cleaning\nWater Management\nTechnology\nMeet Team Kadant\nExpansion Joints\nFluid Handling\nDoctoring, Cleaning, Filtration\nFiber Processing\nContact\nNews\nBlog\nContact\nAbout Us\nInnovation\nAcquisition Strategy\nAutomation\nSustainability\nOur Businesses\nFlow Control\nIndustrial Processing\nMaterial Handling\nInvestors\nOverview\nNews & Events\nFinancial Information\nStock Information\nCorporate Governance\nInvestor Information\nCareers\nEvent Details\nFebruary 19, 2026 at 11:00 AM EST\nQ4 2025 Kadant Earnings Conference Call\nClick here for Webcast\nShareholder Tools\nContact IR\nEmail Alerts\nRSS Feeds\nPrint Page\nEmail Page\n© Kadant Inc.\nPrivacy\n|\nTerms\nCookie settings"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "0461daa1-a6bb-4192-8ac4-09d580757fc2",
+  "n_chars": 1169,
+  "doc_url": "https://investor.kadant.com/events/event-details/q4-2025-kadant-earnings-conference-call",
+  "source_url": "https://investor.kadant.com/news-and-events",
+  "exchange_tags": []
+ }
+}

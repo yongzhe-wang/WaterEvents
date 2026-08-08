@@ -1,0 +1,24 @@
+{
+ "id": "ev_036_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "SUNC",
+   "ir_url": "https://www.sunocolp.com/investors"
+  },
+  "title": "[Sunoco LP Maintains Quarterly Distribution]",
+  "type": "press_release",
+  "date": "2016-10-12",
+  "date_precision": "day",
+  "body": "# Sunoco LP Maintains Quarterly Distribution\n\n#### 3Q 2016 Earnings Release and Earnings Call Dates Also Announced\n\nSUN will release its third quarter 2016 financial and operating results after the market closes on\n\n|\n\n|\n\n** Sunoco LP** (NYSE: SUN) is a master limited partnership that operates approximately 1,340 retail fuel sites and convenience stores (including APlus, Stripes, Aloha Island Mart and Tigermarket brands)  and distributes motor fuel to convenience stores, independent dealers, commercial customers and distributors located in more than 30 states at approximately 6,900 sites. Our parent --\n\n**Qualified Notice**\n\nThis release is intended to be a qualified notice under Treasury Regulation Section 1.1446-4(b). Brokers and nominees should treat 100 percent of SUN's distributions to non-U.S. investors as being attributable to income that is effectively connected with a\n\n**Contacts**\n\n(469) 646-1188, [scott.grischow@sunoco.com](mailto:scott.grischow@sunoco.com)\n\n(469) 646-1328, [patrick.graham@sunoco.com](mailto:patrick.graham@sunoco.com)\n\nLogo - [https://photos.prnewswire.com/prnh/20161011/427507LOGO](https://photos.prnewswire.com/prnh/20161011/427507LOGO)\n\nTo view the original version on PR Newswire, visit:[https://www.prnewswire.com/news-releases/sunoco-lp-maintains-quarterly-distribution-300351875.html](https://www.prnewswire.com/news-releases/sunoco-lp-maintains-quarterly-distribution-300351875.html)\n\nSOURCE"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "edda2c89-3a64-44a9-b35d-72049b9aa913",
+  "n_chars": 1443,
+  "doc_url": "https://www.sunocolp.com/press-release/item/7cb27455-0569-4414-ad69-4c97c0e9d9a7",
+  "source_url": "https://www.sunocolp.com/investors",
+  "exchange_tags": [
+   "(NYSE: SUN)"
+  ]
+ }
+}

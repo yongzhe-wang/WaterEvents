@@ -1,0 +1,22 @@
+{
+ "id": "ev_159_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "7270.T",
+   "ir_url": "https://www.subaru.co.jp/en/ir/"
+  },
+  "title": "Subaru Corporation Announces Consolidated Financial Results for FYE 2023",
+  "type": "press_release",
+  "date": "2023-05-11",
+  "date_precision": "day",
+  "body": "# Subaru Corporation Announces Consolidated Financial Results for FYE 2023\n\nTokyo, May 11, 2023 – Subaru Corporation today announced its consolidated financial results for the fiscal year ended March 31, 2023.\n\n**Results for FYE 2023: Consolidated Revenue**\n\nWhile production constraints continued throughout the fiscal year, mainly due to semiconductor shortages, global production increased 20.3% to 874,000 units as the company worked to minimize the impact through measures such as flexible rescheduling of production plans.\n\nProduction in Japan rose 26.3% to 575,000 units, while production in the U.S. grew 10.1% to 299,000 units.\n\nAs a result of the production increase, global unit sales rose 16.1% to 852,000 units, led by steady sales in Subaru’s key U.S. market.\n\nDue to the positive effects of foreign exchange rates, the unit sales growth, and other factors, consolidated revenue rose 37.5% to 3,774.5 billion yen.\n\n**Results for FYE 2023: Consolidated Profit and Loss**\n\nAs positive factors such as the effects of foreign exchange rates and sales volume growth more than offset the negative effects of material cost increases and higher SG&A expenses, operating profit rose 177.0 billion yen to 267.5 billion yen, profit before tax grew 171.4 billion yen to 278.4 billion yen, and profit for the period attributable to owners of parent increased 130.4 billion yen to 200.4 billion yen.\n\n**Forecast for FYE 2024**\n\nGlobal unit sales are forecast at 1,010,000 units, with the key U.S. market expected to lead sales growth.\n\nWhile the negative impact of the stronger yen is expected, taking into account sales volume growth, the Company forecasts revenue of 4,200 billion yen (up 11.3% y/y), operating profit of 300 billion yen (up 12.2% y/y), profit before tax of 300 billion yen (up 7.8% y/y), and profit for the period attributable to owners of parent of 210 billion yen (up 4.8% y/y).\n\nThe forecasts are based on exchange rate assumptions of 128 yen to the U.S. dollar and 138 yen to the euro.\n\nNotes on figures in the results:\n\nVehicle volume figures are rounded to the nearest thousand. Yen figures are rounded to the nearest hundred million.\n\nForward-looking statements in this document including financial and other forecasts are based on the information available at the time of announcement and are subject to various risks and uncertainties that could cause actual results to vary materially.\n\nReference for FYE 2023 Consolidated Financial Results\n\n###\n\n## Related News Release\n\n[Read more News Release](https://www.subaru.co.jp/en/news/)"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "f6baa627-301d-445e-b6de-73d4dda2b883",
+  "n_chars": 2560,
+  "doc_url": "https://www.subaru.co.jp/news-en/2023_05_11_192213",
+  "source_url": "https://www.subaru.co.jp/en/news/archive_2023.html",
+  "exchange_tags": []
+ }
+}

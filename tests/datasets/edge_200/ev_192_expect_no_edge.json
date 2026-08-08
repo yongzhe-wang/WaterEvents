@@ -1,0 +1,25 @@
+{
+ "id": "ev_192_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "PAAS",
+   "ir_url": "https://panamericansilver.com/invest/"
+  },
+  "title": "Pan American Silver to Host Investor Day on June 1, 2026",
+  "type": "presentation",
+  "date": "2026-06-01",
+  "date_precision": "day",
+  "body": "May 12, 2026\n\n## Pan American Silver to Host Investor Day on June 1, 2026\n\nVANCOUVER, British Columbia–(BUSINESS WIRE)–  **Pan American Silver Corp.** (NYSE: PAAS) (TSX: PAAS) (“**Pan American**“) will host an Investor Day on Monday, June 1, 2026 in Toronto, Ontario from 1:00 to 4:00 pm ET during which Pan American’s executive management team will provide detailed presentations on Pan American’s strategy, operations, growth projects and exploration activities. The event will include a question-and-answer session with management.\n\n**Webcast details:**\n\nDate: Monday, June 1, 2026\n\nTime: 1:00 pm ET\n\nRegistration link: [https://reg.lumiengage.com/pan-american-silver-ir-day/reg-en/Site/Register](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Freg.lumiengage.com%2Fpan-american-silver-ir-day%2Freg-en%2FSite%2FRegister&esheet=54535071&newsitemid=20260512664367&lan=en-US&anchor=https%3A%2F%2Freg.lumiengage.com%2Fpan-american-silver-ir-day%2Freg-en%2FSite%2FRegister&index=1&md5=254bac0a30f940b893bba960d1055ec8)\n\nThe presentation slides and a recording of the webcast will be available at [https://panamericansilver.com/invest/events-and-presentations/](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fpanamericansilver.com%2Finvest%2Fevents-and-presentations%2F&esheet=54535071&newsitemid=20260512664367&lan=en-US&anchor=https%3A%2F%2Fpanamericansilver.com%2Finvest%2Fevents-and-presentations%2F&index=2&md5=6001c9052ebdda51f9252e1df37e5633).\n\n**About Pan American Silver**\n\nPan American is a leading producer of silver and gold in the Americas, operating mines in Canada, Mexico, Peru, Brazil, Bolivia, Chile and Argentina. We also own a 44% joint venture interest in the producing Juanicipio mine in Mexico, a 100% interest in the Escobal mine in Guatemala that is currently not operating, and we hold interests in exploration and development projects. We have been operating in the Americas for over three decades, earning an industry-leading reputation for sustainability performance, operational excellence and prudent financial management. We are headquartered in Vancouver, B.C. and our shares trade on the New York Stock Exchange and the Toronto Stock Exchange under the symbol “PAAS”.\n\nLearn more at [panamericansilver.com ](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fpanamericansilver.com%2F&esheet=54535071&newsitemid=20260512664367&lan=en-US&anchor=panamericansilver.com&index=3&md5=3494d5babf6b5c8be4f6189a64d28bd8)\n\nFollow us on [LinkedIn](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.linkedin.com%2Fcompany%2Fpan-american-silver-corp.%2Fposts%2F%3FfeedView%3Dall%26viewAsMember%3Dtrue&esheet=54535071&newsitemid=20260512664367&lan=en-US&anchor=LinkedIn&index=4&md5=c1a8266f23fb6dc9360c939c0b395c65)\n\nFor more information:\n\nSiren Fisekci\n\nVP, Investor Relations & Corporate Communications\n\nPh: 604-806-3191\n\nEmail: [ir@panamericansilver.com](javascript:;)"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "5e9b5fea-b616-4130-86d5-ba2b0f07fab6",
+  "n_chars": 2959,
+  "doc_url": "https://panamericansilver.com/news/pan-american-silver-to-host-investor-day-on-june-1-2026/",
+  "source_url": "https://panamericansilver.com/news/2026/",
+  "exchange_tags": [
+   "(NYSE: PAAS)",
+   "(TSX: PAAS)"
+  ]
+ }
+}

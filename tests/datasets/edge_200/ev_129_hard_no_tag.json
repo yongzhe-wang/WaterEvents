@@ -1,0 +1,22 @@
+{
+ "id": "ev_129_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "BOKF",
+   "ir_url": "https://investor.bokf.com/overview/default.aspx"
+  },
+  "title": "BOK Financial CEO Steve Bradshaw announces plans to retire",
+  "type": "press_release",
+  "date": "2021-04-05",
+  "date_precision": "day",
+  "body": "### BOK Financial CEO Steve Bradshaw announces plans to retire\n\nTULSA, Okla., April  05, 2021  (GLOBE NEWSWIRE) -- BOK Financial CEO and President Steven G. Bradshaw has announced plans to retire as of March 31, 2022. The company’s board of directors is expected to appoint a successor in the coming months, ensuring a smooth transition prior to April 1, 2022.\n\nBradshaw joined the company in 1991 after selling his wholly owned retail brokerage business to BOK Financial. He held numerous leadership positions at the company before being named the company’s chief executive in 2014. Under Bradshaw’s leadership, the company has grown from $27 billion in assets to more than $47 billion, achieved record earnings levels and expanded operations significantly to almost 5,000 employees across eight states.\n\nBradshaw has also been very active in the Tulsa community, serving as board chair for the Tulsa Metropolitan Chamber, and a board member for the University of Tulsa, Tulsa Community Foundation and many other organizations over the years. He co-chaired the 2016 Tulsa Area United Way campaign with his wife, Marla. After retirement, Bradshaw plans to stay in Tulsa and remain active in the community.\n\nThe board recently appointed Stacy Kymes as the company’s COO with responsibility for all revenue-generating divisions. Kymes previously served over all specialized banking areas, including energy, commercial real estate, healthcare, treasury services and TransFund. He has been with BOK Financial for almost 25 years and has a broad understanding of the company, having served as chief auditor, director of mergers and acquisitions, and chief credit officer.\n\n“It has been an extreme honor to serve BOK Financial and to play a role in the company’s 100-plus years of growth,” said Bradshaw. “I can truly say that this is the right time to step away, as the company is performing exceptionally well – despite the challenges of the past year – and the executive team is highly skilled and cohesive. I look forward to becoming the company’s number one advocate as I move into the next phase of my life.”\n\nBOK Financial Corporation is a more than $47 billion regional financial services company headquartered in Tulsa, Okla. with more than $90 billion in assets under management and administration. The company's stock is publicly traded on NASDAQ under the Global Select market listings (BOKF). BOK Financial Corporation's holdings include BOKF, NA; BOK Financial Securities, Inc., BOK Financial Private Wealth, and BOK Financial Insurance, Inc. BOKF, NA operates TransFund, Cavanal Hill Investment Management and BOK Financial Asset Management, Inc. BOKF, NA operates banking divisions across eight states as: Bank of Albuquerque, Bank of Oklahoma, Bank of Texas and BOK Financial (in Arizona, Arkansas, Colorado, Kansas and Missouri); as well as having limited purpose offices Nebraska, Milwaukee and Connecticut. Through its subsidiaries, BOK Financial Corporation provides commercial and consumer banking, brokerage trading, investment, trust and insurance services, mortgage origination and servicing, and an electronic funds transfer network. For more information, visit [www.bokf.com](https://www.globenewswire.com/Tracker?data=ei-dKi1R26x8HaX57v8Gcki57R05PVd23ob_INV8Y_5v9wvcN0NDbEtvw3HlwANDEgUCXnOTCyLm89ZIe-CLvHbRZO4k9J9omOea9ZzqRIyT68lluNAdtHAR7yXbrOUx2-ku7mzAeSsSP7Wi7neOuY8W3NFqRkh3zyLsuU_1ua7l--IdQi8y8TOuFP7Uq_sK1Tvm_Qk8PxsodvOqLXyf0c_8okUjpl5JWohyYiSls8w=).\n\nMedia Contact:\n\nCody McAlester[cmcalester@bokf.com](mailto:cmcalester@bokf.com)\n\n918.295.0486"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "a48ac91a-d75a-4041-9f69-371f8bd2e9b2",
+  "n_chars": 3573,
+  "doc_url": "https://investor.bokf.com/news/news-details/2021/BOK-Financial-CEO-Steve-Bradshaw-announces-plans-to-retire/default.aspx",
+  "source_url": "https://investor.bokf.com/news/default.aspx",
+  "exchange_tags": []
+ }
+}

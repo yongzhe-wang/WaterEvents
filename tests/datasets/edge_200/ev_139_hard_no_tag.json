@@ -1,0 +1,22 @@
+{
+ "id": "ev_139_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "RICO.L",
+   "ir_url": "https://www.ricoh.com/IR"
+  },
+  "title": "[June 16, 2021 Notice Regarding the Conclusion of the Transfer of Shares in Ricoh India Ltd.]",
+  "type": "press_release",
+  "date": "2021-06-16",
+  "date_precision": "day",
+  "body": "- [Home](https://www.ricoh.com/)\n- [News Release](https://www.ricoh.com/release)\n- Notice Regarding the Conclusion of the Transfer of Shares in Ricoh India Ltd.\n\nMain content\n\n# Notice Regarding the Conclusion of the Transfer of Shares in Ricoh India Ltd.\n\n## For full version in PDF format\n\n## | About Ricoh |\n\nNews Release\n\n- June 16, 2021\n\n**TOKYO, June 16, 2021** – Ricoh today announced that the Company concluded the transfer of all its shares in Ricoh India Ltd. (Registered Office: Mumbai, hereinafter referred to as Ricoh India) to third parties and dissolved its capital relationship with Ricoh India.\n\nRicoh is [empowering digital workplaces](https://www.ricoh.com/about/empowering-digital-workplaces/) using innovative technologies and services that enable individuals to work smarter from anywhere.\n\nWith cultivated knowledge and organizational capabilities nurtured over its 85-years history, Ricoh is a leading provider of digital services and information management, and print and imaging solutions designed to support digital transformation and optimize business performance.\n\nHeadquartered in Tokyo, Ricoh Group has major operations throughout the world and its products and services now reach customers in approximately 200 countries and regions. In the financial year ended March 2021, Ricoh Group had worldwide sales of 1,682 billion yen (approx. 15.1 billion USD).\n\nFor further information, please visit [www.ricoh.com](https://www.ricoh.com/)\n\n###\n\n© 2021 RICOH COMPANY, LTD. All rights reserved. All referenced product names are the trademarks of their respective companies."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "1bc1d53b-20a2-415a-97ed-4ab01fbb7ce9",
+  "n_chars": 1598,
+  "doc_url": "https://www.ricoh.com/release/2021/0616_1",
+  "source_url": "https://www.ricoh.com/IR/news",
+  "exchange_tags": []
+ }
+}

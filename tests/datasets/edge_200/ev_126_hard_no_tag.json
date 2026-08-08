@@ -1,0 +1,22 @@
+{
+ "id": "ev_126_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "8001.T",
+   "ir_url": "https://www.itochu.co.jp/en/ir/index.html"
+  },
+  "title": "[ITOCHU Announces Acquisition of Additional Shares of AICHI CORPORATION]",
+  "type": "press_release",
+  "date": "2026-04-06",
+  "date_precision": "day",
+  "body": "# ITOCHU Announces Acquisition of Additional Shares of AICHI CORPORATION\n\nApril 7, 2026\n\nITOCHU Corporation (headquartered in Minato-ku, Tokyo; Keita Ishii, President & COO; hereinafter “ITOCHU”) announced today that it has decided to acquire additional shares of AICHI CORPORATION (headquartered in Ageo, Saitama; Shunichi Nakazawa, President and Representative Director and Chief Executive Officer; hereinafter “AICHI CORPORATION”), an equity-method affiliate of ITOCHU (hereinafter the “Stock Acquisition”).\n\nIn recent years, the aerial work platform market in Japan has remained firm, supported by expanding demand related to infrastructure development projects, mainly in the electric power, communication and construction industries. In overseas markets as well, demand for aerial work platforms is increasing due to the maintenance, repair and reinforcement of infrastructure in developed countries and the advancement of urbanization and growing demand for the development of electrical and communication infrastructure in emerging countries.\n\nAICHI CORPORATION holds an approximately 70% share of the truck-mounted aerial work platform market in Japan. It is a leading company in the industry that has long provided products and services which are indispensable in the construction of social infrastructure. Since the capital alliance in May 2025, ITOCHU has built a strong partnership with AICHI CORPORATION and jointly promoted initiatives aimed at continued growth, including the strengthening of value chains in the domestic market in areas such as finance, after-sales services and used vehicle sales, as well as the development of overseas markets. As a result, synergies between the two companies have steadily begun to emerge.\n\nThrough this Stock Acquisition, ITOCHU will further strengthen its collaboration with AICHI CORPORATION and further accelerate the company’s sustainable growth and the creation of synergies with the ITOCHU Group.\n\nUnder its management policy, “The Brand-new Deal: Profit opportunities are shifting downstream,” ITOCHU is working to build a business model from a market-oriented perspective. Going forward, ITOCHU will continue to contribute to the maintenance and development of social infrastructure through this Stock Acquisition.\n\n#### About AICHI CORPORATION\n\n#### About the Stock Acquisition\n\nThe Stock Acquisition is considered an acquisition equivalent to a tender offer pursuant to paragraph (1) of Article 167 of the Financial Instruments and Exchange Act and in Article 31 of the Order for Enforcement of the Financial Instruments and Exchange Act, as the intent is to acquire 5% or more of the voting rights of AICHI CORPORATION. Therefore, ITOCHU will publish an outline of the Stock Acquisition below pursuant to paragraph (4) of Article 167 of the Financial Instruments and Exchange Act and in item (i) of Article 30 of the Order for Enforcement of the Financial Instruments and Exchange Act.\n\nNote: The voting rights ratio is calculated based on the number of voting rights pertaining to the number of shares obtained by subtracting the number of treasury shares from the total number of shares issued as of December 31, 2025, as stated in the Summary of Consolidated Financial Results for the Third Quarter of the Fiscal Year Ending March 31, 2026 published by AICHI CORPORATION on January 29, 2026."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "16ae5e1e-579e-4b38-84bb-b9cc51dc28f4",
+  "n_chars": 3360,
+  "doc_url": "https://www.itochu.co.jp/en/news/press/2026/260407.html",
+  "source_url": "https://www.itochu.co.jp/en/news/press/index.html",
+  "exchange_tags": []
+ }
+}

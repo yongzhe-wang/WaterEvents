@@ -1,0 +1,22 @@
+{
+ "id": "ev_101_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "DNBBY",
+   "ir_url": "https://www.ir.dnb.no/"
+  },
+  "title": "[DNB Bank ASA: Agreement to divest shareholding in Luminor Holding AS]",
+  "type": "press_release",
+  "date": "2026-07-20",
+  "date_precision": "day",
+  "body": "#### DNB Bank ASA: Agreement to divest shareholding in Luminor Holding AS\n\nA wholly owned subsidiary of DNB Bank ASA (\"DNB\"), DNB Baltic Invest AB, has entered into an agreement to divest its entire shareholding in Luminor Holding AS (\"Luminor\") to OTP Bank Plc. (the \"Acquirer\").\n\nLuminor Holding AS is a regulated holding company owning 100% of the shares in Luminor Bank AS, a leading banking group in the Baltic region under the supervision of the European Central Bank (ECB).\n\nLuminor was established in 2017 through the merger of the Baltic operations of Nordea Bank Abp and DNB Bank ASA (\"DNB\"). Since 2019, a consortium of private equity funds managed by Blackstone has held the majority ownership in Luminor, while DNB Baltic Invest AB has retained a 19.95% shareholding.\n\n**Transaction overview**\n\nUnder the terms of the agreement, the Acquirer will acquire 100% of the shares in Luminor. DNB Baltic Invest AB will sell its entire shareholding. The transaction will be settled in cash at the closing date.\n\nCompletion of the transaction is subject to obtaining the necessary regulatory approvals.\n\n**Financial impact**\n\nLuminor is currently accounted for through the equity method in DNB’s financial statements. DNB will classify its investment in Luminor as held for sale from 20th July 2026 and expects to recognize an accounting loss of approximately NOK 1 billion in the third quarter of 2026 in connection with the classification as held for sale.\n\nFor the financial year 2025, Luminor contributed NOK 371 million to DNB’s net profit.\n\nUpon completion of the transaction, DNB expects a positive effect on the Common Equity Tier 1 (CET1) ratio of approximately 20 basis points.\n\nThe final financial effects will depend on, among other factors, the final transaction price, closing adjustments and currency developments.\n\n**Strategic implications**\n\nThe transaction represents the final step in DNB’s strategy to exit its customer-facing banking activities in the Baltic states.\n\n“Since the establishment of Luminor in 2017 and the subsequent partnership with Blackstone, we have contributed to building a strong and independent banking platform in the Baltics. The transaction is expected to release capital and supports our continued focus on capital efficiency and disciplined allocation of resources,” says Rasmus Aage Figenschou, CFO of DNB.\n\nThis announcement contains information that is subject to disclosure requirements pursuant to the Market Abuse Regulation and section 5-12 of the Norwegian Securities Trading Act.\n\n**Contact persons**\n\nRune Helland\n\nHead of Investor Relations\n\nTel: +47 23 26 84 00 / +47 97 71 32 50\n\nVidar Korsberg Dalsbø\n\nGroup Communications\n\nTel: +47 99 38 03 89"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "5624b295-ea82-4c62-a50a-5a14b3986b7c",
+  "n_chars": 2710,
+  "doc_url": "https://www.ir.dnb.no/press-and-reports/press-releases/dnb-bank-asa-agreement-divest-shareholding-luminor-holding-2470246",
+  "source_url": "https://www.ir.dnb.no/",
+  "exchange_tags": []
+ }
+}

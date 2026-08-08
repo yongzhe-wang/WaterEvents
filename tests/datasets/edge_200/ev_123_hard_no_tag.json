@@ -1,0 +1,22 @@
+{
+ "id": "ev_123_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "8001.T",
+   "ir_url": "https://www.itochu.co.jp/en/ir/index.html"
+  },
+  "title": "[ITOCHU Announces Signing of Memorandum of Understanding on Joint Study for Commercialization of Bio-based CO₂ Liquefaction](L4)",
+  "type": "press_release",
+  "date": "2026-03-02",
+  "date_precision": "day",
+  "body": "# ITOCHU Announces Signing of Memorandum of Understanding on Joint Study for Commercialization of Bio-based CO₂ Liquefaction\n\nMarch 4, 2026\n\nITOCHU Corporation (Headquartered in Minato-ku, Tokyo; Keita Ishii, President & COO; hereinafter “ITOCHU”) announced today that it has signed a memorandum of understanding regarding a joint study for the commercialization of the bio-based CO2　Liquefaction (hereinafter the “MOU”) with Saga City (Mayor: Hidetaka Sakai), Nippon Ekitan Corporation. (Head Office: Minato-ku, Tokyo; Hiroyuki Iizuka, President; hereinafter “Nippon Ekitan”) and Itochu Industrial Gases Co., Ltd. (Head Office: Chiyoda-ku, Tokyo; Ken Watanabe, President; hereinafter “Itochu Industrial Gases”) to conduct a joint study on the feasibility of liquefying and commercializing bio-based carbon dioxide (hereinafter “CO2”) recovered at the Saga City Clean Center.\n\nAgainst the backdrop of the restructuring of oil refining and chemical plants in Japan, it has recently become a challenge to maintain a stable supply the carbon dioxide gas used in carbonated beverages and food products, dry ice, and various industrial applications in the country. At the same time, waste incineration plants are not only an essential part of the infrastructure of local communities but also a stable source of CO2 emissions, and expectations are rising regarding the effective utilization of these emissions.\n\nThe Saga City Clean Center began operating in 2016 as Japan’s first carbon dioxide capture and utilization (“CCU”) plant that separates and recovers only CO2 from waste incineration flue gas. To date, the high-concentration CO2 recovered there has been used in the cultivation of vegetables and algae among other applications, and the plant has established a track record in advanced carbon recycling. Furthermore, in 2024, it obtained ISCC PLUS certification (mass balance approach), marking the first time in the world for a waste incineration plant to receive international certification for its waste-derived CO2. This is international recognition of its environmental value.\n\nFollowing the signing of this MOU, the four parties will utilize the CO2 separation and recovery equipment installed at the Saga City Clean Center and implement studies with an eye toward the establishment of a business model that encompasses the liquefaction, purification and storage of the recovered bio-based CO2, as well as its transportation over long distances and sale as liquefied carbon dioxide. Specifically, the parties plan to conduct joint studies from multiple perspectives, including the technical examination of liquefaction and storage equipment, the evaluation of quality and safety, the examination of compliance with relevant laws and regulations, the formulation of sales and logistics schemes that take into account customers’ needs and the assessment of the feasibility of the business, including its environmental value. Through these initiatives, the parties will promote the utilization of bio-based CO2 and examine solutions to the recent instability of the supply of CO2 for industrial use.\n\nUnder its management policy, “The Brand-New Deal: Profit opportunities are shifting downstream,” ITOCHU continues to meet the increasingly diverse needs that are arising due to changes in society and expand its business domains. Through this initiative, ITOCHU aims to help build a carbon recycling model that originates in local communities and to create new value that contributes to the stable procurement of industrial CO2.\n\n#### Main Roles of the Four Parties\n\n#### Conceptual Diagram\n\n| \n |"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "c18580b1-ffb7-4bbd-98bb-5ed981acd80b",
+  "n_chars": 3604,
+  "doc_url": "https://www.itochu.co.jp/en/news/press/2026/260304.html",
+  "source_url": "https://www.itochu.co.jp/en/news/press/index.html",
+  "exchange_tags": []
+ }
+}

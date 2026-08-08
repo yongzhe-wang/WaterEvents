@@ -1,0 +1,25 @@
+{
+ "id": "ev_022_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "MXL",
+   "ir_url": "https://investors.maxlinear.com/"
+  },
+  "title": "MaxLinear, Inc. Announces Conference Call to Review Second Quarter 2026 Financial Results",
+  "type": "press_release",
+  "date": "2026-07-23",
+  "date_precision": "day",
+  "body": "# MaxLinear, Inc. Announces Conference Call to Review Second Quarter 2026 Financial Results\n\n**Thursday, July 23, 2026 at 1:30 p.m. Pacific Time; 4:30 p.m. Eastern Time**\n\nCARLSBAD, Calif.--(BUSINESS WIRE)-- MaxLinear, Inc. (NASDAQ: MXL), a leading provider of radio frequency (RF), analog, digital and mixed-signal integrated circuits, announced today that it will release its financial results for the second quarter 2026 after the close of market on Thursday, July 23, 2026. The company will host a corresponding conference call at 1:30 p.m. Pacific Time, 4:30 p.m. Eastern Time.\n\n**Conference Call Details**\n\n**About MaxLinear, Inc.**\n\nMaxLinear, Inc. (NASDAQ:MXL) is a leading provider of radio frequency (RF), analog, digital and mixed-signal integrated circuits for access and connectivity, wired and wireless infrastructure, and industrial and multimarket applications. MaxLinear is headquartered in Carlsbad, California. For more information, please visit [www.maxlinear.com](http://www.maxlinear.com).\n\nMXL is MaxLinear’s registered trademark. Other trademarks appearing herein are the property of their respective owners.\n\nView source version on businesswire.com: [https://www.businesswire.com/news/home/20260701090167/en/](https://www.businesswire.com/news/home/20260701090167/en/)\n\n**MaxLinear, Inc. Investor Relations Contact:**\n\nLeslie Green\n[lgreen@maxlinear.com](mailto:lgreen@maxlinear.com)\n\nSource: MaxLinear, Inc.\n\nReleased July 1, 2026"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "93439151-dd4b-49ba-966a-801ac3ad79e8",
+  "n_chars": 1456,
+  "doc_url": "https://investors.maxlinear.com/press-releases/detail/616/maxlinear-inc-announces-conference-call-to-review-second",
+  "source_url": "https://investors.maxlinear.com/",
+  "exchange_tags": [
+   "(NASDAQ: MXL)",
+   "(NASDAQ:MXL)"
+  ]
+ }
+}

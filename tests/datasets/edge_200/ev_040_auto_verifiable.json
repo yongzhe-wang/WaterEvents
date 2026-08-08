@@ -1,0 +1,24 @@
+{
+ "id": "ev_040_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "BLBD",
+   "ir_url": "https://investors.blue-bird.com/"
+  },
+  "title": "Blue Bird Announces Refinancing of Term Loan and Revolving Credit Facility",
+  "type": "press_release",
+  "date": "2016-12-15",
+  "date_precision": "day",
+  "body": "12/15/2016\n\nCompany Release - 12/15/2016 5:30 PM ET\n\nFORT VALLEY, Ga.--(BUSINESS WIRE)-- Blue Bird Corporation (“Blue Bird”) (Nasdaq: BLBD), the leading independent designer and manufacturer of school buses, announced today that it has successfully refinanced its $160 million term loan and $75 million revolving line of credit.\n\nThe new credit facility, led by Bank of Montreal as Administrative Agent and an Issuing Bank, reduces the Company’s effective interest rate paid by approximately 4 pts. and is expected to save the Company approximately $4 million in fiscal year 2017.\n\n“This refinancing is in line with our strategic objective to reduce the cost of our debt and improve our credit profile. This, together with continued solid earnings growth, strengthens the Company as we build on our market-leading brand,\" said Phil Tighe, CFO of Blue Bird Corporation.\n\nAdditional details can be found in the Company’s 8-K filed on December 15, 2016.\n\n**About Blue Bird Corporation**\n\nBlue Bird is the leading independent designer and manufacturer of school buses, with more than 550,000 buses sold since its formation in 1927 and approximately 180,000 buses in operation today. Blue Bird’s longevity and reputation in the school bus industry have made it an iconic American brand. Blue Bird distinguishes itself from its principal competitors by its singular focus on the design, engineering, manufacture and sale of school buses and related parts. As the only manufacturer of chassis and body production specifically designed for school bus applications, Blue Bird is recognized as an industry leader for school bus innovation, safety, product quality/reliability/durability, operating costs and drivability. In addition, Blue Bird is the market leader in alternative fuel applications with its propane-powered, gasoline-powered and compressed natural gas-powered school buses. Blue Bird manufactures school buses at two facilities in Fort Valley, Georgia. Its Micro Bird joint venture operates a manufacturing facility in Drummondville, Quebec, Canada. Service and after-market parts are distributed from Blue Bird’s parts distribution center located in Delaware, Ohio.\n\nView source version on [businesswire.com](http://businesswire.com): [http://www.businesswire.com/news/home/20161215006449/en/](http://www.businesswire.com/news/home/20161215006449/en/)\n\nBlue Bird Corporation\n\nMark Benfield, 478-822-2315\n\nInvestor\nRelations & New Business Development[[email protected]](https://investors.blue-bird.com/cdn-cgi/l/email-protection#1c517d6e77325e79727a757970785c7e706979317e756e78327f7371)\n\nSource: Blue Bird Corporation"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "f8cd7898-00d3-4abf-8a4e-32f3eed28d85",
+  "n_chars": 2624,
+  "doc_url": "https://investors.blue-bird.com/news-financial-reporting/press-releases/news-details/2016/Blue-Bird-Announces-Refinancing-of-Term-Loan-and-Revolving-Credit-Facility/default.aspx",
+  "source_url": "http://investors.blue-bird.com/news-financial-reporting/press-releases/default.aspx",
+  "exchange_tags": [
+   "(Nasdaq: BLBD)"
+  ]
+ }
+}

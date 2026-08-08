@@ -1,0 +1,22 @@
+{
+ "id": "ev_176_other_types",
+ "input": {
+  "company": {
+   "ticker": "ADRNY",
+   "ir_url": "https://aholddelhaize.com/investors/"
+  },
+  "title": "Ahold Delhaize share buyback update June 1, 2021",
+  "type": "dividend",
+  "date": "2021-06-01",
+  "date_precision": "day",
+  "body": "# Ahold Delhaize share buyback update June 1, 2021\n\n*Zaandam, the Netherlands, June 1, 2021 *– Ahold Delhaize has repurchased 255,000 of Ahold Delhaize common shares in the period from May 24, 2021 up to and including May 28, 2021. The shares were repurchased at an average price of € 23.91 per share for a total consideration of € 6.1 million. These repurchases were made as part of the €1 billion share buyback program announced on November 4, 2020.\n\nThe total number of shares repurchased under this program to date is 19,887,752 common shares for a total consideration of € 458.5 million.\n\nDownload the share buyback transactions excel sheet for detailed individual transaction information from [https://www.aholddelhaize.com/en/investors/share-buyback-programs/2021/](https://www.aholddelhaize.com/en/investors/share-buyback-programs/2021/)\n\nThis press release is issued in connection with the disclosure and reporting obligation set out in Article 2(2) of the EU Regulation that contains technical standards for buyback programs.\n\nDownloads"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "5dd840f9-f784-42f0-80a2-a55655d9c3c3",
+  "n_chars": 1046,
+  "doc_url": "https://newsroom.aholddelhaize.com/ahold-delhaize-share-buyback-update-june-1-2021/",
+  "source_url": "https://newsroom.aholddelhaize.com?h=1&t=press%20release",
+  "exchange_tags": []
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "id": "ev_031_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "HBM",
+   "ir_url": "https://hudbayminerals.com/investors/default.aspx"
+  },
+  "title": "Hudbay to Host Conference Call for Fourth Quarter 2020 Results",
+  "type": "press_release",
+  "date": "2021-01-27",
+  "date_precision": "day",
+  "body": "[View all news](https://hudbayminerals.com/investors/press-releases/default.aspx)\n\n### Hudbay to Host Conference Call for Fourth Quarter 2020 Results\n\nTORONTO, Jan.  27, 2021  (GLOBE NEWSWIRE) -- **Hudbay Minerals Inc. (“Hudbay” or the “company”) (****TSX, NYSE: HBM)** senior management will host a conference call on Friday, February 19, 2021 at 9:00 a.m. ET to discuss the company’s fourth quarter 2020 results and production and cost guidance for 2021.\n\nHudbay plans to issue a news release containing the fourth quarter 2020 results on Thursday, February 18, 2021 and post it on the company’s website. An archived audio webcast of the call also will be available on Hudbay’s website.\n\n**About Hudbay**\n\nHudbay (TSX, NYSE: HBM) is a diversified mining company primarily producing copper concentrate (containing copper, gold and silver) and zinc metal. Directly and through its subsidiaries, Hudbay owns three polymetallic mines, four ore concentrators and a zinc production facility in northern Manitoba and Saskatchewan (Canada) and Cusco (Peru), and copper projects in Arizona and Nevada (United States). The company’s growth strategy is focused on the exploration, development, operation and optimization of properties it already controls, as well as other mineral assets it may acquire that fit its strategic criteria. Hudbay’s vision is to be a responsible, top-tier operator of long-life, low-cost mines in the Americas. Hudbay’s mission is to create sustainable value through the acquisition, development and operation of high-quality, long-life deposits with exploration potential in jurisdictions that support responsible mining, and to see the regions and communities in which the company operates benefit from its presence. The company is governed by the Canada Business Corporations Act and its shares are listed under the symbol \"HBM\" on the Toronto Stock Exchange, New York Stock Exchange and Bolsa de Valores de Lima. Further information about Hudbay can be found on [www.hudbay.com](http://www.hudbay.com).\n\n**For further information, please contact:**\n\nCandace Brûlé\n\nDirector, Investor Relations\n\n(416) 814-4387[candace.brule@hudbay.com](mailto:candace.brule@hudbay.com)\n\nSource: Hudbay Minerals Inc.\n\n[View all news](https://hudbayminerals.com/investors/press-releases/default.aspx)"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "9b75d5c8-68a1-46de-9f1c-01ebbe0a4505",
+  "n_chars": 2305,
+  "doc_url": "https://hudbayminerals.com/investors/press-releases/press-release-details/2021/Hudbay-to-Host-Conference-Call-for-Fourth-Quarter-2020-Results/default.aspx",
+  "source_url": "https://hudbayminerals.com/investors/press-releases/default.aspx",
+  "exchange_tags": [
+   "(TSX, NYSE: HBM)"
+  ]
+ }
+}

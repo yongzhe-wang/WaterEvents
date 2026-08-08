@@ -1,0 +1,22 @@
+{
+ "id": "ev_170_other_types",
+ "input": {
+  "company": {
+   "ticker": "DCI",
+   "ir_url": "https://ir.donaldson.com"
+  },
+  "title": "Donaldson’s Q3 FY26 Earnings Conference Call Webcast",
+  "type": "earnings",
+  "date": "2026-06-02",
+  "date_precision": "day",
+  "body": "Skip to main content\nOverview\nFinancials\nQuarterly Results\nAnnual Reports\nSEC Filings\nStock Info\nStock Quote\nStock Chart\nHistorical Stock Quote\nDividend History\nAnalyst Coverage\nGovernance\nExecutive Management\nBoard of Directors\nCommittee Composition\nGovernance\nEvents & Presentations\nNews\nFinancials\nStock Info\nGovernance\nEvents & Presentations\nNews\nSearch query\nSearch\nOverview\nFinancials\nQuarterly Results\nAnnual Reports\nSEC Filings\nStock Info\nStock Quote\nStock Chart\nHistorical Stock Quote\nDividend History\nAnalyst Coverage\nGovernance\nExecutive Management\nBoard of Directors\nCommittee Composition\nGovernance\nEvents & Presentations\nNews\nOverview\nFinancials\nQuarterly Results\nAnnual Reports\nSEC Filings\nStock Info\nStock Quote\nStock Chart\nHistorical Stock Quote\nDividend History\nAnalyst Coverage\nGovernance\nExecutive Management\nBoard of Directors\nCommittee Composition\nGovernance\nEvents & Presentations\nNews\nSearch\nSearch query\nSearch\nSearch query\nOverview\nFinancials\nBack\nQuarterly Results\nAnnual Reports\nSEC Filings\nStock Info\nBack\nStock Quote\nStock Chart\nHistorical Stock Quote\nDividend History\nAnalyst Coverage\nGovernance\nBack\nExecutive Management\nBoard of Directors\nCommittee Composition\nGovernance\nEvents & Presentations\nNews\nEvent Details\nDonaldson’s Q3 FY26 Earnings Conference Call Webcast\n02 June 2026 9:00 AM CT\nWebcast\n(opens in new window)\nPress Release\n(opens in new window)\nPresentation\n(opens in new window)\nTranscript\n(opens in new window)"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "09461099-2367-484f-810a-d3d09fbfa104",
+  "n_chars": 1457,
+  "doc_url": "https://ir.donaldson.com/events-and-presentations/event-details/2026/Donaldsons-Q3-FY26-Earnings-Conference-Call-Webcast/default.aspx",
+  "source_url": "https://ir.donaldson.com",
+  "exchange_tags": []
+ }
+}

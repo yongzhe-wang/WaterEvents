@@ -1,0 +1,22 @@
+{
+ "id": "ev_104_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "AXAHY",
+   "ir_url": "https://www.axa.com/investor"
+  },
+  "title": "Half Year 2026 Earnings",
+  "type": "press_release",
+  "date": "2026-06",
+  "date_precision": "month",
+  "body": "July 31, 2026\n\n# Half Year 2026 Earnings\n\nOn track to deliver “Unlock the Future” plan targets.\n\n1 minute\n\n\"These results confirm AXA’s positioning as an all-weather company able to navigate changing market conditions. In P&C, our Retail and Commercial lines ex-XL businesses continued to expand their customer base while further improving their best-in-class margins. At AXA XL, earnings grew by +4%, demonstrating disciplined cycle management through agile redeployment towards the most profitable business lines. Life & Health earnings rose by +11%, reflecting the impact of management actions across the Health & Protection businesses and solid growth in earnings in our long-term savings business. This excellent performance shows the strength of our multi-line, globally diversified model, with growth in Life increasingly balancing the growth in P&C. We recorded sustained positive net flows in Life & Savings, which will support higher earnings generation over time. This performance was further amplified by continued progress on efficiency gains, notably from our technology and AI initiatives”, said Thomas Buberl.\n\nBuilding on this excellent momentum and the resilience of our diversified business, underpinned by prudent reserving and a high-quality investment portfolio, we are confident in our ability to deliver underlying earnings per share growth in 2026 at the upper end of our target range, and to sustain organic growth with strong profitability beyond the current plan.\n\n“I would like to thank all our colleagues, agents and partners for their commitment, as well as our customers for their continued trust,” concluded Thomas Buberl.\n\n## Tags:\n\n[In the News](https://www.axa.com/en/news#in-the-news)"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "6d1d7b6b-72bc-4306-a3e8-8443cccaa088",
+  "n_chars": 1721,
+  "doc_url": "https://www.axa.com/en/news/half-year-earnings-2026-news",
+  "source_url": "https://www.axa.com/en/investor/other-financial-presentations",
+  "exchange_tags": []
+ }
+}

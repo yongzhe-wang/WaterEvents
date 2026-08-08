@@ -1,0 +1,24 @@
+{
+ "id": "ev_047_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "OUST",
+   "ir_url": "https://investors.ouster.com"
+  },
+  "title": "Ouster Announces Upcoming Investor Events",
+  "type": "press_release",
+  "date": "2026-03-04",
+  "date_precision": "day",
+  "body": "## \n        Ouster Announces Upcoming Investor Events\n\n[ Ouster, Inc.](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fouster.com%2F&esheet=54438927&newsitemid=20260304709100&lan=en-US&anchor=Ouster%2C+Inc.&index=1&md5=bb166ac2f2e47219cf869dba65bc30fa) (Nasdaq: OUST) (“Ouster” or the “Company”), a leader in sensing and perception for Physical AI, today announced that Ouster management will participate in the following investor events:\n\n|\n\n38th Annual  | |\n\n|\n\nInstitutional investors interested in a meeting should contact their representative at either firm or email Ouster investor relations at [investors@ouster.io](mailto:investors@ouster.io).\n\n**About Ouster**\n\nOuster (Nasdaq: OUST) is a leader in sensing and perception for Physical AI across industrial, robotics, automotive, and smart infrastructure. With a unified platform of high-performance digital lidar, cameras, AI compute, sensor fusion and perception software, and AI models, Ouster delivers solutions that improve quality of life in the physical world. Headquartered in [www.ouster.com](https://cts.businesswire.com/ct/CT?id=smartlink&url=http%3A%2F%2Fwww.ouster.com&esheet=54438927&newsitemid=20260304709100&lan=en-US&anchor=www.ouster.com&index=2&md5=53a5f5864ded7fec117d060c195465ec), contact our [sales team](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fouster.com%2Ftalk-to-sales&esheet=54438927&newsitemid=20260304709100&lan=en-US&anchor=sales+team&index=3&md5=d19a1e28ebde63d5b33f1f6e72651f17), or connect with us on [X](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Ftwitter.com%2Fousterlidar&esheet=54438927&newsitemid=20260304709100&lan=en-US&anchor=X&index=4&md5=1b5e4b60b0aed627dcc4211a5df73bc2) or [LinkedIn](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fwww.linkedin.com%2Fcompany%2Fouster%2F&esheet=54438927&newsitemid=20260304709100&lan=en-US&anchor=LinkedIn&index=5&md5=0ff565ae5565645c6c6210653ccc5faa).\n\nView source version on [businesswire.com](http://businesswire.com): [https://www.businesswire.com/news/home/20260304709100/en/](https://www.businesswire.com/news/home/20260304709100/en/)\n\nFor Investors\n[investors@ouster.io](mailto:investors@ouster.io)\n\nFor Media\n[press@ouster.io](mailto:press@ouster.io)\n\nSource:"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "4c7dfa0e-a0e3-4034-b86a-8bcfa90bfeb6",
+  "n_chars": 2287,
+  "doc_url": "https://investors.ouster.com/news-releases/news-release-details/ouster-announces-upcoming-investor-events-0",
+  "source_url": "https://investors.ouster.com/news-events/news-releases?page=2",
+  "exchange_tags": [
+   "(Nasdaq: OUST)"
+  ]
+ }
+}

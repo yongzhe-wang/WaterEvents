@@ -1,0 +1,24 @@
+{
+ "id": "ev_061_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "PFSI",
+   "ir_url": "https://pfsi.pennymac.com/home/default.aspx"
+  },
+  "title": "PennyMac Financial Services, Inc. Announces Date for Release of Second Quarter 2025 Results",
+  "type": "press_release",
+  "date": "2025-07-15",
+  "date_precision": "day",
+  "body": "### PennyMac Financial Services, Inc. Announces Date for Release of Second Quarter 2025 Results\n\nWESTLAKE VILLAGE, Calif.--(BUSINESS WIRE)-- PennyMac Financial Services, Inc. (NYSE: PFSI) will announce results for the quarter ended June 30, 2025, in a news release to be issued after the market close on Tuesday, July 22, 2025. Management will also host a conference call and live audio webcast at 5:00 p.m. Eastern Time to review the results.\n\nThe release, webcast, and accompanying materials will be available online at [pfsi.pennymac.com](https://cts.businesswire.com/ct/CT?id=smartlink&url=http%3A%2F%2Fpfsi.pennymac.com&esheet=54290194&newsitemid=20250714275197&lan=en-US&anchor=pfsi.pennymac.com&index=1&md5=c4a1f860a70cf91165900d9a675693ad). A replay of the webcast will be available shortly after its conclusion.\n\nIndividuals who are unable to access the website but would like to receive a copy of the materials should contact our Investor Relations department at 818.264.4907.\n\n**About PennyMac Financial Services, Inc.**\n\nPennyMac Financial Services, Inc. is a specialty financial services firm focused on the production and servicing of U.S. mortgage loans and the management of investments related to the U.S. mortgage market. Founded in 2008, the company is recognized as a leader in the U.S. residential mortgage industry and employs approximately 4,200 people across the country. For the twelve months ended March 31, 2025, PennyMac Financial’s production of newly originated loans totaled $123 billion in unpaid principal balance, making it a top lender in the nation. As of March 31, 2025, PennyMac Financial serviced loans totaling $680 billion in unpaid principal balance, making it a top mortgage servicer in the nation. Additional information about PennyMac Financial Services, Inc. is available at [pfsi.pennymac.com](https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Fpfsi.pennymac.com%2Fhome%2Fdefault.aspx&esheet=54290194&newsitemid=20250714275197&lan=en-US&anchor=pfsi.pennymac.com&index=2&md5=cbbd3235c6753ed77bd7ba4e98939e94).\n\n**Media \n**\n\nKristyn Clark\n[mediarelations@pennymac.com \n](mailto:mediarelations@pennymac.com)\n\n805.395.9943\n\n**Investors \n**\n\nKevin Chamberlain\n\nIsaac Garden\n[PFSI_IR@pennymac.com \n](mailto:PFSI_IR@pennymac.com)\n\n818.264.4907\n\n**Multimedia Files:**"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "735cb1e5-323b-49a1-b1f4-9bcbcb515713",
+  "n_chars": 2321,
+  "doc_url": "https://pfsi.pennymac.com/news-events/press-releases/news-details/2025/PennyMac-Financial-Services-Inc--Announces-Date-for-Release-of-Second-Quarter-2025-Results/default.aspx",
+  "source_url": "https://pfsi.pennymac.com/news-events/press-releases/default.aspx",
+  "exchange_tags": [
+   "(NYSE: PFSI)"
+  ]
+ }
+}

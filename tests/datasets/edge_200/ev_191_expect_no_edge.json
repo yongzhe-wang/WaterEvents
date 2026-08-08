@@ -1,0 +1,22 @@
+{
+ "id": "ev_191_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "KVYO",
+   "ir_url": "https://investors.klaviyo.com/overview/default.aspx"
+  },
+  "title": "Klaviyo Q2 2026 Earnings",
+  "type": "webcast",
+  "date": "2024-11-06",
+  "date_precision": "day",
+  "body": "## Powering the Era of Autonomous Customer Experiences\n\nFounded in 2012, Klaviyo (CLAY-vee-oh) is the autonomous B2C CRM that powers more valuable customer experiences. Built on a flexible, scalable data platform, Klaviyo delivers intelligence that gets smarter with every interaction, and action across Marketing and Service to help businesses turn real-time customer data into personalization at scale. High-growth enterprises like Mattel, TaylorMade, Glossier, Liquid Death, Daily Harvest and 196,000+ customers leverage Klaviyo’s actionable infrastructure and our more than 350 integrations to deliver measurable outcomes through faster, higher-quality experiences.\n\n## Why Invest in Klaviyo\n\nin our platform\n\nThe AI era concentrates value\n\nin our platform\n\ncompounding at once\n\nMultiple growth engines\n\ncompounding at once\n\nwith upside ahead\n\nAn expanding market\n\nwith upside ahead\n\nstrengthened with every interaction\n\nDifferentiated data platform\n\nstrengthened with every interaction\n\naligned with customer success\n\nA durable and efficient business model\n\naligned with customer success\n\ndisciplined capital allocation\n\nStrong cash generation and\n\ndisciplined capital allocation\n\n## Q2 2026 Highlights\n\nCustomers\n\nRevenue\n\nRevenue Growth\n\nNon-GAAP Operating Margin"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "dadb9074-e86e-43a3-99fa-9022875e2bee",
+  "n_chars": 1270,
+  "doc_url": "https://cts.businesswire.com/ct/CT?id=smartlink&url=https%3A%2F%2Finvestors.klaviyo.com&esheet=54148134&newsitemid=20241106584777&lan=en-US&anchor=https%3A%2F%2Finvestors.klaviyo.com&index=2&md5=ac1231af8b0421245b0d4863686e88b8",
+  "source_url": "https://investors.klaviyo.com/newsroom/news/news-details/2024/Klaviyo-Announces-Third-Quarter-2024-Financial-Results/default.aspx",
+  "exchange_tags": []
+ }
+}

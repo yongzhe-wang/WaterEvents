@@ -1,0 +1,24 @@
+{
+ "id": "ev_021_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "QSR",
+   "ir_url": "https://www.rbi.com/English/investors/investor-home/default.aspx"
+  },
+  "title": "[Restaurant Brands International Inc. to Report Third Quarter 2017 Results on October 26, 2017]",
+  "type": "press_release",
+  "date": "2017-10-26",
+  "date_precision": "day",
+  "body": "OAKVILLE, ON, Oct. 19, 2017 /CNW/ - Restaurant Brands International Inc. (TSX/NYSE: QSR, TSX: QSP) will release its third quarter 2017 financial results on Thursday, October 26, 2017 and will host an investor conference call that morning at 8:30 a.m. Eastern Time.\n\nThe earnings call will be webcast on the company's investor relations website [http://investor.rbi.com](http://investor.rbi.com/) and a replay will be available for 30 days following the release. Investors may also access the conference call via the following dial-in numbers: (877) 317-6711 for U.S. callers, (866) 450-4696 for Canadian callers, and (412) 317-5475 for callers from other countries.\n\n**About Restaurant Brands International Inc.**\n\nRestaurant Brands International Inc. (\"RBI\") is one of the world's largest quick service restaurant companies with more than $28 billion in system-wide sales and over 23,000 restaurants in more than 100 countries and U.S. territories. RBI owns three of the world's most prominent and iconic quick service restaurant brands – TIM HORTONS®, BURGER KING®, and POPEYES®. These independently operated brands have been serving their respective guests, franchisees and communities for over 40 years. To learn more about RBI, please visit the company's website at [www.rbi.com](http://www.rbi.com/)[.](http://www.rbi.com/)\n\nSOURCE  Restaurant Brands International Inc."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "c0c845a3-c5e2-44ef-8803-ed00c3676631",
+  "n_chars": 1375,
+  "doc_url": "https://www.rbi.com/English/news/news-details/2017/Restaurant-Brands-International-Inc.-to-Report-Third-Quarter-2017-Results-on-October-26-2017/default.aspx",
+  "source_url": "https://www.rbi.com/English/news/default.aspx",
+  "exchange_tags": [
+   "(TSX/NYSE: QSR, TSX: QSP)"
+  ]
+ }
+}

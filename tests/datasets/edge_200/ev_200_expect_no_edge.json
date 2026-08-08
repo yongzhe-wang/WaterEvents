@@ -1,0 +1,22 @@
+{
+ "id": "ev_200_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "DIS",
+   "ir_url": "https://investors.thewaltdisneycompany.com/"
+  },
+  "title": "2026 Annual Meeting of Shareholders Webcast",
+  "type": "webcast",
+  "date": "2026-03-18",
+  "date_precision": "day",
+  "body": "Some states provide residents (or, in some cases, their authorized agents) with the right to opt out of “targeted advertising,” “selling,” or “sharing” of personal information. Please visit[Your US State Privacy Rights](https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/your-us-state-privacy-rights ), including the[Your California Privacy Rights]( https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/your-us-state-privacy-rights/#heading1) section, for more information about your rights and our privacy practices.\n\nAlways Active\n\nThese cookies and similar technologies are necessary for our services to function and cannot be switched off in our systems. They are usually only set by us or our vendors in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in, accessing, searching, or discovering content, verifying your entitlement to services, or filling in forms. You can set your browser to block, or alert you about, these cookies, but some parts of the site will not then work.\n\nWe may use personal information to support “targeted advertising,” “selling,” or “sharing,” as defined by applicable privacy laws, which may result in third parties receiving your personal information. **You or your legally authorized agent can move the toggle above to the left to opt out of these activities on this digital property consistent with applicable law.** Please note that, because these activities are based on online cookies, your opt-out choice is specific to this property. If you access other digital properties of the Walt Disney Family of Companies, you will need to make your election for each. Also, if you clear your cookies on this browser or use another browser or device, you may need to opt out again on this property.\n\nIn addition to the above toggle, you may choose to provide the information requested in this [opt-out form](https://usprivacy.disney.com/dnssmpi), which may enable us to take action on your opt-out election more broadly than just on this digital property.\n\nYou may also choose to enable online, where available, a universal tool that automatically communicates your opt-out preferences, such as the Global Privacy Control (“GPC”). We will process the GPC signal as a request to opt out.\n\nIf you opt out, you may continue to see advertising, including ads that may be based on personal information processed before you opted out.\n\nYou also may have rights to opt out from certain third parties selling and sharing your personal information. You will need to separately exercise your opt-out rights with regard to each, which you may do through this [IAB opt-out list](https://www.iabprivacy.com/optout.html). You may also wish to use other available online tools to limit various types of interest-based advertising or tracking. To learn more, visit [\"Do Not Sell or Share My Personal Information\" and \"Targeted Advertising\" Opt-Out Rights](https://privacy.thewaltdisneycompany.com/en/dnssmpi/).\n\n- label\n\nConsent Leg.Interest\n\nlabel\n\nlabel\n\nlabel"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "b8b6bd28-5eb4-4a2b-8b93-f1fba637ea4a",
+  "n_chars": 3083,
+  "doc_url": "https://investors.thewaltdisneycompany.com/events-and-presentations/event-details/2026/2026-Annual-Meeting-of-Shareholders-Webcast-2026-HKlTbRML8I/default.aspx",
+  "source_url": "https://investors.thewaltdisneycompany.com/",
+  "exchange_tags": []
+ }
+}

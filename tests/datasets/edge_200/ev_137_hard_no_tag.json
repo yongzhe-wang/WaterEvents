@@ -1,0 +1,22 @@
+{
+ "id": "ev_137_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "CRCL",
+   "ir_url": "https://investor.circle.com/overview/default.aspx"
+  },
+  "title": "Circle to Announce Q2 2026 Financial Results on August 5, 2026",
+  "type": "press_release",
+  "date": "2026-07-21",
+  "date_precision": "day",
+  "body": "Opt-Out Request Honored\n\nPlease note that Circle is not a data broker and does not disclose personal information in exchange for money. Circle discloses personal information to third parties for its targeted advertising and data analytics purposes. Based on broad legal definitions, these disclosures may be considered “selling” and/or “sharing” of personal information. To read more about Circle’s privacy practices, please visit our [Privacy Policy](https://www.circle.com/en/legal/privacy-policy).\n\nYou may opt out of such by pressing the “Opt Me Out” button.\n\nYou may opt out of such by pressing the “Opt Me Out” button.\n\nAlways Active\n\nThese cookies are necessary for the website to function and cannot be switched off in our systems. They are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or filling in forms. You can set your browser to block or alert you about these cookies, but some parts of the site will not then work.\n\nYou may opt out with one click by pressing the “Opt Me Out” button below.\n\nConsent Leg.Interest\n\nlabel\n\nlabel\n\nlabel"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "53f1844e-4bf0-4576-8e5d-68e2ca1bc93a",
+  "n_chars": 1147,
+  "doc_url": "https://investor.circle.com/news/news-details/2026/Circle-to-Announce-Q2-2026-Financial-Results-on-August-5-2026-2026-vg4WyxSo5i/default.aspx",
+  "source_url": "https://investor.circle.com/overview/default.aspx",
+  "exchange_tags": []
+ }
+}

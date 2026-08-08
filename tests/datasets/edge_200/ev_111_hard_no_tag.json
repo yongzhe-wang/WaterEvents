@@ -1,0 +1,22 @@
+{
+ "id": "ev_111_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "RTO",
+   "ir_url": "https://www.rentokil-initial.com/investors.aspx"
+  },
+  "title": "Appointment of Non-Executive Director",
+  "type": "press_release",
+  "date": "2024-09-25",
+  "date_precision": "day",
+  "body": "Media\n\n# Appointment of Non-Executive Director\n\n25 Sep 2024\n\nRentokil Initial plc (FTSE: RTO, \"the Company\") today announces the appointment of Brian Baldwin to its Board as a Non-Executive Director with effect from 1 October 2024. He will also become a member of the Nomination Committee and Remuneration Committee from this date.\n\nMr. Baldwin is the Head of Research of Trian Fund Management, L.P. (“Trian”), an investment management firm. Mr Baldwin has been a Trian Partner since 2013 and a member of Trian’s Investment Team since 2007. He has played leadership roles in many of Trian’s investments.\n\nMr. Baldwin has been a non-executive director of Janus Henderson Group plc since 2022 and currently serves on the Board’s Nominating and Corporate Governance Committee and the Risk Committee. From 2018 to 2020, he served as a director and member of the Compensation and Governance Committees of nVent Electric plc (formerly the electrical business of Pentair plc before becoming a standalone public company).\n\nPrior to joining Trian, Mr. Baldwin was an analyst at Merrill Lynch Global Private Equity from 2005 to 2007. Mr. Baldwin received a B.S. degree, summa cum laude, from The Wharton School at the University of Pennsylvania.\n\nRichard Solomons, Chairman of Rentokil Initial, said:\n\n\"We are delighted to welcome Brian to the Board of Rentokil Initial and we look forward to working with him to deliver long-term sustainable value for our shareholders and, in particular, executing our plans to integrate the Terminix business and to increase organic growth in our North America operations. We continue to work towards the substantial structural growth opportunities for our pest control business, enhanced by the benefits of the Terminix transaction.”\n\nBrian Baldwin said:\n\n\"I welcome the opportunity to join the Board of Rentokil Initial. Trian believes Rentokil has significant potential and runway for growth that can be achieved by leveraging its strong brands and market leading positions, particularly in the US. I look forward to working with management and the Board to identify options to help drive long-term value that will benefit all stakeholders.”\n\nTrian has confirmed to the Company that it manages investment vehicles owning approximately 57.1 million shares of Rentokil Initial (approximately 2.26% of shares outstanding).\n\nThere are no further details to be disclosed relating to Brian Baldwin under Section 6.4.8 of the UK Listing Rules.\n\nFor further information please contact:\n\nRentokil Initial plc\n\n[Back to 2024](https://www.rentokil-initial.com/)"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "4c11b6e8-8b44-422a-bc04-0906a9929264",
+  "n_chars": 2579,
+  "doc_url": "https://www.rentokil-initial.com/media/news-releases/2024/25-09-2024.aspx",
+  "source_url": "https://www.rentokil-initial.com/media/news-releases/2024.aspx",
+  "exchange_tags": []
+ }
+}

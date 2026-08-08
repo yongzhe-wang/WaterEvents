@@ -1,0 +1,22 @@
+{
+ "id": "ev_196_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "TWST",
+   "ir_url": "https://investors.twistbioscience.com/"
+  },
+  "title": "[UBS Global Healthcare Conference 2022]",
+  "type": "webcast",
+  "date": "2022-05-23",
+  "date_precision": "day",
+  "body": "en\n\nTwist's Whole Exome Library Preparation Workflow. Learn More >\n\nCheck out our new synthetic controls for liquid biopsy assay development\n\n- News and EventsFinancials\n- GovernanceResources\n\nInvestor Relations\n\nThe figures contained in the analyst consensus tables are a simple arithmetic average of the most recent forecasts that have been provided to Twist. The figures do not give greater weight to more recent forecasts or to the forecasts of any individual analyst.\n\nMoreover, the data has not been adjusted to exclude any submission.\n\nThe information is provided purely for convenience to users of our website, for information purposes only. This information is, by definition, forward-looking and is therefore subject to various risks and uncertainties which are subject to change at any time and may materially affect actual results or performance.\n\nThe consensus data is based on the analysts' opinions, forecasts, estimates, projections and predictions regarding Twist's performance.\n\nIt does not represent Twist's own views on its performance nor does Twist endorse or concur with any of such analysts’ opinions, estimates, forecasts or recommendations. Twist has not verified any of the information it has received and none of Twist, its affiliates or their respective directors, officers and employees make any representation or warranty, express or implied, as to, or accept any responsibility for, the accuracy or completeness of the consensus information. Twist does not assume any responsibility to update, revise or supplement such information.\n\nThe consensus data was last updated on November 20, 2025."
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "c3000786-334e-463b-8149-b6d2d26d689c",
+  "n_chars": 1623,
+  "doc_url": "https://investors.twistbioscience.com/events/event-details/ubs-global-healthcare-conference-2022",
+  "source_url": "https://investors.twistbioscience.com/events-and-presentations/events",
+  "exchange_tags": []
+ }
+}

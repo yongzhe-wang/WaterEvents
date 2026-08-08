@@ -1,0 +1,24 @@
+{
+ "id": "ev_025_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "EFXT",
+   "ir_url": "https://www.enerflex.com/investors/"
+  },
+  "title": "Enerflex Announces Election of Board of Directors",
+  "type": "press_release",
+  "date": "2020-05-08",
+  "date_precision": "day",
+  "body": "CALGARY, Alberta, May 08, 2020 (GLOBE NEWSWIRE) -- Enerflex Ltd. (TSX:EFX) (\"Enerflex\" or the \"Company\"), is pleased to announce that all of the nominees listed in its Management Information Circular dated March 9, 2020 were elected as directors of Enerflex until the next annual meeting of shareholders. The detailed results of the vote held earlier today are set out below.\n\n**Election of Directors **\n\nOn a vote by ballot, each of the following ten nominees proposed by management was elected as a director of Enerflex.  A total of 74,028,622 common shares, representing 82.55% of the shares outstanding, were represented in person and by proxy at the meeting.\n\n[[TABLE:1]]\n\n**About Enerflex **\n\nEnerflex Ltd. is a single source supplier of natural gas compression, oil and gas processing, refrigeration systems, and electric power generation equipment – plus related engineering and mechanical service expertise. The Company’s broad in-house resources provide the capability to engineer, design, manufacture, construct, commission, operate, and service hydrocarbon handling systems.  Enerflex’s expertise encompasses field production facilities, compression and natural gas processing plants, gas lift compression, refrigeration systems, and electric power equipment servicing the natural gas production industry.\n\nHeadquartered in Calgary, Canada, Enerflex has approximately 2,200 employees worldwide. Enerflex, its subsidiaries, interests in associates and joint-ventures operate in Canada, the United States, Argentina, Bolivia, Brazil, Colombia, Mexico, the United Kingdom, the United Arab Emirates, Oman, Bahrain, Kuwait, Australia, New Zealand, Indonesia, Malaysia, and Thailand. Enerflex’s shares trade on the Toronto Stock Exchange under the symbol “EFX”.  For more information about Enerflex, go to [www.enerflex.com](http://www.enerflex.com).\n\nFor investor and media inquiries, please contact:\n\nSource: Enerflex Ltd."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "fd4aa59e-a43c-442f-8efc-5763900bd0e4",
+  "n_chars": 1930,
+  "doc_url": "https://investors.enerflex.com/news-releases/news-release-details/enerflex-announces-election-board-directors-1",
+  "source_url": "https://investors.enerflex.com/news-releases?page=16",
+  "exchange_tags": [
+   "(TSX:EFX)"
+  ]
+ }
+}

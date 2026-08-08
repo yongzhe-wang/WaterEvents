@@ -1,0 +1,22 @@
+{
+ "id": "ev_140_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "CSTM",
+   "ir_url": "https://www.constellium.com/investors"
+  },
+  "title": "Constellium Partners with EOS to Accelerate Industrial Adoption of Aluminum Additive Manufacturing | Constellium",
+  "type": "press_release",
+  "date": "2026-07-07",
+  "date_precision": "day",
+  "body": "Business\n\nConstellium today announced a strategic partnership with [EOS](https://www.eos.info/), a leading supplier of industrial 3D printing solutions, to accelerate the development and industrial adoption of [advanced aluminum alloys for additive manufacturing](https://www.constellium.com/additive-manufacturing).\n\nLeveraging Constellium’s expertise in advanced aluminum alloy development and EOS’ leadership in additive manufacturing, the partnership complements Constellium’s broader network of collaborations across the additive manufacturing ecosystem and supports the industrialization of next-generation alloys. Together, the partners provide customers with access to validated materials, application expertise, and a faster path to commercialization. As the additive manufacturing market continues to expand, the partners are well-positioned to support manufacturers seeking to scale production, improve material performance, and unlock new business opportunities across industrial applications.\n\n“This collaboration with EOS helps accelerate the practical application of additive manufacturing across industries,” said Ludovic Piquier, Senior Vice President, Manufacturing Excellence and Chief Technical Officer at Constellium. “By expanding access to advanced aluminum additive manufacturing solutions, we are helping customers reduce qualification times, improve production efficiency, and develop new lightweight, high-performance applications.”\n\n“With our partnership with Constellium, we are setting a new benchmark for aluminum in additive manufacturing,” said Joachim Zettler, Chief Technology Officer, EOS. “Together, we are enabling higher performance, greater productivity, and faster industrial adoption for our customers.”\n\nAs part of the collaboration, EOS will add Aheadd® CP1 to its materials portfolio as EOS Aluminium Constellium CP1, while Constellium will work with EOS to accelerate industrialization of the Al5X1 alloy.\n\nDeveloped specifically for additive manufacturing, CP1 combines high strength, thermal conductivity, and excellent printability, making it well suited for applications such as heat exchangers, semiconductor equipment, and other mission critical parts. Al5X1 is a high-strength, high-elongation, heat-treatable, and anodizable aluminum alloy designed to meet the performance requirements of aerospace, transportation, and motorsport applications.\n\nCP1 will be available through EOS in August 2026."
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "c5deab00-bbeb-483f-87cd-e958753d23ba",
+  "n_chars": 2449,
+  "doc_url": "https://www.constellium.com/news/constellium-partners-with-eos-to-accelerate-industrial-adoption-of-aluminum-additive-manufacturing",
+  "source_url": "https://www.constellium.com/news",
+  "exchange_tags": []
+ }
+}

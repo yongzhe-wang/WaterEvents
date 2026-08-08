@@ -1,0 +1,24 @@
+{
+ "id": "ev_183_other_types",
+ "input": {
+  "company": {
+   "ticker": "MLI",
+   "ir_url": "https://ir.muellerindustries.com/"
+  },
+  "title": "Mueller Industries, Inc. Declares Cash Dividend for Second Quarter",
+  "type": "dividend",
+  "date": "2024-05-10",
+  "date_precision": "day",
+  "body": "# Mueller Industries, Inc. Declares Cash Dividend for Second Quarter\n\nCOLLIERVILLE, Tenn.--(BUSINESS WIRE)-- Mueller Industries, Inc. (NYSE: MLI) announced today that its Board of Directors has declared a regular quarterly cash dividend on its common stock of 20 cents per share. The dividend will be payable June 21, 2024 to shareholders of record on June 7, 2024.\n\n*Mueller Industries, Inc. (NYSE: MLI) is an industrial corporation whose holdings manufacture vital goods for important markets such as air, water, oil and gas distribution; climate comfort; food preservation; energy transmission; medical; aerospace; and automotive. It includes a network of companies and brands throughout North America, Europe, Asia, and the Middle East.*\n\nStatements in this release that are not strictly historical may be \"forward-looking\" statements, which involve risks and uncertainties. These include economic and currency conditions, continued availability of raw materials and energy, market demand, pricing, competitive and technological factors, and the availability of financing, among others, as set forth in the Company's SEC filings. The words \"outlook,\" \"estimate,\" \"project,\" \"intend,\" \"expect,\" \"believe,\" \"target,\" \"encourage,\" \"anticipate,\" \"appear,\" and similar expressions are intended to identify forward-looking statements. The reader should not place undue reliance on forward-looking statements, which speak only as of the date of this report. The Company has no obligation to publicly update or revise any forward-looking statements to reflect events after the date of this report.\n\nView source version on businesswire.com: [https://www.businesswire.com/news/home/20240509455357/en/](https://www.businesswire.com/news/home/20240509455357/en/)\n\nJeffrey A. Martin\n\n(901) 753-3226\n\nSource: Mueller Industries, Inc.\n\nReleased May 10, 2024"
+ },
+ "meta": {
+  "stratum": "other_types",
+  "db_event_id": "173e60a6-527f-48ba-bc93-345e640ec1cb",
+  "n_chars": 1846,
+  "doc_url": "https://ir.muellerindustries.com/news/press-releases/detail/173/mueller-industries-inc-declares-cash-dividend-for-second",
+  "source_url": "https://ir.muellerindustries.com/news/press-releases?page=3",
+  "exchange_tags": [
+   "(NYSE: MLI)"
+  ]
+ }
+}

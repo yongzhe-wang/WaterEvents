@@ -1,0 +1,24 @@
+{
+ "id": "ev_055_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "IRT",
+   "ir_url": "https://investors.irtliving.com/corporate-profile/default.aspx"
+  },
+  "title": "[Independence Realty Trust Announces Fourth Quarter 2017 Earnings Release Date and Conference Call]",
+  "type": "press_release",
+  "date": "2018-01-25",
+  "date_precision": "day",
+  "body": "PHILADELPHIA--(BUSINESS WIRE)--\n      Independence Realty Trust, Inc. (NYSE: IRT) (“IRT”) today announced that\n      it expects to release its fourth quarter 2017 financial results before\n      the U.S. stock market open on Tuesday, February 20, 2018, followed by\n      its quarterly results conference call on the same day, February 20,\n      2018, at 9:30 a.m. Eastern Time.\n\nThe live conference call can be accessed from the investor relations\n      section of the IRT website at [investors.irtliving.com](http://cts.businesswire.com/ct/CT?id=smartlink&url=http%3A%2F%2Finvestors.irtliving.com&esheet=51749235&newsitemid=20180125006376&lan=en-US&anchor=investors.irtliving.com&index=1&md5=933dda24ee4a915b97fddd437c0e2077)\n      or by dialing 1.844.775.2542, access code 5985018. A replay of the\n      conference call will be available shortly following the live call on the\n      investor relations section of IRT’s website and telephonically until\n      Tuesday, February 27, 2018 by dialing 1.855.859.2056, access code\n      5985018.\n\n**About Independence Realty Trust, Inc.**\n\nIndependence Realty Trust (NYSE: IRT) is a real estate investment trust\n      that owns and operates 54 multifamily apartment properties, totaling\n      14,733 units, across non-gateway U.S. markets, including Atlanta,\n      Louisville, Memphis, and Raleigh. IRT’s investment strategy is focused\n      on gaining scale within key amenity rich submarkets that offer good\n      school districts, high-quality retail and major employment centers. IRT\n      aims to provide stockholders attractive risk-adjusted returns through\n      diligent portfolio management, strong operational performance, and a\n      consistent return of capital through distributions and capital\n      appreciation.\n\n**Forward-Looking Statements**\n\nThis press release may contain certain forward-looking statements within\n      the meaning of Section 27A of the Securities Act of 1933, as amended,\n      and Section 21E of the Securities Exchange Act of 1934, as amended. Such\n      forward-looking statements can generally be identified by our use of\n      forward-looking terminology such as “will,” “strategy,” “expects,”\n      “seeks,” “believes,” “potential,” or other similar words. Because such\n      statements include risks, uncertainties and contingencies, actual\n      results may differ materially from the expectations, intentions,\n      beliefs, plans or predictions of the future expressed or implied by such\n      forward-looking statements. These forward-looking statements are based\n      upon the current beliefs and expectations of IRT’s management and are\n      inherently subject to significant business, economic and competitive\n      uncertainties and contingencies, many of which are difficult to predict\n      and generally not within IRT’s control. In addition, these\n      forward-looking statements are subject to assumptions with respect to\n      future business strategies and decisions that are subject to change.\n      These risks, uncertainties and contingencies include, but are not\n      limited to, those disclosed in IRT’s filings with the Securities and\n      Exchange Commission. IRT undertakes no obligation to update these\n      forward-looking statements to reflect events or circumstances after the\n      date hereof or to reflect the occurrence of unanticipated events, except\n      as may be required by law.\n\nView source version on [businesswire.com](http://businesswire.com): [http://www.businesswire.com/news/home/20180125006376/en/](http://www.businesswire.com/news/home/20180125006376/en/)\n\n**For Independence Realty Trust, Inc.**\n\nEdelman Financial\n      Communications & Capital Markets\n\nTed McHugh and Lauren Tarola,\n      212-277-4322\n\n[IRT@edelman.com](mailto:IRT@edelman.com)\n\nSource: Independence Realty Trust, Inc."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "d5384b50-e3b7-4180-a6c5-696ce14745ac",
+  "n_chars": 3829,
+  "doc_url": "https://investors.irtliving.com/press-releases/press-release/2018/Independence-Realty-Trust-Announces-Fourth-Quarter-2017-Earnings-Release-Date-and-Conference-Call/default.aspx",
+  "source_url": "https://investors.irtliving.com/press-releases/default.aspx",
+  "exchange_tags": [
+   "(NYSE: IRT)"
+  ]
+ }
+}

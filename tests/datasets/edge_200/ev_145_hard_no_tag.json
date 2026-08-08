@@ -1,0 +1,22 @@
+{
+ "id": "ev_145_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "AMIGY",
+   "ir_url": "https://www.admiralgroup.co.uk/investor-relations/overview/"
+  },
+  "title": "Admiral Group invests in HSBC Asset Management Fund, providing loans to UK mid-market businesses",
+  "type": "press_release",
+  "date": "2026-02-06",
+  "date_precision": "day",
+  "body": "## \n        Admiral Group invests in HSBC Asset Management Fund, providing loans to UK mid-market businesses\n\nAdmiral Group is announcing today that it has invested into HSBC Asset Management’s (HSBC AM) UK Direct Lending Fund, which invests in mid-market companies across the UK in partnership with HSBC UK Bank. The Fund is classified as Article 8 under the Sustainable Finance Disclosure Regulation, with Admiral Group upholding its commitment to making more sustainable long-term investments.\n\nThe Fund has provided vital capital to many UK businesses, including the school meal provider, Impact Food Group, and telecommunications hardware recycling business, TXO. This has enabled these businesses to expand their operations and customer base, whilst delivering good financial outcomes for Admiral and social benefits to local communities.\n\nImpact Food Group, in which the Fund invested in 2025, is a UK based food supplier which provides school meals of a high nutritional value whilst limiting food waste and reducing its carbon footprint.\n\nTXO is a provider of telecom asset recycling and other services which support the transition towards a circular economy by reducing waste. TXO’s services extend the life of critical equipment, lessening the environmental impact associated with production cycles.\n\nMid-market companies are the economic engine of the UK, fuelling local job creation and innovation. Investor capital committed to HSBC AM’s fund supports financing for these companies whilst delivering attractive returns to investors.\n\n**Geraint Jones, Admiral Group Chief Financial Officer:** “Our investment demonstrates our commitment to operating in a sustainable way and enables us to help even more people to look after their future by supporting businesses which make a significant impact in communities. It has been great to see the on-the-ground impact of the Fund and showcase that our investments can generate attractive financial returns and positive change for society.”\n\n**Frank Bandura, Impact Food Group Chief Financial Officer:** “We aim to transform lives through the power of food – ensuring that every meal we serve makes our students happy, better able to attend, focus and enjoy school and leads them to achieve better outcomes. The funding structure from HSBC and their investors has enabled our business to scale rapidly, furthering our impact on students.”\n\n**Deepak Seeburrun, Head of Global Insurance & Partnerships, HSBC Asset Management:** “We are incredibly proud of the success of our Direct Lending platform to date, and delighted to have the continued support of Admiral, alongside many other clients. Our partnership approach provides unique access to UK mid-market loans, combining the skill and experience of HSBC AM’s Direct Lending investment team, and the unparalleled market position of HSBC UK Bank.”\n\n**For media enquiries, please contact:**\n\nSophie Williams[Sophie.williams65@admiralgroup.co.uk](mailto:Sophie.williams65@admiralgroup.co.uk)"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "ab9b6778-9fdd-41b6-af71-c28bd03fcda2",
+  "n_chars": 2995,
+  "doc_url": "https://www.admiralgroup.co.uk/news-releases/news-release-details/admiral-group-invests-hsbc-asset-management-fund-providing-loans",
+  "source_url": "https://www.admiralgroup.co.uk/media/news-releases-and-media-contacts",
+  "exchange_tags": []
+ }
+}

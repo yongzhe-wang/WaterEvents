@@ -1,0 +1,22 @@
+{
+ "id": "ev_195_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "NUE",
+   "ir_url": "https://investors.nucor.com/overview/default.aspx"
+  },
+  "title": "[Nucor's Fourth Quarter of 2025 Earnings Call]",
+  "type": "webcast",
+  "date": "2025-Q4",
+  "date_precision": "quarter",
+  "body": "Press Option+1 for screen-reader mode, Option+0 to cancel\nAccessibility Screen-Reader Guide, Feedback, and Issue Reporting | New window\nIR Home\nCOMPANY OVERVIEW\nNews\nEvents & Presentations\nFinancials\nQuarterly Results\nAnnual Reports\nFinancial and Operating Statistics\nSEC Filings\nLeadership & ESG\nExecutive Team\nBoard of Directors\nESG Related Documents\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nStock Quote\nStock Chart\nStock Split History\nDividend History\nSearch query\nIR Home\nCOMPANY OVERVIEW\nNews\nEvents & Presentations\nFinancials\nQuarterly Results\nAnnual Reports\nFinancial and Operating Statistics\nSEC Filings\nLeadership & ESG\nExecutive Team\nBoard of Directors\nESG Related Documents\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nStock Quote\nStock Chart\nStock Split History\nDividend History\nSkip to main content\nBACK TO NUCOR.COM\nIR Home\nCOMPANY OVERVIEW\nNews\nEvents & Presentations\nFinancials\nQuarterly Results\nAnnual Reports\nFinancial and Operating Statistics\nSEC Filings\nLeadership & ESG\nExecutive Team\nBoard of Directors\nESG Related Documents\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nStock Quote\nStock Chart\nStock Split History\nDividend History\nSearch query\nSearch\nEvent Details\nIR Home\nCOMPANY OVERVIEW\nNews\nEvents & Presentations\nFinancials\nQuarterly Results\nAnnual Reports\nFinancial and Operating Statistics\nSEC Filings\nLeadership & ESG\nExecutive Team\nBoard of Directors\nESG Related Documents\nResources\nInvestor FAQs\nInformation Request Form\nInvestor Email Alerts\nStock Quote\nStock Chart\nStock Split History\nDividend History\nNucor's Fourth Quarter of 2025 Earnings Call\nJanuary 27, 2026\n10:00 AM ET\nAdd to Calendar\nAdd to Apple Calendar\nAdd to Google Calendar\nAdd to Microsoft Outlook\nAdd to iCalendar\nWebcast\nQ4 2025 Earnings Call Presentation\n(opens in new window)\nPDF\n1.48 MB"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "95af1d1c-1985-443d-8cfe-151a36ac59fa",
+  "n_chars": 1871,
+  "doc_url": "https://investors.nucor.com/events-and-presentations/events/event-details/2026/Nucors-Fourth-Quarter-2025-Earnings-Call/default.aspx",
+  "source_url": "https://investors.nucor.com/overview/default.aspx",
+  "exchange_tags": []
+ }
+}

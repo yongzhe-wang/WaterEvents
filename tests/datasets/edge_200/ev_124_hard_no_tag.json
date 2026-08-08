@@ -1,0 +1,22 @@
+{
+ "id": "ev_124_hard_no_tag",
+ "input": {
+  "company": {
+   "ticker": "KIGRY",
+   "ir_url": "https://www.kiongroup.com/en/Investor-Relations/"
+  },
+  "title": "Press Releases Detail",
+  "type": "press_release",
+  "date": "2022-12-05",
+  "date_precision": "day",
+  "body": "Executive and Supervisory Board are resonsible for the company.\n\n# KION GROUP AG: Hasan Dandashly, buy\n\n[back to Overview](javascript:window.history.back();)\n\n2023-03-13 / 13:58:56\n\n**1. Details of the person discharging managerial responsibilities / person closely associated**\n\na) Name\n\n**2. Reason for the notification**\n\na) Position / status\n\nb) Initial notification\n\n**3. Details of the issuer, emission allowance market participant, auction platform, auctioneer or auction monitor**\n\na) Name\n\nb) LEI\n\n**4. Details of the transaction(s)**\n\na) Description of the financial instrument, type of instrument, identification code\n\nb) Nature of the transaction\n\nc) Price(s) and volume(s)\n\n[[TABLE:1]]\n\nd) Aggregated information\n\ne) Date of the transaction\n\nf) Place of the transaction\n\n### Key figures at the Online Annual Report\n\n[back to Overview](javascript:window.history.back();)\n\nDo you have any questions?\n\nYour contact persons for all Investor Relations related topics.\n\n## Read more\n\nDiscover our vision for the future, our strategy and our values.\n\nWhy sustainable practices are a basis for our success.\n\nRead more about our focus topics innovation, automation, growth, sustainability and our people.\n\n[[TABLE:2]]"
+ },
+ "meta": {
+  "stratum": "hard_no_tag",
+  "db_event_id": "35c1f6ce-2d7e-4bad-af00-7d9a7feac312",
+  "n_chars": 1221,
+  "doc_url": "https://www.kiongroup.com/en/Investors/Events-Publications/Financial-News/Press-Releases-Detail.html?id=2464291&type=dd&title=KION%20GROUP%20AG:%20Hasan%20Dandashly,%20buy",
+  "source_url": "https://www.kiongroup.com/en/Investors/Events-Publications/Financial-News/",
+  "exchange_tags": []
+ }
+}

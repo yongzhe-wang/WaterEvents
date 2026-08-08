@@ -1,0 +1,26 @@
+{
+ "id": "ev_010_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "QSR",
+   "ir_url": "https://www.rbi.com/English/investors/investor-home/default.aspx"
+  },
+  "title": "Restaurant Brands International to Report First Quarter 2024 Results on April 30, 2024",
+  "type": "press_release",
+  "date": "2024-04-30",
+  "date_precision": "day",
+  "body": "TORONTO, April 2, 2024 /CNW/ - As previously announced, Restaurant Brands International Inc. (\"RBI\") (TSX: QSR) (NYSE: QSR) (TSX: QSP) will release its first quarter 2024 financial results on Tuesday, April 30, 2024. An investor conference call will be hosted that morning at 10:00 a.m. Eastern Time.\n\nThe earnings call will be webcast on the company's investor relations website ([https://rbi.com/investors](https://c212.net/c/link/?t=0&l=en&o=4130739-1&h=1668605595&u=https%3A%2F%2Fwww.rbi.com%2FEnglish%2Finvestors%2Fevents-and-presentations%2Fdefault.aspx&a=https%3A%2F%2Frbi.com%2Finvestors)) and a replay will be available for 30 days following the release. Investors may also access the conference call via the following dial-in numbers: 1 (833)-470-1428 for U.S. callers, 1 (833)-950-0062 for Canadian callers, and 1 (929)-526-1599 for callers from other countries. For all dial-in numbers please use the following access code: 967699.\n\n**About Restaurant Brands International Inc.**\n\nRestaurant Brands International Inc. is one of the world's largest quick service restaurant companies with over $40 billion in annual system-wide sales and over 30,000 restaurants in more than 120 countries and territories. RBI owns four of the world's most prominent and iconic quick service restaurant brands – Tim Hortons®, Burger King®, Popeyes®, and Firehouse Subs®. These independently operated brands have been serving their respective guests, franchisees and communities for decades. Through its *Restaurant Brands for Good* framework, RBI is improving sustainable outcomes related to its food, the planet, and people and communities. To learn more about RBI, please visit the company's website at __www.rbi.com__\n\nView original content to download multimedia:[https://www.prnewswire.com/news-releases/restaurant-brands-international-to-report-first-quarter-2024-results-on-april-30-2024-302104934.html](https://www.prnewswire.com/news-releases/restaurant-brands-international-to-report-first-quarter-2024-results-on-april-30-2024-302104934.html)\n\nSOURCE  Restaurant Brands International Inc."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "cf0aa0f8-1c2a-4b34-9e75-7fcfe1fb4ebb",
+  "n_chars": 2093,
+  "doc_url": "https://www.rbi.com/English/news/news-details/2024/Restaurant-Brands-International-to-Report-First-Quarter-2024-Results-on-April-30-2024/default.aspx",
+  "source_url": "https://www.rbi.com/news",
+  "exchange_tags": [
+   "(NYSE: QSR)",
+   "(TSX: QSP)",
+   "(TSX: QSR)"
+  ]
+ }
+}

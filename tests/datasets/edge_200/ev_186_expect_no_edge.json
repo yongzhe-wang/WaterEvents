@@ -1,0 +1,22 @@
+{
+ "id": "ev_186_expect_no_edge",
+ "input": {
+  "company": {
+   "ticker": "EMA",
+   "ir_url": "https://investors.emera.com/overview/default.aspx"
+  },
+  "title": "Emera Q4 2025 Analyst Conference Call",
+  "type": "webcast",
+  "date": "2026-02-23",
+  "date_precision": "day",
+  "body": "Skip to main content\nSkip to main content\nAbout Us\nCompanies\nSustainability\nCommunity\nOverview\nWhy Invest\nWhy Invest\nFinancial Footnotes\nNews\nEvents & Presentations\nStock Info\nStock Quote\nDividend History\nDividend Reinvestment Plan\nPreferred Shares\nAnalysts\nCredit Ratings\nFinancials\nQuarterly Results\nAnnual Reports\nSedar+ Filings\nSEC Filings\n2026 Annual Meeting\nResources\nInformation Request\nInvestor Email Alerts\nInvestor Relations Contacts\nOverview\nWhy Invest\nWhy Invest\nFinancial Footnotes\nNews\nEvents & Presentations\nStock Info\nStock Quote\nDividend History\nDividend Reinvestment Plan\nPreferred Shares\nAnalysts\nCredit Ratings\nFinancials\nQuarterly Results\nAnnual Reports\nSedar+ Filings\nSEC Filings\n2026 Annual Meeting\nResources\nInformation Request\nInvestor Email Alerts\nInvestor Relations Contacts\nSearch\nSearch query\nSearch\nSearch query\nOverview\nWhy Invest\nBack\nWhy Invest\nFinancial Footnotes\nNews\nEvents & Presentations\nStock Info\nBack\nStock Quote\nDividend History\nDividend Reinvestment Plan\nPreferred Shares\nAnalysts\nCredit Ratings\nFinancials\nBack\nQuarterly Results\nAnnual Reports\nSedar+ Filings\nSEC Filings\n2026 Annual Meeting\nResources\nBack\nInformation Request\nInvestor Email Alerts\nInvestor Relations Contacts\nAbout Us\nCompanies\nSustainability\nCommunity\nEvent Details\nEmera Q4 2025 Analyst Conference Call\nFebruary 23, 2026 8:30 AM ET\nWebcast\n(opens in new window)\nPresentation\n(opens in new window)\nTranscript\n(opens in new window)"
+ },
+ "meta": {
+  "stratum": "expect_no_edge",
+  "db_event_id": "3d8d360c-4a3a-4706-8038-72e14e03aded",
+  "n_chars": 1442,
+  "doc_url": "https://investors.emera.com/events-and-presentations/event-details/2026/Emera-Q4-2025-Analyst-Conference-Call/default.aspx",
+  "source_url": "https://investors.emera.com/overview/default.aspx",
+  "exchange_tags": []
+ }
+}

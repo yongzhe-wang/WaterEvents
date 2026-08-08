@@ -1,0 +1,24 @@
+{
+ "id": "ev_012_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "DY",
+   "ir_url": "https://ir.dycomind.com"
+  },
+  "title": "Dycom Industries, Inc. Announces Withdrawal of Proposed Senior Notes Offering",
+  "type": "press_release",
+  "date": "2019-12-06",
+  "date_precision": "day",
+  "body": "PALM BEACH GARDENS, Fla., Dec. 6, 2019 /[PRNewswire](http://www.prnewswire.com/)/ -- Dycom Industries, Inc. (NYSE: DY) (\"Dycom\") announced today that due to market conditions it has decided not to proceed with its previously announced proposed offering of $300.0 million aggregate principal amount of senior notes due 2027 and its proposed repurchase of up to $275.0 million principal amount of its outstanding 0.75% convertible senior notes due 2021. The convertible note hedge transactions and warrant transactions entered into in connection with the initial issuance of the convertible senior notes will remain in place in their initial amount.\n\nThis press release does not constitute an offer to sell or the solicitation of an offer to buy any of the securities described herein, nor shall there be any sale or purchase of any of the securities described herein in any state or jurisdiction in which such an offer, solicitation, sale or repurchase would be unlawful prior to the registration or qualification under the securities law of any such jurisdiction.\n\n**About Dycom Industries, Inc.**\n\nDycom is a leading provider of specialty contracting services throughout the United States. These services include program management; planning; engineering and design; aerial, underground, and wireless construction; maintenance; and fulfillment services for telecommunications providers. Additionally, Dycom provides underground facility locating services for various utilities, including telecommunications providers, and other construction and maintenance services for electric and gas utilities.\n\n**Safe Harbor for Forward-Looking Statements**\n\nThis press release contains forward-looking statements as contemplated by the 1995 Private Securities Litigation Reform Act. These statements are subject to change. Forward looking statements are based on management's current expectations, estimates and projections. These statements are subject to risks and uncertainties that may cause actual events or actual future results to differ materially from the expectations set forth in any forward-looking statements in this press release. The most significant of these risks and uncertainties are described in the Company's Form 10-K, Form 10-Q, and Form 8-K reports (including all amendments to those reports), and include the Company's ability to effectively execute its business and capital plans, business and economic conditions and trends in the telecommunications industry affecting the Company's customers, customer capital budgets and spending priorities, the adequacy of the Company's insurance and other reserves and allowances for doubtful accounts, whether the carrying value of the Company's assets may be impaired, preliminary purchase price allocations of acquired businesses, expected benefits and synergies of acquisitions, the future impact of any acquisitions or dispositions, adjustments and cancellations related to the Company's backlog, weather conditions, the anticipated outcome of other contingent events, including litigation, liquidity and other financial needs, the availability of financing, the Company's ability to generate sufficient cash to service its indebtedness, restrictions imposed by our credit agreement, and the other risks and uncertainties detailed from time to time in the Company's filings with the Securities and Exchange Commission. The forward-looking statements in this press release are qualified by these risk factors. Although Dycom believes that these forward-looking statements and information are based upon reasonable assumptions and expectations, readers should not place undue reliance on them, or any other forward-looking statements or information in this press release. If any of these risks or uncertainties materializes, Dycom's operating results and financial performance could suffer, and actual results could differ materially from the expectations described in these forward-looking statements. The Company does not undertake any obligation to update forward-looking statements.\n\nSOURCE Dycom Industries, Inc."
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "32c6bf42-e14a-4505-b8e1-d9f76b39f040",
+  "n_chars": 4075,
+  "doc_url": "https://ir.dycomind.com/news-releases/news-release-details/dycom-industries-inc-announces-withdrawal-proposed-senior-notes",
+  "source_url": "https://ir.dycomind.com/news?page=11",
+  "exchange_tags": [
+   "(NYSE: DY)"
+  ]
+ }
+}

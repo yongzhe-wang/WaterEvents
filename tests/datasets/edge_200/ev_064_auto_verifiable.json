@@ -1,0 +1,24 @@
+{
+ "id": "ev_064_auto_verifiable",
+ "input": {
+  "company": {
+   "ticker": "BANR",
+   "ir_url": "https://investor.bannerbank.com/overview/default.aspx"
+  },
+  "title": "Banner Corporation Announces Stock Repurchase Program",
+  "type": "press_release",
+  "date": "2026-08-03",
+  "date_precision": "day",
+  "body": "### Banner Corporation Announces Stock Repurchase Program\n\nWALLA WALLA, Wash.--(BUSINESS WIRE)-- Banner Corporation (NASDAQ: BANR) (“Company”), the parent company of Banner Bank, today announced that its Board of Directors has authorized the repurchase of up to 1.7 million shares of the Company’s common stock, which is approximately 5% of its issued and outstanding common stock.\n\n“We believe our stock represents an attractive value proposition, and that repurchasing shares is a sound way to build long-term value for our shareholders,” said Mark J. Grescovich, President and Chief Executive Officer. Under the repurchase program, shares may be repurchased by the Company in open market purchases. The extent to which the Company repurchases its shares and the timing of such repurchases will depend upon market conditions and other corporate considerations.\n\n**About the Company**\n\nBanner Corporation is a $16.59 billion bank holding company operating a commercial bank in four Western states through a network of branches offering a full range of deposit services and business, commercial real estate, construction, residential, agricultural and consumer loans. Visit Banner Bank on the Web at [www.bannerbank.com](https://cts.businesswire.com/ct/CT?id=smartlink&url=http%3A%2F%2Fwww.bannerbank.com&esheet=54582714&newsitemid=20260803244958&lan=en-US&anchor=www.bannerbank.com&index=1&md5=f203fceccb283d3680632c7d25dd1486).\n\n**Forward-Looking Statements**\n\n*This press release contains statements that the Company believes are “forward-looking statements.” These statements relate to the Company’s financial condition, results of operations, plans, objectives, future performance or business. You should not place undue reliance on these statements, as they are subject to risks and uncertainties, and actual results and performance in future periods may be materially different from any future results or performance suggested by the forward-looking statements in this release. Factors that might cause such differences include, but are not limited to, those identified in our risk factors contained in Banner Corporation’s Annual Report on Form 10-K for the fiscal year ended December 31, 2025. Such forward-looking statements speak only as of the date of this release. Banner Corporation expressly disclaims any obligation to update or revise any forward-looking statements found herein to reflect any changes in the Company’s expectations of results or any change in events.*\n\nMARK J. GRESCOVICH, PRESIDENT & CEO\n\nROBERT G. BUTTERFIELD, CFO\n\n(509) 527-3636"
+ },
+ "meta": {
+  "stratum": "auto_verifiable",
+  "db_event_id": "e2e023a9-a1e1-41b2-8cda-339347768ed1",
+  "n_chars": 2566,
+  "doc_url": "https://investor.bannerbank.com/news/news-details/2026/Banner-Corporation-Announces-Stock-Repurchase-Program/default.aspx",
+  "source_url": "https://investor.bannerbank.com/overview/default.aspx",
+  "exchange_tags": [
+   "(NASDAQ: BANR)"
+  ]
+ }
+}
