@@ -455,13 +455,42 @@ class Chart:
         return docs
 
     def confirm_metadata(self, title: str = "", date: str = "", type_: str = "") -> None:
-        """Fill any EMPTY metadata field from the detail page. Never overwrites an existing non-empty value — the
-        crawl-level title/date/type is trusted; the page only supplies what was missing."""
-        if not self.title and title:
+        """Take whatever the model returned for title/date/type. A NON-EMPTY value means "replace this".
+
+        用一句话讲完: 空字符串 = 模型说「已知值是对的,别动」;非空 = 模型说「已知值坏了,用这个」 —— 这个约定写在
+        prompt 里,而这个方法过去只认前半句,于是所有针对非空字段的修复都在这一行被丢掉。
+
+        THE CONTRACT IS THE PROMPT'S, and it is explicit in both directions:
+        {PROMPTS.PY SYSTEM_ROUTE "LEAVE A FIELD \"\" TO KEEP A VALUE THAT IS ALREADY CORRECT — BUT THE KNOWN VALUE IS
+         NOT ALWAYS CORRECT, AND WHEN IT IS PLAINLY BROKEN YOU MUST REPLACE IT. A KNOWN TITLE IS BROKEN WHEN IT IS
+         EMPTY, IS A BARE URL PATH SEGMENT OR FILE NAME …, IS AN ERROR OR BLOCK-PAGE NOTICE (\"ACCESS DENIED\", …)"}
+        Emptiness is the model's channel for "no change"; anything else is a judgement it was asked to make.
+
+        WHAT THIS REPLACES: `if not self.title and title` — fill-only. The prompt was changed to ask for repairs and
+        the database write was changed to record them, but this method between them was not, so every repair of a
+        NON-EMPTY field died here and neither of those two changes could ever be observed working.
+        The cost of that one missing edit, counted on production:
+        {psql 2026-08-07 — enriched events still holding a known-broken title: "拦截/错误页 | 1382 | 修过 0",
+         "URL 路径段 | 510 | 修过 0", "过短(<6 字符) | 63 | 修过 0" — 1,996 rows, 3 ever repaired}
+        {psql 2026-08-07 — 1,393 of those were enriched AFTER the repair prompt shipped}
+        The repairs that DID land are this bug's fingerprint: every logged example was an empty field being filled,
+        `"" → "Kontoor Brands Reports 2023 Second Quarter Results…"`, never a replacement.
+        The model was doing its job throughout — asked about that exact page it answers:
+        {VLM PROBE 2026-08-07, production system prompt + guided schema + token cap, on the GFL page whose stored
+         title was "ACCESS DENIED | INVESTORS.GFLENV.COM USED CLOUDFLARE TO RESTRICT ACCESS":
+         '{"PAGE_KIND": "EVENT", "TITLE": "GFL ENVIRONMENTAL REPORTS THIRD QUARTER 2024 RESULTS",
+           "DATE": "2024-11-06", "TYPE": "EARNINGS"}'}
+        [CONFIDENCE: CONFIRMED 100% — probe ran the production call shape against the live model; counts are from the
+         production database.]
+
+        Fill-and-append across MULTIPLE pages still holds: a later page returning "" cannot erase what an earlier page
+        established, because "" is never assigned.
+        """
+        if title.strip():
             self.title = title.strip()
-        if not self.date and date:
+        if date.strip():
             self.date = date.strip()
-        if not self.type and type_:
+        if type_.strip():
             self.type = type_.strip()
 
     # ── finalize ─────────────────────────────────────────────────────────────────────────────────────────────
