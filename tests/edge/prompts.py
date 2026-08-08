@@ -123,8 +123,11 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 
 ## edges —— 实体之间的关系
 - subject / object: 必须是上面 mentions 里的 name
-- predicate: 用自然的动词短语描述关系(divests_shareholding_in / acquires / owns / launches /
-  appoints / partners_with …), 不必套用固定词表
+- predicate: **一个简短的动词短语, 最多 4 个词**(divests_shareholding_in / acquires /
+  launches / appoints / partners_with ...), 不必套用固定词表。
+  不要把整句话写成 predicate —— 细节放进 attrs
+- object: **必须是另一个实体**。如果一句话只是公司在说自己(上调指引、宣布分红、公布业绩),
+  那它没有客体, **不要产这条边** —— 那是公司的属性不是关系
 - valid_at + valid_precision: 关系发生的时间。文中说 "2017" 就填 "2017"+year, 说
   "since 2019" 就填 "2019"+year。**不要把年份补成某一天**
 - attrs: 比例、金额、条件状态等原样记录, 如 {{"stake":"19.95%","status":"pending_regulatory_approval"}}
@@ -135,7 +138,9 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 2. 只写这段文字**说了**的。不要补充你知道但文中没说的事(比如你知道某公司在纽交所上市, 但文中没写, 就不要写)。
 3. 读不出任何关系时, edges 给空数组, 并在 no_edge_reason 里说明原因。**不要为了凑数硬造边。**
    大多数事件(季报、年会、网播预告)本来就没有关系可抽, 那是正常的。
-4. 标题说的事和正文说的事明显不是一回事时, title_body_mismatch 填 true。
+4. title_body_mismatch: 对比标题和正文**讲的是不是同一件事**。
+   例: 标题 "[Shuttle traffic in January 2026]" 而正文通篇在讲 "targets EUR1 billion EBITDA by 2030"
+   —— 这是两件不同的事, 填 true。抓取时可能抓到了列表页或另一篇稿, 这个标记是唯一的线索。
 
 只输出 JSON, 不要任何解释文字。
 """

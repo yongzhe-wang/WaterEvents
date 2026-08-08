@@ -23,21 +23,38 @@ from __future__ import annotations
 import re
 import unicodedata
 
-# 归一化: 统一各种引号/破折号 → 压 markdown 强调符 → 拆 [text](url) 只留 text → 压空白。
+# 归一化: 统一引号/破折号 → 拆 [text](url) → 去脚注编号 → 压强调符 → 去孤立列表符 → 压空白。
 # 顺序有讲究: 先拆链接再压符号, 否则 [**x**](u) 会剩下孤立的括号。
 _LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+# 脚注编号 [1] / [12]。真实正文里它会插在句子【中间】:
+#   "...consolidated EBITDA of EUR1 billion**- [1]- **by 2030."
+# 模型很合理地跳过它读出连贯句子; 若不在归一化里去掉, 正确的抽取会被当成幻觉丢弃。
+# {ev_001 实测 模型 evidence "...of EUR1 billion by 2030." vs 正文 "...of EUR1 billion- [1]- by 2030."}
+# [CONFIDENCE: CONFIRMED 100% — 首轮 3 条试跑, ev_001 的 2 条边全因此被误杀]
+_FOOTNOTE = re.compile(r"\[\d{1,3}\]")
 _EMPH = re.compile(r"[*_`~#]+")
+# 去掉脚注/强调符后会剩下孤立的 "- " 列表符, 一并压掉。
+# 只压【被空白包围的】连字符 —— 不能动 "Otter-Tail" 这类词内连字符。
+_DASH = re.compile(r"(?<=\s)-+(?=\s)|^-+\s|\s-+$")
 _WS = re.compile(r"\s+")
-_QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"',
-                         "–": "-", "—": "-", " ": " "})
+_QUOTES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+                         "\u2013": "-", "\u2014": "-", "\u00a0": " "})
 
 
 def norm(s: str) -> str:
-    """把一段文字压成可比对的形态。两边用同一个函数, 所以不会单方面放宽。"""
+    """把一段文字压成可比对的形态。两边用同一个函数, 所以不会单方面放宽。
+
+    这里放宽的只是【排版噪声】(markdown 标记、脚注编号、列表符), 不是内容 ——
+    实词、数字、顺序全部保留, 所以「evidence 必须是原文」这个要求没有被削弱。
+    """
     s = unicodedata.normalize("NFKC", s or "")
     s = s.translate(_QUOTES)
     s = _LINK.sub(r"\1", s)            # [text](url) → text
-    s = _EMPH.sub("", s)               # 去掉 markdown 强调符
+    s = _FOOTNOTE.sub(" ", s)          # [1] 脚注编号 → 空白
+    # ★ 替换成空格而非删除: "billion**- [1]- **by" 若直接删 ** 会得到 "billion- - by",
+    # 破折号紧贴单词导致 _DASH 的空白断言失配;替换成空格才能让它被正常吃掉。
+    s = _EMPH.sub(" ", s)              # markdown 强调符 → 空格
+    s = _DASH.sub(" ", s)              # 去掉孤立的列表破折号(保留词内连字符)
     return _WS.sub(" ", s).strip().lower()
 
 

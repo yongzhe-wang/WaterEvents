@@ -30,8 +30,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 
-import psycopg2
-from psycopg2.extras import RealDictCursor
+# asyncpg 而非 psycopg2 —— 生产机上只装了它(ir-media-8 实测),且项目统一走这个驱动。
+# {backend/agent/event_agent/storage/events.py:89 "asyncpg.create_pool(..., statement_cache_size=0"}
+import asyncpg
 
 # water-graph 的图谱库(不是 WaterEvents 事件库)—— 候选实体在这。
 _GRAPH_DSN = os.environ.get("GRAPH_DSN", "")
@@ -82,7 +83,7 @@ def _clean_keys(keys: list[str]) -> list[str]:
     return out[:3]
 
 
-def _query(cur, keys: list[str], how: str) -> list[dict]:
+async def _query(conn, keys: list[str], how: str) -> list[dict]:
     """按 keys 查 node_entity。how='and' 取交集, how='or' 取单键。
 
     带上 kind 和 cik 是给 Step 3 判断用的 —— 光看名字分不出两个同名的
@@ -93,19 +94,20 @@ def _query(cur, keys: list[str], how: str) -> list[dict]:
     if not keys:
         return []
     joiner = " and " if how == "and" else " or "
-    where = joiner.join(["n.name ilike %s"] * len(keys))
+    # asyncpg 用 $1/$2 位置参数, 不是 %s
+    where = joiner.join([f"n.name ilike ${i + 1}" for i in range(len(keys))])
     # limit 给到 K*B_MAX+1 —— 多取一条就能判断「是否超限」, 不必 count(*) 再查一遍
-    cur.execute(
+    rows = await conn.fetch(
         f"""select n.cik as entity_id, n.name, n.kind
               from node_entity n
              where {where}
              limit {K * B_MAX + 1}""",
-        [f"%{k}%" for k in keys],
+        *[f"%{k}%" for k in keys],
     )
-    return [dict(r) for r in cur.fetchall()]
+    return [dict(r) for r in rows]
 
 
-def recall_one(cur, mention: dict) -> RecallResult:
+async def recall_one(conn, mention: dict) -> RecallResult:
     """对一个 mention 做召回 → 分块。
 
     上游: Step 1 的 mentions[]。下游: Step 3 逐块判断。
@@ -120,13 +122,13 @@ def recall_one(cur, mention: dict) -> RecallResult:
         return RecallResult(name, [], 0, note="no usable search key")
 
     # ① AND 交集: 多个词同时命中 → 天然收窄, 不需要相似度排序
-    rows = _query(cur, keys, "and") if len(keys) > 1 else _query(cur, keys, "or")
+    rows = await (_query(conn, keys, "and") if len(keys) > 1 else _query(conn, keys, "or"))
 
     # ② 交集为空 → 退化到「召回条数最少」的那个 key(最有区分度的那个)
     if not rows and len(keys) > 1:
         best, best_rows = None, None
         for k in keys:
-            r = _query(cur, [k], "or")
+            r = await _query(conn, [k], "or")
             if best_rows is None or len(r) < len(best_rows):
                 best, best_rows = k, r
         rows, keys = (best_rows or []), [best or keys[0]]
@@ -143,7 +145,7 @@ def recall_one(cur, mention: dict) -> RecallResult:
     return RecallResult(name, keys, n, blocks=blocks)
 
 
-def recall_event(mentions: list[dict]) -> list[RecallResult]:
+async def recall_event(mentions: list[dict]) -> list[RecallResult]:
     """一个事件的全部 mention 一次性召回(共用一个连接)。
 
     上游: edge_run.py 拿到 Step 1 输出后调用。
@@ -151,11 +153,10 @@ def recall_event(mentions: list[dict]) -> list[RecallResult]:
     """
     if not _GRAPH_DSN:
         raise RuntimeError("GRAPH_DSN 未设置 —— 指向 water-graph 图谱库")
-    conn = psycopg2.connect(_GRAPH_DSN)
+    conn = await asyncpg.connect(_GRAPH_DSN, statement_cache_size=0)
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # 会话级放宽: 默认 2 分钟对 78,467 行的 ILIKE 够用, 但通用词会扫全表
-            cur.execute("set statement_timeout = '2min'")
-            return [recall_one(cur, m) for m in mentions]
+        # 会话级放宽: 默认 2 分钟对 78,467 行的 ILIKE 够用, 但通用词会扫全表
+        await conn.execute("set statement_timeout = '2min'")
+        return [await recall_one(conn, m) for m in mentions]
     finally:
-        conn.close()
+        await conn.close()
