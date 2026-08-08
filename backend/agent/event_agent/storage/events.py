@@ -229,6 +229,19 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                   -- DATABASE are different decisions, and only the first is needed to stop the waste.
                   -- [CONFIDENCE: CONFIRMED 100% — count read from production; one such nav-menu body was read in full.]
                   AND jsonb_array_length(media_urls) > 0
+                  -- AND the same rule for an event whose ONLY url IS the listing page. The crawler no longer records
+                  -- one, but 110 such rows predate that change, and stopping their CREATION did nothing about their
+                  -- CLAIMING: each time one is picked up, stage-2 renders the hub again and stores the navigation menu
+                  -- again. An audit run after the first backfill found 167 fresh hub-sourced documents that had
+                  -- appeared in exactly that way, still arriving:
+                  -- {psql 2026-08-08 "d.url = e.source_url → 168 份, 其中 167 份产生于回填之后"}
+                  -- {psql 2026-08-08 "stepstonegroupinc.gcs-web.com/events/event-details | 533 字"} — a listing page,
+                  --  stored as an event's body.
+                  -- Enforced HERE rather than by cleaning the 110 rows, because a data fix closes the population that
+                  -- exists today while a predicate closes the shape forever — and the audit also found 2 such rows
+                  -- created after the crawler fix, so the shape is demonstrably not closed.
+                  -- [CONFIDENCE: CONFIRMED 100% — both counts and the sample document came from the live database.]
+                  AND NOT (jsonb_array_length(media_urls) = 1 AND media_urls->>0 = source_url)
                 -- enrich_priority first: a chosen batch (a test set, a customer's backlog) is pushed to the front
                 -- without disturbing anything else. Every row defaults to 0, so with no batch enqueued this orders
                 -- exactly as it did before. next_retry_at stays the tiebreaker so backed-off failures still sink

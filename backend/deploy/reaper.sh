@@ -90,4 +90,30 @@ ev=$("$PSQL" "$DSN" -t -A -c \
                WHERE status='rendering' AND lease_until < now() RETURNING 1)
    SELECT count(*) FROM u" 2>/dev/null | tr -d ' ')
 [ "${ev:-0}" != "0" ] && echo "reaper: reclaimed $ev stalled event lease(s)" || true
-[ "$out" = "0" ] && [ "${ev:-0}" = "0" ] && echo "reaper: nothing to reclaim" || true
+
+# STAGE 3 — RETIRE EVENTS THAT HAVE NOTHING TO FETCH. An event whose media_urls is `[]`, or whose only url IS its own
+# listing page, can never produce content. claim_events already refuses to claim either shape, so correctness is
+# already safe — but refusing to CLAIM them does not move them OUT of `discovered`, and they accumulate there as
+# permanent phantom backlog.
+#
+# 用一句话讲完: claim 谓词让它们永远不被认领,却没让它们离开 discovered —— 于是它们变成一堆永远不会减少的假积压。
+#
+# This has to be a RECURRING sweep rather than the one-shot UPDATE that first cleared them, because the population is
+# not closed: an audit two hours after that backfill found the count had grown again.
+# {psql 2026-08-08 backfill "UPDATE 7227" → 队列干净} then {psql 2026-08-08 audit "零url · discovered | 415"}
+# {psql 2026-08-08 audit "jsonb_array_length(media_urls)=1 AND media_urls->>0=source_url → 110, 其中 2 个建于修复之后"}
+# The row itself is KEPT — its title and date came off a text-only IR calendar and are real data. What changes is the
+# status telling the truth about it: not "waiting to be enriched", but "nothing here to enrich".
+# [CONFIDENCE: CONFIRMED 100% — both counts read from the live database, the second one after the first fix had run.]
+nc=$("$PSQL" "$DSN" -t -A -c \
+  "WITH u AS (UPDATE waterevents.events
+                 SET status='deferred', fail_reason='deferred:no-content-url',
+                     claim_token=NULL, lease_until=NULL, next_retry_at=NULL
+               WHERE status IN ('discovered','failed')
+                 AND (jsonb_array_length(media_urls) = 0
+                      OR (jsonb_array_length(media_urls) = 1 AND media_urls->>0 = source_url))
+               RETURNING 1)
+   SELECT count(*) FROM u" 2>/dev/null | tr -d ' ')
+[ "${nc:-0}" != "0" ] && echo "reaper: retired $nc event(s) with no fetchable url" || true
+
+[ "$out" = "0" ] && [ "${ev:-0}" = "0" ] && [ "${nc:-0}" = "0" ] && echo "reaper: nothing to reclaim" || true
