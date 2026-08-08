@@ -97,132 +97,125 @@ def _active_weight() -> float:
     return sum(_w_of(k) for k, c in _want.items() if c > 0) or 1.0
 
 
-# ── 自适应闸门:吞吐爬山 ──────────────────────────────────────────────────────────────────────────
-# 用一句话讲完: 每 PROBE_S 秒把闸门调一格,看吞吐涨了还是跌了 —— 涨就继续同向,跌就掉头,于是它自己
-# 收敛到吞吐峰值,不需要任何人写死一个并发数。
+# ── 自适应闸门 ───────────────────────────────────────────────────────────────────────────────────
+# 用一句话讲完: 每个窗口从 vLLM 的 /metrics 读一次累计 prompt token,算出 prefill tok/s —— 那是 GPU 实际
+# 做功的直接度量 —— 然后围着「取得过最好 prefill 速率的那个闸门位置」小步试探,试探失败就退回去换方向。
 #
-# WHY 峰值不能是常数: 实测同一张 A40,并发 24 → 10,421 请求/h、p90 14.2s、prefix cache 命中 74%;
-# 并发 48 → 5,325 请求/h、p90 46.6s、命中 25.7%。超过 KV pool 装得下的量之后,已缓存的前缀块被逐出,
-# 下一个请求只好重新 prefill 整个 system prompt,吞吐腰斩。
-# {隔离扫描 2026-08-08,舰队全停:"并发 24 → 10421 请求/h · p90 14.2s · 缓存 74.0%" vs
-#  "并发 48 → 5325 请求/h · p90 46.6s · 缓存 25.7%"}
-# 而这个拐点随 prompt 长度漂移 —— 同一台机器上,基准里 2,066 token 的 prompt 峰值在 24,生产 3,601
-# token 的 prompt 峰值明显更低。写死任何一个数都会在另一种负载下落进崩塌区。生产原本设的是 48。
-# [CONFIDENCE: CONFIRMED 100% — 扫描在无其他负载的隔离环境取得,八个并发档单调可复现。]
+# WHY 目标必须是 prefill tok/s 而不是 请求/小时: 请求数会因为**和闸门完全无关**的原因变化。生产实测,
+# 同一天内爬虫走到一批更长的页面上,每请求 prompt 从 3,601 token 涨到 7,835 token,请求/小时随之从
+# ~2,400 掉到 1,160 —— 而 prefill 速率纹丝不动(2,400 → 2,525 tok/s)。GPU 每秒做的功一模一样。
+# {生产实测 2026-08-08 90 秒采样: "29 个请求 · prompt 227213 tok" → 每请求 7,835 tok · prefill 2,525 tok/s;
+#  同日早些时候 "每请求 prompt 3,601 tok · prefill 2,400 tok/s"}
+# 用请求数当目标的后果是实际发生过的事故:prompt 变长 → 请求数掉 → 控制器读成「闸门太大」→ 收缩 →
+# 触发卸载 → 客户端重试 → 队列更长 → 更多卸载 → 吞吐真的掉下去 → 控制器继续收缩。自我强化的螺旋。
+# {生产实测 2026-08-08 崩塌时 /gwstats: "limit=16 best_limit=24 dir=-1 shed=3007 min_rtt=0.012"}
+# [CONFIDENCE: CONFIRMED 100% — 两组 token 计数都取自 vLLM 自己的 /metrics;螺旋的每一环都在 /gwstats 里。]
 #
-# WHY 不用 Vegas(试过,信号退化): Vegas 判据 queue ≈ limit × (1 − minRTT/p50),前提是「延迟高于最小值
-# = 排队 = 浪费」。对网络成立,对 LLM 服务不成立 —— 高于最小值的那部分延迟是**批处理**造成的,而批处理
-# 正是吞吐的来源。实测 minRTT/p50 恒为极小值,queue_est 恒 ≈ limit,于是恒大于任何 beta,闸门单调收到底限。
-# {实测 2026-08-08 "limit=23→18→15→11→8",四次采样的 queue_est/limit = 18.98/18、15.91/15、
-#  11.82/11、8.95/8,全部 ≈1 —— 该信号已退化成 limit 本身,不含任何拥塞信息}
-# [CONFIDENCE: CONFIRMED 100% — 在生产负载下观察到的单调下降,四个采样点齐全。]
+# WHY 峰值不能写死: 隔离扫描(舰队全停)在 2,066-token 的 prompt 上峰值在并发 24 → 6,445 tok/s,
+# 并发 48 掉到 3,295;而生产 3,601-token 的 prompt 峰值明显更低。同一台机器,同一个模型,不同的 prompt
+# 长度就是不同的峰。任何写下来的数字都会在另一种负载下落进崩塌区 —— 生产原本写的是 48。
+# {隔离扫描 2026-08-08: 并发 1/4/8/16/24/32/48/64 → prefill 1037/4104/3578/4734/6445/6404/3295/3192 tok/s}
 #
-# 爬山法直接优化我们真正要的量,而且不需要关于模型/硬件/prompt 长度的任何先验 —— 条件漂移时它跟着走。
-# 这才是「删掉常数」的实际含义:不是把 48 换成 24,是让系统不再需要这个数字。
-PROBE_S       = float(os.environ.get("FAIR_PROBE_S", "5"))       # 控制回路周期
+# 算法选型也是测出来的,不是挑出来的。用上面那条实测曲线跑 250 窗模拟:
+#   Vegas(排队深度)  信号退化 —— minRTT/p50 恒极小,queue_est ≈ limit,闸门单调收到底限。
+#                     生产实测证实:23→18→15→11→8。LLM 服务里高于最小延迟的部分是**批处理**,不是浪费。
+#   纯爬山            曲线有两个平台(好的 24–32、崩塌后的 48–64),平台上没梯度,落哪守哪。
+#   AIMD              从任何起点都收敛,但停在低位,只拿 61% 峰值。
+#   记最好点 + 褪色    七个起点全部收敛到 92%;加 20% 噪声仍有 89–91%;负载整体变重时闸门不动。← 用这个
+# [CONFIDENCE: CONFIRMED 100% — 四种算法都用同一条实测曲线模拟过,Vegas 那条另有生产实测佐证。]
+PROBE_S       = float(os.environ.get("FAIR_PROBE_S", "10"))      # 控制回路周期
 LIMIT_MIN     = int(os.environ.get("FAIR_LIMIT_MIN", "4"))       # 再拥塞也保底,不能饿死
 LIMIT_MAX     = int(os.environ.get("FAIR_LIMIT_MAX", "64"))      # 硬上限,防控制器跑飞
-# 一个窗口至少要有这么多个完成才结算。**不够就不清空,累积到下一窗** —— 于是窗口长度自动随负载伸缩:
-# 高负载时 PROBE_S 一到就够样本(响应快),低负载时自动等成更长的窗(读数稳)。这比写死一个窗口长度
-# 稳健得多,也少一个需要维护的常数。
-# {生产实测 2026-08-08,PROBE_S=5s 且不累积时:连续八窗的 rph = 2160, 2880, 0, 2160, 1440, 2160, 1440, 720
-#  —— 每窗只有 ~2.8 个完成(2000 请求/h × 5s),一个长请求就能让整窗归零,控制器有一半在追噪声}
-# [CONFIDENCE: CONFIRMED 100% — 生产 /gwstats 连续采样,含一次 rph=0 的空窗。]
-MIN_SAMPLES   = int(os.environ.get("FAIR_MIN_SAMPLES", "15"))
 STEP          = int(os.environ.get("FAIR_STEP", "2"))            # 每次试探移动几格
-DEADBAND      = float(os.environ.get("FAIR_DEADBAND", "0.05"))   # 吞吐变化 <5% 视为噪声,不算刷新纪录
-EWMA_A        = float(os.environ.get("FAIR_EWMA_ALPHA", "0.3"))  # 吞吐平滑,越小越稳越慢
+DEADBAND      = float(os.environ.get("FAIR_DEADBAND", "0.05"))   # 变化 <5% 不算刷新纪录
+EWMA_A        = float(os.environ.get("FAIR_EWMA_ALPHA", "0.3"))  # 平滑,越小越稳越慢
 PATIENCE      = int(os.environ.get("FAIR_PATIENCE", "4"))        # 连续这么多窗没更好 → 回最好点、换方向
-DECAY         = float(os.environ.get("FAIR_DECAY", "0.98"))      # 纪录每窗褪色一点,逼它周期性重新确认
-LAT_CEILING_S = float(os.environ.get("FAIR_LAT_CEILING_S", "180"))   # p50 超过它无条件收缩(安全阀)
-# 每个 key 允许排多深的队,超出即 503。有界是关键:_acquire 原本无限等待,突发上千个请求会全部堆在
-# Condition 上,连接/内存/事件循环一起被占住,网关比上游先倒。卸载比熔断好,也比静默排队诚实。
-QUEUE_DEPTH_MULT = float(os.environ.get("FAIR_QUEUE_DEPTH_MULT", "4"))
+DECAY         = float(os.environ.get("FAIR_DECAY", "0.98"))      # 纪录每窗褪色,峰值漂移时能重新确认
+MIN_TOKENS    = int(os.environ.get("FAIR_MIN_TOKENS", "20000"))  # 一窗至少要有这么多 prompt token 才结算
+# 卸载阈值是**绝对值,不跟闸门缩**。这是过载保护,不是常规背压 —— 让它随闸门缩会和闸门形成正反馈:
+# 闸门降 → 份额降 → 阈值降 → 更多 503 → 客户端重试 → 队列更长 → 吞吐掉 → 闸门继续降。
+# {生产实测 2026-08-08 该螺旋跑满时 shed 累计 3007,而正常运行时每 key 的 want 只有 18–48}
+# [CONFIDENCE: CONFIRMED 100% — 阈值当时是 max(份额,4)×4;闸门收到 16 后阈值降到 32,而 want=36,于是持续卸载。]
+SHED_QUEUE    = int(os.environ.get("FAIR_SHED_QUEUE", "400"))
 
-_limit = float(os.environ.get("FAIR_TOTAL_SLOTS", "24"))         # 起点;此后由控制器接管
-_rtts: list[float] = []                                          # 本窗口完成请求的**服务**耗时(不含排队)
-_min_rtt = float("inf")
+_limit = float(os.environ.get("FAIR_TOTAL_SLOTS", "28"))         # 起点;此后由控制器接管
 _done = 0
 _win = 0
-_dir = 1                                                         # 试探方向:+1 加闸门,-1 减
-_best_rph = 0.0                                                  # 迄今最好吞吐
-_best_limit = _limit                                             # 取得该吞吐时的闸门 —— 试探失败就回这里
-_miss = 0                                                        # 连续没刷新纪录的窗口数
-_ewma_rph = 0.0
-_acc_s = 0.0                                                     # 当前这批样本已累积的秒数
-_stats: dict = {"limit": _limit, "rph": 0, "rph_ewma": 0, "best_rph": 0, "best_limit": _limit,
-                "dir": 1, "miss": 0, "p50": 0.0, "min_rtt": None, "shed": 0}
+_dir = 1
+_best_rate = 0.0                                                 # 迄今最好的 prefill tok/s
+_best_limit = _limit                                             # 取得该速率时的闸门 —— 试探失败就回这里
+_miss = 0
+_ewma_rate = 0.0
+_prev_tok = None                                                 # 上一窗的累计 prompt token
+_acc_s = 0.0
+_stats: dict = {"limit": _limit, "prefill_tok_s": 0, "ewma": 0, "best_rate": 0, "best_limit": _limit,
+                "dir": 1, "miss": 0, "rph": 0, "shed": 0, "window_s": 0.0}
 
 
 class Shed(Exception):
-    """这个 key 的等待队列已满 —— 卸载而不是排队。调用方转成 503 + Retry-After。"""
+    """这个 key 排队太深 —— 卸载而不是无限等。调用方转成 503 + Retry-After。"""
+
+
+async def _prompt_tokens() -> float | None:
+    """从上游 vLLM 的 /metrics 读累计 prompt token。读不到返回 None(控制器该轮不动作)。"""
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(UPSTREAM + "/metrics", timeout=aiohttp.ClientTimeout(total=5)) as r:
+                for line in (await r.text()).splitlines():
+                    if line.startswith("vllm:prompt_tokens_total"):
+                        return float(line.split()[-1])
+    except Exception:                                            # noqa: BLE001 — 上游抖动不该让控制器崩
+        return None
+    return None
 
 
 async def _controller() -> None:
-    """记住最好点、围着它试探。步长 STEP,试探 PATIENCE 次没更好就回到最好点换方向。
-
-    WHY 不是纯爬山: 实测曲线有**两个平台** —— 24~32 是好平台(~10,400 请求/h),48~64 是崩塌后的坏平台
-    (~5,200)。纯爬山在平台上没有梯度可循,落在哪个就守在哪个,从 48 起步会永远停在坏平台。
-    {隔离扫描 2026-08-08:"并发 16→7654 · 24→10421 · 32→10353 · 48→5325 · 64→5157"}
-    WHY 不是纯 AIMD: 乘法减比加法增快太多,会一路住到低位。用实测曲线驱动的本地模拟里,AIMD 从任何
-    起点都收敛到闸门 9~12,只有 6,370 请求/h —— 鲁棒但只拿到 61% 的峰值。
-    [CONFIDENCE: CONFIRMED 100% — 两种算法都用同一条实测曲线跑过 200~300 个窗口的模拟。]
-
-    「记最好点 + 定期褪色」同时解决了两件事:平台上靠 PATIENCE 强制换向去别处找,峰值漂移时靠 DECAY
-    让旧纪录失效、重新确认。本地模拟:七个起点(4/8/16/24/32/48/64)全部收敛到 92% 峰值;峰值中途
-    左移一半时闸门自动跟过去。而生产原本写死的 48 只拿到 51%。
-    """
-    global _limit, _rtts, _min_rtt, _done, _win, _dir, _best_rph, _best_limit, _miss, _ewma_rph, _acc_s
+    """记最好点 + 围着它试探。步长 STEP,慢加慢减,避免和上游的批处理节奏共振。"""
+    global _limit, _done, _win, _dir, _best_rate, _best_limit, _miss, _ewma_rate, _prev_tok, _acc_s
     while True:
         await asyncio.sleep(PROBE_S)
+        tok = await _prompt_tokens()
+        if tok is None:
+            continue
         async with _cond:
-            # 样本不够就原样留着,下一轮继续攒;_acc_s 记录这批样本实际累积了多久,用它算速率。
             _acc_s += PROBE_S
-            if len(_rtts) < MIN_SAMPLES:
+            if _prev_tok is None:
+                _prev_tok = tok
                 continue
-            samples, done, span = _rtts, _done, _acc_s
-            _rtts, _done, _acc_s = [], 0, 0.0
-            _win += 1
-            rph = done / span * 3600
-            p50 = 0.0
-            if samples:
-                samples.sort()
-                p50 = samples[len(samples) // 2]               # p50 而非均值:长尾请求不该驱动控制决策
-                _min_rtt = min(_min_rtt, samples[0])
-            # 单窗口吞吐噪声很大(一个长请求就能让 5 秒窗口的完成数归零),不平滑会被噪声牵着乱走。
-            _ewma_rph = rph if not _ewma_rph else _ewma_rph * (1 - EWMA_A) + rph * EWMA_A
+            d_tok = tok - _prev_tok
+            # 样本不够就不结算,累积到下一窗 —— 窗口长度自动随负载伸缩:忙时短(响应快)、闲时长(读数稳)。
+            if d_tok < MIN_TOKENS:
+                continue
+            span, done = _acc_s, _done
+            _prev_tok, _acc_s, _done, _win = tok, 0.0, 0, _win + 1
+            rate = d_tok / span                                  # prefill tok/s —— 这才是 GPU 做功的度量
+            _ewma_rate = rate if not _ewma_rate else _ewma_rate * (1 - EWMA_A) + rate * EWMA_A
 
-            if True:
-                if p50 > LAT_CEILING_S:                        # 安全阀:延迟离谱时无条件收缩
-                    _limit = max(LIMIT_MIN, _limit - STEP)
-                    _dir = -1
-                else:
-                    if _ewma_rph > _best_rph * (1 + DEADBAND):  # 刷新纪录 → 记住这个位置,保持方向
-                        _best_rph, _best_limit, _miss = _ewma_rph, _limit, 0
-                    else:
-                        _miss += 1
-                        if _miss >= PATIENCE:                   # 试探够了没更好 → 回最好点,换方向再试
-                            _limit, _dir, _miss = _best_limit, -_dir, 0
-                    _best_rph *= DECAY                          # 纪录缓慢褪色 → 峰值漂移时能重新确认
-                    nxt = _limit + _dir * STEP
-                    # 边界反弹:撞到上/下限就把方向翻向内侧。少了这个,闸门会贴着边界空转,而且
-                    # 「回到最好点」会把自己送回边界。{本地模拟:起点 4 停在 4、起点 48/64 停在 64}
-                    if nxt >= LIMIT_MAX:
-                        nxt, _dir = float(LIMIT_MAX), -1
-                    if nxt <= LIMIT_MIN:
-                        nxt, _dir = float(LIMIT_MIN), 1
-                    _limit = nxt
-                    if _best_limit in (LIMIT_MIN, LIMIT_MAX):   # 最好点落在边界 → 不可信,往内挪重新找
-                        _best_limit = max(LIMIT_MIN + STEP, min(LIMIT_MAX - STEP, _best_limit - _dir * STEP))
-            _stats.update(limit=round(_limit, 1), rph=round(rph), rph_ewma=round(_ewma_rph),
-                          best_rph=round(_best_rph), best_limit=round(_best_limit, 1), dir=_dir,
-                          miss=_miss, p50=round(p50, 2),
-                          min_rtt=round(_min_rtt, 3) if _min_rtt < float("inf") else None,
-                          window_s=round(span, 1), samples=len(samples))
-            _cond.notify_all()                                 # 闸门变大 → 等待者立刻重新评估
+            if _ewma_rate > _best_rate * (1 + DEADBAND):         # 刷新纪录 → 记住这个位置,保持方向
+                _best_rate, _best_limit, _miss = _ewma_rate, _limit, 0
+            else:
+                _miss += 1
+                if _miss >= PATIENCE:                            # 试探够了没更好 → 回最好点,换方向再试
+                    _limit, _dir, _miss = _best_limit, -_dir, 0
+            _best_rate *= DECAY                                  # 纪录缓慢褪色 → 峰值漂移时重新确认
+            nxt = _limit + _dir * STEP
+            # 边界反弹:撞到上/下限就把方向翻向内侧。少了它,闸门会贴着边界空转,而且「回到最好点」
+            # 会把自己送回边界。{本地模拟:起点 4 停在 4、起点 48/64 停在 64}
+            if nxt >= LIMIT_MAX:
+                nxt, _dir = float(LIMIT_MAX), -1
+            if nxt <= LIMIT_MIN:
+                nxt, _dir = float(LIMIT_MIN), 1
+            _limit = nxt
+            if _best_limit in (LIMIT_MIN, LIMIT_MAX):            # 最好点落在边界 → 不可信,往内挪重新找
+                _best_limit = max(LIMIT_MIN + STEP, min(LIMIT_MAX - STEP, _best_limit - _dir * STEP))
+
+            _stats.update(limit=round(_limit, 1), prefill_tok_s=round(rate), ewma=round(_ewma_rate),
+                          best_rate=round(_best_rate), best_limit=round(_best_limit, 1), dir=_dir,
+                          miss=_miss, rph=round(done / span * 3600), window_s=round(span, 1))
+            _cond.notify_all()                                   # 闸门变大 → 等待者立刻重新评估
 
 
-async def _on_start(app):                                      # noqa: ANN001 — aiohttp signal signature
+async def _on_start(app):                                        # noqa: ANN001 — aiohttp signal signature
     app["ctl"] = asyncio.create_task(_controller())
 
 
@@ -230,15 +223,14 @@ async def _acquire(key: str, w: float) -> None:
     """Block until this key can admit a `w`-weight request WITHOUT (a) exceeding its fair budget TOTAL/active, NOR (b)
     overflowing the global TOTAL. Re-evaluated on every notify → a key expands to the whole server the moment it's alone."""
     async with _cond:
-        my_cap = _limit * _w_of(key) / _active_weight()
-        if _want.get(key, 0) > max(my_cap, LIMIT_MIN) * QUEUE_DEPTH_MULT:
+        if _want.get(key, 0) > SHED_QUEUE:                       # 绝对阈值,不跟闸门缩
             _stats["shed"] += 1
-            raise Shed()                                       # 队列已满 → 卸载,不让它无限等
+            raise Shed()
         while True:
-            cap = _limit * _w_of(key) / _active_weight()        # 闸门是动态的,每次重算都取当前值
+            cap = _limit * _w_of(key) / _active_weight()        # this key's CURRENT fair budget (weighted, work-conserving)
             cur = _inflight.get(key, 0.0)                       # its weighted in-flight now
             gtot = sum(_inflight.values())                     # everyone's weighted in-flight (the hard KV/OOM bound)
-            if cur + w <= cap and gtot + w <= _limit:           # within BOTH my fair share AND the global ceiling → admit
+            if cur + w <= cap and gtot + w <= _limit:            # within BOTH my fair share AND the global ceiling → admit
                 _inflight[key] = cur + w
                 return
             await _cond.wait()                                 # blocked → sleep until a release/arrival changes the math
@@ -292,9 +284,7 @@ async def handle(req: web.Request) -> web.StreamResponse:
     """Every /v1/* request. GET (models/health) passes straight through — only the COMPUTE endpoints go through the fair
     admission gate, since only they consume seq slots."""
     if req.path == "/gwstats":
-        # 把控制器实测到的容量暴露出来 —— 上游调度器不该再拿写死的常数去规划。
-        return web.json_response({**_stats, "inflight": dict(_inflight), "want": dict(_want),
-                                  "weights": _KEY_WEIGHTS})
+        return web.json_response({**_stats, "inflight": dict(_inflight), "want": dict(_want)})
     if req.method == "GET":                                    # /v1/models etc. — cheap, no admission
         return await _forward(req, b"")
 
@@ -315,15 +305,10 @@ async def handle(req: web.Request) -> web.StreamResponse:
             return web.json_response({"error": {"message": "gateway overloaded, retry later",
                                                 "type": "overloaded"}},
                                      status=503, headers={"Retry-After": "5"})
-        _t0 = _time.monotonic()
         try:
             return await _forward(req, body_bytes)
         finally:
-            # 只统计**被服务**的时间,不含排队 —— 控制器要的是服务时间,端到端延迟会把闸门的效果算进去
-            # 形成正反馈(闸门越小排队越久 → 延迟越大 → 闸门更小)。
-            async with _cond:
-                _rtts.append(_time.monotonic() - _t0)
-                globals()["_done"] += 1
+            globals()["_done"] += 1
             await _release(key, w)
     finally:
         _want[key] = _want.get(key, 1) - 1                     # no longer competing
@@ -336,8 +321,8 @@ def main() -> None:
     app.on_startup.append(_on_start)                           # 控制回路随服务启动
     app.router.add_route("*", "/{tail:.*}", handle)            # proxy everything
     print(f"[fair_gateway] :{PORT} → {UPSTREAM} | 自适应闸门 起点={_limit:.0f} 范围=[{LIMIT_MIN},{LIMIT_MAX}] "
-          f"probe={PROBE_S}s 步长={STEP} 耐心={PATIENCE} 死区={DEADBAND:.0%} | text={TEXT_W} vision={VISION_W} | "
-          f"队列上限=份额×{QUEUE_DEPTH_MULT:.0f} 超出即 503 | /gwstats 暴露实测容量", flush=True)
+          f"目标=prefill tok/s probe={PROBE_S}s 步长={STEP} | text={TEXT_W} vision={VISION_W} | "
+          f"卸载阈值={SHED_QUEUE}(绝对) | /gwstats", flush=True)
     web.run_app(app, port=PORT, print=None)
 
 
