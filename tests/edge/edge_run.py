@@ -249,10 +249,89 @@ def _write_trace(d: str, rec: dict, job: dict, raw: dict | None, chk: dict | Non
         f.write("\n".join(L) + "\n")
 
 
-async def main() -> int:
-    """读数据集 → 批量跑 Step 1 → 落 trace → 汇总。
+async def _process_one(client, sem, rec: dict, agg, preds, lv, per_stratum) -> None:
+    """处理一条样本 → **立刻落盘**。这是流式的关键: 完成一条写一条, 不攒到最后。
 
-    上游: sample.py 产出的 edge_200。下游: 人读 trace.txt; recall.py 消费 out.json 的 mentions。
+    上游: main 为每条样本起一个 task。下游: 它自己写完 trace.txt / out.json 就结束。
+
+    ★ 为什么必须流式: 首版是 send_many 一次性提交全部 300 个块、全部返回才开始写盘 ——
+    200 条要跑二十分钟, 期间被打断就【一条产出都不剩】。2026-08-08 连续两次 200 条跑批
+    都因此归零。改成按事件落盘后, 打断只损失正在跑的那一条。
+    """
+    idx_dir = os.path.join(os.path.abspath(_OUT), rec["id"])
+    st = rec["meta"]["stratum"]
+
+    # 断点续跑: 已有 out.json 的直接跳过。中断后重跑只处理没做完的。
+    if os.path.exists(os.path.join(idx_dir, "out.json")):
+        agg["resumed"] += 1
+        return
+
+    jobs, mt = _build_jobs(rec)
+
+    if mt["skip"]:
+        agg["skipped"] += 1
+        agg[f"skip_{mt['skip']}"] += 1
+        per_stratum[st]["skipped"] += 1
+        _write_trace(idx_dir, rec, {"user": "(前置挡下, 未进模型)"}, None, None, mt,
+                     f"前置挡下: {mt['skip']}  ({mt['n_chars']} 字符 / {mt['n_blocks']} 块)")
+        return
+
+    async with sem:                       # 事件级并发闸, 与 QwenClient 内部信号量叠加
+        blocks_out = await client.send_many(jobs)
+
+        ok_blocks = [o for o in blocks_out if isinstance(o, dict) and not o.get("__error__")]
+        n_failed_blocks = len(blocks_out) - len(ok_blocks)
+        if not ok_blocks:
+            agg["failed"] += 1
+            per_stratum[st]["failed"] += 1
+            _write_trace(idx_dir, rec, jobs[0], None, None, mt,
+                         f"全部 {len(blocks_out)} 块都失败")
+            return
+
+        out = _merge(ok_blocks)
+        chk = check_step1(out, rec["input"]["body"])
+
+        # 逐字校验失败 → 定向重试。区分「抄写手滑」与「凭空编造」:
+        # 给了具体反馈还找不到原句的, 才判定为编造并真正丢弃。
+        for _ in range(_RETRY_MAX):
+            if not (chk["dropped"]["mentions"] or chk["dropped"]["edges"]):
+                break
+            before = len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])
+            out, chk = await _retry_failed(client, rec, out, chk)
+            agg["retry_recovered"] += (len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])) - before
+
+    _write_trace(idx_dir, rec, {"user": jobs[0]["user"]}, out, chk, mt, None)
+    with open(os.path.join(idx_dir, "out.json"), "w") as f:
+        json.dump({"id": rec["id"], "stratum": st,
+                   "n_blocks": mt["n_blocks"], "n_failed_blocks": n_failed_blocks,
+                   "kept": chk["kept"], "dropped": chk["dropped"],
+                   "stats": chk["stats"],
+                   "no_edge_reason": out.get("no_edge_reason")}, f, ensure_ascii=False, indent=1)
+
+    for e_ in chk["kept"]["edges"]:
+        preds[(e_.get("predicate") or "?").strip().lower()] += 1
+        # -1 = 模型没给这个字段(prompt 缺陷), 与「模型判定为 5」是完全不同的信号
+        lv[int(e_["level"]) if e_.get("level") is not None else -1] += 1
+
+    sd = chk["stats"]
+    for k, c in (("events", 1), ("blocks", mt["n_blocks"]),
+                 ("chunked", int(mt["n_blocks"] > 1)), ("failed_blocks", n_failed_blocks),
+                 ("mentions_in", sd["mentions_in"]), ("mentions_kept", sd["mentions_kept"]),
+                 ("edges_in", sd["edges_in"]), ("edges_kept", sd["edges_kept"]),
+                 ("mismatch", int(sd["title_body_mismatch"])),
+                 ("no_edge", int(sd["edges_kept"] == 0))):
+        agg[k] += c
+        per_stratum[st][k] += c
+
+    done = agg["events"] + agg["skipped"] + agg["failed"]
+    if done % 10 == 0:
+        print(f"    …已完成 {done}", flush=True)
+
+
+async def main() -> int:
+    """读数据集 → 每条独立处理并即时落盘 → 汇总。
+
+    上游: sample.py 产出的 edge_200。下游: 人读 trace.txt; score.py 算指标。
     不写任何数据库。
     """
     files = sorted(glob.glob(os.path.join(os.path.abspath(_DATASET), "ev_*.json")))
@@ -264,105 +343,20 @@ async def main() -> int:
     recs = [json.load(open(f)) for f in files]
     print(f"跑 {len(recs)} 条  →  {_OUT}", flush=True)
 
-    # 一个事件可能产出多个块 → 多个 job。用 owner 记录每个 job 属于哪条样本,
-    # 跑完再按样本聚回去合并。被 skip 的样本不产 job, 但仍会写 trace(见下)。
-    jobs: list[dict] = []
-    owner: list[int] = []
-    metas: list[dict] = []
-    for idx, r in enumerate(recs):
-        js, mt = _build_jobs(r)
-        metas.append(mt)
-        for jb in js:
-            jobs.append(jb)
-            owner.append(idx)
-
-    n_blk = sum(m["n_blocks"] for m in metas if not m["skip"])
-    n_skip = sum(1 for m in metas if m["skip"])
-    print(f"  {len(recs)} 条 → {n_blk} 个块要跑, {n_skip} 条被前置挡下", flush=True)
-
-    # send_many 一次性提交全部, 由 QwenClient 的全局信号量控并发(vLLM continuous-batching 在 GPU 侧批处理)。
-    # 返回顺序与 jobs 一致 —— asyncio.gather 保序, 所以能按 owner 聚回样本。
-    client = QwenClient()
-    outs = await client.send_many(jobs) if jobs else []
-
-    # 按样本聚合各块的输出
-    by_rec: dict[int, list] = collections.defaultdict(list)
-    for oi, o in zip(owner, outs):
-        by_rec[oi].append(o)
-
     agg = collections.Counter()
-    preds: collections.Counter = collections.Counter()   # predicate → 出现次数, 用于算复用度
-    lv: collections.Counter = collections.Counter()      # level → 边数, 用于看确定度分布
+    preds: collections.Counter = collections.Counter()
+    lv: collections.Counter = collections.Counter()
     per_stratum: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
 
-    for idx, rec in enumerate(recs):
-        d = os.path.join(os.path.abspath(_OUT), rec["id"])
-        st = rec["meta"]["stratum"]
-        mt = metas[idx]
-
-        # ① 前置挡下的(not_text / too_long)—— 记录而不是静默跳过
-        if mt["skip"]:
-            agg["skipped"] += 1
-            agg[f"skip_{mt['skip']}"] += 1
-            per_stratum[st]["skipped"] += 1
-            _write_trace(d, rec, {"user": "(前置挡下, 未进模型)"}, None, None, mt,
-                         f"前置挡下: {mt['skip']}  ({mt['n_chars']} 字符 / {mt['n_blocks']} 块)")
-            continue
-
-        blocks_out = by_rec.get(idx, [])
-        # send_many 对失败的 job 返回带 __error__ 的 dict, 不抛异常 —— 单块失败不该毁掉整条
-        ok_blocks = [o for o in blocks_out if isinstance(o, dict) and not o.get("__error__")]
-        n_failed_blocks = len(blocks_out) - len(ok_blocks)
-        if not ok_blocks:
-            agg["failed"] += 1
-            per_stratum[st]["failed"] += 1
-            _write_trace(d, rec, jobs[owner.index(idx)] if idx in owner else {"user": ""},
-                         None, None, mt, f"全部 {len(blocks_out)} 块都失败")
-            continue
-
-        out = _merge(ok_blocks)
-        chk = check_step1(out, rec["input"]["body"])
-
-        # 逐字校验失败 → 定向重试一轮。区分「抄写手滑」和「凭空编造」:
-        # 给了具体反馈还找不到原句的, 才判定为编造并真正丢弃。
-        n_retried = 0
-        for _ in range(_RETRY_MAX):
-            if not (chk["dropped"]["mentions"] or chk["dropped"]["edges"]):
-                break
-            before = len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])
-            out, chk = await _retry_failed(client, rec, out, chk)
-            n_retried += 1
-            agg["retry_recovered"] += (len(chk["kept"]["mentions"]) + len(chk["kept"]["edges"])) - before
-        # prompt 存第一块的(多块时其余块只是 body 不同), 完整 body 在数据集里
-        _write_trace(d, rec, {"user": jobs[owner.index(idx)]["user"]}, out, chk, mt, None)
-        with open(os.path.join(d, "out.json"), "w") as f:
-            json.dump({"id": rec["id"], "stratum": st,
-                       "n_blocks": mt["n_blocks"], "n_failed_blocks": n_failed_blocks,
-                       "kept": chk["kept"], "dropped": chk["dropped"],
-                       "stats": chk["stats"],
-                       "no_edge_reason": out.get("no_edge_reason")}, f, ensure_ascii=False, indent=1)
-
-        for e_ in chk["kept"]["edges"]:
-            preds[(e_.get("predicate") or "?").strip().lower()] += 1
-            # 用 -1 表示「模型没给这个字段」—— 与「模型判定为 5」是完全不同的信号:
-            # 前者是 prompt 没说清, 后者是模型诚实地表示不确定。混成一个值会让
-            # 「85% 挂起」这种假象掩盖掉真正的 prompt 缺陷。
-            lv[int(e_["level"]) if e_.get("level") is not None else -1] += 1
-
-        s = chk["stats"]
-        for k, c in (("events", 1), ("blocks", mt["n_blocks"]),
-                     ("chunked", int(mt["n_blocks"] > 1)), ("failed_blocks", n_failed_blocks),
-                     ("mentions_in", s["mentions_in"]), ("mentions_kept", s["mentions_kept"]),
-                     ("edges_in", s["edges_in"]), ("edges_kept", s["edges_kept"]),
-                     ("mismatch", int(s["title_body_mismatch"])),
-                     ("no_edge", int(s["edges_kept"] == 0))):
-            agg[k] += c
-            per_stratum[st][k] += c
+    client = QwenClient()
+    sem = asyncio.Semaphore(int(os.environ.get("EDGE_EVENT_CONCURRENCY", "3")))
+    await asyncio.gather(*[_process_one(client, sem, r, agg, preds, lv, per_stratum) for r in recs])
 
     print("\n════════ 汇总 ════════")
     e = max(agg["events"], 1)
     print(f"  成功 {agg['events']}  失败 {agg['failed']}  前置挡下 {agg['skipped']}"
-          f" (not_text {agg['skip_not_text']} / too_long {agg['skip_too_long']})")
+          f" (not_text {agg['skip_not_text']} / too_long {agg['skip_too_long']})"
+          f"  断点跳过 {agg['resumed']}")
     print(f"  总块数 {agg['blocks']}  其中分块处理的事件 {agg['chunked']} 条  块级失败 {agg['failed_blocks']}")
     print(f"  mention  抽出 {agg['mentions_in']} → 逐字校验通过 {agg['mentions_kept']} "
           f"({100 * agg['mentions_kept'] // max(agg['mentions_in'], 1)}%)")
@@ -370,34 +364,26 @@ async def main() -> int:
           f"({100 * agg['edges_kept'] // max(agg['edges_in'], 1)}%)")
     print(f"  重试救回 {agg['retry_recovered']} 条 —— 这些是抄写手滑而非编造, 直接丢会误杀")
     print(f"  每条平均产边 {agg['edges_kept'] / e:.2f}   标题正文不符 {agg['mismatch']}")
-    # level 分布 —— 这决定有多少能进主图、多少要挂起。
-    # WaterEvents 这条线产不出 level 0(那是 SEC 结构化字段的专属), 所以正常分布应集中在 1-3;
-    # 若大量落在 4-5, 说明要么文本本身弱, 要么模型在滥用高等级回避判断。
+
     if lv:
         tot = sum(lv.values())
         print(f"\n  ── 确定度分布(边) ──")
         for k in sorted(lv):
-            bar = "█" * (30 * lv[k] // max(tot, 1))
             tag = "  ★ 模型未给该字段(prompt 问题, 不是模型不确定)" if k < 0 else ""
-            print(f"  level {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {bar}{tag}")
+            print(f"  level {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
         writable = sum(c for k, c in lv.items() if 0 <= k <= WRITE_MAX)
         print(f"  可写入主图(level<={WRITE_MAX}) {writable}  ·  挂起(level>={PENDING_AT}) {tot - writable}")
 
-    # predicate 复用度 —— 判断模型是在给「类型」还是在写「句子」。
-    # 只出现一次的 predicate 占比高, 说明它在复述这句话而不是给可聚合的关系类型。
-    # 这比「限制词数」是更直接的判据: 词数短但每条都不同, 一样聚不起来。
     if preds:
-        uniq = len(preds)
         once = sum(1 for _, c in preds.items() if c == 1)
         print(f"\n  ── predicate 复用度 ──")
-        print(f"  不同 predicate {uniq} 个 / 边总数 {sum(preds.values())}"
-              f"   只出现一次的占 {100 * once // max(uniq, 1)}%")
+        print(f"  不同 predicate {len(preds)} 个 / 边总数 {sum(preds.values())}"
+              f"   只出现一次的占 {100 * once // max(len(preds), 1)}%")
         print("  最常见: " + " · ".join(f"{k}×{c}" for k, c in preds.most_common(8)))
 
     print("\n  ── 按层 ──")
     print(f"  {'stratum':18s} {'条数':>5s} {'产边':>6s} {'无边':>6s} {'逐字通过率':>10s}")
-    for st, c in per_stratum.items():
-        n = max(c["events"], 1)
+    for st, c in sorted(per_stratum.items()):
         rate = 100 * c["edges_kept"] // max(c["edges_in"], 1)
         print(f"  {st:18s} {c['events']:5d} {c['edges_kept']:6d} {c['no_edge']:6d} {rate:9d}%")
     print(f"\n  人读入口: {os.path.abspath(_OUT)}/<id>/trace.txt")
