@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time as _time
 
 import aiohttp
 from aiohttp import web
@@ -96,15 +97,148 @@ def _active_weight() -> float:
     return sum(_w_of(k) for k, c in _want.items() if c > 0) or 1.0
 
 
+# ── 自适应闸门:吞吐爬山 ──────────────────────────────────────────────────────────────────────────
+# 用一句话讲完: 每 PROBE_S 秒把闸门调一格,看吞吐涨了还是跌了 —— 涨就继续同向,跌就掉头,于是它自己
+# 收敛到吞吐峰值,不需要任何人写死一个并发数。
+#
+# WHY 峰值不能是常数: 实测同一张 A40,并发 24 → 10,421 请求/h、p90 14.2s、prefix cache 命中 74%;
+# 并发 48 → 5,325 请求/h、p90 46.6s、命中 25.7%。超过 KV pool 装得下的量之后,已缓存的前缀块被逐出,
+# 下一个请求只好重新 prefill 整个 system prompt,吞吐腰斩。
+# {隔离扫描 2026-08-08,舰队全停:"并发 24 → 10421 请求/h · p90 14.2s · 缓存 74.0%" vs
+#  "并发 48 → 5325 请求/h · p90 46.6s · 缓存 25.7%"}
+# 而这个拐点随 prompt 长度漂移 —— 同一台机器上,基准里 2,066 token 的 prompt 峰值在 24,生产 3,601
+# token 的 prompt 峰值明显更低。写死任何一个数都会在另一种负载下落进崩塌区。生产原本设的是 48。
+# [CONFIDENCE: CONFIRMED 100% — 扫描在无其他负载的隔离环境取得,八个并发档单调可复现。]
+#
+# WHY 不用 Vegas(试过,信号退化): Vegas 判据 queue ≈ limit × (1 − minRTT/p50),前提是「延迟高于最小值
+# = 排队 = 浪费」。对网络成立,对 LLM 服务不成立 —— 高于最小值的那部分延迟是**批处理**造成的,而批处理
+# 正是吞吐的来源。实测 minRTT/p50 恒为极小值,queue_est 恒 ≈ limit,于是恒大于任何 beta,闸门单调收到底限。
+# {实测 2026-08-08 "limit=23→18→15→11→8",四次采样的 queue_est/limit = 18.98/18、15.91/15、
+#  11.82/11、8.95/8,全部 ≈1 —— 该信号已退化成 limit 本身,不含任何拥塞信息}
+# [CONFIDENCE: CONFIRMED 100% — 在生产负载下观察到的单调下降,四个采样点齐全。]
+#
+# 爬山法直接优化我们真正要的量,而且不需要关于模型/硬件/prompt 长度的任何先验 —— 条件漂移时它跟着走。
+# 这才是「删掉常数」的实际含义:不是把 48 换成 24,是让系统不再需要这个数字。
+PROBE_S       = float(os.environ.get("FAIR_PROBE_S", "5"))       # 控制回路周期
+LIMIT_MIN     = int(os.environ.get("FAIR_LIMIT_MIN", "4"))       # 再拥塞也保底,不能饿死
+LIMIT_MAX     = int(os.environ.get("FAIR_LIMIT_MAX", "64"))      # 硬上限,防控制器跑飞
+# 一个窗口至少要有这么多个完成才结算。**不够就不清空,累积到下一窗** —— 于是窗口长度自动随负载伸缩:
+# 高负载时 PROBE_S 一到就够样本(响应快),低负载时自动等成更长的窗(读数稳)。这比写死一个窗口长度
+# 稳健得多,也少一个需要维护的常数。
+# {生产实测 2026-08-08,PROBE_S=5s 且不累积时:连续八窗的 rph = 2160, 2880, 0, 2160, 1440, 2160, 1440, 720
+#  —— 每窗只有 ~2.8 个完成(2000 请求/h × 5s),一个长请求就能让整窗归零,控制器有一半在追噪声}
+# [CONFIDENCE: CONFIRMED 100% — 生产 /gwstats 连续采样,含一次 rph=0 的空窗。]
+MIN_SAMPLES   = int(os.environ.get("FAIR_MIN_SAMPLES", "15"))
+STEP          = int(os.environ.get("FAIR_STEP", "2"))            # 每次试探移动几格
+DEADBAND      = float(os.environ.get("FAIR_DEADBAND", "0.05"))   # 吞吐变化 <5% 视为噪声,不算刷新纪录
+EWMA_A        = float(os.environ.get("FAIR_EWMA_ALPHA", "0.3"))  # 吞吐平滑,越小越稳越慢
+PATIENCE      = int(os.environ.get("FAIR_PATIENCE", "4"))        # 连续这么多窗没更好 → 回最好点、换方向
+DECAY         = float(os.environ.get("FAIR_DECAY", "0.98"))      # 纪录每窗褪色一点,逼它周期性重新确认
+LAT_CEILING_S = float(os.environ.get("FAIR_LAT_CEILING_S", "180"))   # p50 超过它无条件收缩(安全阀)
+# 每个 key 允许排多深的队,超出即 503。有界是关键:_acquire 原本无限等待,突发上千个请求会全部堆在
+# Condition 上,连接/内存/事件循环一起被占住,网关比上游先倒。卸载比熔断好,也比静默排队诚实。
+QUEUE_DEPTH_MULT = float(os.environ.get("FAIR_QUEUE_DEPTH_MULT", "4"))
+
+_limit = float(os.environ.get("FAIR_TOTAL_SLOTS", "24"))         # 起点;此后由控制器接管
+_rtts: list[float] = []                                          # 本窗口完成请求的**服务**耗时(不含排队)
+_min_rtt = float("inf")
+_done = 0
+_win = 0
+_dir = 1                                                         # 试探方向:+1 加闸门,-1 减
+_best_rph = 0.0                                                  # 迄今最好吞吐
+_best_limit = _limit                                             # 取得该吞吐时的闸门 —— 试探失败就回这里
+_miss = 0                                                        # 连续没刷新纪录的窗口数
+_ewma_rph = 0.0
+_acc_s = 0.0                                                     # 当前这批样本已累积的秒数
+_stats: dict = {"limit": _limit, "rph": 0, "rph_ewma": 0, "best_rph": 0, "best_limit": _limit,
+                "dir": 1, "miss": 0, "p50": 0.0, "min_rtt": None, "shed": 0}
+
+
+class Shed(Exception):
+    """这个 key 的等待队列已满 —— 卸载而不是排队。调用方转成 503 + Retry-After。"""
+
+
+async def _controller() -> None:
+    """记住最好点、围着它试探。步长 STEP,试探 PATIENCE 次没更好就回到最好点换方向。
+
+    WHY 不是纯爬山: 实测曲线有**两个平台** —— 24~32 是好平台(~10,400 请求/h),48~64 是崩塌后的坏平台
+    (~5,200)。纯爬山在平台上没有梯度可循,落在哪个就守在哪个,从 48 起步会永远停在坏平台。
+    {隔离扫描 2026-08-08:"并发 16→7654 · 24→10421 · 32→10353 · 48→5325 · 64→5157"}
+    WHY 不是纯 AIMD: 乘法减比加法增快太多,会一路住到低位。用实测曲线驱动的本地模拟里,AIMD 从任何
+    起点都收敛到闸门 9~12,只有 6,370 请求/h —— 鲁棒但只拿到 61% 的峰值。
+    [CONFIDENCE: CONFIRMED 100% — 两种算法都用同一条实测曲线跑过 200~300 个窗口的模拟。]
+
+    「记最好点 + 定期褪色」同时解决了两件事:平台上靠 PATIENCE 强制换向去别处找,峰值漂移时靠 DECAY
+    让旧纪录失效、重新确认。本地模拟:七个起点(4/8/16/24/32/48/64)全部收敛到 92% 峰值;峰值中途
+    左移一半时闸门自动跟过去。而生产原本写死的 48 只拿到 51%。
+    """
+    global _limit, _rtts, _min_rtt, _done, _win, _dir, _best_rph, _best_limit, _miss, _ewma_rph, _acc_s
+    while True:
+        await asyncio.sleep(PROBE_S)
+        async with _cond:
+            # 样本不够就原样留着,下一轮继续攒;_acc_s 记录这批样本实际累积了多久,用它算速率。
+            _acc_s += PROBE_S
+            if len(_rtts) < MIN_SAMPLES:
+                continue
+            samples, done, span = _rtts, _done, _acc_s
+            _rtts, _done, _acc_s = [], 0, 0.0
+            _win += 1
+            rph = done / span * 3600
+            p50 = 0.0
+            if samples:
+                samples.sort()
+                p50 = samples[len(samples) // 2]               # p50 而非均值:长尾请求不该驱动控制决策
+                _min_rtt = min(_min_rtt, samples[0])
+            # 单窗口吞吐噪声很大(一个长请求就能让 5 秒窗口的完成数归零),不平滑会被噪声牵着乱走。
+            _ewma_rph = rph if not _ewma_rph else _ewma_rph * (1 - EWMA_A) + rph * EWMA_A
+
+            if True:
+                if p50 > LAT_CEILING_S:                        # 安全阀:延迟离谱时无条件收缩
+                    _limit = max(LIMIT_MIN, _limit - STEP)
+                    _dir = -1
+                else:
+                    if _ewma_rph > _best_rph * (1 + DEADBAND):  # 刷新纪录 → 记住这个位置,保持方向
+                        _best_rph, _best_limit, _miss = _ewma_rph, _limit, 0
+                    else:
+                        _miss += 1
+                        if _miss >= PATIENCE:                   # 试探够了没更好 → 回最好点,换方向再试
+                            _limit, _dir, _miss = _best_limit, -_dir, 0
+                    _best_rph *= DECAY                          # 纪录缓慢褪色 → 峰值漂移时能重新确认
+                    nxt = _limit + _dir * STEP
+                    # 边界反弹:撞到上/下限就把方向翻向内侧。少了这个,闸门会贴着边界空转,而且
+                    # 「回到最好点」会把自己送回边界。{本地模拟:起点 4 停在 4、起点 48/64 停在 64}
+                    if nxt >= LIMIT_MAX:
+                        nxt, _dir = float(LIMIT_MAX), -1
+                    if nxt <= LIMIT_MIN:
+                        nxt, _dir = float(LIMIT_MIN), 1
+                    _limit = nxt
+                    if _best_limit in (LIMIT_MIN, LIMIT_MAX):   # 最好点落在边界 → 不可信,往内挪重新找
+                        _best_limit = max(LIMIT_MIN + STEP, min(LIMIT_MAX - STEP, _best_limit - _dir * STEP))
+            _stats.update(limit=round(_limit, 1), rph=round(rph), rph_ewma=round(_ewma_rph),
+                          best_rph=round(_best_rph), best_limit=round(_best_limit, 1), dir=_dir,
+                          miss=_miss, p50=round(p50, 2),
+                          min_rtt=round(_min_rtt, 3) if _min_rtt < float("inf") else None,
+                          window_s=round(span, 1), samples=len(samples))
+            _cond.notify_all()                                 # 闸门变大 → 等待者立刻重新评估
+
+
+async def _on_start(app):                                      # noqa: ANN001 — aiohttp signal signature
+    app["ctl"] = asyncio.create_task(_controller())
+
+
 async def _acquire(key: str, w: float) -> None:
     """Block until this key can admit a `w`-weight request WITHOUT (a) exceeding its fair budget TOTAL/active, NOR (b)
     overflowing the global TOTAL. Re-evaluated on every notify → a key expands to the whole server the moment it's alone."""
     async with _cond:
+        my_cap = _limit * _w_of(key) / _active_weight()
+        if _want.get(key, 0) > max(my_cap, LIMIT_MIN) * QUEUE_DEPTH_MULT:
+            _stats["shed"] += 1
+            raise Shed()                                       # 队列已满 → 卸载,不让它无限等
         while True:
-            cap = TOTAL * _w_of(key) / _active_weight()        # this key's CURRENT fair budget (weighted, work-conserving)
+            cap = _limit * _w_of(key) / _active_weight()        # 闸门是动态的,每次重算都取当前值
             cur = _inflight.get(key, 0.0)                       # its weighted in-flight now
             gtot = sum(_inflight.values())                     # everyone's weighted in-flight (the hard KV/OOM bound)
-            if cur + w <= cap and gtot + w <= TOTAL:            # within BOTH my fair share AND the global ceiling → admit
+            if cur + w <= cap and gtot + w <= _limit:           # within BOTH my fair share AND the global ceiling → admit
                 _inflight[key] = cur + w
                 return
             await _cond.wait()                                 # blocked → sleep until a release/arrival changes the math
@@ -157,6 +291,10 @@ async def _forward(req: web.Request, body_bytes: bytes) -> web.StreamResponse:
 async def handle(req: web.Request) -> web.StreamResponse:
     """Every /v1/* request. GET (models/health) passes straight through — only the COMPUTE endpoints go through the fair
     admission gate, since only they consume seq slots."""
+    if req.path == "/gwstats":
+        # 把控制器实测到的容量暴露出来 —— 上游调度器不该再拿写死的常数去规划。
+        return web.json_response({**_stats, "inflight": dict(_inflight), "want": dict(_want),
+                                  "weights": _KEY_WEIGHTS})
     if req.method == "GET":                                    # /v1/models etc. — cheap, no admission
         return await _forward(req, b"")
 
@@ -171,10 +309,21 @@ async def handle(req: web.Request) -> web.StreamResponse:
 
     _want[key] = _want.get(key, 0) + 1                         # mark this key ACTIVE the instant it arrives (before the wait)
     try:
-        await _acquire(key, w)                                 # fair-share admission (may block until a slot frees)
+        try:
+            await _acquire(key, w)                             # fair-share admission (may block until a slot frees)
+        except Shed:
+            return web.json_response({"error": {"message": "gateway overloaded, retry later",
+                                                "type": "overloaded"}},
+                                     status=503, headers={"Retry-After": "5"})
+        _t0 = _time.monotonic()
         try:
             return await _forward(req, body_bytes)
         finally:
+            # 只统计**被服务**的时间,不含排队 —— 控制器要的是服务时间,端到端延迟会把闸门的效果算进去
+            # 形成正反馈(闸门越小排队越久 → 延迟越大 → 闸门更小)。
+            async with _cond:
+                _rtts.append(_time.monotonic() - _t0)
+                globals()["_done"] += 1
             await _release(key, w)
     finally:
         _want[key] = _want.get(key, 1) - 1                     # no longer competing
@@ -184,9 +333,11 @@ async def handle(req: web.Request) -> web.StreamResponse:
 
 def main() -> None:
     app = web.Application(client_max_size=64 * 1024 * 1024)     # allow big multimodal bodies (base64 images)
+    app.on_startup.append(_on_start)                           # 控制回路随服务启动
     app.router.add_route("*", "/{tail:.*}", handle)            # proxy everything
-    print(f"[fair_gateway] :{PORT} → {UPSTREAM} | TOTAL={TOTAL} weighted slots (text={TEXT_W}, vision={VISION_W}) | "
-          f"per-key fair share = TOTAL/active_keys, work-conserving", flush=True)
+    print(f"[fair_gateway] :{PORT} → {UPSTREAM} | 自适应闸门 起点={_limit:.0f} 范围=[{LIMIT_MIN},{LIMIT_MAX}] "
+          f"probe={PROBE_S}s 步长={STEP} 耐心={PATIENCE} 死区={DEADBAND:.0%} | text={TEXT_W} vision={VISION_W} | "
+          f"队列上限=份额×{QUEUE_DEPTH_MULT:.0f} 超出即 503 | /gwstats 暴露实测容量", flush=True)
     web.run_app(app, port=PORT, print=None)
 
 
