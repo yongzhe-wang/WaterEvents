@@ -234,6 +234,21 @@ async def _respace_full(pool, week_hours: float) -> int:
     ordering guarantees a due unit is actually reached. Either alone is insufficient — spacing without the ordering
     starves against strict priority, ordering without spacing never generates the demand in the first place.
 
+    THE LADDER MUST NOT SLIDE (`LEAST`, added 2026-08-09). Spreading from a fresh `now()` every tick re-created, by a
+    different route, the exact self-referential loop this function was written to remove. Between two ticks Δ apart the
+    fleet finishes c units, every survivor moves up c ranks, and its due_at moves by `Δ - (c/n)·W` — zero only when
+    c = n·Δ/W, i.e. only when the fleet is ALREADY meeting the contract. Run 26% short and every deadline in the ladder
+    slides 26% of wall-clock later, forever: the deficit is converted into slippage instead of into pressure, and since
+    claim_work is gated on `due_at <= now()` its lateness ordering never even sees the backlog it exists to drain.
+    `LEAST` makes the ladder monotone — a tick may pull a unit EARLIER (capacity improved) but never push it later — so
+    an unmet deadline stays unmet, shows up as an overdue row, and reaches the ordering that can act on it.
+    {MEASURED 2026-08-09 live work_queue: respace_implied_per_h 15.92 | contract_per_h 15.97 | actual_per_h 11.75,
+     while `queued AND due_at <= now() - interval '1 hour'` for type='full' returned 0 and due_now returned 1}
+    {SAME TICK: `status='running'` was 24 incremental / 0 full, with 24h slot demand full 1.92 + incremental 13.68 of
+     24 slots = 65% — the capacity to close the 26% gap was idle, nothing was asking full to use it}
+    [CONFIDENCE: CONFIRMED 100% — a 26% rate deficit and a zero-length overdue backlog cannot coexist unless the
+     deadlines are being moved; the two counts come from the same query window.]
+
     `running` rows are left alone; they re-arm through complete_work. Returns rows re-spaced.
     {MEASURED 2026-07-29 "full_needed_per_h 16.0 | full_actual_per_h 11.2 | days_for_a_full_sweep 10.0 | covered_7d
      1118/2683" against a fleet at 61% utilisation}
@@ -248,7 +263,12 @@ async def _respace_full(pool, week_hours: float) -> int:
                 FROM work_queue WHERE type='full' AND status='queued'
             )
             UPDATE work_queue w
-            SET due_at = now() + ((r.rk::float / greatest(r.n,1)) * $1 || ' seconds')::interval, updated_at = now()
+            -- LEAST(existing, new) = the ladder ratchets forward only. A row already past due keeps its past due_at
+            -- (stays claimable); a row whose slot moved earlier takes the earlier one. complete_work is the only thing
+            -- that may set a full row's due_at LATER, and it does so exactly once, after the unit has actually run.
+            SET due_at = LEAST(w.due_at,
+                               now() + ((r.rk::float / greatest(r.n,1)) * $1 || ' seconds')::interval),
+                updated_at = now()
             FROM ranked r WHERE w.id = r.id;
             """,
             week_hours * 3600.0,
@@ -383,6 +403,17 @@ async def solve_and_apply(pool) -> dict:
     await _publish(pool, profile, sol, tp, n_hub, eta_full_h, note)
     sol["_note"], sol["_tp"], sol["_n_hub"], sol["_n_full"], sol["_eta_full_h"] = note, tp, n_hub, n_full, eta_full_h
     sol["_respaced_full"] = respaced_full
+    # THE NUMBER THAT PROVES THE RATCHET WORKS. With the old sliding ladder this was structurally pinned at ~0 no matter
+    # how far behind the lane ran, because every tick moved the deadlines out from under the deficit — so a healthy fleet
+    # and a fleet missing its contract by a quarter printed the identical log line. Now an unmet full deadline survives
+    # into the next tick, and `late` is the honest backlog: it should RISE at (contract − actual) units/h until
+    # claim_work's lateness ordering hands full enough slots, then flatten and drain.
+    # {MEASURED 2026-08-09 pre-fix: contract 15.97/h vs actual 11.75/h — a 26% deficit — with `due_at <= now() - 1 hour`
+    #  for type='full' returning 0, i.e. the deficit was completely invisible to every number this controller printed}
+    # [CONFIDENCE: CONFIRMED 100% — the zero-length backlog was queried directly against the live table.]
+    async with pool.acquire() as conn:
+        sol["_full_late"] = await conn.fetchval(
+            "SELECT count(*) FROM work_queue WHERE type='full' AND status='queued' AND due_at <= now()") or 0
     # Surface both counts — "re-spaced 5000 rows" and "re-spaced 0 because everything is stuck in running" printed
     # identically before, which is the silently-does-nothing shape this audit was looking for.
     sol["_reaped"], sol["_respaced"] = reaped, respaced
@@ -397,7 +428,10 @@ def _fmt(sol: dict) -> str:
     return (f"[pacer] T*={t} binding={sol['binding']} | N_hub={sol['_n_hub']} N_full={sol['_n_full']} | "
             f"C_R={tp['C_R']:.0f}p/h C_V={tp['C_V']:.0f}c/h hit={tp['hit_rate']*100:.0f}% | "
             f"T_render={sol['t_render_h']:.2f}h T_vlm={sol['t_vlm_h']:.2f}h | "
-            f"respaced={sol.get('_respaced', 0)} reaped={sol.get('_reaped', 0)} | {sol['_note']}")
+            # full's own two numbers were missing from this line entirely: it printed incremental's respace count and
+            # nothing at all about the lane whose weekly contract the whole solve exists to protect.
+            f"respaced={sol.get('_respaced', 0)}/{sol.get('_respaced_full', 0)}f "
+            f"full_late={sol.get('_full_late', 0)} reaped={sol.get('_reaped', 0)} | {sol['_note']}")
 
 
 async def run() -> None:
