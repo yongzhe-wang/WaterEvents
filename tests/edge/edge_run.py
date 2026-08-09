@@ -54,6 +54,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"
 
 from providers.qwen_llm import QwenClient                      # 复用项目的并发传输层, 不自己造轮子
 from tests.edge.prompts import STEP1_PROMPT, STEP1_RETRY_PROMPT, STEP1_SCHEMA, _RETRY_MAX
+from tests.edge.prompts import _selftest_format
 from tests.edge.iters import WRITE_MAX, prompt_block
 from tests.edge.validate import check_step1
 
@@ -349,6 +350,7 @@ async def main() -> int:
         print(f"数据集为空: {_DATASET}", file=sys.stderr)
         return 2
     recs = [json.load(open(f)) for f in files]
+    _selftest_format()   # prompt 花括号自检, 失败即停不浪费 LLM 调用
     print(f"跑 {len(recs)} 条  →  {_OUT}", flush=True)
 
     agg = collections.Counter()

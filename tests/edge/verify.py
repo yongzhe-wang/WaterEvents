@@ -46,6 +46,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"
 from providers.qwen_llm import QwenClient
 from tests.edge.iters import prompt_block
 from tests.edge.prompts import VERIFY_PROMPT, VERIFY_SCHEMA
+from tests.edge.prompts import _selftest_format
 
 _OUT = os.environ.get("EDGE_OUT", "/tmp/edge_out")
 _DATASET = os.environ.get("EDGE_DATASET", "/tmp/edge_200")
@@ -137,6 +138,7 @@ async def main() -> int:
     if not rids:
         print(f"没有结果: {_OUT}", file=sys.stderr)
         return 2
+    _selftest_format()   # prompt 花括号自检
     print(f"复核 {len(rids)} 条样本的边 …", flush=True)
 
     agg = collections.Counter()

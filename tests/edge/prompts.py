@@ -51,7 +51,11 @@ STEP1_SCHEMA = {
                 "required": ["name", "kind", "search_keys", "role_in_text", "evidence", "iter"],
                 "properties": {
                     "name": {"type": "string", "description": "文中出现的最完整写法"},
-                    "kind": {"enum": ["company", "person", "institution", "fund", "product", "other"]},
+                    # asset 是 2026-08-08 新增的一档: 矿山/厂房/航线/牌照这类**资产**被抽成了 company,
+                    # 于是产出 "Endeavour Silver --operates--> Guanaceví mine" 这种边 ——
+                    # 资产是公司的财产不是独立主体, 不该作为边的端点。
+                    "kind": {"enum": ["company", "person", "institution", "fund",
+                                      "product", "asset", "other"]},
                     # 检索词。给能区分的部分, 不给通用后缀 —— 见模块 docstring 的召回量实测。
                     "search_keys": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
                     # 这个实体在本文中扮演什么。Step 3 消歧时它是主要判据 ——
@@ -155,7 +159,9 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 ## mentions —— 文中出现的实体
 每个实体给:
 - name: 文中最完整的写法(如 "Luminor Holding AS", 不要缩成 "Luminor")
-- kind: company / person / institution / fund / product / other
+- kind: company / person / institution / fund / product / asset / other
+  · asset = 矿山、厂房、航线、牌照、物业这类**资产** —— 它是某家公司的财产, 不是独立主体。
+    抽出来记录没问题, 但**不要拿它当边的端点**("公司 operates 某矿" 不是关系, 是资产归属)
 - search_keys: **用来去数据库里找它的词, 最多 3 个**
   给能把这家机构和别家区分开的部分。不要给 Capital / Holdings / Group / Bank / Partners
   这类几乎每家公司都有的通用词 —— 那会召回上千条无关结果。
@@ -183,8 +189,23 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 - subject / object: 必须是上面 mentions 里的 name
 - edge_class: 五选一
   · affiliation  谁跟谁有关系(任职 / 董事 / 子公司隶属 / 指数成员)——【状态】
+    ★ **方向固定: 被隶属的一方做 subject, 所属的组织做 object。**
+      人 → 公司 · 子公司 → 母公司 · 成员公司 → 指数
+      对: Paul Hanson --officer_of--> Bitdeer Industrial
+      错: Bitdeer Industrial --employs--> Paul Hanson   (方向反了, 查询时会漏一半)
+    ★ **职位名不要写进 predicate** —— 它已经在 attributes 里了。
+      predicate 统一用 officer_of / director_of / subsidiary_of / member_of,
+      具体是 CEO 还是 Chairman 由 attributes 的 title 承载。
+      对: Catherine Guo --officer_of--> Bitdeer Industrial  +  attr(title="CEO")
+      错: Catherine Guo --is CEO of--> Bitdeer Industrial   (职位存了两份, predicate 也碎了)
   · transaction  所有权变动(收购 / 剥离 / 投资 / 合并)——【事件】
   · commercial   商业往来(合作 / 供货 / 客户 / 授权)——【事件】
+    ★ 必须有一个**发生的动作**: 签了合同 / 达成协议 / 开始供货 / 授予许可。
+      仅仅描述身份("是我们的 partner"、"是我们的客户"、"属于我们的生态")
+      → 那是 affiliation(状态), 不是 commercial(事件)。
+      例: 「signed a contract with Fluor to proceed with FEED Phase 2」  → commercial ✓
+          「Zebra independent software vendor (ISV) partner, Spatialsolutions.ai」
+          → 这是身份标签, 归 affiliation, 不是 commercial
   · product      产品动作(发布 / 上市 / 停产)——【事件】
   · corporate    公司自身动作(分红 / 回购 / 指引 / 任命)——【事件】
 - predicate: 用你自己的话描述这个关系是什么, **不要套用固定词表** ——
@@ -193,14 +214,21 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
   **但数字、金额、比例、日期、期间不要写进 predicate, 放进 attrs。**
   这不是为了归类, 是因为它们本来就是独立的字段, 塞进关系名会让它们查不出来:
     写成 "announces_loss_of_$610_million"     → 金额被埋在字符串里, 没法按金额筛
-    写成 "reports_earnings" + attrs {"net_loss": "$610 million"}  → 金额是可查询的值
+    写成 "reports_earnings" + attrs {{"net_loss": "$610 million"}}  → 金额是可查询的值
     写成 "reduces_capital_spending_by_30_percent" → 同理
-    写成 "guides_capex" + attrs {"change": "-30%"}
+    写成 "guides_capex" + attrs {{"change": "-30%"}}
   判断很简单: **predicate 里出现了数字或日期, 就说明有东西该挪进 attrs**。
 
 - ★ predicate **不要带 edge_class 前缀**。写 "officer_of" 而不是 "affiliation:officer_of" ——
   类别已经在 edge_class 字段里了, 重复写进 predicate 会让同一种关系出现两种写法。
-- object: **必须是 mentions 里另一个实体的名字。不允许 null / 空 / "None"。**
+- object: **必须是 mentions 里另一个实体的名字。不允许 null / 空 / "None", 也不允许与 subject 相同。**
+  ★ **股票代码、网址、总部地址、成立年份、行业**这些不是实体, 不能当 object ——
+    它们是 attributes 里已有的 key(ticker / website / headquarters / founded / industry)。
+    错: MaxLinear --stock_symbol--> NASDAQ:MXL      对: attr(MaxLinear.ticker = "MXL")
+  公司自己的动作(发布财报、宣布派息、回购股票)没有第二个实体作客体 ——
+  **整条边都不要出现在 edges 里**。这类信息若要保留, 走 attributes。
+  例: 「Qnity Electronics today reported results for the first quarter」→ 不产边
+      「Allegion's board declared a quarterly dividend of $0.41」→ 不产边(除非文中写明派给谁)
   如果一句话只是公司在说自己(上调指引、宣布分红、公布业绩、发布财报), 它没有客体 ——
   **整条边都不要出现在 edges 里**, 而不是产一条 object 为空的边。那是公司的属性不是关系
 - valid_at + valid_precision: 关系发生的时间。文中说 "2017" 就填 "2017"+year, 说
@@ -467,3 +495,17 @@ VERIFY_PROMPT = """下面是从一篇文章里抽出来的关系。请对照原�
 
 只输出 JSON, 不要任何解释文字。
 """
+
+
+def _selftest_format() -> None:
+    """用假参数把三个 prompt 各 format 一遍 —— 任何未转义的字面花括号都会当场 KeyError。
+
+    WHY 需要它: prompt 里经常要写 JSON 例子({"key": "value"}), 而 str.format 会把单花括号
+    当成占位符。2026-08-08 加「数字进 attrs」的例子时就踩了这个坑, 报 KeyError: '"net_loss"',
+    而且是在跑批开始后才炸 —— 白等一轮。
+    这个自检在 import 时不跑, 由 edge_run/verify 启动时调用, 失败即刻停, 不浪费 LLM 调用。
+    """
+    STEP1_PROMPT.format(ticker="", ir_url="", title="", etype="", date="",
+                        precision="", body="", level_block="")
+    STEP1_RETRY_PROMPT.format(body="", failed_block="")
+    VERIFY_PROMPT.format(body="", edges_block="", level_block="")

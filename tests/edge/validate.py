@@ -88,6 +88,15 @@ def check_step1(out: dict, body: str) -> dict:
         if not ev or norm(ev) not in nbody:
             dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "evidence 不是正文逐字子串"))
             continue
+        # ★ 自环: subject 与 object 是同一个实体。这是【纯机械】判断 —— 比较两个字符串是否相等,
+        # 不需要理解任何语义, 所以它留在代码里, 与下面删掉的那几条语义规则性质完全不同。
+        # 自环不是关系, 是公司自己的动作(发财报、派息), 应该走 attributes 或不产。
+        # {200 条实测 "reports_financial_results Qnity Electronics --> Qnity Electronics"
+        #  与 "declares_dividend Allegion plc --> Allegion"}
+        if norm(e.get("subject") or "") == norm(e.get("object") or ""):
+            dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "自环:主客体是同一实体"))
+            continue
+
         # ★ 这里原本有两条检查, 已删除 —— 它们是语义判断被写成了规则:
         #   ① object 为空的兜底: schema 已要求 object 非空, 重复拦截没有意义
         #   ② 「边的端点必须在 mentions 里」: 200 条实测丢掉 70 条(占 20%), 而那些多半是
