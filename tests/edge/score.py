@@ -13,8 +13,9 @@ r"""tests/edge/score.py — 读 edge_run 的产出,算出**不需要人工标注
    把它记进 exchange_tag,是可以直接对照的。这是唯一一个有「正确答案」的指标。
 2. **iter 分布** —— 不判对错,判分布形态。WaterEvents 产不出 iter0(SEC 专属),
    正常应集中在 1;iter2 占比高说明文本本身少有明示关系,多是靠推断。
-3. **predicate 复用度** —— 只出现一次的 predicate 占比高 = 模型在复述句子而不是给可聚合
-   的关系类型。这是纯结构性质,不需要知道哪条边是对的。
+3. **predicate 分布** —— MVP 阶段【不做归类】,110 种就是 110 种,这是真实分布不是缺陷。
+   这里只看一件事:predicate 里**有没有混进数字/金额/日期**——那说明本该进 attrs 的
+   值被埋进了关系名,查询时取不出来。归类等数据量够了再从实际输出做。
 4. **分层产边率对比** —— expect_no_edge 层的产边率**必须**显著低于 press_release 层。
    如果两者接近,说明抽取器在硬凑 —— 这个判据不需要知道任何一条边对不对,只看相对关系。
 5. **丢弃原因分布** —— 哪一类闸门在拦东西、拦了多少。它告诉我们下一轮该改 prompt 的哪里。
@@ -114,10 +115,13 @@ def main() -> int:
     for o in outs.values():
         for e in o["kept"]["edges"]:
             pr[(e.get("predicate") or "?").strip().lower()] += 1
-    once = sum(1 for _, c in pr.items() if c == 1)
-    print(f"\n════════ ③ predicate 复用度 ════════")
-    print(f"  {len(pr)} 种 / {sum(pr.values())} 条边   只出现一次的占 {100 * once // max(len(pr), 1)}%")
-    print("  高占比 = 模型在复述句子而不是给可聚合的关系类型")
+    # MVP 不归类, 只查「数字/日期被埋进 predicate」—— 那是结构化问题不是分类问题
+    dirty = [k for k in pr if re.search(r"\d", k)]
+    print(f"\n════════ ③ predicate 分布(MVP 不归类) ════════")
+    print(f"  {len(pr)} 种 / {sum(pr.values())} 条边")
+    print(f"  ★ 含数字/日期的 {len(dirty)} 种 —— 这些值本该进 attrs, 埋在关系名里查不出来")
+    for k in dirty[:8]:
+        print(f"      {k}")
     print("  最常见: " + " · ".join(f"{k}×{c}" for k, c in pr.most_common(10)))
 
     # ── ④ 分层产边率 —— 判「有没有硬凑」的关键对比 ──

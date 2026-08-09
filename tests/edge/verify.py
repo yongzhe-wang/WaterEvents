@@ -51,15 +51,20 @@ _OUT = os.environ.get("EDGE_OUT", "/tmp/edge_out")
 _DATASET = os.environ.get("EDGE_DATASET", "/tmp/edge_200")
 # 与 Step 1 同一个窗口预算 —— 验证要看到原文才能判主体归属
 _BODY_MAX = int(os.environ.get("EDGE_CHUNK_CHARS", "18000"))
+# 一次复核多少条边。首轮一次把一条样本的全部边(常十几条)交给模型, 结果 55% 没给判决,
+# 而且出现「判决对了但理由说的是另一条边」—— 典型的输入过载。
+# 与召回的 blocking 同一思路: 让每次判断的输入量可控。
+# {200 条实测 "no_verdict 124 / 223 = 55%"}
+_BATCH = int(os.environ.get("EDGE_VERIFY_BATCH", "8"))
 
 
-def _edges_block(edges: list[dict]) -> str:
+def _edges_block(edges: list[dict], offset: int = 0) -> str:
     """把边渲染成给模型复核的清单。带序号, 模型按序号回判决。
 
     证据要原样给全 —— 复核的核心就是「证据支不支持这条关系」, 截断证据等于让它盲判。
     """
     out = []
-    for i, e in enumerate(edges):
+    for i, e in enumerate(edges, start=offset):
         out.append(f"[{i}] {e.get('subject')}  --{e.get('predicate')}-->  {e.get('object')}\n"
                    f"    证据: {e.get('evidence')}")
     return "\n".join(out)
@@ -82,18 +87,26 @@ async def _verify_one(client, sem, rid: str, agg: collections.Counter) -> None:
         return
 
     rec = json.load(open(os.path.join(_DATASET, f"{rid}.json")))
+    # 分批复核: 每批 _BATCH 条, 序号带 offset 以便结果对回原下标
+    verdicts: dict[int, dict] = {}
     async with sem:
-        r = await client.send_one(
-            system="You verify extracted relationships against the source text. Output JSON only.",
-            user=VERIFY_PROMPT.format(body=rec["input"]["body"][:_BODY_MAX],
-                                      edges_block=_edges_block(edges),
-                                      level_block=prompt_block()),
-            guided_json=VERIFY_SCHEMA)
-    if not isinstance(r, dict) or r.get("__error__"):
+        for off in range(0, len(edges), _BATCH):
+            batch = edges[off:off + _BATCH]
+            r = await client.send_one(
+                system="You verify extracted relationships against the source text. Output JSON only.",
+                user=VERIFY_PROMPT.format(body=rec["input"]["body"][:_BODY_MAX],
+                                          edges_block=_edges_block(batch, offset=off),
+                                          level_block=prompt_block()),
+                guided_json=VERIFY_SCHEMA)
+            if not isinstance(r, dict) or r.get("__error__"):
+                agg["batch_failed"] += 1
+                continue
+            for v in (r.get("verdicts") or []):
+                if isinstance(v, dict) and "i" in v:
+                    verdicts[v["i"]] = v
+    if not verdicts:
         agg["failed"] += 1
         return
-
-    verdicts = {v["i"]: v for v in (r.get("verdicts") or []) if isinstance(v, dict) and "i" in v}
     merged = []
     for i, e in enumerate(edges):
         v = verdicts.get(i)

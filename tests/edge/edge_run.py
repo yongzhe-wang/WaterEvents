@@ -140,7 +140,8 @@ def _merge(outs: list[dict]) -> dict:
     保留**先出现的那个**: 块是按正文顺序切的, 先出现的通常在更完整的上下文里。
     title_body_mismatch 取 or —— 任何一块认为不符就是不符。
     """
-    mentions, edges, seen_m, seen_e = [], [], set(), set()
+    mentions, attrs, edges = [], [], []
+    seen_m, seen_a, seen_e = set(), set(), set()
     mismatch, reasons = False, []
     for o in outs:
         if not isinstance(o, dict):
@@ -156,10 +157,16 @@ def _merge(outs: list[dict]) -> dict:
             if k not in seen_e:
                 seen_e.add(k)
                 edges.append(e)
+        for a in o.get("attributes") or []:
+            k = ((a.get("entity") or "").lower(), (a.get("key") or "").lower(),
+                 (a.get("value") or "").lower())
+            if k not in seen_a:
+                seen_a.add(k)
+                attrs.append(a)
         mismatch = mismatch or bool(o.get("title_body_mismatch"))
         if o.get("no_edge_reason"):
             reasons.append(o["no_edge_reason"])
-    return {"mentions": mentions, "edges": edges,
+    return {"mentions": mentions, "attributes": attrs, "edges": edges,
             "title_body_mismatch": mismatch,
             "no_edge_reason": " | ".join(reasons[:3]) or None}
 
@@ -318,6 +325,7 @@ async def _process_one(client, sem, rec: dict, agg, preds, lv, per_stratum) -> N
                  ("chunked", int(mt["n_blocks"] > 1)), ("failed_blocks", n_failed_blocks),
                  ("mentions_in", sd["mentions_in"]), ("mentions_kept", sd["mentions_kept"]),
                  ("edges_in", sd["edges_in"]), ("edges_kept", sd["edges_kept"]),
+                 ("attrs_in", sd.get("attrs_in", 0)), ("attrs_kept", sd.get("attrs_kept", 0)),
                  ("mismatch", int(sd["title_body_mismatch"])),
                  ("no_edge", int(sd["edges_kept"] == 0))):
         agg[k] += c
@@ -345,6 +353,7 @@ async def main() -> int:
 
     agg = collections.Counter()
     preds: collections.Counter = collections.Counter()
+    ecls: collections.Counter = collections.Counter()   # edge_class → 边数
     lv: collections.Counter = collections.Counter()
     per_stratum: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
 
@@ -362,6 +371,7 @@ async def main() -> int:
           f"({100 * agg['mentions_kept'] // max(agg['mentions_in'], 1)}%)")
     print(f"  edge     抽出 {agg['edges_in']} → 逐字校验通过 {agg['edges_kept']} "
           f"({100 * agg['edges_kept'] // max(agg['edges_in'], 1)}%)")
+    print(f"  attribute 抽出 {agg['attrs_in']} → 通过 {agg['attrs_kept']}")
     print(f"  重试救回 {agg['retry_recovered']} 条 —— 这些是抄写手滑而非编造, 直接丢会误杀")
     print(f"  每条平均产边 {agg['edges_kept'] / e:.2f}   标题正文不符 {agg['mismatch']}")
 
@@ -373,6 +383,12 @@ async def main() -> int:
             print(f"  iter {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
         writable = sum(c for k, c in lv.items() if 0 <= k <= WRITE_MAX)
         print(f"  可写入主图 {writable}  ·  字段缺失 {tot - writable}")
+
+    if ecls:
+        te = sum(ecls.values())
+        print(f"\n  ── edge_class 分布 ──")
+        for k, c in ecls.most_common():
+            print(f"  {k:14s} {c:5d}  ({100 * c // max(te, 1):3d}%)  {'█' * (26 * c // max(te, 1))}")
 
     if preds:
         once = sum(1 for _, c in preds.items() if c == 1)

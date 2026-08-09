@@ -88,18 +88,29 @@ def check_step1(out: dict, body: str) -> dict:
         if not ev or norm(ev) not in nbody:
             dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "evidence 不是正文逐字子串"))
             continue
-        # object 为空 = 这句话没有客体(公司在说自己)。prompt 已要求这类不产边,
-        # 这里是兜底 —— 上一轮模型把「不产边」执行成了「产边但 object 留空」。
-        # {实测 ev_001/ev_002 输出 "Getlink→None" / "Otter Tail Corporation→None"}
-        if not (e.get("object") or "").strip() or (e.get("object") or "").strip().lower() in ("none", "null"):
-            dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "object 为空(公司自述不是关系)"))
-            continue
-        # 引用完整性: 边的两端必须是留下来的 mention。指向被丢弃的 mention 的边一并丢弃 ——
-        # 否则会产生指向不存在节点的悬空边。
-        if e.get("subject") not in names or e.get("object") not in names:
-            dropped_e.append((f"{e.get('subject')}→{e.get('object')}", "端点不在 mentions 里"))
-            continue
+        # ★ 这里原本有两条检查, 已删除 —— 它们是语义判断被写成了规则:
+        #   ① object 为空的兜底: schema 已要求 object 非空, 重复拦截没有意义
+        #   ② 「边的端点必须在 mentions 里」: 200 条实测丢掉 70 条(占 20%), 而那些多半是
+        #      对的边, 只是名字写法不一致(边写 "Zebra", mention 是 "Zebra Technologies
+        #      Corporation")。判断两个写法是不是同一个实体需要理解语义, 不是字符串比对能做的。
+        #      交给验证步骤(verify.py)由模型判断。
+        # {USER 2026-08-08 "you shouldnt check right, use llm to determien"}
+        # {200 条实测丢弃原因 "端点不在 mentions 里 70 条" 是最大宗}
         kept_e.append(e)
+
+    # attributes: 同样只做两项机械检查 —— 证据逐字、entity 必须在 mentions 里。
+    # 后者是结构性引用完整性(名字必须完全相同, 因为 attribute 是模型自己同时产出的,
+    # 不存在跨来源写法不一致的问题), 与上面删掉的边端点检查性质不同。
+    kept_a, dropped_a = [], []
+    for a in out.get("attributes") or []:
+        ev = a.get("evidence") or ""
+        if not ev or norm(ev) not in nbody:
+            dropped_a.append((f"{a.get('entity')}.{a.get('key')}", "evidence 不是正文逐字子串"))
+            continue
+        if a.get("entity") not in names:
+            dropped_a.append((f"{a.get('entity')}.{a.get('key')}", "entity 不在 mentions 里"))
+            continue
+        kept_a.append(a)
 
     # 没有边时必须给理由。沉默返回空数组会让「读不出来」和「模型偷懒」无法区分。
     if not kept_e and not (out.get("no_edge_reason") or "").strip():
@@ -107,12 +118,13 @@ def check_step1(out: dict, body: str) -> dict:
 
     return {
         "ok": not reasons,
-        "kept": {"mentions": kept_m, "edges": kept_e},
-        "dropped": {"mentions": dropped_m, "edges": dropped_e},
+        "kept": {"mentions": kept_m, "attributes": kept_a, "edges": kept_e},
+        "dropped": {"mentions": dropped_m, "attributes": dropped_a, "edges": dropped_e},
         "reasons": reasons,
         "stats": {
             "mentions_in": len(out.get("mentions") or []), "mentions_kept": len(kept_m),
             "edges_in": len(out.get("edges") or []), "edges_kept": len(kept_e),
+            "attrs_in": len(out.get("attributes") or []), "attrs_kept": len(kept_a),
             "title_body_mismatch": bool(out.get("title_body_mismatch")),
         },
     }

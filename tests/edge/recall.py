@@ -40,14 +40,11 @@ _GRAPH_DSN = os.environ.get("GRAPH_DSN", "")
 K = int(os.environ.get("EDGE_BLOCK_K", "50"))            # 每块候选数
 B_MAX = int(os.environ.get("EDGE_BLOCK_MAX", "4"))       # 每个 mention 最多几块
 
-# 通用词黑名单。这些词几乎每家机构都有, 单独拿来检索必然召回上千条。
-# prompt 里已经要求模型别给, 这里是第二道保险 —— 模型偶尔还是会给。
-# {PSQL 2026-08-08 "Capital 1,474 · Holdings 1,304 · Bank 246"}
-_TOO_GENERIC = {
-    "capital", "holdings", "holding", "group", "bank", "partners", "partner", "fund", "funds",
-    "inc", "ltd", "llc", "plc", "corp", "corporation", "company", "co", "trust", "management",
-    "investments", "investment", "advisors", "advisers", "international", "global", "the",
-}
+# ★ 原本这里有一个 _TOO_GENERIC 通用词黑名单(capital/holdings/group/bank…), 已删除。
+# 它是语义判断被写成了硬编码清单 —— 而「这个词有没有区分度」本来就该由模型在给
+# search_keys 时判断, 事前列黑名单只会遇到没列进去的词(各语言、各行业的通用词列不完)。
+# 召回量爆炸由 AMBIGUOUS 兜底(候选 > K*B_MAX 即挂起), 那是成本上限不是语义规则。
+# {USER 2026-08-08 "you shouldnt check right, use llm to determien"}
 
 
 @dataclass
@@ -66,18 +63,16 @@ class RecallResult:
 
 
 def _clean_keys(keys: list[str]) -> list[str]:
-    """滤掉太短和太通用的检索词。
+    """只滤掉太短的检索词。
 
-    WHY 要滤: 模型偶尔会给 "Capital" 这种词, 实测单独召回 1,474 条 —— 直接把这个 mention 推进
-    AMBIGUOUS, 白白挂起一个本来能判的实体。滤掉之后还剩别的 key 就仍然能查。
-    长度 <2 的词(如 "AB" "AS")同理: 那是法人后缀不是识别词。
+    只滤长度 —— 那是字符长度不是语义判断。"AB"/"AS"/"NV" 这类两字符串是法人后缀,
+    拿去 ILIKE 会匹配到几乎所有名字, 属于机械事实而非「这个词重不重要」的判断。
+    检索词好不好由模型在 Step 1 负责; 召回量爆炸由 AMBIGUOUS 兜底。
     """
     out = []
     for k in keys or []:
         k = (k or "").strip()
         if len(k) < 3:                          # "AB"/"AS"/"NV" 这类后缀, 不是识别词
-            continue
-        if k.lower() in _TOO_GENERIC:
             continue
         out.append(k)
     return out[:3]

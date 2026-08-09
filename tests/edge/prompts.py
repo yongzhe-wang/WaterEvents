@@ -42,7 +42,7 @@ from tests.edge.iters import ITER_SCHEMA, prompt_block
 
 STEP1_SCHEMA = {
     "type": "object",
-    "required": ["mentions", "edges", "title_body_mismatch"],
+    "required": ["mentions", "attributes", "edges", "title_body_mismatch"],
     "properties": {
         "mentions": {
             "type": "array",
@@ -69,23 +69,52 @@ STEP1_SCHEMA = {
                 },
             },
         },
+        # ★ 新增: 实体自身的属性, 落 node_*_profile 而不是产边。
+        # 200 条实测里 employs 独占 41 条(18%), 而「某人是某职位」本就是那个人的属性 ——
+        # 把它写成 "公司 employs 某人" 会逼模型去选一个主体, 而它总选文章的主角公司,
+        # 于是 Paul Hanson(Bitdeer Industrial 的董事长)被挂到了 Bitdeer Technologies Group 上。
+        # 拆成 attribute(title=Chairman) + affiliation 边(Paul Hanson → Bitdeer Industrial)后,
+        # 边的主体是本人, 母公司根本没有出现的位置 —— 偏差在结构上消失, 不靠 prompt 去劝。
+        "attributes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["entity", "key", "value", "evidence", "iter"],
+                "properties": {
+                    "entity": {"type": "string", "description": "必须是 mentions 里的 name"},
+                    "key": {"enum": ["title", "headquarters", "founded", "industry",
+                                     "employee_count", "ticker", "website", "other"]},
+                    "value": {"type": "string"},
+                    "evidence": {"type": "string"},
+                    "iter": ITER_SCHEMA,
+                },
+            },
+        },
         "edges": {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["subject", "predicate", "object", "evidence", "iter"],
+                "required": ["subject", "predicate", "object", "edge_class", "evidence", "iter"],
                 "properties": {
-                    # subject/object 必须是上面 mentions 里的 name —— 代码强制校验引用完整性
+                    # subject/object 必须是上面 mentions 里的 name
                     "subject": {"type": "string"},
                     "object": {"type": "string"},
-                    # 不预设 taxonomy: 让模型用自然的动词短语, 跑完 200 条再从实际输出归纳。
-                    # 现在拍脑袋定一套关系类型, 一定会漏掉真实数据里的形态。
+                    # ★ 新增: 边的类别。与 water-graph 的 SEC 线对齐, 不另造一套 ——
+                    # 现有 affiliated 归入 affiliation, holds/transacts 归入 transaction,
+                    # 于是两条来源线可比, 查询方能按类别选要什么。
+                    "edge_class": {"enum": ["affiliation", "transaction", "commercial",
+                                            "product", "corporate"]},
+                    # ★ MVP 阶段【不做 predicate 归类】。如实记录模型读出的关系措辞,
+                    # 分类只靠 edge_class 五选一。
+                    # {USER 2026-08-08 "we dont want to cateoy now as a mvp, we just want to
+                    #  honestly report eveyrthing and then the only cateaogiresize is the 5 types"}
                     #
-                    # ★ 约束是「可聚合」而不是「够短」。首版写的是「最多 4 个词」, 那是错的代理指标 ——
-                    # 真正要的是能 group by(图谱的价值在于能查「所有 acquires 关系」), 而长度只是它的
-                    # 一个副产品。而且限制词数和「不预设 taxonomy、跑完再归纳」自相矛盾。
-                    # 模型违反时不靠这里挡, 靠跑完 200 条后看 predicate 的实际分布:
-                    # 出现次数为 1 的 predicate 占比高 = 模型在写句子而不是给类型。
+                    # 200 条实测出现 110 种 predicate、80 种只出现一次 —— 这个数字本身不是问题,
+                    # 它是真实分布。等数据量足够时再从实际输出归纳 taxonomy, 现在归纳是过早优化。
+                    #
+                    # 唯一的约束是【数字/金额/日期不要写进 predicate】, 那与分类无关 ——
+                    # "announces_loss_of_$610_million" 把金额埋进了字符串, 查询时取不出来;
+                    # "reports_earnings" + attrs{"net_loss":"$610 million"} 才让它成为可查询的值。
                     "predicate": {"type": "string"},
                     "valid_at": {"type": ["string", "null"]},
                     "valid_precision": {"enum": ["day", "month", "quarter", "year", "unknown"]},
@@ -138,14 +167,39 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 - evidence: 正文里的**逐字片段**(必须能在正文中原样找到)
 - iter: 确定度 0/1/2(见下面「iter」一节)。**每个 mention 都必须给**
 
+## attributes —— 实体自身的属性(**不是关系**)
+
+某个实体「是什么」, 而不是它和别人之间发生了什么:
+- title(职位名)/ headquarters / founded / industry / employee_count / ticker / website
+
+每条给: entity(必须是 mentions 里的 name)· key · value · evidence(逐字)· iter
+
+★ 「Paul Hanson, Chairman of Bitdeer Industrial」要拆成两部分:
+    attribute: entity="Paul Hanson", key="title", value="Chairman"
+    edge:      Paul Hanson --affiliation:officer_of--> Bitdeer Industrial
+  **不要**写成 "Bitdeer employs Paul Hanson" —— 职位名是他的属性, 任职关系的主体是他本人。
+
 ## edges —— 实体之间的关系
 - subject / object: 必须是上面 mentions 里的 name
-- predicate: 关系的**类型**, 不是这句话的复述。判断标准是「换一篇文章里同类的事,
-  能不能用同一个 predicate」—— 能, 才是类型; 不能, 那是细节, 应该放进 attrs。
-  例: acquires / divests_shareholding_in / launches / appoints / partners_with / supplies
-  反例: "proposes a dividend of EUR0.80 per share in 2026 and a progressive annual increase..."
-        —— 这是一句话不是类型, 换一家公司就复用不了。predicate 该是 proposes_dividend,
-        金额和递增计划进 attrs
+- edge_class: 五选一
+  · affiliation  谁跟谁有关系(任职 / 董事 / 子公司隶属 / 指数成员)——【状态】
+  · transaction  所有权变动(收购 / 剥离 / 投资 / 合并)——【事件】
+  · commercial   商业往来(合作 / 供货 / 客户 / 授权)——【事件】
+  · product      产品动作(发布 / 上市 / 停产)——【事件】
+  · corporate    公司自身动作(分红 / 回购 / 指引 / 任命)——【事件】
+- predicate: 用你自己的话描述这个关系是什么, **不要套用固定词表** ——
+  我们现在要的是如实记录, 不是提前分类。分类只靠上面的 edge_class 五选一。
+
+  **但数字、金额、比例、日期、期间不要写进 predicate, 放进 attrs。**
+  这不是为了归类, 是因为它们本来就是独立的字段, 塞进关系名会让它们查不出来:
+    写成 "announces_loss_of_$610_million"     → 金额被埋在字符串里, 没法按金额筛
+    写成 "reports_earnings" + attrs {"net_loss": "$610 million"}  → 金额是可查询的值
+    写成 "reduces_capital_spending_by_30_percent" → 同理
+    写成 "guides_capex" + attrs {"change": "-30%"}
+  判断很简单: **predicate 里出现了数字或日期, 就说明有东西该挪进 attrs**。
+
+- ★ predicate **不要带 edge_class 前缀**。写 "officer_of" 而不是 "affiliation:officer_of" ——
+  类别已经在 edge_class 字段里了, 重复写进 predicate 会让同一种关系出现两种写法。
 - object: **必须是 mentions 里另一个实体的名字。不允许 null / 空 / "None"。**
   如果一句话只是公司在说自己(上调指引、宣布分红、公布业绩、发布财报), 它没有客体 ——
   **整条边都不要出现在 edges 里**, 而不是产一条 object 为空的边。那是公司的属性不是关系
@@ -161,10 +215,30 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 
 # 硬性要求
 1. evidence 必须是正文的逐字子串。改写、翻译、概括一律不接受 —— 会被程序当场丢弃。
-2. 只写这段文字**说了**的。不要补充你知道但文中没说的事(比如你知道某公司在纽交所上市, 但文中没写, 就不要写)。
-3. 读不出任何关系时, edges 给空数组, 并在 no_edge_reason 里说明原因。**不要为了凑数硬造边。**
+2. ★ **先问「这句话的施动者是谁」, 再决定 subject。**
+   最常见的错误是把**文章在讲的那家公司**当成所有关系的主体。文里提到的人和机构
+   未必属于它 —— 可能属于它的子公司, 也可能属于完全无关的第三方。
+
+   错: Bitdeer Technologies Group --employs--> Paul Hanson
+       原文「Paul Hanson, Chairman of Bitdeer Industrial」
+       → 他是 **Bitdeer Industrial**(子公司)的董事长。母公司和子公司是两个实体。
+       对: attribute(Paul Hanson.title="Chairman")
+           + edge(Paul Hanson --affiliation:officer_of--> Bitdeer Industrial)
+
+   错: Bitdeer Technologies Group --communicates_with--> Taylor Adams
+       原文「Taylor Adams, President and CEO of the Economic Development Authority of Western Nevada」
+       → 他是另一个机构的负责人, 和这家公司没有这层关系。
+       对: 不产这条边;要记就记 Taylor Adams --affiliation:officer_of--> EDAWN
+
+   错: Otter Tail Corporation --receives_approval_for--> Otter Tail Power
+       原文「In May, Otter Tail Power received approval from the Minnesota PUC」
+       → 获批的是 **Otter Tail Power**。
+       对: Otter Tail Power --corporate:receives_approval_from--> Minnesota PUC
+
+3. 只写这段文字**说了**的。不要补充你知道但文中没说的事(比如你知道某公司在纽交所上市, 但文中没写, 就不要写)。
+4. 读不出任何关系时, edges 给空数组, 并在 no_edge_reason 里说明原因。**不要为了凑数硬造边。**
    大多数事件(季报、年会、网播预告)本来就没有关系可抽, 那是正常的。
-4. title_body_mismatch: 对比标题和正文**讲的是不是同一件事**。
+5. title_body_mismatch: 对比标题和正文**讲的是不是同一件事**。
    例: 标题 "[Shuttle traffic in January 2026]" 而正文通篇在讲 "targets EUR1 billion EBITDA by 2030"
    —— 这是两件不同的事, 填 true。抓取时可能抓到了列表页或另一篇稿, 这个标记是唯一的线索。
 
