@@ -645,7 +645,7 @@ def _split_text(text: str, n: int) -> list[str]:
 
 
 async def _extract_events_chunked(text: str, page_url: str, c: QwenClient, use_image: bool) -> dict:
-    """EXTRACTION FALLBACK — a page too big for one pass (over cap / output truncated / model bailed empty) → SIMPLE
+    """EXTRACTION FALLBACK — a page too big for one pass (over cap / output truncated) → SIMPLE
     fixed-size chunking: cut into ceil(len/_CHUNK_TARGET_CHARS) blocks (each ≈ the char limit, cut cleanly at line
     boundaries, NO overlap), tag EACH block with its OWN Lnn map, extract EVENTS from all in parallel, resolve each via
     ITS map, merge (dedup by url overlap). NO RECURSION, NO ROUTES (routing is a separate single call now). A block that
@@ -765,7 +765,8 @@ async def _route_page(raw_text: str, page_url: str, c: QwenClient) -> dict:
 
 async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
     """ONE page → {events, routes}. TWO focused calls fired IN PARALLEL: ROUTING (one call over the flat link list) +
-    EXTRACTION (events-only; chunked if the body is over cap / truncates / bails empty). Combined with event⊥route
+    EXTRACTION (events-only; chunked if the body is over cap or the output truncates — an empty answer is not a
+    trigger, it is an answer). Combined with event⊥route
     exclusivity in _combine. Splitting the old single call shrinks each prompt + input (saves context) and keeps the
     extraction pass focused so it holds up on long lists. {USER 2026-07-24 "separate the routing and the classification,
     so we can save more context"} [CONFIDENCE: CONFIRMED 100% — direct instruction]."""
@@ -793,14 +794,24 @@ async def _extract_one(page: dict, c: QwenClient, use_image: bool) -> dict:
         job = _build_events_job(tagged, url, page.get("image_b64"), use_img)
         res = (await c.send_many([job]))[0]
 
-        def _empty(r: dict) -> bool:                           # content-full page → un-errored {events:[]} = transient bad gen
-            return not r.get("_error") and not (r.get("events") or [])
-        if _empty(res) and len(raw_text) > 2000:               # re-send once (else a seed silently zeroes a company)
-            print(f"[extract] ↻ EMPTY VLM events for content-full {url[:70]} ({len(raw_text)} chars) — re-sending once", flush=True)
-            res = (await c.send_many([job]))[0]
-        if _empty(res) and len(text) > _CHUNK_TARGET_CHARS:    # model bailed on a big/dense page (not truncated) → chunk
-            print(f"[extract] ✂️  EMPTY on LARGE page {url[:70]} ({len(text)} chars) → chunking (model bailed on one pass)", flush=True)
-            return await _extract_events_chunked(raw_text, url, c, use_img)
+        # AN EMPTY ANSWER IS AN ANSWER. This used to read an un-errored {"events": []} on a long page as a bad
+        # generation and escalate twice — re-send the identical job, then chunk the page — on the theory that a page
+        # with text in it must contain events. It does not: a page can be long and still hold nothing dated.
+        #   {RENDER 2026-08-09 macysinc.com/newsroom/events-presentations-and-updates → 5,310 chars whose entire text is
+        #    "Overview Company Overview About Overview Timeline Leadership Team Governance Overview Board of
+        #     Directors … Careers Overview … Vendors Overview …" — a navigation menu, no dated item anywhere}
+        #   {RENDER 2026-08-09 marex.com/investors/press-releases → 702 chars reading "… Home / Investors / News and
+        #    events / Press Releases  Loading...  …" — the content had not loaded when the snapshot was taken}
+        # Both were being counted as failures and re-sent. The length test was measuring the wrong thing: a menu is
+        # long. {W1-3.LOG "[extract] ↻ EMPTY VLM events for content-full … — re-sending once" ≈ 215 per worker per
+        #  30k lines, of which 349 were still empty after the re-send}
+        # {USER 2026-08-09 "the model is allowed to return nothing right??? … i accept these fail that is fine also"}
+        # So the empty answer is taken at face value and said once, plainly. Truncation keeps its escalation below,
+        # because finish_reason=length is evidence about the GENERATION rather than a guess about the page.
+        # [CONFIDENCE: CONFIRMED 100% — both page texts were rendered and read in full; the counts are grep over the
+        #  workers' own logs.]
+        if not res.get("_error") and not (res.get("events") or []):
+            print(f"[extract] ∅ no events on {url[:70]} ({len(raw_text)} chars) — taking the model at its word", flush=True)
         if res.get("__finish__") == "length":                  # output cut even with Lnn → chunk (split input, merge)
             print(f"[extract] ✂️  OUTPUT TRUNCATED {url[:70]} — finish=length → chunking", flush=True)
             return await _extract_events_chunked(raw_text, url, c, use_img)
