@@ -85,6 +85,22 @@ _HUB_EXCLUDE_RE = re.compile(r"/(sec-filings|edgar|financials/(sec|quarterly|ann
                              r"|regulatory)", re.I)
 
 
+# 一个事件内 url 的处理顺序。html 排第一不是为了整齐 —— 它那次 LLM 调用会**采纳属于本事件的文档链接**
+# (SYSTEM_ROUTE 的第三个任务),采纳出来的 url 进 chart 的 pending,由 pass 2 处理。html 排在后面,
+# 它采纳的文档就要多等一轮才被抓。文档次之,音视频最后(它们最慢且不产出元数据)。
+# {HANDLERS.PY _adopt_documents —— html 路径产出新 url 的唯一来源}
+# stage-1 给的列表顺序没有语义,它只是页面上链接出现的次序。
+# [CONFIDENCE: CONFIRMED 100% — 采纳逻辑在 handle_html 里,pass 2 在本文件下方。]
+_KIND_RANK = {router.KIND_HTML: 0,
+              router.KIND_PDF: 1, router.KIND_PPTX: 1, router.KIND_DOCX: 1, router.KIND_XLSX: 1,
+              router.KIND_AUDIO: 2, router.KIND_VIDEO: 2}
+
+
+def _ordered(urls: list) -> list:
+    """html → 文档 → 音视频 → 其他。同一档内保持原有相对次序(稳定排序),不引入新的不确定性。"""
+    return sorted(urls, key=lambda u: _KIND_RANK.get(router.classify(u), 3))
+
+
 def _as_list(v) -> list:
     """asyncpg returns a jsonb column as a Python list already — but stay robust to a str (double-encoded) or dirty
     non-list data (a dict), which would make a bare json.loads(dict) raise TypeError and crash the worker. {AUDIT
@@ -171,7 +187,7 @@ async def process_event(pool, client: QwenClient, ev) -> None:
 
         # PASS 1 — the urls event_agent gave us. Rendering an html page here may ALSO make the model name document
         # links that belong to this event; those land in the chart's ledger as new pending urls.
-        for u in media:
+        for u in _ordered(media):
             await _run(u)
 
         # PAGE VERDICT — decided before pass 2, because a hub has nothing worth fetching and a dead page has nothing
@@ -203,7 +219,7 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         # PASS 2 — documents the model picked off the page. They are dispatched but discover nothing further: a file is
         # not a page, so it yields no links. The depth of this whole mechanism is 2 BY CONSTRUCTION, not by a budget.
         fresh = [u for u in chart.pending_urls() if u not in set(media)]
-        for u in fresh:
+        for u in _ordered(fresh):
             await _run(u)
         if fresh:
             print(f"[enrich] ↳ event {eid} pass-2 on {len(fresh)} adopted document url(s)", flush=True)
