@@ -30,7 +30,8 @@ interface Docling { concurrency: number | null; inflight: number | null; queued:
 interface Whisper { concurrency: number | null; inflight: number | null; done: number | null; errors: number | null; gpu_mem_used_mb: number | null; gpu_mem_total_mb: number | null; gpu_util_pct: number | null; }
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
-  totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null };
+  totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null;
+            via?: { coords: number | null; docling: number | null; unknown: number | null } };
   meta: { title_fixed: number | null; date_fixed: number | null };
   ledger: { done: number | null; failed: number | null; skipped: number | null };
   recent: { enriched_1h: number | null; blocks_1h: number | null };
@@ -96,7 +97,7 @@ function PipelineBar({ p }: { p: Pipeline }) {
         {cell("Titles fixed", num(p.meta.title_fixed), "stage-1 title replaced by the page's own")}
         {cell("Dates fixed", num(p.meta.date_fixed), "stage-1 date replaced by the page's own")}
         {cell("Basic info", num(p.totals.blocks), "pages whose prose was extracted")}
-        {cell("Docling", num(p.totals.files), "pdf / xlsx / pptx / docx parsed")}
+        {cell("Documents", num(p.totals.files), "pdf / xlsx / pptx / docx parsed")}
         {cell("In flight", num(p.inflight), "claimed by a worker right now")}
       </div>
     </div>
@@ -122,7 +123,10 @@ function PipelineBar({ p }: { p: Pipeline }) {
  * [CONFIDENCE: CONFIRMED 100% — read off the live service while diagnosing a stall that showed zero output for 30
  *  consecutive minutes with every health check returning 200.]
  */
-function MediaResourceCards({ r }: { r: MediaToday["resources"] }) {
+// `totals` comes in alongside `resources` because the document card's headline is now the OUTPUT (a pipeline
+// number) while its detail lines are the extractor's own state (a resource number). Splitting them across two cards
+// would separate the count from the thing that produced it.
+function MediaResourceCards({ r, totals }: { r: MediaToday["resources"]; totals: Pipeline["totals"] }) {
   const card = (title: string, sub: string, big: ReactNode, hot: boolean, lines: string[]) => (
     <div className="q-card" style={{ flex: 1 }}>
       <div className="q-card-head"><span className="q-card-title">{title}</span><span className="q-card-sub">{sub}</span></div>
@@ -158,20 +162,34 @@ function MediaResourceCards({ r }: { r: MediaToday["resources"] }) {
           f.weights ? `share ${Object.entries(f.weights).map(([k, v]) => `${k}:${v}`).join(" · ")}` : "share —",
         ] : ["render VM unreachable"])}
 
-      {card("Docling · documents", "RunPod CPU",
-        d ? <>{d.inflight ?? "—"}<span className="q-card-big-sub">/{d.concurrency ?? "—"} slots</span></> : "—",
+      {/* WHAT THIS CARD SHOWS CHANGED, because what it was showing stopped being the question. It printed docling's
+          inflight/slots, which was the document lane back when docling WAS the document path. The coordinate rebuild
+          is now the primary path for pdf and docling is the fallback, so an idle docling is the HEALTHY state — and
+          the card was rendering it in red as though the pipeline had stopped.
+          {2026-08-09 — 4,512 non-html documents produced against docling's own counter of 234 calls: 95% of them
+           never touched it, and the card read "0".}
+          The big number is the documents themselves now. The split by extractor is the line under it, because the
+          two paths fail in different shapes on different document types and a report is only actionable once you
+          know which one produced the document. Docling's own occupancy moves to the third line, where an idle
+          reading is unremarkable rather than alarming. */}
+      {card("Documents · extracted", "pdf · xlsx · docx · pptx",
+        <>{num(totals.files)}<span className="q-card-big-sub"> docs</span></>,
         doclingHot,
-        d ? [
-          `${d.queued ?? 0} queued`,
-          `${num(d.done)} done · ${num(d.errors)} errors`,
-          // `cores` is the cgroup QUOTA. The host count is printed beside it ONLY when they disagree, which is the
-          // whole point — on the pod this line reads "274% cpu · 7.65 cores (host 96)" where it used to read
-          // "19% cpu · 96 cores" for the identical machine state.
-          d.pct != null
+        [
+          totals.via
+            ? `${num(totals.via.coords)} coords · ${num(totals.via.docling)} docling`
+              + (totals.via.unknown ? ` · ${num(totals.via.unknown)} pre-column` : "")
+            : "path split —",
+          d ? `docling ${d.inflight ?? "—"}/${d.concurrency ?? "—"} slots · ${num(d.queued)} queued · ${num(d.errors)} errors`
+            : "docling unreachable",
+          // `cores` is the cgroup QUOTA, and the host count is printed beside it ONLY when they disagree — on the pod
+          // this reads "307% cpu · 7.65 cores (host 96)" where it used to read "19% cpu · 96 cores" for the identical
+          // machine state, because os.cpu_count() does not honour a cgroup quota.
+          d && d.pct != null
             ? `${d.pct}% cpu · ${d.cores ?? "—"} cores${d.cores_host && d.cores_host !== d.cores ? ` (host ${d.cores_host})` : ""}`
+              + (d.throttled != null ? ` · ${d.throttled}% throttled` : "")
             : "cpu —",
-          d.throttled != null ? `${d.throttled}% of periods throttled` : "throttle —",
-        ] : ["docling unreachable"])}
+        ])}
 
       {card("Whisper · audio", "RunPod GPU (shared with VLM)",
         w ? <>{w.inflight ?? "—"}<span className="q-card-big-sub">/{w.concurrency ?? "—"} slots</span></> : "—",
@@ -239,7 +257,9 @@ export default function MediaTodayView() {
       <div className="events-panel">
         <div className="body-full">
           {data?.pipeline && <PipelineBar p={data.pipeline} />}
-          {data?.resources && <MediaResourceCards r={data.resources} />}
+          {data?.resources && data?.pipeline && (
+            <MediaResourceCards r={data.resources} totals={data.pipeline.totals} />
+          )}
           {data?.pipeline && <LedgerBar l={data.pipeline.ledger} />}
 
           <div className="section-label">Media runs — newest first<span className="rule" /></div>

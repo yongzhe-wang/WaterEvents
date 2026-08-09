@@ -288,6 +288,9 @@ class Chart:
         # [CONFIDENCE: CONFIRMED 100% — the chunked path is in handlers.py and issues one append per chunk.]
         self._html_bufs: dict[str, list[dict]] = {}   # source url → its ordered blocks, awaiting the join
         self._html_order: list[str] = []              # visit order, so documents come out in dispatch order
+        # url → 哪个抽取器产出了这一页的正文。一页可能 append 多次(分块、VLM 重试),取**第一个非空**的:
+        # 那是真正决定这份文档内容的那次,后续追加沿用同一条路径。
+        self._html_via: dict[str, str] = {}
         self.transcript_segments: list[dict] = []   # {"speaker","start","end","text"}
         self.transcript_sources: list[str] = []     # which audio/page each segment batch came from
         self.audio: list[dict] = []            # {"url","local_path","duration_s"}
@@ -366,7 +369,7 @@ class Chart:
         self.urls.setdefault(_canon(url), {"url": url, "kind": router.classify(url)})["status"] = status
 
     # ── fill-and-append slots ────────────────────────────────────────────────────────────────────────────────
-    def append_basic_info(self, blocks: list[dict], source_url: str = "") -> int:
+    def append_basic_info(self, blocks: list[dict], source_url: str = "", via: str = "") -> int:
         """Buffer an html page's ordered content blocks under the url they came from. Returns how many landed.
 
         The blocks are NOT joined here — `build_documents()` does that once the url's handler has finished, so a url
@@ -383,6 +386,8 @@ class Chart:
         added = 0
         key = _canon(source_url) if source_url else ""
         buf = self._html_bufs.setdefault(key, [])
+        if via and not self._html_via.get(key):
+            self._html_via[key] = via
         if key not in self._html_order:
             self._html_order.append(key)                       # first write for this url fixes its document order
 
@@ -444,13 +449,14 @@ class Chart:
         """Record an audio artifact (the mp3 we downloaded + transcribed)."""
         self.audio.append({"url": url, "local_path": local_path, "duration_s": duration_s})
 
-    def append_file(self, kind: str, url: str, markdown: str = "", tables: list | None = None, n_pages: int = 0) -> None:
+    def append_file(self, kind: str, url: str, markdown: str = "", tables: list | None = None,
+                    n_pages: int = 0, via: str = "") -> None:
         """Record a parsed office document — the native officeall.DocResult shape: `markdown` (Docling's clean full
         text, tables rendered inline = the readable view) + `tables` (structured [{columns,rows}] = the JSON view).
         md-for-prose + JSON-for-tables, same principle as basic_info. kind ∈ {pdf,pptx,docx,xlsx}. {OFFICEALL DocResult
         ".text (markdown)", ".tables ([{columns,rows}])"} [CONFIDENCE: CONFIRMED 100% — officeall/types.py DocResult]."""
         self.files.setdefault(kind, []).append(
-            {"url": url, "markdown": markdown, "tables": tables or [], "n_pages": n_pages})
+            {"url": url, "markdown": markdown, "tables": tables or [], "n_pages": n_pages, "via": via})
 
     # ── the pair, per url ────────────────────────────────────────────────────────────────────────────────────
     def build_documents(self) -> list[dict]:
@@ -472,7 +478,8 @@ class Chart:
             if not md.strip():
                 continue
             docs.append({"url": self.urls.get(key, {}).get("url", key), "kind": "html",
-                         "md": md, "blocks": blocks, "n_chars": len(md), "n_blocks": len(blocks)})
+                         "md": md, "blocks": blocks, "n_chars": len(md), "n_blocks": len(blocks),
+                         "via": self._html_via.get(key, "")})
         for kind, entries in (self.files or {}).items():       # office documents, one per parsed file
             for f in entries or []:
                 md, blocks, warn = markdown_to_pair(f.get("markdown") or "", f.get("tables"))
@@ -484,7 +491,8 @@ class Chart:
                 if not md.strip():
                     continue
                 docs.append({"url": f.get("url") or "", "kind": kind, "md": md, "blocks": blocks,
-                             "n_chars": len(md), "n_blocks": len(blocks), "n_pages": f.get("n_pages") or 0})
+                             "n_chars": len(md), "n_blocks": len(blocks), "n_pages": f.get("n_pages") or 0,
+                             "via": f.get("via") or ""})
         return docs
 
     def confirm_metadata(self, title: str = "", date: str = "", type_: str = "") -> None:

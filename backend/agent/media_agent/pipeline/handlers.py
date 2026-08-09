@@ -209,7 +209,7 @@ async def handle_office(url: str, chart, proxy: str | None = None, client=None,
         print(f"[media] ⛔ office parse failed {url[:70]} — {res.error or 'no-content'}", flush=True)
         return
     kind = res.format or router.classify(url)                 # trust the magic-confirmed format from the fetch
-    chart.append_file(kind, url, markdown=res.text, tables=res.tables, n_pages=res.n_pages)
+    chart.append_file(kind, url, markdown=res.text, tables=res.tables, n_pages=res.n_pages, via=res.via)
     chart.set_status(url, "done")
     # 这个事件有没有网页可读?有 → 元数据归 SYSTEM_ROUTE 管,这里不重复花调用。
     urls = event_urls or []
@@ -405,7 +405,7 @@ def _apply_contribution(contrib: dict, chart, page_url: str) -> None:
     path's deliberate overlap is absorbed by Chart's SEAM trim (not by global content dedup, which was removed for
     eating legitimate repeats). Discovers nothing — the url set is event_agent's, fixed."""
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
-    chart.append_basic_info(contrib.get("basic_info") or [], source_url=page_url)
+    chart.append_basic_info(contrib.get("basic_info") or [], source_url=page_url, via="vlm-legacy")
     chart.append_transcript(contrib.get("transcript_segments") or [], source_url=page_url)   # inline transcript → its slot
 
 
@@ -448,7 +448,7 @@ async def _route_html(url: str, page_text: str, img, det: dict, chart, client: Q
                                     user=prompts.build_user(fitted, url, chart_known(chart)),
                                     image_b64=img, guided_json=prompts.SCHEMA_ROUTE, max_tokens=ROUTE_MAX_TOKENS)
     if not contrib or contrib.get("_error"):                    # VLM hard-fail → body kept, judgements lost
-        chart.append_basic_info(det["blocks"], source_url=url)
+        chart.append_basic_info(det["blocks"], source_url=url, via=det.get("tier", ""))
         chart.set_status(url, "done:route-vlm-fail")
         print(f"[media] ⚠️ route VLM fail {url[:70]} — deterministic body kept, page_kind/metadata/documents lost",
               flush=True)
@@ -459,7 +459,7 @@ async def _route_html(url: str, page_text: str, img, det: dict, chart, client: Q
     chart.set_page_kind(url, contrib.get("page_kind") or "")
 
     chart.confirm_metadata(contrib.get("title", ""), contrib.get("date", ""), contrib.get("type", ""))
-    chart.append_basic_info(det["blocks"], source_url=url)      # deterministic reading-order body (real urls, no Lnn)
+    chart.append_basic_info(det["blocks"], source_url=url, via=det.get("tier", ""))   # deterministic body
 
     # DOCUMENTS — the model SELECTS from links that are on the page; it never GENERATES a url.
     _adopt_documents(url, contrib.get("documents") or [], page_links, chart)

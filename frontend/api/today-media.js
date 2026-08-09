@@ -175,7 +175,7 @@ export default async function handler(_req, res) {
     const [
       backlog, inflight, enriched, failed,
       titleFixed, dateFixed,
-      blocks, files, segments, audio,
+      blocks, files, viaCoords, viaDocling, viaUnknown, segments, audio,
       ledgerDone, ledgerFailed, ledgerSkipped,
       enriched1h, blocks1h,
       resources, recent,
@@ -198,6 +198,15 @@ export default async function handler(_req, res) {
       // [CONFIDENCE: CONFIRMED 100% — schema read back from psql after the migration applied.]
       sbCount("event_documents?select=id&kind=eq.html"),
       sbCount("event_documents?select=id&kind=neq.html"),
+      // WHICH EXTRACTOR produced the documents. The card used to show docling's inflight/slots, which was right when
+      // docling WAS the document path; it is now the fallback, so a zero there reads as "the pipeline stopped" when it
+      // actually means "the primary path handled everything". {2026-08-09 — 4,512 non-html documents against docling's
+      // own counter of 234 calls, i.e. 95% never touched it, and the card showed a red 0.}
+      // Counting by `via` says the thing the card is trying to say. NULL is the pre-column backlog, not a path.
+      // [CONFIDENCE: CONFIRMED 100% — both figures read live, from the database and from docling's /health.]
+      sbCount("event_documents?select=id&kind=neq.html&via=eq.coords"),
+      sbCount("event_documents?select=id&kind=neq.html&via=like.docling*"),
+      sbCount("event_documents?select=id&kind=neq.html&via=is.null"),
       sbCount("event_transcript_segments?select=id"),
       sbCount("event_audio?select=id"),
       // The url ledger tallied by outcome. This is the highest-signal number on the page: it is the ONLY place a
@@ -249,7 +258,8 @@ export default async function handler(_req, res) {
         // `blocks` counts html documents = the pages whose prose we extracted; `files` counts office documents = the
         // docling lane. Naming them by what produced them beats naming them by table.
         meta: { title_fixed: titleFixed, date_fixed: dateFixed },
-        totals: { blocks, files, segments, audio },
+        totals: { blocks, files, segments, audio,
+                  via: { coords: viaCoords, docling: viaDocling, unknown: viaUnknown } },
         ledger: { done: ledgerDone, failed: ledgerFailed, skipped: ledgerSkipped },
         recent: { enriched_1h: enriched1h, blocks_1h: blocks1h },
       },

@@ -93,16 +93,25 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                     continue                              # an empty md is not a document; never store a hollow row
                 md = d["md"]
                 await conn.execute(
+                    # `via` records WHICH EXTRACTOR produced this row. A kind='pdf' document can now come from either
+                    # the coordinate rebuild or docling, and the two fail in different shapes on different document
+                    # types — {2026-08-08 ExxonMobil 3Q24: docling put earnings per share on the net-income row, 1.92
+                    # where the page reads 8,610; coordinates got all 44 numeric rows} against {2026-08-09 Ormat Q4-25
+                    # deck: 4 of the coordinate path's 10 tables are slide furniture, docling's were clean}. Without
+                    # this column a bad document cannot be attributed to a path, only to the pipeline as a whole.
+                    # Before it, the split was reachable only by subtraction from a service counter that resets on
+                    # restart {2026-08-09 "4,512 non-html documents" vs docling's own "234 calls"}.
                     """INSERT INTO event_documents
-                         (event_id, url, kind, md, blocks, n_chars, n_blocks, content_hash)
-                       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                         (event_id, url, kind, md, blocks, n_chars, n_blocks, content_hash, via)
+                       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
                        ON CONFLICT (event_id, url) DO UPDATE SET
                          kind = excluded.kind, md = excluded.md, blocks = excluded.blocks,
                          n_chars = excluded.n_chars, n_blocks = excluded.n_blocks,
-                         content_hash = excluded.content_hash;""",
+                         content_hash = excluded.content_hash, via = excluded.via;""",
                     event_id, d.get("url") or "", d.get("kind") or "html", md,
                     json.dumps(d.get("blocks") or []), len(md), len(d.get("blocks") or []),
                     _hash({"u": _canon(d.get("url") or ""), "md": md[:4000]}),
+                    (d.get("via") or None),                    # 空字符串存 NULL:没测到和「测到是空」是两回事
                 )
 
             # transcript segments — ord-ordered. A timestamp-less inline segment (start None) is never deduped (chart.py
