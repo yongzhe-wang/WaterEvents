@@ -161,7 +161,10 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         async def _run(u: str) -> None:
             kind = router.classify(u)
             try:
-                await dispatch(u, kind, chart, client=client, use_image=_USE_IMAGE, proxy=_PROXY)
+                # event_urls 让 office handler 判断「这个事件有没有网页可读」—— 全是文档时才为它单独取
+                # 一次标题/日期,有网页时那件事归 SYSTEM_ROUTE,不重复花调用。
+                await dispatch(u, kind, chart, client=client, use_image=_USE_IMAGE, proxy=_PROXY,
+                               event_urls=media)
             except Exception as e:                           # noqa: BLE001 — ONE bad url must not lose the other urls'
                 chart.set_status(u, f"failed:{type(e).__name__}")   # work; record it loudly and keep going
                 print(f"[enrich] ⚠️ event {eid} url {u[:60]} raised {type(e).__name__}: {str(e)[:80]}", flush=True)

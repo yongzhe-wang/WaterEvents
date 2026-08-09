@@ -160,7 +160,47 @@ def _kind_from_magic(reason: str) -> str:
 
 
 # ── OFFICE (pdf / pptx / docx / xlsx) → tools/officeall (Docling) ──────────────────────────────────────────────
-async def handle_office(url: str, chart, proxy: str | None = None) -> None:
+# 送给元数据那一步的开头长度。标题和日期都在文件最前面,再多送只是白付 prefill —— 而 prefill 是 GPU 的全部成本
+# {POD 2026-08-08 实测 "每请求 prompt 3,601 token → 生成 155 token = 23:1,GPU 时间几乎全在 prefill"}。
+# 2000 字符 ≈ 500 token,够覆盖封面页/抬头/第一段,比一次完整页面调用便宜一个数量级。
+_DOC_META_HEAD_CHARS = int(os.environ.get("MEDIA_DOC_META_CHARS", "2000"))
+# 这些后缀之外的 url 就是「有网页可读」——那时 SYSTEM_ROUTE 的元数据任务已经在做这件事,不必再花一次调用。
+_DOC_ONLY_RE = re.compile(r"\.(pdf|xlsx?|docx?|pptx?|mp[34]|wav|m4a)(\?|#|$)", re.I)
+
+
+async def _doc_metadata(url: str, text: str, chart, client) -> None:
+    """从文档正文开头取真标题/真日期,写回 chart —— 只对「没有网页可读」的事件做。
+
+    用一句话讲完: 一个事件如果只挂着一个 pdf 链接,它的 title/date 是 stage-1 从列表页抄来的**链接文字**,
+    而这条管线原本修复元数据的唯一途径是读 html 详情页 —— 这类事件根本没有详情页,于是永远修不到。
+
+    {psql 2026-08-09 "事件总数 235166 | 只有文档无html 56198"} = 24% 的事件走的是这条盲路。
+    {psql 2026-08-09 抽样 "[Half-Year 2021 PresentationPDF] | 2021-Half-Year",
+     "[Presentation Q4 2007] | 2007-Q4", "[Interim Report Q1 2015] | 2015-Q1"} —— 方括号、"PresentationPDF"
+    粘连、日期粒度是从标题里猜出来的。它们都**非空**,所以任何「为空才修」的判据都放过了它们。
+    [CONFIDENCE: CONFIRMED 100% — 计数与样本均取自生产库。]
+
+    只在 event 的 url 全是文档时才调用: 有网页的事件由 SYSTEM_ROUTE 的元数据任务负责,重复调一次是白花
+    最紧张的那份算力。写回走 chart.confirm_metadata,和 html 路径同一个出口 —— 非空即替换,空即保留。
+    """
+    if not client or not text.strip():
+        return
+    body = (f"<<<UNTRUSTED_PAGE_CONTENT>>>\n{text[:_DOC_META_HEAD_CHARS]}\n"
+            f"<<<END_UNTRUSTED_PAGE_CONTENT>>>")
+    try:
+        out = await client.send_one(prompts.SYSTEM_DOC_META, body, image_b64=None,
+                                    guided_json=prompts.SCHEMA_DOC_META, max_tokens=256)
+    except Exception as e:                                    # noqa: BLE001 — 元数据是增量收益,失败不该毁掉这份文档
+        print(f"[media] ⚠️ doc-meta failed {url[:60]} — {type(e).__name__}: {str(e)[:60]}", flush=True)
+        return
+    t, d, ty = (out or {}).get("title", ""), (out or {}).get("date", ""), (out or {}).get("type", "")
+    if t or d or ty:
+        chart.confirm_metadata(str(t or ""), str(d or ""), str(ty or ""))
+        print(f"[media] 📄 doc-meta {url[-52:]} → title={str(t)[:44]!r} date={d!r}", flush=True)
+
+
+async def handle_office(url: str, chart, proxy: str | None = None, client=None,
+                        event_urls: list | None = None) -> None:
     """Parse an office document via tools/officeall and append it to chart.files[kind]. {OFFICEALL extract(url)->DocResult}."""
     from tools.officeall import extract as office_extract     # lazy: docling is a heavy GPU dep, only load on use
     res = await asyncio.to_thread(office_extract, url, proxy)  # blocking Docling call off the event loop
@@ -171,6 +211,10 @@ async def handle_office(url: str, chart, proxy: str | None = None) -> None:
     kind = res.format or router.classify(url)                 # trust the magic-confirmed format from the fetch
     chart.append_file(kind, url, markdown=res.text, tables=res.tables, n_pages=res.n_pages)
     chart.set_status(url, "done")
+    # 这个事件有没有网页可读?有 → 元数据归 SYSTEM_ROUTE 管,这里不重复花调用。
+    urls = event_urls or []
+    if urls and not any(u for u in urls if isinstance(u, str) and not _DOC_ONLY_RE.search(u)):
+        await _doc_metadata(url, res.text or "", chart, client)
     return
 
 
@@ -473,7 +517,7 @@ def _adopt_documents(page_url: str, proposed: list, page_links: list | None, cha
 
 
 async def handle_html(url: str, chart, client: QwenClient, use_image: bool = True,
-                      proxy: str | None = None) -> None:
+                      proxy: str | None = None, event_urls: list | None = None) -> None:
     """Render an html page + get THIS page's contribution and FILL the chart. Two paths by extract_html tier: ROUTE
     (deterministic body exists → shrunk VLM, no overflow) vs LEGACY (JS-shell/thin page, tier=='empty' → full-copy VLM
     with the two truncation twins). Discovers no urls — the set is event_agent's, fixed."""
@@ -525,7 +569,7 @@ async def handle_html(url: str, chart, client: QwenClient, use_image: bool = Tru
             print(f"[media] ↪ misrouted {url[:70]} — served {real} under an html content-type; "
                   f"re-routing to its own handler", flush=True)
             if real in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):
-                return await handle_office(url, chart, proxy=proxy)
+                return await handle_office(url, chart, proxy=proxy, client=client, event_urls=event_urls)
             if real == router.KIND_AUDIO:
                 return await handle_audio(url, chart, proxy=proxy)
             if real == router.KIND_VIDEO:
@@ -617,7 +661,8 @@ async def _refine_kind(url: str, kind: str) -> str:
 
 # ── dispatch: (url, kind) → the right handler ─────────────────────────────────────────────────────────────────
 async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
-                   use_image: bool = True, proxy: str | None = None) -> None:
+                   use_image: bool = True, proxy: str | None = None,
+                   event_urls: list | None = None) -> None:
     """Route one url to its handler by kind. Refines an extension-less html guess via HEAD first (H3). `other` is
     recorded-only (feeds/assets/unknown) — never fetched.
 
@@ -655,9 +700,10 @@ async def dispatch(url: str, kind: str, chart, client: QwenClient | None = None,
         return
 
     if kind == router.KIND_HTML:
-        await handle_html(url, chart, client or QwenClient(), use_image=use_image, proxy=proxy)
+        await handle_html(url, chart, client or QwenClient(), use_image=use_image, proxy=proxy,
+                          event_urls=event_urls)
     elif kind in (router.KIND_PDF, router.KIND_PPTX, router.KIND_DOCX, router.KIND_XLSX):   # H2: xlsx now routed
-        await handle_office(url, chart, proxy=proxy)
+        await handle_office(url, chart, proxy=proxy, client=client, event_urls=event_urls)
     elif kind == router.KIND_AUDIO:
         await handle_audio(url, chart, proxy=proxy)
     elif kind == router.KIND_VIDEO:
