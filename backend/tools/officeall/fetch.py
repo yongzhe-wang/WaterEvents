@@ -71,6 +71,18 @@ def _sniff_format(data: bytes, url_guess: str) -> str:
         except Exception:                                        # noqa: BLE001
             pass
         return url_guess if url_guess in ("pptx", "xlsx", "docx") else ""
+    # OLE2 — the 1997 compound-document container behind legacy .xls / .doc / .ppt. It was missing from this table, so
+    # every legacy workbook was rejected HERE, at the fetch layer, as `wrong-magic` and never reached a parser.
+    # {LIVE 2026-08-09 vodafone h1-12-spreadsheet.xls → "direct FAILED (WRONG-MAGIC-B'\XD0\XCF\X11\XE0\XA1\XB1\X1A\XE1')"}
+    # The fallback for exactly these files already exists and was unreachable because of it:
+    # {EXTRACT.PY _xls_tables "IF NOT DATA OR DATA[:4] != B'\XD0\XCF\X11\XE0': RETURN NONE  # OLE2 MAGIC — NOT A LEGACY XLS"}
+    # — a pandas/xlrd reader written precisely because Docling's MsExcelDocumentBackend only speaks OOXML, and the ledger
+    # had already priced the gap {DB 2026-08-05 "KIND='XLSX': 23 FAILED, 1 DONE"}.
+    # Like the zip branch above, the container does not name its payload (.xls, .doc and .ppt share it), so the url's own
+    # extension decides and an unrecognised one still returns '' rather than a guess.
+    # [CONFIDENCE: CONFIRMED 100% — the magic quoted in the rejection is byte-identical to the one _xls_tables tests for.]
+    if data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+        return url_guess if url_guess in ("pptx", "xlsx", "docx") else ""
     head = data[:512].lstrip().lower()
     if head.startswith(b"<!doctype html") or head.startswith(b"<html") or b"<head" in head:
         return "html"

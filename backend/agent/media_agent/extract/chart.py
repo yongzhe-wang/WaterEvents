@@ -149,6 +149,11 @@ def blocks_to_pair(blocks: list[dict]) -> tuple[str, list[dict]]:
     return "\n\n".join(parts), structured
 
 
+# 两条 office 路径产出的占位符形式:`[TABLE 3]`(extract.py / coords.py)与存储归一后的 `[[TABLE:3]]`。
+# 两种都认,因为一份文档可能被重新处理,而重处理时读到的是已经归一过的那种。
+_PLACEHOLDER_RE = re.compile(r"^\[\[?TABLE[:\s]\s*(\d+)\]\]?$", re.M)
+
+
 def markdown_to_pair(md: str, tables: list | None) -> tuple[str, list[dict], str]:
     """Docling markdown (tables ALREADY inlined as GFM) → (md with placeholders, structured blocks json, warning).
 
@@ -169,6 +174,34 @@ def markdown_to_pair(md: str, tables: list | None) -> tuple[str, list[dict], str
     out: list[str] = []
     structured: list[dict] = []
     n_tab, i = 0, 0
+
+    # BOTH office paths hand over markdown whose tables are ALREADY placeholders, not inlined pipes — the docstring's
+    # premise stopped being true when extraction moved the table DATA out to json and left `[TABLE n]` behind:
+    # {OFFICEALL/EXTRACT.PY _prose_markdown "REPLACE EVERY MARKDOWN TABLE BLOCK (|...| LINES) WITH A NUMBERED
+    #  [TABLE N] PLACEHOLDER … STRUCTURE PRESERVED, TABLE DATA MOVED OUT TO JSON (OPTION B)"}
+    # {OFFICEALL/COORDS.PY "表在 md 里只留占位符,结构化数据在 tables"}
+    # With no pipes left to walk, the loop below matched nothing, `structured` came back empty, and every office
+    # document's tables were dropped on the floor. The code said so on every single document and nobody read it:
+    # {JOURNAL 2026-08-09 "[chart] ⚠️ TABLE-COUNT-MISMATCH: 0 GFM REGIONS VS 1 STRUCTURED TABLES ON
+    #  https://www.sbigroup.co.jp/…/2026/07"} and again with "0 GFM REGIONS VS 2 STRUCTURED TABLES".
+    # {psql 2026-08-09 over the first 36 pdfs written after the lane opened: "有表 0 | 无表 36 | 最多表数 0"}
+    # So: recognise the placeholders that are already there and pair them positionally, exactly as the pipe path does.
+    # The pipe path stays for any caller that still inlines — this is an additional shape, not a replacement.
+    # [CONFIDENCE: CONFIRMED 100% — the warning names both counts, and the database shows the result.]
+    if not any(_GFM_ROW_RE.match(ln) for ln in lines) and tables and _PLACEHOLDER_RE.search(md or ""):
+        for ln in lines:
+            m = _PLACEHOLDER_RE.match(ln.strip())
+            if m:
+                n_tab += 1
+                out.append(f"[[TABLE:{n_tab}]]")               # 归一到存储用的形式
+                src = tables[n_tab - 1] if n_tab - 1 < len(tables) else None
+                structured.append(_table_block(n_tab, src, []))
+            else:
+                out.append(ln)
+        warn = "" if n_tab == len(tables) else \
+            f"placeholder-count-mismatch: {n_tab} placeholders vs {len(tables)} structured tables"
+        return "\n".join(out), structured, warn
+
     while i < len(lines):
         if _GFM_ROW_RE.match(lines[i]):
             j = i
