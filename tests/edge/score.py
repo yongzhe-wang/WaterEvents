@@ -11,8 +11,8 @@ r"""tests/edge/score.py — 读 edge_run 的产出,算出**不需要人工标注
 
 1. **交易所标记捕获率** —— 正文里写着 `(NYSE: WLY)`,这是客观事实。模型的 mention 有没有
    把它记进 exchange_tag,是可以直接对照的。这是唯一一个有「正确答案」的指标。
-2. **确定度分布** —— 不判对错,判分布形态。WaterEvents 这条线产不出 level 0(那是 SEC
-   结构化字段专属),正常应集中在 1-3;大量落在 4-5 说明文本弱或模型在回避判断。
+2. **iter 分布** —— 不判对错,判分布形态。WaterEvents 产不出 iter0(SEC 专属),
+   正常应集中在 1;iter2 占比高说明文本本身少有明示关系,多是靠推断。
 3. **predicate 复用度** —— 只出现一次的 predicate 占比高 = 模型在复述句子而不是给可聚合
    的关系类型。这是纯结构性质,不需要知道哪条边是对的。
 4. **分层产边率对比** —— expect_no_edge 层的产边率**必须**显著低于 press_release 层。
@@ -102,12 +102,12 @@ def main() -> int:
     lv = collections.Counter()
     for o in outs.values():
         for e in o["kept"]["edges"]:
-            lv[e["level"] if e.get("level") is not None else -1] += 1
+            lv[e["iter"] if e.get("iter") is not None else -1] += 1
     tot = sum(lv.values())
-    print(f"\n════════ ② 确定度分布(边 {tot} 条) ════════")
+    print(f"\n════════ ② iter 分布(边 {tot} 条) ════════")
     for k in sorted(lv):
         tag = "  ★ 模型未给字段 = prompt 缺陷, 不是模型不确定" if k < 0 else ""
-        print(f"  level {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
+        print(f"  iter {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
 
     # ── ③ predicate 复用度 ──
     pr = collections.Counter()

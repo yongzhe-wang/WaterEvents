@@ -34,7 +34,7 @@ Step 3 让模型**带着库里的候选**判断每个 mention 是复用已有节
 from __future__ import annotations
 
 # 等级定义单独成文件: 抽取自评、消歧自评、落库分流三处引用同一套, 避免描述漂移。
-from tests.edge.levels import LEVEL_SCHEMA, prompt_block
+from tests.edge.iters import ITER_SCHEMA, prompt_block
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Step 1 — 读文字, 出 mention 和 edge
@@ -48,7 +48,7 @@ STEP1_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["name", "kind", "search_keys", "role_in_text", "evidence", "level"],
+                "required": ["name", "kind", "search_keys", "role_in_text", "evidence", "iter"],
                 "properties": {
                     "name": {"type": "string", "description": "文中出现的最完整写法"},
                     "kind": {"enum": ["company", "person", "institution", "fund", "product", "other"]},
@@ -62,9 +62,10 @@ STEP1_SCHEMA = {
                     # 正文里若写了 (NYSE: XXX) 这类标记, 抄在这 —— 它是最强的锚点。
                     "exchange_tag": {"type": ["string", "null"]},
                     "evidence": {"type": "string", "description": "正文中的逐字片段"},
-                    # 确定度。node 和 edge 共用同一把尺子(levels.py), 0=结构化零推断 ~ 5=无法确定。
-                    # WaterEvents 这条线产不出 0 —— 它读的是自然语言;保留 0 是为了和 SEC 边同尺。
-                    "level": LEVEL_SCHEMA,
+                    # 确定度。node 和 edge 共用同一把尺子(iters.py):
+                    # 0=结构化零推断(SEC 专属) / 1=文本明说 / 2=从上下文推断。
+                    # 三档是 200 条实测收敛的结果 —— 首版六档里 level3 只用了 1 次、level5 零次。
+                    "iter": ITER_SCHEMA,
                 },
             },
         },
@@ -72,7 +73,7 @@ STEP1_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["subject", "predicate", "object", "evidence", "level"],
+                "required": ["subject", "predicate", "object", "evidence", "iter"],
                 "properties": {
                     # subject/object 必须是上面 mentions 里的 name —— 代码强制校验引用完整性
                     "subject": {"type": "string"},
@@ -91,9 +92,9 @@ STEP1_SCHEMA = {
                     # 比例/金额/条件状态等挂在边上的属性, 原样记录不做换算
                     "attrs": {"type": "object"},
                     "evidence": {"type": "string"},
-                    # 边的等级取 max(关系本身的等级, 两端实体的等级) —— 短板决定成色:
+                    # 边的 iter 取 max(关系, 主体, 客体) —— 短板决定成色:
                     # 关系读得再准, 主语指错了实体这条边照样是错的。
-                    "level": LEVEL_SCHEMA,
+                    "iter": ITER_SCHEMA,
                 },
             },
         },
@@ -135,7 +136,7 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 - aliases_in_text: 文中用到的其它写法或简称(如 "Luminor" 是 "Luminor Holding AS" 的简称)
 - exchange_tag: 文中若写了 (NYSE: XXX) / (NASDAQ: XXX) 这类标记, 原样抄下来; 没有填 null
 - evidence: 正文里的**逐字片段**(必须能在正文中原样找到)
-- level: 确定度 0-5(见下面「确定度」一节)。**每个 mention 都必须给**
+- iter: 确定度 0/1/2(见下面「iter」一节)。**每个 mention 都必须给**
 
 ## edges —— 实体之间的关系
 - subject / object: 必须是上面 mentions 里的 name
@@ -152,9 +153,9 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
   "since 2019" 就填 "2019"+year。**不要把年份补成某一天**
 - attrs: 比例、金额、条件状态等原样记录, 如 {{"stake":"19.95%","status":"pending_regulatory_approval"}}
 - evidence: 正文里的**逐字片段**
-- level: 确定度 0-5(见下面「确定度」一节)。**每条 edge 都必须给**
+- iter: 确定度 0/1/2(见下面「iter」一节)。**每条 edge 都必须给**
 
-# 确定度
+# iter
 
 {level_block}
 
@@ -183,7 +184,7 @@ STEP3_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["mention", "decision", "level", "reason"],
+                "required": ["mention", "decision", "iter", "unsure", "reason"],
                 "properties": {
                     "mention": {"type": "string"},
                     # MATCH = 就是候选里的某一个;NEW = 候选里都不是。
@@ -193,8 +194,11 @@ STEP3_SCHEMA = {
                     # 是两个正交的维度: 你必须给一个判断, 同时诚实说明它有多确定。
                     "decision": {"enum": ["MATCH", "NEW"]},
                     "entity_id": {"type": ["integer", "null"]},
-                    # 与 mention/edge 共用同一把尺子(levels.py)。level=5 → 挂起人工, 不写库。
-                    "level": LEVEL_SCHEMA,
+                    # 与 mention/edge 共用同一把尺子(iters.py)。分不清 → 走 unsure 字段挂起, 不占 iter 档位。
+                    "iter": ITER_SCHEMA,
+                    # 消歧分不清时置 true → 挂起人工, 不写库。它不是一个 iter 档位 ——
+                    # 「不确定」不该作为一种确定度写进事实层。
+                    "unsure": {"type": "boolean"},
                     "reason": {"type": "string"},
                 },
             },
@@ -224,7 +228,8 @@ STEP3_PROMPT = """你要判断一篇文章里提到的机构, 是不是数据库
 # 判断
 对「{mention_name}」给出:
 - decision: MATCH + entity_id(候选中某一条**就是**它)  或  NEW(候选里都不是它)
-- level:    这个判断有多确定
+- iter:     这个判断是照着候选信息直接对上的(1)还是推出来的(2)
+- unsure:   分不清就置 true —— 会被挂起等人看, 不写进库
 
 {level_block}
 
@@ -234,8 +239,8 @@ STEP3_PROMPT = """你要判断一篇文章里提到的机构, 是不是数据库
 2. 反过来, 同一个实体在不同文章里写法会不同("DNB Baltic Invest AB" / "DNB Baltic Invest"),
    结合它在文中的角色判断, 不要只看字面。
 3. 候选里若有多条名字几乎一样但 cik 不同的, 说明数据库里本身可能有重复 —— 这种情况选证据最匹配的
-   那条并给 level 4;实在分不清就给 level 5(会被挂起等人看)。
-4. **必须给一个 decision, 但要诚实给 level。** 分不清就给 level 5 —— 它会被挂起等人看, 不写进库。
+   那条并给 iter 2;实在分不清就把 unsure 置 true(会被挂起等人看)。
+4. **必须给一个 decision, 分不清就把 unsure 置 true。** 挂起的会等人看, 不写进库。
    判错成 MATCH 会污染已有节点, 判错成 NEW 会持续制造重复节点, 两者都比挂起更糟;
    但「不给判断」也没有用, 所以判断和确定度分开表达。
 

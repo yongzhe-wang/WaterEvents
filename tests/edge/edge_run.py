@@ -54,7 +54,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"
 
 from providers.qwen_llm import QwenClient                      # 复用项目的并发传输层, 不自己造轮子
 from tests.edge.prompts import STEP1_PROMPT, STEP1_RETRY_PROMPT, STEP1_SCHEMA, _RETRY_MAX
-from tests.edge.levels import PENDING_AT, WRITE_MAX, prompt_block
+from tests.edge.iters import WRITE_MAX, prompt_block
 from tests.edge.validate import check_step1
 
 _DATASET = os.environ.get("EDGE_DATASET",
@@ -311,7 +311,7 @@ async def _process_one(client, sem, rec: dict, agg, preds, lv, per_stratum) -> N
     for e_ in chk["kept"]["edges"]:
         preds[(e_.get("predicate") or "?").strip().lower()] += 1
         # -1 = 模型没给这个字段(prompt 缺陷), 与「模型判定为 5」是完全不同的信号
-        lv[int(e_["level"]) if e_.get("level") is not None else -1] += 1
+        lv[int(e_["iter"]) if e_.get("iter") is not None else -1] += 1
 
     sd = chk["stats"]
     for k, c in (("events", 1), ("blocks", mt["n_blocks"]),
@@ -367,12 +367,12 @@ async def main() -> int:
 
     if lv:
         tot = sum(lv.values())
-        print(f"\n  ── 确定度分布(边) ──")
+        print(f"\n  ── iter 分布(边) ──")
         for k in sorted(lv):
             tag = "  ★ 模型未给该字段(prompt 问题, 不是模型不确定)" if k < 0 else ""
-            print(f"  level {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
+            print(f"  iter {k if k >= 0 else '缺失':>5}  {lv[k]:5d}  {'█' * (30 * lv[k] // max(tot, 1))}{tag}")
         writable = sum(c for k, c in lv.items() if 0 <= k <= WRITE_MAX)
-        print(f"  可写入主图(level<={WRITE_MAX}) {writable}  ·  挂起(level>={PENDING_AT}) {tot - writable}")
+        print(f"  可写入主图 {writable}  ·  字段缺失 {tot - writable}")
 
     if preds:
         once = sum(1 for _, c in preds.items() if c == 1)
