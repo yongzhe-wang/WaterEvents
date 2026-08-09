@@ -47,7 +47,14 @@ def norm(s: str) -> str:
     这里放宽的只是【排版噪声】(markdown 标记、脚注编号、列表符), 不是内容 ——
     实词、数字、顺序全部保留, 所以「evidence 必须是原文」这个要求没有被削弱。
     """
-    s = unicodedata.normalize("NFKC", s or "")
+    # 模型偶尔把 evidence 返回成数组而不是字符串(schema 写的是 string, guided_json 没兜住)。
+    # 拼起来而不是报错: 内容还在, 只是形状不对; 直接 TypeError 会让整条样本失败。
+    # {2026-08-09 实测 "TypeError: normalize() argument 2 must be str, not list" —— 一条崩掉整批}
+    if isinstance(s, (list, tuple)):
+        s = " ".join(str(x) for x in s)
+    elif not isinstance(s, str):
+        s = "" if s is None else str(s)
+    s = unicodedata.normalize("NFKC", s)
     s = s.translate(_QUOTES)
     s = _LINK.sub(r"\1", s)            # [text](url) → text
     s = _FOOTNOTE.sub(" ", s)          # [1] 脚注编号 → 空白

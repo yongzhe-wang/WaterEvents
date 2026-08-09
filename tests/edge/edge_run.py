@@ -63,12 +63,30 @@ _DATASET = os.environ.get("EDGE_DATASET",
 _OUT = os.environ.get("EDGE_OUT", "/tmp/edge_out")
 _LIMIT = int(os.environ.get("EDGE_LIMIT", "0"))                # >0 时只跑前 N 条, 用于快速试跑
 
-# 分块参数 —— 与 handlers.py 对齐, 不另造一套
-_CHUNK_CHARS = int(os.environ.get("EDGE_CHUNK_CHARS", "18000"))   # 每块目标输入
+# ── 分块参数:尽量少切、每块尽量满 ──────────────────────────────────────────
+# 2026-08-09 实测倒推(vLLM /tokenize 端点, 不是估算):
+#   prompt 模板不含正文          1,842 token
+#   英文 markdown 正文           5.15 字符/token(标点/空格/URL 压缩率高)
+#   窗口 32,768 − 模板 1,842 − 输出预算 3,000 = 27,926 可用
+# 英文按 5.15 折算能放十几万字符, 但 CJK 约 1 字符/token(hard_no_tag 层有日韩中文样本),
+# 所以按最坏情况取 24,000 —— 英文时仅占 4,660 token 余量充裕, CJK 时也不会超窗。
+_CHUNK_CHARS = int(os.environ.get("EDGE_CHUNK_CHARS", "24000"))
 _CHUNK_OVERLAP = int(os.environ.get("EDGE_CHUNK_OVERLAP", "1500"))  # 向后重叠, 防切断
-# 块数上限。见模块 docstring: p99=174k → 10 块, 取 12 覆盖到 p99 之外。
-# 超过的标记 too_long 挂起, 不硬跑 —— 那些是提取失败(RTF 源码)或 SEC 全文, 都不该走这条管道。
-_MAX_BLOCKS = int(os.environ.get("EDGE_MAX_BLOCKS", "12"))
+
+# ★ 块数上限 2(原为 12)。理由不是成本, 是质量:
+# 2026-08-09 的 2×2 诊断显示【切碎会让模型变笨】——
+#   全文 18k + 三列表 → 3/3 判对;  截成 1.5k 段落 + 同样任务 → 0/3
+# 因为它失去了「这是一篇 AI Developer Challenge 获奖名单」这个背景, 只看到 "partner"
+# 就把身份标签判成了新签合作。所以能不切就不切, 必须切也只切两刀。
+# 24,000 × 2 = 48,000 字符覆盖 —— 按全库分布已覆盖 p95(26,762)之外;
+# 超过的多是 SEC 全文或 RTF 提取失败, 本就不该走这条管道。
+# {PSQL 全库 n_chars 分位 "p50 2,727 · p95 26,762 · p99 174,028"}
+_MAX_BLOCKS = int(os.environ.get("EDGE_MAX_BLOCKS", "2"))
+
+# 每块都带的全局头长度。切块最大的代价是后面的块不知道这篇文章在讲什么,
+# 而正文开头通常是导语(含主旨、公司定位、事件性质)—— 把它复制到每块前面,
+# 用 4% 的额外长度换回被切掉的背景。
+_CTX_HEAD = int(os.environ.get("EDGE_CTX_HEAD", "1000"))
 
 # 提取失败的特征: md 里是 RTF/富文本控制码而不是正文。分块只会把垃圾切成 N 份垃圾,
 # 所以在分块之前先挡掉, 并且明确记 too_long/not_text 而不是静默跳过。
@@ -86,10 +104,15 @@ def _split_blocks(text: str) -> list[str]:
         return [text]
     n = -(-len(text) // _CHUNK_CHARS)                      # ceil-div
     step = -(-len(text) // n)                              # 每块步进
+    head = text[:_CTX_HEAD]                                # 导语, 复制给每个后续块
     out = []
     for i in range(n):
         start = max(0, i * step - (_CHUNK_OVERLAP if i else 0))
-        out.append(text[start:(i + 1) * step])
+        body = text[start:(i + 1) * step]
+        # 第一块本来就含导语;后续块前置全局头, 并标明这是背景而非正文的一部分,
+        # 免得模型把导语里的句子当成本块内容抽出来(evidence 逐字校验用的是全文, 所以不会误杀)
+        out.append(body if i == 0 else
+                   f"[本文开头(供背景参考)]\n{head}\n\n[本段正文]\n{body}")
     return out
 
 
@@ -361,11 +384,20 @@ async def main() -> int:
 
     client = QwenClient()
     sem = asyncio.Semaphore(int(os.environ.get("EDGE_EVENT_CONCURRENCY", "3")))
-    await asyncio.gather(*[_process_one(client, sem, r, agg, preds, lv, per_stratum) for r in recs])
+    # return_exceptions=True: 单条样本崩掉不该毁掉整批。
+    # 流式落盘的全部意义就在于此 —— 2026-08-09 一条 evidence 返回成数组导致 TypeError,
+    # 而 gather 默认会传播异常, 结果 18 条之后剩下 182 条全部没跑。
+    results = await asyncio.gather(
+        *[_process_one(client, sem, r, agg, preds, lv, per_stratum) for r in recs],
+        return_exceptions=True)
+    for r, res in zip(recs, results):
+        if isinstance(res, BaseException):
+            agg["crashed"] += 1
+            print(f"    ✗ {r['id']} 崩溃: {type(res).__name__}: {str(res)[:100]}", flush=True)
 
     print("\n════════ 汇总 ════════")
     e = max(agg["events"], 1)
-    print(f"  成功 {agg['events']}  失败 {agg['failed']}  前置挡下 {agg['skipped']}"
+    print(f"  成功 {agg['events']}  失败 {agg['failed']}  崩溃 {agg['crashed']}  前置挡下 {agg['skipped']}"
           f" (not_text {agg['skip_not_text']} / too_long {agg['skip_too_long']})"
           f"  断点跳过 {agg['resumed']}")
     print(f"  总块数 {agg['blocks']}  其中分块处理的事件 {agg['chunked']} 条  块级失败 {agg['failed_blocks']}")
