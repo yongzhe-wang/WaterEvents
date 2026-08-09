@@ -141,7 +141,15 @@ STEP1_SCHEMA = {
     },
 }
 
-STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出这段文字**明确说了**的实体和关系。
+STEP1_PROMPT = """你在读一家公司的投资者关系页面。
+
+# 我想要什么
+
+我在建一张**公司关系图**。我关心的是:**这家公司和外界发生了什么关系** ——
+它跟谁做了生意、买了谁、投了谁、谁在它那里任职、它发布了什么。
+
+我不关心:这篇稿子的文风、它怎么描述自己的业绩有多好、它的季度数字。
+那些信息有别的地方存,不该变成图上的连线。
 
 # 输入
 公司: {ticker} ({ir_url})
@@ -154,121 +162,105 @@ STEP1_PROMPT = """你在读一家公司的投资者关系页面, 任务是抽出
 {body}
 ---
 
-# 输出两个列表
+# 请给我三样东西
 
-## mentions —— 文中出现的实体
-每个实体给:
-- name: 文中最完整的写法(如 "Luminor Holding AS", 不要缩成 "Luminor")
-- kind: company / person / institution / fund / product / asset / other
-  · asset = 矿山、厂房、航线、牌照、物业这类**资产** —— 它是某家公司的财产, 不是独立主体。
-    抽出来记录没问题, 但**不要拿它当边的端点**("公司 operates 某矿" 不是关系, 是资产归属)
-- search_keys: **用来去数据库里找它的词, 最多 3 个**
-  给能把这家机构和别家区分开的部分。不要给 Capital / Holdings / Group / Bank / Partners
-  这类几乎每家公司都有的通用词 —— 那会召回上千条无关结果。
-  例: "DNB Baltic Invest AB" → ["DNB Baltic", "DNB"]
-      "Blackstone Capital Partners" → ["Blackstone Capital", "Blackstone"]   不要给 ["Capital"]
-- role_in_text: 它在这段文字里是什么角色、和别的实体什么关系(一句话)
-- aliases_in_text: 文中用到的其它写法或简称(如 "Luminor" 是 "Luminor Holding AS" 的简称)
-- exchange_tag: 文中若写了 (NYSE: XXX) / (NASDAQ: XXX) 这类标记, 原样抄下来; 没有填 null
-- evidence: 正文里的**逐字片段**(必须能在正文中原样找到)
-- iter: 确定度 0/1/2(见下面「iter」一节)。**每个 mention 都必须给**
+## 1. mentions —— 这段文字里出现了哪些**能独立存在的主体**
 
-## attributes —— 实体自身的属性(**不是关系**)
+公司、人、机构、基金、产品。
+矿山、厂房、牌照、航线这类是某家公司的**财产**, 也记下来(kind=asset), 但它们不是主体。
 
-某个实体「是什么」, 而不是它和别人之间发生了什么:
-- title(职位名)/ headquarters / founded / industry / employee_count / ticker / website
+每个给: name(文中最完整的写法)· kind · search_keys(去数据库找它的词, 最多 3 个,
+给能把它和别家区分开的部分)· role_in_text(它在文中是什么角色, 一句话)·
+aliases_in_text(文中用到的简称)· exchange_tag(文中若写了 (NYSE: XXX) 就原样抄)·
+evidence(正文逐字片段)· iter
 
-每条给: entity(必须是 mentions 里的 name)· key · value · evidence(逐字)· iter
+## 2. attributes —— 某个主体**自己是什么**
 
-★ 「Paul Hanson, Chairman of Bitdeer Industrial」要拆成两部分:
-    attribute: entity="Paul Hanson", key="title", value="Chairman"
-    edge:      Paul Hanson --affiliation:officer_of--> Bitdeer Industrial
-  **不要**写成 "Bitdeer employs Paul Hanson" —— 职位名是他的属性, 任职关系的主体是他本人。
+职位、总部、成立年份、行业、员工数、股票代码、网址。
 
-## edges —— 实体之间的关系
-- subject / object: 必须是上面 mentions 里的 name
-- edge_class: 五选一
-  · affiliation  谁跟谁有关系(任职 / 董事 / 子公司隶属 / 指数成员)——【状态】
-    ★ **方向固定: 被隶属的一方做 subject, 所属的组织做 object。**
-      人 → 公司 · 子公司 → 母公司 · 成员公司 → 指数
-      对: Paul Hanson --officer_of--> Bitdeer Industrial
-      错: Bitdeer Industrial --employs--> Paul Hanson   (方向反了, 查询时会漏一半)
-    ★ **职位名不要写进 predicate** —— 它已经在 attributes 里了。
-      predicate 统一用 officer_of / director_of / subsidiary_of / member_of,
-      具体是 CEO 还是 Chairman 由 attributes 的 title 承载。
-      对: Catherine Guo --officer_of--> Bitdeer Industrial  +  attr(title="CEO")
-      错: Catherine Guo --is CEO of--> Bitdeer Industrial   (职位存了两份, predicate 也碎了)
-  · transaction  所有权变动(收购 / 剥离 / 投资 / 合并)——【事件】
-  · commercial   商业往来(合作 / 供货 / 客户 / 授权)——【事件】
-    ★ 必须有一个**发生的动作**: 签了合同 / 达成协议 / 开始供货 / 授予许可。
-      仅仅描述身份("是我们的 partner"、"是我们的客户"、"属于我们的生态")
-      → 那是 affiliation(状态), 不是 commercial(事件)。
-      例: 「signed a contract with Fluor to proceed with FEED Phase 2」  → commercial ✓
-          「Zebra independent software vendor (ISV) partner, Spatialsolutions.ai」
-          → 这是身份标签, 归 affiliation, 不是 commercial
-  · product      产品动作(发布 / 上市 / 停产)——【事件】
-  · corporate    公司自身动作(分红 / 回购 / 指引 / 任命)——【事件】
-- predicate: 用你自己的话描述这个关系是什么, **不要套用固定词表** ——
-  我们现在要的是如实记录, 不是提前分类。分类只靠上面的 edge_class 五选一。
+判断方法: 如果这条信息只描述一个主体、不牵涉第二个主体, 它就是属性。
+「Paul Hanson 是董事长」——「董事长」是他的属性;
+「Paul Hanson 是 Bitdeer Industrial 的董事长」—— 属性是「董事长」, 关系是「他在那家公司」。
 
-  **但数字、金额、比例、日期、期间不要写进 predicate, 放进 attrs。**
-  这不是为了归类, 是因为它们本来就是独立的字段, 塞进关系名会让它们查不出来:
-    写成 "announces_loss_of_$610_million"     → 金额被埋在字符串里, 没法按金额筛
-    写成 "reports_earnings" + attrs {{"net_loss": "$610 million"}}  → 金额是可查询的值
-    写成 "reduces_capital_spending_by_30_percent" → 同理
-    写成 "guides_capex" + attrs {{"change": "-30%"}}
-  判断很简单: **predicate 里出现了数字或日期, 就说明有东西该挪进 attrs**。
+每条给: entity(必须是 mentions 里的 name)· key · value · evidence · iter
 
-- ★ predicate **不要带 edge_class 前缀**。写 "officer_of" 而不是 "affiliation:officer_of" ——
-  类别已经在 edge_class 字段里了, 重复写进 predicate 会让同一种关系出现两种写法。
-- object: **必须是 mentions 里另一个实体的名字。不允许 null / 空 / "None", 也不允许与 subject 相同。**
-  ★ **股票代码、网址、总部地址、成立年份、行业**这些不是实体, 不能当 object ——
-    它们是 attributes 里已有的 key(ticker / website / headquarters / founded / industry)。
-    错: MaxLinear --stock_symbol--> NASDAQ:MXL      对: attr(MaxLinear.ticker = "MXL")
-  公司自己的动作(发布财报、宣布派息、回购股票)没有第二个实体作客体 ——
-  **整条边都不要出现在 edges 里**。这类信息若要保留, 走 attributes。
-  例: 「Qnity Electronics today reported results for the first quarter」→ 不产边
-      「Allegion's board declared a quarterly dividend of $0.41」→ 不产边(除非文中写明派给谁)
-  如果一句话只是公司在说自己(上调指引、宣布分红、公布业绩、发布财报), 它没有客体 ——
-  **整条边都不要出现在 edges 里**, 而不是产一条 object 为空的边。那是公司的属性不是关系
-- valid_at + valid_precision: 关系发生的时间。文中说 "2017" 就填 "2017"+year, 说
-  "since 2019" 就填 "2019"+year。**不要把年份补成某一天**
-- attrs: 比例、金额、条件状态等原样记录, 如 {{"stake":"19.95%","status":"pending_regulatory_approval"}}
-- evidence: 正文里的**逐字片段**
-- iter: 确定度 0/1/2(见下面「iter」一节)。**每条 edge 都必须给**
+## 3. edges —— 两个主体**之间**的关系
+
+每条给: subject · object · edge_class · predicate · valid_at + valid_precision ·
+attrs · evidence · iter
+
+### edge_class —— 我想按这五类来看这张图
+
+- `affiliation`  谁属于谁。人在哪家公司、子公司属于哪个集团、公司是哪个指数的成员。
+                 这是**状态**, 通常没有明确的发生时刻。
+- `transaction`  所有权动了。收购、剥离、投资、合并。
+- `commercial`   做成了生意。签约、供货、授权、达成协议。
+- `product`      产品动了。发布、上市、停产。
+- `corporate`    公司自己做的动作, 但有明确对象。派息、回购、任命、获得批准。
+
+### 关于 subject 和 object 的方向
+
+方向应该服务于「我想查什么」。
+
+我想查**一个人属于哪里**、**一家子公司属于谁** —— 所以 affiliation 从**属于的一方**出发:
+    Paul Hanson --officer_of--> Bitdeer Industrial
+    Bitdeer Industrial --subsidiary_of--> Bitdeer Technologies Group
+
+我想查**谁对谁做了什么** —— 所以事件类从**做这件事的一方**出发:
+    Palo Alto Networks --acquires--> Portkey
+
+★ 最容易出错的地方: 文章通常围绕一家公司写, 于是你会不自觉地把那家公司当成所有关系的主体。
+  但文中出现的人和机构未必属于它 —— 可能属于它的子公司, 也可能属于完全无关的第三方。
+  **先问「这句话在说谁」, 那个才是 subject。**
+  具体到 affiliation: **人做 subject, 组织做 object**;子公司做 subject, 母公司做 object。
+    对: Paul Hanson --officer_of--> Bitdeer Industrial
+    错: Bitdeer Industrial --employs--> Paul Hanson
+    原文「Paul Hanson, Chairman of Bitdeer Industrial」
+      → 说的是 Paul Hanson, 他所属的是 Bitdeer Industrial(子公司), 不是集团
+    原文「Taylor Adams, President and CEO of the Economic Development Authority」
+      → 说的是 Taylor Adams 和 EDAWN 的关系, 跟这篇文章的主角公司没关系
+
+### 关于 predicate
+
+predicate 只回答**一个**问题: 这是什么关系。
+
+其他所有信息都有它自己的位置。放错了地方就查不出来 ——
+埋在关系名字符串里的金额没法按金额筛, 埋在里面的职位也没法按职位查:
+
+    职位(CEO / Chairman / CFO)   → attributes 的 title, 不进 predicate
+      写 "is_officer_of" 而不是 "is_chairman_of" / "is the president and ceo of"
+    金额 / 比例 / 期间             → attrs
+      写 "reports_earnings" + attrs, 而不是 "announces_loss_of_$610_million"
+    时间                          → valid_at
+    类别                          → edge_class, 不要在 predicate 里重复
+      写 "officer_of" 而不是 "affiliation:officer_of"
+
+同一种关系叫同一个名字, 图上才连得起来。
+
+### 什么不该成为一条边
+
+- 两端指的是**同一家** —— 全称、简称、缩写、带不带法人后缀, 那是一个主体的几个名字,
+  不是两个主体。它们之间不该有连线, 把别名写进 aliases_in_text 就够了。
+  (「Zebra」和「Zebra Technologies Corporation」是同一家)
+- 两端是同一个主体 —— 那不是关系, 是这家公司自己的动作
+- 另一端不是主体而是一个值(股票代码、网址、地址、年份)—— 那是属性
+    错: MaxLinear --stock_symbol--> NASDAQ:MXL    对: attributes 里 MaxLinear.ticker = "MXL"
+- 另一端是资产(矿山、厂房)—— 那是财产归属, 记进 attributes
+- 只是在描述身份而没有发生什么(「是我们的合作伙伴」「是我们的客户」)
+  —— 那是 affiliation 的状态, 不是 commercial 的事件
 
 # iter
 
 {level_block}
 
-# 硬性要求
-1. evidence 必须是正文的逐字子串。改写、翻译、概括一律不接受 —— 会被程序当场丢弃。
-2. ★ **先问「这句话的施动者是谁」, 再决定 subject。**
-   最常见的错误是把**文章在讲的那家公司**当成所有关系的主体。文里提到的人和机构
-   未必属于它 —— 可能属于它的子公司, 也可能属于完全无关的第三方。
+# 底线
 
-   错: Bitdeer Technologies Group --employs--> Paul Hanson
-       原文「Paul Hanson, Chairman of Bitdeer Industrial」
-       → 他是 **Bitdeer Industrial**(子公司)的董事长。母公司和子公司是两个实体。
-       对: attribute(Paul Hanson.title="Chairman")
-           + edge(Paul Hanson --affiliation:officer_of--> Bitdeer Industrial)
-
-   错: Bitdeer Technologies Group --communicates_with--> Taylor Adams
-       原文「Taylor Adams, President and CEO of the Economic Development Authority of Western Nevada」
-       → 他是另一个机构的负责人, 和这家公司没有这层关系。
-       对: 不产这条边;要记就记 Taylor Adams --affiliation:officer_of--> EDAWN
-
-   错: Otter Tail Corporation --receives_approval_for--> Otter Tail Power
-       原文「In May, Otter Tail Power received approval from the Minnesota PUC」
-       → 获批的是 **Otter Tail Power**。
-       对: Otter Tail Power --corporate:receives_approval_from--> Minnesota PUC
-
-3. 只写这段文字**说了**的。不要补充你知道但文中没说的事(比如你知道某公司在纽交所上市, 但文中没写, 就不要写)。
-4. 读不出任何关系时, edges 给空数组, 并在 no_edge_reason 里说明原因。**不要为了凑数硬造边。**
-   大多数事件(季报、年会、网播预告)本来就没有关系可抽, 那是正常的。
-5. title_body_mismatch: 对比标题和正文**讲的是不是同一件事**。
-   例: 标题 "[Shuttle traffic in January 2026]" 而正文通篇在讲 "targets EUR1 billion EBITDA by 2030"
-   —— 这是两件不同的事, 填 true。抓取时可能抓到了列表页或另一篇稿, 这个标记是唯一的线索。
+1. evidence 必须是正文里能**原样找到**的片段。改写、翻译、概括都不接受。
+2. 只写这段文字**说了**的。你知道但文里没写的, 不要补。
+3. 读不出任何关系是正常的 —— 大多数事件(季报、年会、网播预告)本来就没有。
+   那时 edges 给空数组并在 no_edge_reason 里说明。**不要凑数。**
+4. title_body_mismatch: 标题和正文讲的不是同一件事时填 true。
+   抓取时可能抓到了列表页或另一篇稿, 这个标记是唯一的线索。
 
 只输出 JSON, 不要任何解释文字。
 """
