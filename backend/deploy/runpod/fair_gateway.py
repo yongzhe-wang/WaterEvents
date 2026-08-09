@@ -131,11 +131,19 @@ EWMA_A        = float(os.environ.get("FAIR_EWMA_ALPHA", "0.3"))  # 平滑,越小
 PATIENCE      = int(os.environ.get("FAIR_PATIENCE", "4"))        # 连续这么多窗没更好 → 回最好点、换方向
 DECAY         = float(os.environ.get("FAIR_DECAY", "0.98"))      # 纪录每窗褪色,峰值漂移时能重新确认
 MIN_TOKENS    = int(os.environ.get("FAIR_MIN_TOKENS", "20000"))  # 一窗至少要有这么多 prompt token 才结算
-# 卸载阈值是**绝对值,不跟闸门缩**。这是过载保护,不是常规背压 —— 让它随闸门缩会和闸门形成正反馈:
-# 闸门降 → 份额降 → 阈值降 → 更多 503 → 客户端重试 → 队列更长 → 吞吐掉 → 闸门继续降。
-# {生产实测 2026-08-08 该螺旋跑满时 shed 累计 3007,而正常运行时每 key 的 want 只有 18–48}
-# [CONFIDENCE: CONFIRMED 100% — 阈值当时是 max(份额,4)×4;闸门收到 16 后阈值降到 32,而 want=36,于是持续卸载。]
-SHED_QUEUE    = int(os.environ.get("FAIR_SHED_QUEUE", "400"))
+# 卸载的判据是**估计等待时间**,不是队长。排队本身没有错 —— 错的是排一个客户端等不到的队:客户端
+# 的 timeout 是 120s,如果队尾要等 150s,那让它排下去只是把「立刻知道」换成「120 秒后超时」,而且
+# 那 120 秒里它还占着一条连接。诚实卸载让客户端能立刻退避重试。
+# 等待时间 = 该 key 的队长 ÷ 该 key 的服务速率,两个量控制器都在测,所以这里不需要再拍一个数字。
+#
+# WHY 不是「队长 × 常数」: 之前的阈值是 max(份额,4)×4,它随闸门缩 —— 闸门降 → 份额降 → 阈值降 →
+# 更多 503 → 客户端重试 → 队列更长 → 吞吐掉 → 闸门继续降。自我强化的螺旋。
+# {生产实测 2026-08-08 螺旋跑满时 shed 累计 3007,闸门被压到 16,而它自己记录的最好点是 24;
+#  同期正常运行时每 key 的 want 只有 18–48}
+# [CONFIDENCE: CONFIRMED 100% — /gwstats 里 limit=16 best_limit=24 shed=3007 同时出现。]
+SHED_WAIT_S   = float(os.environ.get("FAIR_SHED_WAIT_S", "120"))   # 与客户端 QWEN_TIMEOUT_S 对齐
+# 内存兜底:即使速率还没测出来,也不能让队列无限长。一条连接加它的请求体大约几十 KB,一千条是几十 MB。
+SHED_HARD_CAP = int(os.environ.get("FAIR_SHED_HARD_CAP", "1000"))
 
 _limit = float(os.environ.get("FAIR_TOTAL_SLOTS", "28"))         # 起点;此后由控制器接管
 _done = 0
@@ -148,7 +156,8 @@ _ewma_rate = 0.0
 _prev_tok = None                                                 # 上一窗的累计 prompt token
 _acc_s = 0.0
 _stats: dict = {"limit": _limit, "prefill_tok_s": 0, "ewma": 0, "best_rate": 0, "best_limit": _limit,
-                "dir": 1, "miss": 0, "rph": 0, "shed": 0, "window_s": 0.0}
+                "dir": 1, "miss": 0, "rph": 0, "shed": 0, "window_s": 0.0,
+                "tok_per_call": 0, "capacity_cph": 0}
 
 
 class Shed(Exception):
@@ -208,9 +217,21 @@ async def _controller() -> None:
             if _best_limit in (LIMIT_MIN, LIMIT_MAX):            # 最好点落在边界 → 不可信,往内挪重新找
                 _best_limit = max(LIMIT_MIN + STEP, min(LIMIT_MAX - STEP, _best_limit - _dir * STEP))
 
+            # capacity_cph —— 给上游调度器用的「每小时能跑多少次调用」。
+            # 直接报 rph 是不对的:那是**观测到的**速率,受需求限制,闲的时候会很低,而调度器会把它当
+            # 容量,于是从自己的低需求推断出「上游没能力」,然后进一步限制自己。这个反馈回路真实存在:
+            # {SCHEDULER_STATE 2026-08-08 "t_star=93.4h binding=vlm c_v=170.5" —— 而同期网关实测
+            #  prefill 2,631 tok/s、3,220 请求/h}
+            # 正确的换算是拿**最好的 prefill 速率**除以当前每请求的 token 数:前者是这块卡的能力(和需求
+            # 无关),后者是当下负载的形状。两者相除才是「这种 prompt 下每小时能跑多少次」。
+            # [CONFIDENCE: CONFIRMED 100% — 每请求 token 数在同一天内从 3,601 变到 7,835 又回到 2,942,
+            #  而 prefill 速率始终在 2,400–2,600;固定的 calls/hour 常数在任何一种形状下都是错的。]
+            tok_per_call = rate / max(done / span, 1e-9)
+            cap_cph = (_best_rate / tok_per_call * 3600) if tok_per_call > 0 else 0
             _stats.update(limit=round(_limit, 1), prefill_tok_s=round(rate), ewma=round(_ewma_rate),
                           best_rate=round(_best_rate), best_limit=round(_best_limit, 1), dir=_dir,
-                          miss=_miss, rph=round(done / span * 3600), window_s=round(span, 1))
+                          miss=_miss, rph=round(done / span * 3600), window_s=round(span, 1),
+                          tok_per_call=round(tok_per_call), capacity_cph=round(cap_cph))
             _cond.notify_all()                                   # 闸门变大 → 等待者立刻重新评估
 
 
@@ -222,9 +243,21 @@ async def _acquire(key: str, w: float) -> None:
     """Block until this key can admit a `w`-weight request WITHOUT (a) exceeding its fair budget TOTAL/active, NOR (b)
     overflowing the global TOTAL. Re-evaluated on every notify → a key expands to the whole server the moment it's alone."""
     async with _cond:
-        if _want.get(key, 0) > SHED_QUEUE:                       # 绝对阈值,不跟闸门缩
+        queued = _want.get(key, 0)
+        if queued > SHED_HARD_CAP:                               # 内存兜底,与速率无关
             _stats["shed"] += 1
             raise Shed()
+        # 该 key 的服务速率 = 全局完成率 × 它占的份额;据此估计队尾要等多久。
+        # 速率还没测出来(启动初期)时 rate=0,est 为无穷 —— 那时**不卸载**,交给硬上限兜底,
+        # 免得冷启动阶段把正常流量当成过载。
+        svc = _stats.get("rph", 0) / 3600.0
+        if svc > 0 and queued > 0:
+            share = _w_of(key) / _active_weight()
+            est_wait = queued / max(svc * share, 1e-6)
+            if est_wait > SHED_WAIT_S:
+                _stats["shed"] += 1
+                _stats["last_est_wait"] = round(est_wait, 1)
+                raise Shed()
         while True:
             cap = _limit * _w_of(key) / _active_weight()        # this key's CURRENT fair budget (weighted, work-conserving)
             cur = _inflight.get(key, 0.0)                       # its weighted in-flight now
@@ -321,7 +354,7 @@ def main() -> None:
     app.router.add_route("*", "/{tail:.*}", handle)            # proxy everything
     print(f"[fair_gateway] :{PORT} → {UPSTREAM} | 自适应闸门 起点={_limit:.0f} 范围=[{LIMIT_MIN},{LIMIT_MAX}] "
           f"目标=prefill tok/s probe={PROBE_S}s 步长={STEP} | text={TEXT_W} vision={VISION_W} | "
-          f"卸载阈值={SHED_QUEUE}(绝对) | /gwstats", flush=True)
+          f"卸载: 估计等待>{SHED_WAIT_S:.0f}s 或队长>{SHED_HARD_CAP} | /gwstats", flush=True)
     web.run_app(app, port=PORT, print=None)
 
 

@@ -55,3 +55,55 @@ def active() -> dict:
     derived = procs * per_proc if per_proc else 0.0
     p["slots"] = float(os.environ.get("EVENTINC_SLOTS", derived or p["slots"]))
     return p
+
+
+async def probe_ceilings(timeout_s: float = 4.0) -> dict:
+    """从**活着的服务**读容量上限,读不到就返回 {} 让调用方退回 profile 里的常数。
+
+    用一句话讲完: 两个上限本来是写在 profile 里的数字,而那两个数字都过期了 —— vlm_cph=250 是注释里
+    自认的「估计」,render_pph=1728 是在一台 16 核机器上测的,而那台机器现在是 8 核。与其维护它们,
+    不如问服务自己。
+
+    WHY 不用 scan_log 的实测值: solve() 已经有 measured_c_v 了,但它量的是「我们发出去了多少」——
+    一个**受需求限制**的观测量。舰队慢 → 发得少 → 测得低 → 求解器认为上游没能力 → 把周期拉长 →
+    发得更少。这个回路真实发生过:
+    {SCHEDULER_STATE 2026-08-08 "t_star_s→93.4h binding=vlm c_v=170.5",而同期网关 /gwstats 实测
+     prefill 2,631 tok/s、3,220 请求/h、GPU 100%、队列为 0 —— 上游根本没有饱和}
+    网关的 capacity_cph 不同:它是「最好的 prefill 速率 ÷ 当前每请求 token 数」,分子是这块卡的能力
+    (和需求无关,由自适应闸门主动试探得到),分母是当下负载的形状。这才是能当容量用的量。
+    [CONFIDENCE: CONFIRMED 100% — 同一天内每请求 token 数在 2,942–7,835 之间变动而 prefill 速率稳定在
+     2,400–2,600,证明按 calls/hour 写死的常数在任一形状下都不成立。]
+
+    上游触发: pacer.solve_and_apply 每次求解前。下游连接: solve() 的 C_R / C_V。
+    """
+    import asyncio
+    import json
+    import urllib.request
+
+    def _get(url: str) -> dict:
+        try:
+            with urllib.request.urlopen(url, timeout=timeout_s) as r:
+                return json.loads(r.read().decode())
+        except Exception:                                    # noqa: BLE001 — 服务不可达 → 退回常数,不该让求解崩
+            return {}
+
+    gw_url = os.environ.get("QWEN_BASE_URLS", "").split(",")[0].strip().rstrip("/")
+    gw_url = gw_url[:-3] if gw_url.endswith("/v1") else gw_url
+    render_url = os.environ.get("RENDER_REMOTE_URL", "").rstrip("/")
+
+    gw, rd = await asyncio.gather(
+        asyncio.to_thread(_get, f"{gw_url}/gwstats") if gw_url else asyncio.sleep(0, {}),
+        asyncio.to_thread(_get, f"{render_url}/health") if render_url else asyncio.sleep(0, {}),
+    )
+    out: dict = {}
+    # 只在网关真的测出过东西时才采信 —— 冷启动时 capacity_cph=0,那时用常数是对的。
+    if float(gw.get("capacity_cph") or 0) > 0:
+        out["vlm_cph"] = float(gw["capacity_cph"])
+        out["vlm_src"] = "gwstats"
+    # render 侧没有「饱和容量」的直接读数,退而求其次用累计速率;它是需求受限的下界,所以只用来
+    # **抬高**过期的常数(见 solve() 里的 max),不会把一个正确的常数压低。
+    up, tot = float(rd.get("uptime_s") or 0), float(rd.get("total") or 0)
+    if up > 300 and tot > 0:
+        out["render_pph"] = tot / up * 3600.0
+        out["render_src"] = "render/health"
+    return out

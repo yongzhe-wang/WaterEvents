@@ -338,6 +338,17 @@ async def solve_and_apply(pool) -> dict:
     # off rather than guessing (see `slots_known` in solve()).
     inc_secs = inc.get("sec_per_unit") or 0.0
     full_secs = full.get("sec_per_unit") or 0.0
+    # 求解前先问一次活着的服务:profile 里的两个上限都过期了 —— vlm_cph=250 是注释自认的「估计」,
+    # render_pph=1728 是在 16 核机器上测的而那台现在是 8 核。probe 读不到就返回 {},常数照旧生效。
+    # {SCHEDULER_STATE 2026-08-08 "c_v=170.5 binding=vlm t_star=93.4h",而同期网关 /gwstats 报
+    #  prefill 2,631 tok/s、3,220 请求/h、队列为 0 —— 求解器在一个没有饱和的上游面前把周期拉到 93 小时}
+    # [CONFIDENCE: CONFIRMED 100% — 两侧数字取自同一时刻的 scheduler_state 与 /gwstats。]
+    live = await prof.probe_ceilings()
+    if live:
+        profile = {**profile, **{k: v for k, v in live.items() if not k.endswith("_src")}}
+        print("[pacer] 容量改用实测: " + " ".join(
+            f"{k}={live[k]:.0f}({live.get(k.split('_')[0] + '_src', '?')})"
+            for k in ("vlm_cph", "render_pph") if k in live), flush=True)
     sol = solve(profile, n_hub, inc_pages, inc_calls, tp["hit_rate"], n_full, full_pages, full_calls, full_gated=False,
                 measured_c_r=tp["C_R"], measured_c_v=tp["C_V"], inc_secs=inc_secs, full_secs=full_secs)
 

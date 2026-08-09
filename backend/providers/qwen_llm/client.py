@@ -219,8 +219,33 @@ class QwenClient:
                     # ev04_GILD req: PARSED={} ERROR="Connection error."} [CONFIDENCE: CONFIRMED 100% — the dump proves it].
                     is_conn = ("connection" in str(e).lower() or "timeout" in str(e).lower()
                                or type(e).__name__ in ("APIConnectionError", "APITimeoutError"))
+                    # A 4xx OTHER THAN 429 will fail identically however many times it is sent — the request itself is
+                    # malformed, not the moment. Retrying one spends the server's scarcest capacity (these are usually
+                    # the OVER-LONG requests) on an outcome that is already decided.
+                    # The one exception is the FIRST attempt, because attempt 0 is the only one that carries
+                    # response_format=json_schema — a 400 from the grammar backend genuinely can succeed once the
+                    # constraint is dropped, which is exactly what the retry does {see the `rf = (... if attempt == 0)`
+                    # above}. So a schema-bearing first attempt gets its one retry; everything after stops.
+                    # {W1.LOG 2026-08-08 "send failed after 3 retries (4 attempts): BadRequestError: Error code: 400 -
+                    #  'max_tokens=16384 cannot be greater than max_model_len=max_total_tokens=12288'" — 4 identical
+                    #  sends of a request that could never be accepted; ~40,000 such failures accumulated across the
+                    #  six workers, i.e. ~160,000 doomed requests}
+                    # [CONFIDENCE: CONFIRMED 100% — the message names the parameter and the ceiling; no retry can change
+                    #  either. The counts are `grep -c` over the workers' own logs.]
+                    status = getattr(e, "status_code", None)
+                    if status is not None and 400 <= status < 500 and status != 429:
+                        if not (attempt == 0 and guided_json):    # not the grammar-fallback case → hopeless, stop now
+                            break
                     if attempt < config.MAX_RETRIES:          # no sleep after the FINAL attempt — the loop exits next, so it'd be dead time
-                        await asyncio.sleep(min(30.0, (4.0 if is_conn else 1.0) * (2 ** attempt)))   # conn:4,8,16 else 1,2,4
+                        # 503 from the fair gateway means "the queue ahead of you is longer than your own timeout" and it
+                        # ships a Retry-After. Honour it: the gateway knows the queue depth and this side does not, and a
+                        # 1s first retry walks straight back into the same full queue.
+                        hinted = 0.0
+                        try:
+                            hinted = float((getattr(e, "response", None).headers or {}).get("Retry-After", 0) or 0)
+                        except Exception:                     # noqa: BLE001 — header absent/unparseable → fall through
+                            hinted = 0.0
+                        await asyncio.sleep(max(hinted, min(30.0, (4.0 if is_conn else 1.0) * (2 ** attempt))))
             print(f"[qwen] send failed after {config.MAX_RETRIES} retries ({config.MAX_RETRIES + 1} attempts): "
                   f"{type(last).__name__}: {last}", flush=True)
             _dump_debug(system, user, image_b64, guided_json, "", {}, str(last))   # capture WHY it failed (e.g. 400 too-long)
