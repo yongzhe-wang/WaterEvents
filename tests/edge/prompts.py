@@ -290,3 +290,106 @@ STEP1_RETRY_PROMPT = """你刚才从这篇文章里抽出的下面这些条目, 
 只返回你能给出合格 evidence 的条目, 格式与上一轮相同(mentions / edges 两个列表)。
 只输出 JSON, 不要任何解释文字。
 """
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 1.5 — 验证:让模型自己复核抽出来的边
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# WHY 用模型验证而不是写规则:
+# 首版我写了一条程序化检查「evidence 里出现了非本边端点的实体 → 张冠李戴嫌疑」,
+# 200 条上报出 42 条。实际读下来一半是**误报** —— 比如
+#   Zebra Technologies Corporation --partners_with--> Spatialsolutions.ai
+#   证据「In first place is Zebra independent software vendor (ISV) partner, Spatialsolutions.ai」
+# 规则把 "Zebra" 当成了另一个实体, 而它只是同一家公司的简称。
+# 我的下意识反应是再加一条「用 aliases 归一」的规则去补 —— 那是给规则打补丁,
+# 补丁还会有新的边界情况(缩写、旧称、译名、带法人后缀与否…)永远补不完。
+#
+# 分界线应该是:
+#   · 纯机械的事实检查 → 代码。evidence 是不是正文的逐字子串, 这是字符串包含, 不需要理解任何东西
+#   · 需要理解语义的判断 → 模型。这个简称指不指同一家、这句话的施动者是母公司还是子公司
+# {USER 2026-08-08 "you shouldnt check right, use llm to determien"}
+# {USER 2026-08-08 "DECREASE THE NUMBER OF HYPERPARAMETER, AND USE LLM AS POSSIBLE"}
+#
+# 验证要抓的真错(200 条实测, 同一个系统性偏差):
+#   Bitdeer Technologies Group --employs--> Paul Hanson
+#     证据「Paul Hanson, Chairman of Bitdeer Industrial」—— 他是子公司的董事长
+#   Bitdeer Technologies Group --communicates_with--> Taylor Adams
+#     证据「Taylor Adams, President and CEO of the Economic Development Authority of Western Nevada」
+#     —— 他根本不是 Bitdeer 的人
+#   Otter Tail Corporation --receives_approval_for--> Otter Tail Power
+#     证据「In May, Otter Tail Power received approval from the Minnesota PUC」—— 主体是子公司
+# 模型把「文章的主角公司」当成了所有关系的默认主体。验证这一步就是让它回头看这件事。
+
+VERIFY_SCHEMA = {
+    "type": "object",
+    "required": ["verdicts"],
+    "properties": {
+        "verdicts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["i", "verdict", "reason"],
+                "properties": {
+                    "i": {"type": "integer", "description": "边的序号"},
+                    # keep   = 这条边成立, 主体客体都对
+                    # fix    = 关系成立但主体或客体写错了 —— 给出改正后的
+                    # drop   = 证据不支持这条关系
+                    "verdict": {"enum": ["keep", "fix", "drop"]},
+                    "subject": {"type": ["string", "null"], "description": "verdict=fix 时给改正后的主体"},
+                    "object": {"type": ["string", "null"], "description": "verdict=fix 时给改正后的客体"},
+                    "iter": ITER_SCHEMA,
+                    "reason": {"type": "string"},
+                },
+            },
+        },
+    },
+}
+
+VERIFY_PROMPT = """下面是从一篇文章里抽出来的关系。请对照原文逐条复核。
+
+# 原文
+---
+{body}
+---
+
+# 待复核的关系
+
+{edges_block}
+
+# 对每一条给出
+
+- verdict:
+  · keep — 这条关系成立, 主体和客体都对
+  · fix  — 关系成立, 但**主体或客体写错了**。给出改正后的 subject / object
+  · drop — 原文不支持这条关系
+- iter: 0/1/2(见下)
+- reason: 一句话说明
+
+# 复核时重点看这两件事
+
+**① 主体是不是被写成了文章的主角公司**
+
+这是最常见的错误。文章通常围绕一家公司写, 但文里提到的人和机构未必都属于它:
+
+  错: "Bitdeer Technologies Group --employs--> Paul Hanson"
+      证据「Paul Hanson, Chairman of Bitdeer Industrial」
+      → Paul Hanson 是 **Bitdeer Industrial** 的董事长, 不是 Bitdeer Technologies Group 的。
+        母公司和子公司是两个实体。verdict=fix, subject 改成 Bitdeer Industrial
+
+  错: "Bitdeer Technologies Group --communicates_with--> Taylor Adams"
+      证据「Taylor Adams, President and CEO of the Economic Development Authority of Western Nevada」
+      → 他是另一个机构的负责人, 和主角公司没有这层关系。verdict=drop
+
+**② 简称和全称是同一个实体, 不要因为写法不同就判错**
+
+  对: "Zebra Technologies Corporation --partners_with--> Spatialsolutions.ai"
+      证据「In first place is Zebra independent software vendor (ISV) partner, Spatialsolutions.ai」
+      → "Zebra" 就是 "Zebra Technologies Corporation" 的简称, 同一家。verdict=keep
+
+# iter
+
+{level_block}
+
+只输出 JSON, 不要任何解释文字。
+"""
