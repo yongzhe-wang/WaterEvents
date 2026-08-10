@@ -89,6 +89,8 @@ _OCR_FALLBACK = os.environ.get("OFFICE_OCR_FALLBACK", "1") == "1"   # set 0 to d
 #
 # 4 × 24 = 96 exactly, which is also docling's own default — that pairing is the intended design, not a coincidence.
 _NUM_THREADS = int(os.environ.get("OFFICE_NUM_THREADS", "4"))
+# Blank rows/columns tolerated INSIDE one spreadsheet table before docling cuts it in two. See _build.
+_XL_GAP = int(os.environ.get("OFFICE_XL_GAP_TOLERANCE", "2"))
 
 
 def _build(do_ocr: bool):
@@ -106,7 +108,38 @@ def _build(do_ocr: bool):
     # rest — so an AUTO that resolved to CUDA would OOM mid-document. Saying CPU makes the placement a decision.
     # {NVIDIA-SMI 2026-08-04 — 2985 MiB FREE OF 46068}
     opts.accelerator_options = AcceleratorOptions(num_threads=_NUM_THREADS, device=AcceleratorDevice.CPU)
-    return DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)})
+    fmt_opts = {InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+    # SPREADSHEETS GET THE BACKEND'S OWN KNOBS, TUNED AGAINST REAL WORKBOOKS. Docling finds tables in a sheet by
+    # flood-filling from each non-empty cell and cutting at blank rows/columns, and `gap_tolerance` is how many blank
+    # lines may sit INSIDE one table before it is cut in two. The shipped default of 0 means "cut at any blank", which
+    # is right for a sheet that IS a data frame and badly wrong for an IR workbook laid out for printing, where blank
+    # gutters separate figure groups WITHIN one statement.
+    # Measured over six real legacy workbooks from the ledger (tables found per file):
+    #   {gap=0  →  0 |  9 |  0 | 12 | 13 | 172}   two files yield ZERO tables — every region became singleton text
+    #   {gap=2  →  1 |  5 |  1 |  6 |  5 |  37}
+    #   {gap=3  →  1 |  5 |  1 |  6 |  5 |  26}   identical to gap=2 except on the largest deck
+    #   {gap=5  →  1 |  5 |  1 |  5 |  5 |  15}   f4 drops 6→5: distinct tables have started merging
+    # Total cell count is unchanged from gap=2 through gap=5 (the NTT deck holds ~10k either way), so the knob moves
+    # only the partitioning, never the data. 2 is the largest value at which no file loses a table boundary.
+    # [CONFIDENCE: CONFIRMED 100% — six workbooks pulled at random from event_media_urls, all four settings run on the
+    #  pod against the same bytes.]
+    # `treat_singleton_as_text` sends a one-cell region to prose instead of emitting a 1x1 table — those are section
+    # captions, not data, and they are the bulk of the fragment count at low gap values.
+    # `parse_charts=False` because that is what the sweep above measured; a chart's axis ticks arrive as a table of
+    # bare numbers, which is the same noise the coordinate path already fights on presentation decks.
+    try:
+        from docling.backend.msexcel_backend import MsExcelBackendOptions
+        from docling.document_converter import ExcelFormatOption
+        xl = ExcelFormatOption(backend_options=MsExcelBackendOptions(
+            gap_tolerance=_XL_GAP, treat_singleton_as_text=True, parse_charts=False))
+        # XLS alongside XLSX: docling routes the legacy binary through LibreOffice (`convert_to_modern_format`) and then
+        # parses the result with the SAME backend, so both formats land in one code path and one set of options.
+        fmt_opts[InputFormat.XLSX] = xl
+        fmt_opts[InputFormat.XLS] = xl
+    except Exception as e:                                        # noqa: BLE001 — older docling: no options, no XLS enum
+        print(f"[officeall] docling excel options unavailable ({type(e).__name__}: {e}) — using backend defaults",
+              flush=True)
+    return DocumentConverter(format_options=fmt_opts)
 
 
 def _get_converter(ocr: bool = False):
@@ -264,7 +297,19 @@ def docling_extract(data: bytes, fmt: str, want_structured: bool = False) -> dic
             return None
         try:
             from docling.datamodel.base_models import DocumentStream
-            stream = DocumentStream(name=f"document.{fmt or 'pdf'}", stream=io.BytesIO(data))
+            # NAME THE STREAM AFTER THE BYTES, NOT AFTER `fmt`. Docling picks its backend from the filename extension,
+            # and `fmt` for a legacy workbook is 'xlsx' — the router collapses .xls and .xlsx into one kind, and the
+            # sniffer keeps that name because everything downstream keys on it. Handing docling `document.xlsx` for
+            # OLE2 bytes sends them to openpyxl, which cannot read the format at all; `document.xls` sends them
+            # through LibreOffice into the SAME MsExcelDocumentBackend, which is the path its maintainers point at.
+            # {docling#1133, maintainer ceberam — "IF YOU NEED TO PROCESS `.XLS` FILES, YOU CAN CONVERT THEM TO
+            #  `.XLSX` FORMAT USING EXCEL, LIBREOFFICE, OR ANOTHER CONVERSION TOOL BEFORE PASSING THEM TO DOCLING"}
+            # {POD 2026-08-10 with the wrong name — "Input document d.xls with format InputFormat.XLS does not match
+            #  any allowed format"; and before LibreOffice existed — "RuntimeError: LibreOffice is required to convert
+            #  a .xls file to .xlsx. Install LibreOffice and make sure it is on PATH."}
+            # [CONFIDENCE: CONFIRMED 100% — the OLE2 magic is the discriminator and it is checked here, not guessed.]
+            name_fmt = "xls" if (fmt in ("xlsx", "xls") and data[:4] == b"\xd0\xcf\x11\xe0") else (fmt or "pdf")
+            stream = DocumentStream(name=f"document.{name_fmt}", stream=io.BytesIO(data))
             doc = conv.convert(stream).document
             markdown = _prose_markdown(doc.export_to_markdown() or "")   # prose + [TABLE n]; data lives in `tables`
             tables = [t for t in (_table_to_dict(tbl, doc) for tbl in doc.tables) if t]
