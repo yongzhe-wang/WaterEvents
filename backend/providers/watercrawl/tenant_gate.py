@@ -135,10 +135,20 @@ _WEIGHTS = _parse_weights(os.environ.get("RENDER_TENANT_WEIGHTS", "event:5,media
 # [CONFIDENCE: CONFIRMED — `_shot_gate = contextlib.nullcontext() if config.NO_SHOT else runtime._shot_sem`].
 _BROWSER_TOTAL = float(os.environ.get("RENDER_GATE_BROWSER_SLOTS", os.environ.get("IR_WATERCRAWL_MAX_PAGES", "24")))
 
-# Download budget. Separate on purpose (see module docstring). Sized small: these are 300 MB-capped transfers, so the
-# binding resource is bandwidth and memory, not slots, and the point is to stop a burst of large files rather than to
-# maximise their parallelism.
-_FETCH_TOTAL = float(os.environ.get("RENDER_GATE_FETCH_SLOTS", "6"))
+# Download budget. Separate on purpose (see module docstring). It was sized small on the reasoning that "these are
+# 300 MB-capped transfers, so the binding resource is bandwidth and memory, not slots" — and that reasoning does not
+# survive measurement. 300 MB is the AUDIO cap; documents are capped at 60 MB {OFFICEALL/FETCH.PY "_MAX_BYTES =
+# INT(OS.ENVIRON.GET(\"OFFICE_FETCH_MAX_BYTES\", \"60000000\"))   # 60MB"} and in practice run 0.03–6 MB. With the lane
+# pinned full, the two resources it names were sitting idle:
+# {IR-RENDER-16 2026-08-10 — fetch inflight 12/12 with 17–18 waiting across repeated samples, while 下行 21 Mbps
+#  against a c2d-standard-8 egress ceiling near 16,000 Mbps (0.13%), mem 5,529 MB of 32,093 (17%), CPU 38% idle}
+# So the cap was not protecting bandwidth or memory; it was throttling stage-2, and that queue is most of why document
+# throughput sat near half the fleet's recent peak {DB 2026-08-10 enriched 311/h vs 608/h on 08-07}.
+# What DOES bind now is CPU — the box was resized 16→8 cores — so the ceiling is raised in a measured step rather than
+# removed, and the browser lane is watched beside it because stage-1 shares those cores.
+# [CONFIDENCE: CONFIRMED 100% — bandwidth, memory and the standing queue were sampled together on the running VM;
+#  after the raise the fetch queue went to 0 with 6 of 18 slots held and CPU fell rather than rose.]
+_FETCH_TOTAL = float(os.environ.get("RENDER_GATE_FETCH_SLOTS", "18"))
 
 browser = Gate("browser", _BROWSER_TOTAL, _WEIGHTS)
 fetch = Gate("fetch", _FETCH_TOTAL, _WEIGHTS)

@@ -84,6 +84,28 @@ def _sniff_format(data: bytes, url_guess: str) -> str:
     # extension decides and an unrecognised one still returns '' rather than a guess.
     # [CONFIDENCE: CONFIRMED 100% — the magic quoted in the rejection is byte-identical to the one _xls_tables tests for.]
     if data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+        # ASK THE CONTAINER, NOT THE URL. Deferring to the extension worked only when there WAS one, and the single
+        # commonest shape in this corpus has none: `<host>/static-files/<uuid>` is what every Q4-hosted IR site serves
+        # its documents from, so those workbooks arrived with url_guess='pdf' (maybe_office_url's extensionless default)
+        # and were rejected by the very branch written to accept them. OLE2 names its own payload — the directory holds
+        # a stream called Workbook/Book for Excel, WordDocument for Word, PowerPoint Document for PPT — and those names
+        # are stored as UTF-16LE, so a plain substring scan reads them without parsing the container or adding a dep.
+        # Scanned over the WHOLE buffer, not a prefix: the directory sector can sit anywhere, and on 4 of these 6 files
+        # it was past the first 8 KB.
+        # {LIVE 2026-08-10 six extensionless ledger urls (firstcash, marriottvacationsworldwide, onsemi, broadcom,
+        #  popular, evergy — all `/static-files/<uuid>`), magic b'\xd0\xcf\x11\xe0' → stream scan named all six 'xlsx';
+        #  the same scan over the first 8 KB named only two}
+        # {DB 2026-08-10 journal, 20 min after the extension-based fix went live: "wrong-magic 23" still, every url of
+        #  the `/static-files/<uuid>` shape}
+        # [CONFIDENCE: CONFIRMED 100% — 6/6 identified by stream name against 0/6 by extension, same bytes.]
+        # Capital-B "Book" cannot match inside "Workbook" (whose 'b' is lowercase), so the two entries do not collide.
+        for needle, kind in ((b"W\x00o\x00r\x00k\x00b\x00o\x00o\x00k\x00", "xlsx"),
+                             (b"B\x00o\x00o\x00k\x00", "xlsx"),
+                             (b"W\x00o\x00r\x00d\x00D\x00o\x00c\x00u\x00m\x00e\x00n\x00t\x00", "docx"),
+                             (b"P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00", "pptx")):
+            if needle in data:
+                return kind
+        # No recognised stream — fall back to the url's extension, and still refuse to guess when it says nothing.
         return url_guess if url_guess in ("pptx", "xlsx", "docx") else ""
     head = data[:512].lstrip().lower()
     if head.startswith(b"<!doctype html") or head.startswith(b"<html") or b"<head" in head:

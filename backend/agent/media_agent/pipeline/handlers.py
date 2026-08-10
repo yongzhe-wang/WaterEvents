@@ -141,6 +141,21 @@ def _canon_link(u: str) -> str:
 # [CONFIDENCE: CONFIRMED 100% — the reason strings are produced by _looks_binary in that same module.]
 _MAGIC_KIND = {
     "%PDF": router.KIND_PDF,
+    # OFFICE CONTAINERS. Neither header names WHICH office format it holds — `PK\x03\x04` is an ordinary zip shared by
+    # xlsx/docx/pptx, and `\xd0\xcf\x11\xe0` is the OLE2 compound document shared by .xls/.doc/.ppt — and this function
+    # only ever sees a reason STRING, never the bytes, so it cannot open either one to find out. It does not need to:
+    # the only thing the kind decides here is which handler to call and whether that lane is enabled, and all four
+    # office lanes share handle_office, which re-fetches the real bytes and lets _sniff_format name the format properly
+    # (by inner folder for zip, by internal stream name for OLE2). Mapping both to KIND_XLSX therefore picks the right
+    # handler; the label is a routing token, not a claim about the file.
+    # Before this, both headers fell through to "" and the url was recorded `failed:misrouted-binary` — a document we
+    # had already downloaded and correctly identified as a document, discarded for not being specific enough.
+    # {JOURNAL 2026-08-10, 20 min window across 6 media workers: "misrouted <url> — binary under an html content-type,
+    #  unidentifiable (file-magic:b'PK\x03\x04') 26 | (undecodable:N%) 13" — 39/h thrown away}
+    # [CONFIDENCE: CONFIRMED 100% — counted from the running fleet's journal; handle_office's re-sniff is the same code
+    #  path that just took 6/6 extensionless OLE2 urls from wrong-magic to via='xlrd-fallback'.]
+    "PK\\x03\\x04": router.KIND_XLSX, "PK": router.KIND_XLSX,
+    "\\xd0\\xcf\\x11\\xe0": router.KIND_XLSX,
     "ID3": router.KIND_AUDIO, "OggS": router.KIND_AUDIO, "fLaC": router.KIND_AUDIO,
 }
 
