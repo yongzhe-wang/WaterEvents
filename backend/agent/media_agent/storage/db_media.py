@@ -107,7 +107,16 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                        ON CONFLICT (event_id, url) DO UPDATE SET
                          kind = excluded.kind, md = excluded.md, blocks = excluded.blocks,
                          n_chars = excluded.n_chars, n_blocks = excluded.n_blocks,
-                         content_hash = excluded.content_hash, via = excluded.via;""",
+                         content_hash = excluded.content_hash, via = excluded.via,
+                         -- STAMP THE RE-EXTRACTION. created_at deliberately stays at first sight; without a second
+                         -- column, re-running an event refreshed md/blocks/via and left no trace in time, so every
+                         -- "documents produced in the last N minutes" query silently reported zero for re-work. That
+                         -- read as a dead lane while the lane was healthy:
+                         -- {2026-08-10 created_at buckets — html 0|0|0|0 across four 10-minute windows, while events
+                         --  enriched inside those windows carried "html:trafilatura" documents}
+                         -- [CONFIDENCE: CONFIRMED 100% — the zero buckets and those documents came from the same
+                         --  database minutes apart; see migration 20260810050512.]
+                         updated_at = now();""",
                     event_id, d.get("url") or "", d.get("kind") or "html", md,
                     json.dumps(d.get("blocks") or []), len(md), len(d.get("blocks") or []),
                     _hash({"u": _canon(d.get("url") or ""), "md": md[:4000]}),
