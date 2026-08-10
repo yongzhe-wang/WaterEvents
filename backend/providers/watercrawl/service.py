@@ -418,10 +418,39 @@ async def tenant_middleware(request: web.Request, handler):
         return await handler(request)
 
 
+# THE REAL CEILING, MADE EXPLICIT. Every handler runs its work through `_call` → `asyncio.to_thread`, which submits to
+# the event loop's DEFAULT executor. That executor is created on first use with `max_workers = min(32, cpu_count + 4)`
+# — a number nothing in this repo chose and nothing in this repo mentions, and it moved when the VM did: resizing
+# ir-render-16 from 16 cores to 8 took it from 20 to 12 silently. Meanwhile the two tenant gates admit 36 browser + 18
+# fetch = 54 concurrent handlers, so the gates were never the limit; 12 threads were, and everything above them queued.
+# The symptom was a lane that looked saturated while the machine looked asleep:
+# {IR-RENDER-16 2026-08-10 — fetch inflight 18/18 with 3–8 waiting, 下行 2 Mbps of a ~16 Gbps egress, CPU 20% busy}
+# {SAME BOX, timed against /fetch_doc — 126.1s / 182.6s / 147.9s for three ~1 MB pdfs whose extraction reported
+#  via='coords' (2.6 s of work each). Per-host pacing was NOT the cause: crawl_delay=0.0 and the host's next slot was
+#  0.0 s away when asked directly.}
+# {PYTHON on that box — "min(32, cpu_count+4) = min(32, 8+4) = 12"}
+# [CONFIDENCE: CONFIRMED 100% — the executor size was read from the running interpreter, the latency was measured
+#  end-to-end through the production endpoint, and the pacing alternative was ruled out against the live module.]
+# These threads are I/O-bound — they wait on remote servers and on watercrawl's own browser loop — so sizing them to
+# core count is the wrong model entirely. Sized instead so the GATES bind, which is what they were written to do.
+_EXECUTOR_WORKERS = int(os.environ.get("WATERCRAWL_EXECUTOR_WORKERS", "64"))
+
+
+async def _install_executor(app: web.Application) -> None:
+    """Replace the loop's default executor with one sized for I/O-bound work. Runs on startup, before any request."""
+    import concurrent.futures
+    ex = concurrent.futures.ThreadPoolExecutor(max_workers=_EXECUTOR_WORKERS, thread_name_prefix="wc")
+    asyncio.get_running_loop().set_default_executor(ex)
+    app["_executor"] = ex
+    _loud(f"default executor set to {_EXECUTOR_WORKERS} threads (python default here would be "
+          f"{min(32, (os.cpu_count() or 1) + 4)})")
+
+
 def build_app() -> web.Application:
     """Wire the routes. client_max_size is raised because a render POST is tiny but nothing stops a caller from sending
     a long url list later; the RESPONSE (shot_b64) is the big direction and is not bounded by this."""
     app = web.Application(client_max_size=8 * 1024 * 1024, middlewares=[tenant_middleware])
+    app.on_startup.append(_install_executor)
     app.router.add_post("/render_shot", h_render_shot)
     app.router.add_post("/render_full", h_render_full)
     app.router.add_post("/render_detail", h_render_detail)

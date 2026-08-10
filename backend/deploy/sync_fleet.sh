@@ -24,6 +24,22 @@ PROJECT="${GCP_PROJECT:-focusalpha-ir-pipeline}"
 ZONE="${GCP_ZONE:-us-central1-a}"
 HOSTS="${FLEET_HOSTS:-ir-media-8 ir-render-16}"
 REMOTE_ROOT="${FLEET_ROOT:-\$HOME/WaterEvents/backend}"
+
+# THE THIRD TARGET. Deploying to the two GCE boxes and calling it done is wrong, and the way it is wrong is invisible:
+# `tools/officeall/__init__.py` rebinds docling_extract to an HTTP client when DOCLING_REMOTE_URL is set, and it IS set
+# on ir-render-16 — so the whole extraction, fallbacks included, executes on the RunPod pod against the pod's own copy
+# of the code. A fix can be deployed to both GCE hosts, verified by running it in a shell there, and still not be what
+# production runs.
+# {2026-08-10 — extract.py deployed to ir-media-8 + ir-render-16 and correct in a local shell on both, while
+#  POST /fetch_doc kept returning the old '## 1(J)' headings and an untrimmed 56x21 grid; the pod's copy was 289 lines
+#  with `_sheet_title` absent. After copying the same file to the pod: '## 1.連結サマリー（NTT連結業績）', 52x16.}
+# {POD /proc/<pid>/environ — "PYTHONPATH=/opt/we/WaterEvents/backend", and a SECOND stale tree sits at
+#  /workspace/WaterEvents/backend/tools/officeall/extract.py (157 lines) which nothing on PYTHONPATH reaches}
+# [CONFIDENCE: CONFIRMED 100% — same request before and after the pod copy, same bytes, different answer.]
+# Reached over the same ssh hop the tunnels use, read off the running tunnel rather than hard-coded, so a pod
+# re-provision (new host/port) is picked up automatically.
+POD_VIA="${POD_VIA:-ir-media-8}"                # the GCE box that holds the runpod key and the live tunnel
+POD_ROOT="${POD_ROOT:-/opt/we/WaterEvents/backend}"
 APPLY=0
 [ "${1:-}" = "--apply" ] && APPLY=1
 
@@ -64,6 +80,32 @@ for H in $HOSTS; do
     [ -n "$MISSING" ] && echo "$MISSING"
   fi
 done
+
+# ── POD — 同一套比对, 但要多跳一层 ssh, 所以命令拼在 GCE 侧再转发进去。
+# 只比 tools/ 下的文件: pod 上跑的是 tools.service, agent/ 和 api_service/ 那些它根本不 import, 拿来比只会
+# 报出一堆与生产无关的漂移, 把真正要紧的那几行淹掉。
+POD_CMD='K=$HOME/.ssh/runpod_key
+A=$(ps -eo args | grep ExitOnForwardFailure | grep -v grep | head -1)
+PT=$(echo "$A" | grep -oE "\-p [0-9]+" | head -1 | cut -d" " -f2)
+HP=$(echo "$A" | grep -oE "root@[0-9.]+" | head -1)
+[ -z "$HP" ] && { echo "NO_TUNNEL"; exit 0; }
+ssh -i $K -p $PT -o StrictHostKeyChecking=no -o ConnectTimeout=20 $HP \
+  "cd '"$POD_ROOT"' && find tools -name \"*.py\" -not -path \"*/__pycache__/*\" -print0 | xargs -0 md5sum | sort -k2"'
+POD_MD5=$("${SSH[@]}" "$POD_VIA" --command="$POD_CMD" 2>/dev/null || true)
+if [ -z "$POD_MD5" ] || [ "$POD_MD5" = "NO_TUNNEL" ]; then
+  echo "  ⚠️  runpod pod: 读不到(隧道不在?), 未比对 —— 它是第三个部署目标, 别当它不存在"
+else
+  printf '%s\n' "$POD_MD5" > /tmp/_fleet_pod.md5
+  ( cd "$LOCAL_ROOT" && find tools -name '*.py' -not -path '*/__pycache__/*' -print0 | xargs -0 md5 -r 2>/dev/null \
+      || find tools -name '*.py' -not -path '*/__pycache__/*' -print0 | xargs -0 md5sum ) | sort -k2 > /tmp/_fleet_local_tools.md5
+  PD=$(join -j 2 -o 0,1.1,2.1 <(awk '{print $1, $2}' /tmp/_fleet_local_tools.md5 | sort -k2) \
+                               <(awk '{print $1, $2}' /tmp/_fleet_pod.md5 | sort -k2) \
+       | awk '$2 != $3 {print "    内容不同  " $1}')
+  PN=$(printf '%s' "$PD" | grep -c . || true)
+  DRIFT_TOTAL=$((DRIFT_TOTAL + PN))
+  if [ "$PN" -eq 0 ]; then echo "  ✅ runpod pod (tools/) 与本地一致"
+  else echo "  ⚠️  runpod pod (tools/) 有 $PN 个文件漂移:"; echo "$PD"; fi
+fi
 
 if [ "$APPLY" -eq 0 ]; then
   echo "══ 只报告, 未改动。加 --apply 同步 ══"
