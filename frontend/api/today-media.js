@@ -175,7 +175,7 @@ export default async function handler(_req, res) {
     const [
       backlog, inflight, enriched, failed,
       titleFixed, dateFixed,
-      blocks, files, viaCoords, viaDocling, viaUnknown, kPdf, kXlsx, kDocx, kPptx, segments, audio,
+      blocks, files, viaCoords, viaDocling, viaUnknown, viaFallback, kPdf, kXlsx, kDocx, kPptx, segments, audio,
       ledgerDone, ledgerFailed, ledgerSkipped,
       enriched1h, blocks1h,
       resources, recent,
@@ -207,6 +207,13 @@ export default async function handler(_req, res) {
       sbCount("event_documents?select=id&kind=neq.html&via=eq.coords"),
       sbCount("event_documents?select=id&kind=neq.html&via=like.docling*"),
       sbCount("event_documents?select=id&kind=neq.html&via=is.null"),
+      // The FALLBACK bucket — pypdf-fallback and xlrd-fallback. Without it the split silently under-accounts: three
+      // named buckets that do not sum to `files` read as a complete breakdown while a whole extractor is missing from
+      // the page. xlrd-fallback in particular is the only path that can read a legacy .xls at all, so its count is the
+      // one number that says whether that format works.
+      // {DB 2026-08-10 five ledger .xls urls → via='xlrd-fallback', 12/3/20/4/10 tables — a path with no bucket}
+      // [CONFIDENCE: CONFIRMED 100% — the four buckets are exhaustive over the `via` values extract.py can emit.]
+      sbCount("event_documents?select=id&kind=neq.html&via=like.*fallback"),
       // OUTPUT PER FORMAT — the line that replaced docling's slot occupancy on the card. Occupancy answered "is the
       // service busy", which stopped being a question the moment docling became the fallback: idle is the healthy
       // reading and the card had no way to say so. These four say what the lane actually produced, and the shape of
@@ -269,7 +276,7 @@ export default async function handler(_req, res) {
         // docling lane. Naming them by what produced them beats naming them by table.
         meta: { title_fixed: titleFixed, date_fixed: dateFixed },
         totals: { blocks, files, segments, audio,
-                  via: { coords: viaCoords, docling: viaDocling, unknown: viaUnknown },
+                  via: { coords: viaCoords, docling: viaDocling, unknown: viaUnknown, fallback: viaFallback },
                   kind: { pdf: kPdf, xlsx: kXlsx, docx: kDocx, pptx: kPptx } },
         ledger: { done: ledgerDone, failed: ledgerFailed, skipped: ledgerSkipped },
         recent: { enriched_1h: enriched1h, blocks_1h: blocks1h },

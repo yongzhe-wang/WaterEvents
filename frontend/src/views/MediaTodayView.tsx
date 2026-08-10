@@ -31,7 +31,7 @@ interface Whisper { concurrency: number | null; inflight: number | null; done: n
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
   totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null;
-            via?: { coords: number | null; docling: number | null; unknown: number | null };
+            via?: { coords: number | null; docling: number | null; unknown: number | null; fallback?: number | null };
             kind?: { pdf: number | null; xlsx: number | null; docx: number | null; pptx: number | null } };
   meta: { title_fixed: number | null; date_fixed: number | null };
   ledger: { done: number | null; failed: number | null; skipped: number | null };
@@ -179,6 +179,7 @@ function MediaResourceCards({ r, totals }: { r: MediaToday["resources"]; totals:
         [
           totals.via
             ? `${num(totals.via.coords)} coords · ${num(totals.via.docling)} docling`
+              + (totals.via.fallback ? ` · ${num(totals.via.fallback)} fallback` : "")
               + (totals.via.unknown ? ` · ${num(totals.via.unknown)} pre-column` : "")
             : "path split —",
           // WAS docling's inflight/slots. That line answered "is the service busy", and once docling became the
