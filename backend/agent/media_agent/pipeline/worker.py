@@ -160,7 +160,18 @@ async def process_event(pool, client: QwenClient, ev) -> None:
     until lease-expiry). {AUDIT 2026-07-23 HIGH: gather(return_exceptions=False) + no try/except}."""
     eid, tok = ev["id"], ev["claim_token"]
     try:
-        media = _as_list(ev["media_urls"])
+        # UNWRAP DOCUMENT-VIEWER URLS BEFORE ANYTHING ELSE SEES THEM. A `/pdf-viewer.aspx?src=…report.pdf` is a page
+        # whose only content is the PDF it embeds; left as-is it classifies as html, gets rendered, and what lands in
+        # event_documents is the PDF.js toolbar. Rewriting the list HERE rather than inside dispatch is what keeps the
+        # three records consistent: Chart is seeded from this list, the url ledger is keyed off Chart, and the document
+        # row carries the url the handler was given — unwrap later and the ledger would file the wrapper while the
+        # document filed the target, so neither table could answer "did we get this document".
+        # {DB 2026-08-10 event_documents kind='html' from viewer wrappers → 539 rows, 479 under 1000 chars, avg 1002;
+        #  vodafone alone 421. Body of the modal, verbatim: "SKIP TO MAIN CONTENT PDF.JS VIEWER FIND 11 PREVIOUS NEXT
+        #  … ZOOM OUT ZOOM IN PAGE FIT AUTOMATIC ZOOM ACTUAL SIZE PAGE WIDTH 0% 50% 75% 100% … SAVE"}
+        # [CONFIDENCE: CONFIRMED 100% — the same wrapper url in a browser shows a 68-page results deck, so the routing
+        #  was the whole of the problem; unwrap_viewer refuses any target without a document extension.]
+        media = [router.unwrap_viewer(u) if isinstance(u, str) else u for u in _as_list(ev["media_urls"])]
         if not media:
             print(f"[enrich] ⛔ event {eid} has NO media urls at all — fail", flush=True)
             await db.fail_event(pool, eid, tok, "no_media_urls")

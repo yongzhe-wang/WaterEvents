@@ -12,7 +12,7 @@ handlers on top. Extension + host cover ~95% of real IR links; the HEAD refine i
 from __future__ import annotations
 
 import re
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, unquote, urljoin, urlsplit
 
 # The 8 kinds a url can route to. `other` = record the url but do not fetch (feeds, assets, unknown externals).
 KIND_HTML, KIND_PDF, KIND_PPTX, KIND_DOCX = "html", "pdf", "pptx", "docx"
@@ -84,8 +84,52 @@ def _ext(path: str) -> str:
     return tail.rsplit(".", 1)[-1].lower() if "." in tail else ""   # text after the last dot, else no extension
 
 
+# A VIEWER WRAPPER IS A PAGE WHOSE ONLY CONTENT IS A DOCUMENT IT EMBEDS. `/pdf-viewer.aspx?src=/…/h1-13-report.pdf`
+# has no extension the router can read, so it classified as html, went to the browser, and what came back was the
+# PDF.js toolbar stored as an investor document — "Skip to main content / PDF.js viewer / Find / Zoom In / Zoom Out /
+# Page Fit / 50% / 75% / 100%", 234 characters, zero financials, while the actual 68-page results deck sat one query
+# parameter away.
+# {DB 2026-08-10 event_documents kind='html' matching a viewer pattern → 539 rows, 479 of them under 1000 chars;
+#  by host "WWW.VODAFONE.COM 421 (avg 1192 chars) | WWW.DIAGEO.COM 64 (339) | WWW.TXNMENERGY.COM 39 (319) |
+#  INVESTORS.TRANSUNION.COM 10 (234)"}
+# {DB 2026-08-10 the modal body of those rows, verbatim: "SKIP TO MAIN CONTENT PDF.JS VIEWER FIND 11 PREVIOUS NEXT
+#  HIGHLIGHT ALL MATCH CASE MATCH DIACRITICS WHOLE WORDS … ZOOM OUT ZOOM IN PAGE FIT AUTOMATIC ZOOM ACTUAL SIZE
+#  PAGE WIDTH 0% 50% 75% 100% 125% 150% 200% 300% 400% SAVE" — the viewer's own chrome, 438 rows share this prefix}
+# [CONFIDENCE: CONFIRMED 100% — counts from the live table; the same wrapper url opened in a browser renders
+#  "Vodafone Group Plc Preliminary Results, 68 pages", so the document is reachable and only the routing was wrong.]
+#
+# Generalises the officeapps.live.com unwrap that fetch.py already does for exactly this shape — same idea, same
+# `src=` convention, applied here instead so the KIND is decided from the real document rather than from the wrapper.
+_VIEWER_PATH_RE = re.compile(r"(pdf-?viewer|/viewer\.(aspx|html?|php)|/web/viewer\.html|officeapps\.live\.com)", re.I)
+_VIEWER_PARAMS = ("src", "file", "url", "document", "pdf")     # the param names these viewers carry the target in
+
+
+def unwrap_viewer(url: str) -> str:
+    """A document-viewer wrapper url → the document it embeds; anything else → unchanged (pure, no network).
+
+    Only unwraps when BOTH halves agree: the path looks like a viewer AND the extracted target names a real document
+    extension. Requiring the extension is what keeps a generic `?url=` on an ordinary page from being hijacked — an
+    unwrap that guesses would turn one bad document into a wrong one, which is harder to notice than the toolbar."""
+    u = (url or "").strip()
+    if not u.lower().startswith(("http://", "https://")) or not _VIEWER_PATH_RE.search(u):
+        return url
+    q = parse_qs(urlsplit(u).query)
+    for p in _VIEWER_PARAMS:
+        raw = (q.get(p) or [""])[0]
+        if not raw:
+            continue
+        target = unquote(raw)
+        # urljoin handles both forms these viewers use: officeapps passes an absolute url, the Sitecore-style
+        # `/~/media/Files/…` ones pass a host-relative path that only means anything against the wrapper's own host.
+        joined = urljoin(u, target)
+        if _ext(urlsplit(joined).path) in _EXT_KIND:
+            return joined
+    return url
+
+
 def classify(url: str) -> str:
     """url → one of the 7 KIND_* strings. Pure + deterministic (no network). Order of judgment:
+    0. document-viewer wrapper → judge the document it embeds, not the wrapper
     1. non-http → other (mailto:, tel:, javascript:, #anchor)
     2. asset/feed regex → other
     3. known video host → video   (extension-less webcast links)
@@ -93,7 +137,7 @@ def classify(url: str) -> str:
     5. default → html             (an IR detail page with no extension)
     The extension-less HTML-vs-something ambiguity that this can't resolve is handled by the optional async HEAD
     refine (classify_by_content_type), used only when a downstream fetch returns a surprising content-type."""
-    u = (url or "").strip()
+    u = unwrap_viewer((url or "").strip())
     if not u.lower().startswith(("http://", "https://")):   # mailto/tel/js/bare-fragment → nothing to fetch
         return KIND_OTHER
     parts = urlsplit(u)
