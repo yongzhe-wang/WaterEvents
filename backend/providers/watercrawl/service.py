@@ -196,7 +196,7 @@ async def h_capture_media(request: web.Request) -> web.Response:
     return web.json_response(out or {})
 
 
-async def _gated_fetch(url: str, fn, *args):
+async def _gated_fetch(url: str, tenant: str, fn, *args):
     """Run one FETCH-and-extract behind the same politeness gate every render already goes through.
 
     THIS is the point of moving downloads here, more than the memory it frees on ir-media-8. Before this, the two paths
@@ -211,13 +211,31 @@ async def _gated_fetch(url: str, fn, *args):
     url_allowed_async first (scheme + SSRF + robots), then wait_turn_async, which RESERVES this host's next slot rather
     than sleeping a fixed interval — the reservation is what stops N concurrent callers from waking together and hitting
     the host as one burst {POLITENESS.PY "A NAIVE SLEEP(INTERVAL) WOULD LET N COROUTINES WAKE SIMULTANEOUSLY AND HIT THE
-    HOST TOGETHER — WHICH IS THE PILE-UP THIS MODULE EXISTS TO PREVENT"}."""
-    from . import politeness
+    HOST TOGETHER — WHICH IS THE PILE-UP THIS MODULE EXISTS TO PREVENT"}.
+
+    ORDER MATTERS: POLITENESS FIRST, THEN THE SLOT. The tenant gate used to wrap this entire function from the
+    middleware, so a caller acquired one of the fetch lane's slots and THEN slept in wait_turn_async waiting for its
+    host's turn. A slot spent sleeping is a slot no other host can use, so a handful of busy hosts held the whole lane
+    while urls for idle hosts queued behind them — head-of-line blocking, with the queue and the idleness visible at
+    the same instant:
+    {IR-RENDER-16 2026-08-10 — fetch inflight 18/18 with 3–8 waiting, while 下行 2 Mbps (0.01% of a ~16 Gbps egress),
+     CPU 20% busy, memory 15%}
+    {DB 2026-08-10 — 23 non-html documents in 10 minutes across 18 slots = 469.6 slot-seconds per document, against
+     real work of roughly 3–8 s (coords 2.6 s/doc measured, plus the transfer). ~98% of every slot was asleep.}
+    Waiting for the host's turn BEFORE taking a slot means the lane counts work in progress rather than work waiting to
+    be allowed, which is what the number was always meant to mean. Nothing about pacing changes — the same reservation
+    is taken from the same per-host cursor, just outside the slot instead of inside it.
+    [CONFIDENCE: CONFIRMED 100% — the saturated lane, the near-zero bandwidth and the 469.6 s/doc were all sampled in
+     the same window; the middleware's `async with tenant_gate.hold(...)` wrapping `await handler(request)` is the
+     enclosing scope that made the sleep count as occupancy.]
+    """
+    from . import politeness, tenant_gate
     ok, why = await politeness.url_allowed_async(url)
     if not ok:
         return None, why                                    # 'bad-scheme' / 'ssrf-blocked' / 'robots-denied'
-    await politeness.wait_turn_async(url)
-    return await _call(fn, *args), ""
+    await politeness.wait_turn_async(url)                   # unpaid-for; costs no slot
+    async with tenant_gate.hold(tenant_gate.fetch, tenant): # the slot now covers ONLY transfer + extract
+        return await _call(fn, *args), ""
 
 
 async def h_fetch_doc(request: web.Request) -> web.Response:
@@ -233,7 +251,7 @@ async def h_fetch_doc(request: web.Request) -> web.Response:
     if not url:
         return web.json_response({"error": "missing url"}, status=400)
     want = bool(body.get("structured"))
-    r, refused = await _gated_fetch(url, office_extract, url, _PROXY, want)
+    r, refused = await _gated_fetch(url, tenant_of_req(request), office_extract, url, _PROXY, want)
     if r is None:
         _loud(f"fetch_doc({url}) → refused:{refused}")
         return web.json_response({"source": "url", "error": f"refused:{refused}", "via": ""})
@@ -251,7 +269,7 @@ async def h_fetch_audio(request: web.Request) -> web.Response:
     url = str(body.get("url") or "").strip()
     if not url:
         return web.json_response({"error": "missing url"}, status=400)
-    r, refused = await _gated_fetch(url, audio_extract, url, _PROXY)
+    r, refused = await _gated_fetch(url, tenant_of_req(request), audio_extract, url, _PROXY)
     if r is None:
         _loud(f"fetch_audio({url}) → refused:{refused}")
         return web.json_response({"source": "url", "error": f"refused:{refused}", "via": ""})
@@ -376,6 +394,12 @@ async def h_health(_request: web.Request) -> web.Response:
 _FETCH_PATHS = ("/fetch_doc", "/fetch_audio")
 
 
+def tenant_of_req(request) -> str:
+    """The calling tenant for a request, for handlers that take their own slot (see _gated_fetch)."""
+    from . import tenant_gate
+    return tenant_gate.tenant_of(request)
+
+
 @web.middleware
 async def tenant_middleware(request: web.Request, handler):
     """Admit through the per-tenant weighted gate, then run the handler. /health is exempt — a health probe that can
@@ -384,9 +408,13 @@ async def tenant_middleware(request: web.Request, handler):
 
     if request.method != "POST" or not tenant_gate.ENABLED:
         return await handler(request)
-    gate = tenant_gate.fetch if request.path in _FETCH_PATHS else tenant_gate.browser
-    tenant = tenant_gate.tenant_of(request)
-    async with tenant_gate.hold(gate, tenant):
+    # FETCH PATHS SELF-GATE. Holding the slot out here meant holding it across _gated_fetch's per-host politeness
+    # wait, which turned the fetch lane into a queue of sleepers — see _gated_fetch for the measurement (469.6
+    # slot-seconds per document against 3–8 s of real work). The browser lane keeps the middleware gate: render.py
+    # consults politeness inside watercrawl itself, so there is no equivalent sleep to hoist out.
+    if request.path in _FETCH_PATHS:
+        return await handler(request)
+    async with tenant_gate.hold(tenant_gate.browser, tenant_gate.tenant_of(request)):
         return await handler(request)
 
 
