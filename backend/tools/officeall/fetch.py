@@ -91,7 +91,7 @@ def _sniff_format(data: bytes, url_guess: str) -> str:
     return ""
 
 
-def _try_get(url: str, proxy: str | None) -> tuple[bytes, str]:
+def _try_get(url: str, proxy: str | None, fmt_guess: str = "") -> tuple[bytes, str]:
     """ONE curl_cffi GET attempt → (bytes, "") on a usable document, or (b'', reason) with a SPECIFIC loud reason.
     Reasons: dep-missing / http-<code> / oversized-<MB> / wrong-magic-<kind> / <ExcType>. `proxy` None = direct.
 
@@ -143,7 +143,20 @@ def _try_get(url: str, proxy: str | None) -> tuple[bytes, str]:
             return b"", "empty-body"
         if len(data) > _MAX_BYTES:
             return b"", f"oversized-{len(data) // 1_000_000}MB"  # loud: the size, not a silent drop
-        fmt = _sniff_format(data, "")
+        # PASS THE URL'S OWN GUESS INTO THE SNIFFER. This argument was hard-coded to "" and that single empty string
+        # made the OLE2 support in _sniff_format dead code from the day it shipped: the 1997 compound-document container
+        # is shared by .xls, .doc and .ppt, so its magic identifies the CONTAINER and only the url's extension can name
+        # the payload — which is exactly why that branch ends `return url_guess if url_guess in (...) else ""`. Handed
+        # "", it returned "", the caller read that as "not a document", and every legacy workbook was rejected here with
+        # the very magic the branch tests for. The same emptiness disarms the PK-zip branch's own extension fallback.
+        # {LIVE 2026-08-10 five ledger urls re-fetched with the shipped code — vodafone financial-results .xls,
+        #  mb.cision.com/…/b314189899f16a52.xls, orkla quarterly-figures, group.ntt fy2018q1hosoku0807.xls — all five
+        #  returned "WRONG-MAGIC-B'\XD0\XCF\X11\XE0\XA1\XB1\X1A\XE1'", i.e. OLE2 recognised and then discarded}
+        # {DB 2026-08-10 event_media_urls "FAILED:FETCH-FAILED:DIRECT[WRONG-MAGIC-B'\XD0\XCF\… 54" — unchanged while
+        #  the redirect fix in the same deploy took its own bucket from 278 down to 230}
+        # [CONFIDENCE: CONFIRMED 100% — the two buckets moved differently under one deploy, and the five re-fetches
+        #  reproduce the rejection against the running code.]
+        fmt = _sniff_format(data, fmt_guess)
         if not fmt:
             return b"", f"wrong-magic-{data[:8]!r}"              # loud: got bytes but not a document (an HTML wall etc.)
         return data, ""
@@ -166,7 +179,7 @@ def fetch_bytes(url: str, proxy: str | None = None, fmt_guess: str = "pdf") -> t
         return b"", "ssrf-blocked"
 
     # Attempt 1: DIRECT (no proxy). The common path.
-    data, reason = _try_get(url, None)
+    data, reason = _try_get(url, None, fmt_guess)
     if data:
         fmt = _sniff_format(data, fmt_guess)
         # HTML WHERE A DOCUMENT WAS ASKED FOR IS A WALL, NOT A RESULT. Every caller reaches this through
@@ -188,7 +201,7 @@ def fetch_bytes(url: str, proxy: str | None = None, fmt_guess: str = "pdf") -> t
     # Attempt 2: RESIDENTIAL PROXY fallback — only when a proxy is available and direct failed on something a
     # different egress could fix (a datacenter block / TLS reset), not a definitive 404/oversized.
     if proxy and not reason.startswith(("http-404", "oversized")):
-        data2, reason2 = _try_get(url, proxy)
+        data2, reason2 = _try_get(url, proxy, fmt_guess)
         if data2:
             fmt2 = _sniff_format(data2, fmt_guess)
             if fmt2 == "html" and fmt_guess != "html":            # same wall through a different egress — still a wall

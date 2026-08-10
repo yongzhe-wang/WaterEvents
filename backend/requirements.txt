@@ -11,6 +11,16 @@ pypdf>=4.0
 pdfplumber>=0.11
 python-pptx>=1.0
 docling>=2.0           # media_agent tools/officeall: pdf/pptx/docx/xlsx → structured content (DocumentConverter). Was MISSING from requirements → the same "media deps bug" class as camoufox (officeall lazy-imports it, so import doesn't break, but the office handler silently fails). Heavy (pulls torch + layout models).
+# LEGACY .xls (OLE2, 1997). Docling's MsExcelDocumentBackend speaks only OOXML and shells out to LibreOffice for .xls,
+# which is not installed on the fleet — so officeall/extract.py::_xls_tables reads them with pandas instead, and pandas
+# needs xlrd for that format. It was missing everywhere, which is why the fallback returned None on every workbook it
+# was written for. Same silent-optional-dependency class as lxml_html_clean below.
+# {POD 2026-08-10 `import xlrd` → "ModuleNotFoundError: No module named 'xlrd'", and pandas.read_excel on the same
+#  bytes → "Missing optional dependency 'xlrd'. Install xlrd >= 2.0.1 for xls Excel support"}
+# {DOCLING 2026-08-10 on the same file → "RuntimeError: LibreOffice is required to convert a .xls file to .xlsx"}
+# [CONFIDENCE: CONFIRMED 100% — both errors reproduced against the fleet venv; installing xlrd took 5 real ledger
+#  urls from 0/5 to 5/5 parsed, via='xlrd-fallback', 12/3/20/4/10 tables.]
+xlrd>=2.0.1            # pandas.read_excel engine for legacy .xls — required by officeall/extract.py::_xls_tables
 # DETERMINISTIC HTML→basic_info extraction (media_agent/extract_html.py) — replaces the VLM's verbatim content-copy so the
 # earnings HTML pages that embed full financials NEVER overflow the VLM output. trafilatura = primary body extractor
 # (F1 0.937, powers FineWeb); readability-lxml + resiliparse = fallback chain; lxml_html_clean = trafilatura runtime dep
