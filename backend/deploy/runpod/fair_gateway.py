@@ -251,7 +251,22 @@ async def _acquire(key: str, w: float) -> None:
         # 速率还没测出来(启动初期)时 rate=0,est 为无穷 —— 那时**不卸载**,交给硬上限兜底,
         # 免得冷启动阶段把正常流量当成过载。
         svc = _stats.get("rph", 0) / 3600.0
-        if svc > 0 and queued > 0:
+        # ★ 服务器【完全空闲】时永不按速率卸载 —— 没有在飞请求就没有队列,估算等待毫无意义。
+        #
+        # 少了这一条会死锁,而且真实发生过、持续了两天:
+        #   全部卸载 → 没有请求完成 → rph 塌到接近 0 → est_wait 爆表 → 继续全部卸载 → …
+        # 2026-08-08 11:51 起 ir-media-8 的采集队列每小时约 800-1000 次调用全部 503,
+        # 同一时刻 /gwstats 是 inflight={} want={} limit=64、后端 vLLM num_requests_running=0、
+        # A40 利用率 0% —— 一个请求都没在跑,却已累计拒绝 497,601 次。
+        #
+        # 算式复现(与线上数值逐位吻合):
+        #   rph=18 → svc=0.005 req/s;新到的请求在 handle() 里已把 _want[key] 顶到 1;
+        #   est_wait = 1 / 0.005 = 200.0s > SHED_WAIT_S(120) → Shed。
+        # 上面那条冷启动护栏守的是 `svc > 0`,但塌缩后的 rph 是**非零小值**,守卫放行,照拒不误。
+        # {POD /gwstats 2026-08-10: "shed":497601, "rph":18, "last_est_wait":200.0, "inflight":{}}
+        # [CONFIDENCE: CONFIRMED 100% — 手算 200.0 与线上 last_est_wait 完全一致;
+        #  重启进程后 rph 归零、`svc > 0` 守卫生效,POST 立刻恢复 3/3 HTTP 200]
+        if svc > 0 and queued > 0 and _inflight:
             share = _w_of(key) / _active_weight()
             est_wait = queued / max(svc * share, 1e-6)
             if est_wait > SHED_WAIT_S:
