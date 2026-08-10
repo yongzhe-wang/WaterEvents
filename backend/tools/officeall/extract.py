@@ -164,6 +164,25 @@ def _table_to_dict(tbl, doc) -> dict:
         return {}
 
 
+def _sheet_title(rows: list[list[str]]) -> str:
+    """The sheet's own title — its first cell that reads like a heading — or '' when it has none.
+
+    WHY: see the call site. A tab named '1(J)' is a page number; the statement's name is inside the sheet. Only the
+    first two rows are considered, because a match further down is a data label, not a title, and only a cell with no
+    digit-dominant content qualifies, because a figure is never a heading. `2018-05-11 00:00:00` on a cover sheet is
+    the case that rules out a plain 'first non-empty cell' — it is first, and it is not the title."""
+    for r in rows[:2]:                                       # a title lives on the first line or two, never deeper
+        for c in r:
+            s = (c or "").strip()
+            if len(s) < 4 or len(s) > 60:
+                continue
+            digits = sum(ch.isdigit() for ch in s)
+            if digits * 2 >= len(s):                         # mostly digits → a date or a figure, not a heading
+                continue
+            return s.replace("\n", " ")
+    return ""
+
+
 def _xls_tables(data: bytes) -> dict | None:
     """FALLBACK for legacy .xls when Docling refuses it. None when this is not an OLE2 file or the read fails.
 
@@ -186,7 +205,15 @@ def _xls_tables(data: bytes) -> dict | None:
     try:
         import io
         import pandas as pd
-        sheets = pd.read_excel(io.BytesIO(data), sheet_name=None)   # None → every sheet, {name: DataFrame}
+        # header=None — NEVER let pandas promote a row to column names. An IR workbook is a LAYOUT, not a data frame:
+        # its first row is a title, a logo row, or blank, so header=0 both DESTROYED a real row and manufactured column
+        # names out of it. Where the row was blank the names came back as the placeholder pandas invents for unnamed
+        # positions, which then travelled all the way to the dashboard as if they were the sheet's own headers.
+        # {LIVE 2026-08-10 group.ntt H3003hosoku0511.xls sheet '1(J)' with header=0 → columns
+        #  ['Unnamed: 0','Unnamed: 1','Unnamed: 2','Unnamed: 3','Unnamed: 4','Unnamed: 5'], and the row it consumed was
+        #  the sheet's own title '1.連結サマリー（NTT連結業績概要）'}
+        # [CONFIDENCE: CONFIRMED 100% — same file read both ways, side by side.]
+        sheets = pd.read_excel(io.BytesIO(data), sheet_name=None, header=None)
     except Exception as e:                                # noqa: BLE001 — xlrd absent / corrupt file → LOUD, no crash
         _loud(f"legacy .xls fallback FAILED ({type(e).__name__}: {str(e)[:110]})")
         return None
@@ -194,11 +221,27 @@ def _xls_tables(data: bytes) -> dict | None:
     for name, df in (sheets or {}).items():
         if df is None or df.empty:
             continue
-        cols = [str(c) for c in df.columns.tolist()]
-        rows = [[("" if pd.isna(v) else str(v)) for v in r] for r in df.values.tolist()]
-        tables.append({"columns": cols, "rows": rows})
-        # A sheet name is content here, not decoration — EDGAR exhibits label the statement on the tab.
-        parts.append(f"## {name}\n\n[TABLE {len(tables)}]")
+        # TRIM THE CANVAS. These sheets are laid out for printing, so the used range is padded with wholly-empty rows
+        # and columns — spacer gutters between figure groups, margins around the block. They carry no information and
+        # they dominate the grid, which is what turned a readable statement into a wall of blanks on the page.
+        # {LIVE 2026-08-10 same workbook — '表紙(J)' 22x12 → 11x4, '1(J)' 56x21 → 52x16, '2(J)' 53x21 → 47x16}
+        # [CONFIDENCE: CONFIRMED 100% — shapes measured before and after on all 11 sheets.]
+        df = df.dropna(how="all").dropna(axis=1, how="all")
+        if df.empty:
+            continue
+        rows = [[("" if pd.isna(v) else str(v).strip()) for v in r] for r in df.values.tolist()]
+        # No column names at all, rather than invented ones. With header=None there is no header row to name, and the
+        # sheet's real header (`4月～6月（第1四半期）` …) is simply one of the rows — which is the truth of the file.
+        tables.append({"columns": [], "rows": rows})
+        # THE TAB NAME IS NOT ALWAYS THE TITLE. It is for EDGAR exhibits, which label the statement on the tab; it is
+        # not for a Japanese supplementary-data workbook, whose tabs are page numbers — '表紙(J)', '1(J)', '2(J)' — while
+        # the statement's actual name sits in the sheet's first text cell. Heading every table `## 1(J)` told a reader
+        # nothing about which statement they were looking at.
+        # {LIVE 2026-08-10 group.ntt H3003hosoku0511.xls — tabs '1(J)' / '2(J)' vs first cells
+        #  '1.連結サマリー（NTT連結業績概要）' / '1.連結サマリー（設備投資）'}
+        # [CONFIDENCE: CONFIRMED 100% — both read from the same workbook.]
+        # Falls back to the tab name, so the EDGAR case keeps the behaviour that was right for it.
+        parts.append(f"## {_sheet_title(rows) or name}\n\n[TABLE {len(tables)}]")
     if not tables:
         _loud("legacy .xls read but every sheet was empty")
         return None
