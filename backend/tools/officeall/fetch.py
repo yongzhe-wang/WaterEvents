@@ -15,12 +15,14 @@ import os
 import socket
 import sys
 import zipfile
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 _BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 _TIMEOUT_S = int(os.environ.get("OFFICE_FETCH_TIMEOUT_S", "40"))
 _MAX_BYTES = int(os.environ.get("OFFICE_FETCH_MAX_BYTES", "60000000"))   # 60MB
+# Bounded so a redirect loop costs 6 requests, not a hang. Browsers use 20; documents do not need it.
+_MAX_REDIRECTS = int(os.environ.get("OFFICE_FETCH_MAX_REDIRECTS", "5"))
 
 
 def _loud(msg: str) -> None:
@@ -91,21 +93,51 @@ def _sniff_format(data: bytes, url_guess: str) -> str:
 
 def _try_get(url: str, proxy: str | None) -> tuple[bytes, str]:
     """ONE curl_cffi GET attempt → (bytes, "") on a usable document, or (b'', reason) with a SPECIFIC loud reason.
-    Reasons: dep-missing / http-<code> / oversized-<MB> / wrong-magic-<kind> / <ExcType>. `proxy` None = direct."""
+    Reasons: dep-missing / http-<code> / oversized-<MB> / wrong-magic-<kind> / <ExcType>. `proxy` None = direct.
+
+    Redirects are FOLLOWED one hop at a time, re-checking the SSRF guard at every hop (see the loop below)."""
     try:
         from curl_cffi import requests as cffi_requests
     except Exception:                                            # noqa: BLE001
         return b"", "dep-missing:curl_cffi"
     try:
         proxies = {"http": proxy, "https": proxy} if proxy else None
-        resp = cffi_requests.get(
-            url, impersonate="chrome", timeout=_TIMEOUT_S, allow_redirects=False,
-            headers={"User-Agent": _BROWSER_UA,
-                     "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.*,*/*"},
-            **({"proxies": proxies} if proxies else {}),
-        )
+        # FOLLOW REDIRECTS. `allow_redirects=False` made every 3xx a terminal failure, and a 3xx is the NORMAL way an IR
+        # site serves a document — a CDN hand-off, an http→https upgrade, a /files/x.pdf → signed-url rewrite. Because a
+        # redirect is a property of the URL and not of the egress, the residential-proxy fallback replayed the request
+        # and collected the identical 3xx, so each one burned BOTH legs to learn nothing.
+        # {DB 2026-08-09 waterevents.event_media_urls status='failed': "DIRECT[HTTP-302]+PROXY[HTTP-302] 51 |
+        #  DIRECT[HTTP-302]+PROXY[CONNECTIO… 47 | DIRECT[HTTP-301]+PROXY[HTTP-301] 22 | DIRECT[HTTP-303]+… 12 |
+        #  DIRECT[HTTP-307]+PROXY[HTTP-307] 9 | DIRECT[HTTP-301]+PROXY[TIMEOUT:F… 5" — 169 pdfs, every one a bare hop}
+        # [CONFIDENCE: CONFIRMED 100% — the reason strings are this function's own output, read back from the ledger.]
+        # NOT `allow_redirects=True`: fetch_bytes validates only the URL it was HANDED, so letting the client chase hops
+        # on its own would let a public host redirect us onto 169.254.169.254 or a private address — the exact hole
+        # `_host_is_public` exists to close. Every hop is therefore re-validated here before it is taken.
+        cur, resp = url, None
+        for _ in range(_MAX_REDIRECTS + 1):
+            resp = cffi_requests.get(
+                cur, impersonate="chrome", timeout=_TIMEOUT_S, allow_redirects=False,
+                headers={"User-Agent": _BROWSER_UA,
+                         "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.*,*/*"},
+                **({"proxies": proxies} if proxies else {}),
+            )
+            if resp.status_code not in (301, 302, 303, 307, 308):
+                break
+            loc = (resp.headers or {}).get("Location") or ""
+            if not loc:
+                return b"", f"http-{resp.status_code}-no-location"   # a 3xx with nowhere to go is a broken server
+            nxt = urljoin(cur, loc)                                  # a relative Location is legal and common
+            p = urlparse(nxt)
+            if p.scheme not in ("http", "https"):
+                return b"", f"redirect-bad-scheme-{p.scheme or 'none'}"
+            if not _host_is_public(p.hostname or ""):
+                _loud(f"REFUSED redirect to non-public host {p.hostname} from {cur[:60]}")
+                return b"", "redirect-ssrf-blocked"                  # the guard that made allow_redirects unsafe
+            cur = nxt
+        else:
+            return b"", f"too-many-redirects-{_MAX_REDIRECTS}"       # for/else: never broke = still redirecting
         if resp.status_code != 200:
-            return b"", f"http-{resp.status_code}"               # loud: the exact status (403 wall, 404 gone, 302 redirect)
+            return b"", f"http-{resp.status_code}"               # loud: the exact status (403 wall, 404 gone)
         data = resp.content
         if not data:
             return b"", "empty-body"
@@ -136,7 +168,21 @@ def fetch_bytes(url: str, proxy: str | None = None, fmt_guess: str = "pdf") -> t
     # Attempt 1: DIRECT (no proxy). The common path.
     data, reason = _try_get(url, None)
     if data:
-        return data, _sniff_format(data, fmt_guess)
+        fmt = _sniff_format(data, fmt_guess)
+        # HTML WHERE A DOCUMENT WAS ASKED FOR IS A WALL, NOT A RESULT. Every caller reaches this through
+        # maybe_office_url, so fmt_guess is always pdf/xlsx/docx/pptx and html can only mean the site served an
+        # interstitial — a consent page, a login, a "your download will begin shortly" stub. Following redirects made
+        # this reachable: the URL used to die at the 3xx with a loud `http-302`, and now it arrives at whatever the
+        # last hop serves. Landing a 572-byte stub in event_documents as a real document would trade a visible failure
+        # for an invisible one, which is the opposite of what this module is for.
+        # {LIVE 2026-08-09 goldmansachs.com/pressroom/.../2026-q2-results.pdf → 572 bytes, sniffed "html"}
+        # [CONFIDENCE: CONFIRMED 100% — observed in the redirect-recovery test, 7/8 real pdfs and this one stub.]
+        # Falls through to the proxy leg rather than returning: a wall is exactly the failure a different egress fixes.
+        if fmt == "html" and fmt_guess != "html":
+            reason = f"wall-html-{len(data)}B"
+            data = b""
+        else:
+            return data, fmt
     _loud(f"direct FAILED ({reason}) for {url[:70]}")
 
     # Attempt 2: RESIDENTIAL PROXY fallback — only when a proxy is available and direct failed on something a
@@ -144,8 +190,12 @@ def fetch_bytes(url: str, proxy: str | None = None, fmt_guess: str = "pdf") -> t
     if proxy and not reason.startswith(("http-404", "oversized")):
         data2, reason2 = _try_get(url, proxy)
         if data2:
-            _loud(f"RECOVERED via residential proxy for {url[:70]}")
-            return data2, _sniff_format(data2, fmt_guess)
+            fmt2 = _sniff_format(data2, fmt_guess)
+            if fmt2 == "html" and fmt_guess != "html":            # same wall through a different egress — still a wall
+                reason2 = f"wall-html-{len(data2)}B"
+            else:
+                _loud(f"RECOVERED via residential proxy for {url[:70]}")
+                return data2, fmt2
         _loud(f"proxy fallback ALSO FAILED ({reason2}) for {url[:70]}")
         return b"", f"direct[{reason}]+proxy[{reason2}]"          # loud: the WHOLE chain's failure
 

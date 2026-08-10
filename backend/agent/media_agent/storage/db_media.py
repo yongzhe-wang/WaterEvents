@@ -156,10 +156,24 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                 # {MIGRATION 20260723145355 "CHECK (STATUS IN ('PENDING','DONE','FAILED','SKIPPED'))"}
                 # [CONFIDENCE: CONFIRMED 100% — the constraint is why this truncation exists at all.]
                 st = next((s for s in ("done", "failed", "skipped", "pending") if raw.startswith(s)), "done")
+                # A RETRY MUST BE ABLE TO CORRECT THE RECORD. `DO NOTHING` froze the first outcome forever, so the ledger
+                # was monotonically pessimistic: a url that failed before a fix shipped stayed 'failed' even after a
+                # later run parsed it, and the dashboard's most-trusted table under-reported success by exactly the
+                # amount of work each fix recovered.
+                # {TODAY-MEDIA.JS "THE URL LEDGER TALLIED BY OUTCOME. THIS IS THE HIGHEST-SIGNAL NUMBER ON THE PAGE: IT
+                #  IS THE ONLY PLACE A PER-URL FAILURE IS RECORDED"} — a number that can only get worse is not that.
+                # {DB 2026-08-09 status='failed' AND reason LIKE '%http-30%' → 193 urls, every one fetchable after the
+                #  redirect fix; under DO NOTHING their rows could never say so.}
+                # [CONFIDENCE: CONFIRMED 100% — event_documents already upserts on retry, so only this table was frozen;
+                #  the two tables would have drifted apart on every recovered url.]
+                # The WHERE guard keeps it honest in the other direction: a later run that SKIPS a url (lane disabled,
+                # sec-filing) must not erase a real 'done', because a skip is not evidence about the resource.
                 await conn.execute(
                     """INSERT INTO event_media_urls (event_id, url, canon_key, kind, status, reason)
                        VALUES ($1,$2,$3,$4,$5,$6)
-                       ON CONFLICT (event_id, canon_key) DO NOTHING;""",
+                       ON CONFLICT (event_id, canon_key) DO UPDATE
+                         SET status = excluded.status, reason = excluded.reason
+                         WHERE event_media_urls.status <> 'done' OR excluded.status = 'done';""",
                     event_id, u, _canon(u), classify(u), st, (raw if raw != st else None),
                 )
         return True

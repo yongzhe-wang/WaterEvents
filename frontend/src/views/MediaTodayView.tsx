@@ -31,7 +31,8 @@ interface Whisper { concurrency: number | null; inflight: number | null; done: n
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
   totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null;
-            via?: { coords: number | null; docling: number | null; unknown: number | null } };
+            via?: { coords: number | null; docling: number | null; unknown: number | null };
+            kind?: { pdf: number | null; xlsx: number | null; docx: number | null; pptx: number | null } };
   meta: { title_fixed: number | null; date_fixed: number | null };
   ledger: { done: number | null; failed: number | null; skipped: number | null };
   recent: { enriched_1h: number | null; blocks_1h: number | null };
@@ -180,8 +181,15 @@ function MediaResourceCards({ r, totals }: { r: MediaToday["resources"]; totals:
             ? `${num(totals.via.coords)} coords · ${num(totals.via.docling)} docling`
               + (totals.via.unknown ? ` · ${num(totals.via.unknown)} pre-column` : "")
             : "path split —",
-          d ? `docling ${d.inflight ?? "—"}/${d.concurrency ?? "—"} slots · ${num(d.queued)} queued · ${num(d.errors)} errors`
-            : "docling unreachable",
+          // WAS docling's inflight/slots. That line answered "is the service busy", and once docling became the
+          // fallback the only healthy answer was "no" — so a permanently-idle reading occupied the row and said
+          // nothing. Output per format is the question that survived: it is where the lane's real failure lives.
+          // {DB 2026-08-09 GROUP BY kind "PDF 4481 | XLSX 138 | DOCX 9 | PPTX 2"} — pdf works, the other three do not,
+          // and the single `files` total above cannot show that because pdf is 97% of it.
+          // [CONFIDENCE: CONFIRMED 100% — counted against the live table.]
+          totals.kind
+            ? `${num(totals.kind.pdf)} pdf · ${num(totals.kind.xlsx)} xlsx · ${num(totals.kind.docx)} docx · ${num(totals.kind.pptx)} pptx`
+            : "by format —",
           // `cores` is the cgroup QUOTA, and the host count is printed beside it ONLY when they disagree — on the pod
           // this reads "307% cpu · 7.65 cores (host 96)" where it used to read "19% cpu · 96 cores" for the identical
           // machine state, because os.cpu_count() does not honour a cgroup quota.
