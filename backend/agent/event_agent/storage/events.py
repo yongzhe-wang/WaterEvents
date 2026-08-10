@@ -198,9 +198,14 @@ async def log_scan(pool: asyncpg.Pool, unit_type: str, url: str, stats: dict) ->
 # {DESIGN wlkrnxklp "enrichment 是 EVENT 级 flat map 从表里 claim"}.
 # ─────────────────────────────────────────────────────────────────────────────
 async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[asyncpg.Record]:
-    """Claim a BATCH of enrichable events (discovered, OR rendering-lease-expired, OR failed-and-retry-due) → flip to
-    `rendering` with a FRESH per-row claim_token + lease. SKIP LOCKED → N workers never fight over a row. Ordered by
-    next_retry_at so backed-off failures sink below fresh rows (anti-starvation). Returns the claimed rows to enrich."""
+    """Claim a BATCH of enrichable events (discovered, OR partial-with-work-owed, OR rendering-lease-expired, OR
+    failed-and-retry-due) → flip to `rendering` with a FRESH per-row claim_token + lease. SKIP LOCKED → N workers never
+    fight over a row. Ordered by next_retry_at so backed-off failures sink below fresh rows (anti-starvation).
+
+    `pending_kinds` rides along in the RETURNING because it is what tells the worker WHICH pass to run: empty means the
+    full pass, non-empty means dispatch only those kinds and leave the html/VLM half alone. A claimed row is `rendering`
+    either way — the array, not the status, carries the distinction, which is what lets one lease and one reclaim path
+    serve both. {MIGRATION 20260810051500 "WHY ONE STATE + ONE ARRAY, AND NOT A PAIR OF STATES"}."""
     async with pool.acquire() as conn:
         return await conn.fetch(
             """
@@ -209,6 +214,10 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
             WHERE id IN (
                 SELECT id FROM events
                 WHERE (status='discovered'
+                       -- 'partial' = enriched, but some lane was closed when it ran and still owes an attempt. It is
+                       -- claimable on exactly the same terms as a fresh event; what differs is the work, not the
+                       -- eligibility. {MIGRATION 20260810051500}
+                       OR status='partial'
                        OR (status='rendering' AND lease_until < now())           -- reclaim a crashed enrichment worker
                        OR (status='failed' AND (next_retry_at IS NULL OR next_retry_at < now())))
                   -- SEC filings never enter stage-2: EDGAR serves them completely and structurally, so rendering an
@@ -249,7 +258,7 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                 ORDER BY enrich_priority DESC, next_retry_at NULLS FIRST
                 FOR UPDATE SKIP LOCKED LIMIT $2
             )
-            RETURNING id, claim_token, title, event_date, event_type, media_urls;
+            RETURNING id, claim_token, title, event_date, event_type, media_urls, pending_kinds;
             """,
             str(ENRICH_LEASE_MIN), limit, SEC_URL_EXCLUDE,
         )
@@ -364,6 +373,25 @@ async def defer_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) ->
             """,
             event_id, claim_token, (reason or "")[:200],
         )
+
+
+async def clear_pending_kinds(pool: asyncpg.Pool, event_id, claim_token) -> bool:
+    """Owed work on a lane this event has no url for → drop the debt and put the row back to 'enriched'. Fenced.
+
+    WHY this exists as its own exit. Enrolment into `partial` is a bulk UPDATE driven by the url ledger, and a ledger
+    row can name a kind the event's CURRENT media_urls no longer contains — a url was rewritten by the viewer unwrap,
+    or the row predates a router reclassification. Without this exit the worker claims such a row, filters `media` to
+    empty, and returns having changed nothing, so the row is claimed again on the very next round: a free-running loop
+    that occupies a worker slot forever and produces nothing. It is the same shape as an empty retry with no backoff.
+    Dropping the debt rather than failing the event is the honest disposition — the event is enriched and fine; there
+    is simply nothing on that lane to fetch. {MIGRATION 20260810051500}"""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """UPDATE events SET status='enriched', pending_kinds='{}', claim_token=NULL, lease_until=NULL
+               WHERE id=$1 AND claim_token=$2 RETURNING id;""",
+            event_id, claim_token,
+        )
+    return row is not None
 
 
 async def fail_event(pool: asyncpg.Pool, event_id, claim_token, reason: str) -> None:

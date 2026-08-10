@@ -20,6 +20,24 @@ from ..extract.chart import _canon, _hash          # canonical url dedup key + s
 from ..extract.router import classify              # url → KIND_* (html/pdf/pptx/docx/xlsx/audio/video/other)
 
 
+def _pg_text(s: str) -> str:
+    """Strip NUL bytes — Postgres `text` cannot hold them, and one of them kills the WHOLE event.
+
+    用一句话讲完: 抽取出来的 md 里偶尔混进 \\x00(pdf 的字体表、xls 的定长字段、被截断的 UTF-16),Postgres 的 text
+    类型存不了它,于是整个事务抛异常 —— 一个字节把一个 event 的全部产出连同它的状态一起葬掉。
+
+    WHY at the DB boundary and not at extraction. The byte is legal in every format we read and legal in Python; the
+    only place it is invalid is this one column type, so this is exactly the system boundary where validation belongs.
+    Fixing it in each extractor would mean remembering it in every extractor written later.
+    {LIVE 2026-08-10 — "[enrich] ⛔ event 2e719526 UNEXPECTED CharacterNotInRepertoireError: invalid byte sequence for
+     encoding \\"UTF8\\": 0x00 — fail", and the same exception seen earlier the same day on the normal enrichment path}
+    [CONFIDENCE: CONFIRMED 100% — asyncpg raises CharacterNotInRepertoireError from the INSERT, so no row is written
+     and the enclosing transaction takes the event's status down with it.]
+    Removed rather than replaced: a NUL carries no meaning in extracted prose, so substituting a visible character
+    would invent content that was never on the page."""
+    return s.replace("\x00", "") if s else s
+
+
 async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict],
                               transcript_segments: list[dict], urls: list[str], source_url: str = "",
                               meta: dict | None = None,
@@ -91,7 +109,7 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
             for d in (documents or []):
                 if not isinstance(d, dict) or not (d.get("md") or "").strip():
                     continue                              # an empty md is not a document; never store a hollow row
-                md = d["md"]
+                md = _pg_text(d["md"])
                 await conn.execute(
                     # `via` records WHICH EXTRACTOR produced this row. A kind='pdf' document can now come from either
                     # the coordinate rebuild or docling, and the two fail in different shapes on different document
@@ -135,7 +153,7 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                          (event_id, ord, speaker, start_s, end_s, "text", source_url, seg_hash)
                        VALUES ($1,$2,$3,$4,$5,$6,$7,$8);""",
                     event_id, i, (str(s.get("speaker") or "").strip() or "SPEAKER_00"),
-                    s.get("start"), s.get("end"), (s.get("text") or "").strip(), source_url or None, seg_hash,
+                    s.get("start"), s.get("end"), _pg_text((s.get("text") or "").strip()), source_url or None, seg_hash,
                 )
 
             # audio artifacts — one row per transcribed source (unique on (event_id, url)). local_path is transient
@@ -186,3 +204,79 @@ async def mark_enriched_media(pool, event_id, claim_token, documents: list[dict]
                     event_id, u, _canon(u), classify(u), st, (raw if raw != st else None),
                 )
         return True
+
+
+async def write_documents_only(pool, event_id, claim_token, documents: list[dict],
+                               url_status: dict | None = None, source_url: str = "") -> bool:
+    """Terminal write for a DOCUMENT-ONLY pass: upsert the documents + their ledger rows, clear the debt, put the row
+    back to 'enriched'. Fenced on claim_token in one transaction, exactly like mark_enriched_media. Returns False if
+    the lease was lost (nothing written).
+
+    用一句话讲完: 这个 event 早就富集好了, 这一遍只是补当初车道关着没抓的文档 —— 所以只写文档和台账, 然后把
+    pending_kinds 清空、状态放回 enriched。它和 mark_enriched_media 的差别全在**不做什么**上。
+
+    THREE THINGS IT DELIBERATELY DOES NOT DO, each of which would damage an already-good event:
+
+    1. IT DOES NOT TOUCH title / event_date / event_type / meta_fixed. Those are the html pass's product and this pass
+       did not run one, so it has no evidence with which to change them. mark_enriched_media writes them from
+       `chart.title/date/type`, which on a document-only chart are whatever the event already had — writing them back
+       would be a no-op on a good day and an overwrite-with-stale on a bad one.
+    2. IT DOES NOT FAIL THE EVENT when no document came back. The artifacts exist; they were written by the first
+       enrichment. A failed fetch here costs the LEDGER a row and the event nothing. The normal path's
+       NOTHING-USABLE → fail_event branch is correct only for an event that has never produced anything.
+    3. IT DOES NOT MERGE media_urls. No url was discovered — a document-only pass dispatches a filtered subset of a
+       list that is already stored, so a union could only ever be a no-op or a truncation.
+
+    Clearing pending_kinds is UNCONDITIONAL. The array records that an ATTEMPT was owed, not that a document is
+    missing; leaving it set when a fetch fails would re-claim this row every round forever. What was actually obtained
+    is in event_media_urls, which upserts and can therefore correct itself on a later run.
+    {MIGRATION 20260810051500 "WHAT PENDING_KINDS IS NOT: IT IS NOT A LEDGER"}
+    [CONFIDENCE: CONFIRMED 100% — the failure modes in 1-3 are the three branches worker.py returns before, named in
+     the comment above its `if only_kinds:` terminal.]"""
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # FENCE + CLEAR first, same discipline as mark_enriched_media: if another worker re-claimed this row the
+            # UPDATE matches nothing and we abort BEFORE writing any child rows.
+            row = await conn.fetchrow(
+                """UPDATE events SET status='enriched', pending_kinds='{}', claim_token=NULL, lease_until=NULL
+                   WHERE id=$1 AND claim_token=$2 RETURNING id;""",
+                event_id, claim_token,
+            )
+            if row is None:
+                return False
+
+            for d in (documents or []):
+                if not isinstance(d, dict) or not (d.get("md") or "").strip():
+                    continue                              # an empty md is not a document; never store a hollow row
+                md = _pg_text(d["md"])
+                await conn.execute(
+                    """INSERT INTO event_documents
+                         (event_id, url, kind, md, blocks, n_chars, n_blocks, content_hash, via)
+                       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                       ON CONFLICT (event_id, url) DO UPDATE SET
+                         kind = excluded.kind, md = excluded.md, blocks = excluded.blocks,
+                         n_chars = excluded.n_chars, n_blocks = excluded.n_blocks,
+                         content_hash = excluded.content_hash, via = excluded.via,
+                         updated_at = now();""",
+                    event_id, d.get("url") or "", d.get("kind") or "html", md,
+                    json.dumps(d.get("blocks") or []), len(md), len(d.get("blocks") or []),
+                    _hash({"u": _canon(d.get("url") or ""), "md": md[:4000]}),
+                    (d.get("via") or None),
+                )
+
+            # Ledger, same upsert + same never-downgrade-'done' guard as the full path. This is where a failed fetch
+            # is recorded, and it is the ONLY place this pass reports a failure.
+            for u, raw in (url_status or {}).items():
+                if not isinstance(u, str) or not u.lower().startswith(("http://", "https://")):
+                    continue
+                raw = raw or "done"
+                st = next((s for s in ("done", "failed", "skipped", "pending") if raw.startswith(s)), "done")
+                await conn.execute(
+                    """INSERT INTO event_media_urls (event_id, url, canon_key, kind, status, reason)
+                       VALUES ($1,$2,$3,$4,$5,$6)
+                       ON CONFLICT (event_id, canon_key) DO UPDATE
+                         SET status = excluded.status, reason = excluded.reason
+                         WHERE event_media_urls.status <> 'done' OR excluded.status = 'done';""",
+                    event_id, u, _canon(u), classify(u), st, (raw if raw != st else None),
+                )
+    return True

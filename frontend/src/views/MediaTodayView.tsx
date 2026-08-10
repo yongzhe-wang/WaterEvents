@@ -30,6 +30,7 @@ interface Docling { concurrency: number | null; inflight: number | null; queued:
 interface Whisper { concurrency: number | null; inflight: number | null; done: number | null; errors: number | null; gpu_mem_used_mb: number | null; gpu_mem_total_mb: number | null; gpu_util_pct: number | null; }
 interface Pipeline {
   backlog: number | null; inflight: number | null; enriched: number | null; failed: number | null;
+  partial: number | null;                       // 已富集但还欠某条车道的一次尝试 —— 算欠账, 不算做完
   totals: { blocks: number | null; files: number | null; segments: number | null; audio: number | null;
             via?: { coords: number | null; docling: number | null; unknown: number | null; fallback?: number | null };
             kind?: { pdf: number | null; xlsx: number | null; docx: number | null; pptx: number | null } };
@@ -93,6 +94,9 @@ function PipelineBar({ p }: { p: Pipeline }) {
       </div>
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 6 }}>
         {cell("Backlog", num(p.backlog), "events waiting to be enriched")}
+        {/* Shown beside Backlog rather than folded into it: the two are owed for different reasons and
+            cost different amounts — a partial event skips the html render entirely. */}
+        {cell("Partial", num(p.partial), "enriched, still owed a document pass")}
         {/* The three VLM tasks, each shown by what it PRODUCED rather than by how often it ran. A count of calls says
             nothing about whether the call was worth making; a count of repairs and extractions does. */}
         {cell("Titles fixed", num(p.meta.title_fixed), "stage-1 title replaced by the page's own")}

@@ -159,6 +159,9 @@ async def process_event(pool, client: QwenClient, ev) -> None:
     fail_event — it must NOT propagate out of gather and sink the batch (leaving the batch's rows stuck in 'rendering'
     until lease-expiry). {AUDIT 2026-07-23 HIGH: gather(return_exceptions=False) + no try/except}."""
     eid, tok = ev["id"], ev["claim_token"]
+    # Read BEFORE the try: the except needs to know which pass this was, and a value assigned inside the
+    # try is indistinguishable from "crashed before we got there" when the handler reads it back.
+    only_kinds = set(ev["pending_kinds"] or ())
     try:
         # UNWRAP DOCUMENT-VIEWER URLS BEFORE ANYTHING ELSE SEES THEM. A `/pdf-viewer.aspx?src=…report.pdf` is a page
         # whose only content is the PDF it embeds; left as-is it classifies as html, gets rendered, and what lands in
@@ -177,6 +180,28 @@ async def process_event(pool, client: QwenClient, ev) -> None:
             await db.fail_event(pool, eid, tok, "no_media_urls")
             return
 
+        # DOCUMENT-ONLY PASS. A non-empty pending_kinds means this event is already enriched and is owed an attempt on
+        # specific lanes that were closed when it first ran — so dispatch ONLY those kinds and leave the html half
+        # untouched. Every one of these events already has its html in the database, which is the whole reason the
+        # state exists: re-running them whole would buy 26,939 documents at the price of 18,654 redundant renders.
+        # {DB 2026-08-10 — 14,893 events owe a `skipped:kind-disabled` document, 14,893 of 14,893 also carry html,
+        #  18,654 html urls total, 26,939 documents owed}
+        # [CONFIDENCE: CONFIRMED 100% — counted by joining events to the url ledger.]
+        # `all_urls` keeps the ORIGINAL list because two things downstream must still see the whole event: the office
+        # handler decides whether to spend a metadata call by asking "does this event have a readable page at all", and
+        # answering that from the filtered list would say "no" for every event here and fire a call the html pass
+        # already made. {HANDLERS.PY handle_office — `event_urls` drives the _DOC_ONLY_RE check}
+        all_urls = list(media)
+        if only_kinds:
+            media = [u for u in media if router.classify(u) in only_kinds]
+            if not media:
+                # Owed work on kinds this event does not actually have — nothing to do, but the debt must still be
+                # cleared or the row is claimed again every round forever.
+                print(f"[enrich] ↩ event {eid} partial({','.join(sorted(only_kinds))}) has no matching url — clearing",
+                      flush=True)
+                await db.clear_pending_kinds(pool, eid, tok)
+                return
+
         # THE FIXED LIST. Every url event_agent found gets dispatched to its handler, in order; nothing is discovered
         # and nothing is added. Work per event is therefore exactly len(media) units — knowable in advance, unlike the
         # frontier this replaced. Production distribution: 1 url for 56% of events, 2 for 20%, 3 for 8%, 4-6 for 16%
@@ -191,7 +216,7 @@ async def process_event(pool, client: QwenClient, ev) -> None:
                 # event_urls 让 office handler 判断「这个事件有没有网页可读」—— 全是文档时才为它单独取
                 # 一次标题/日期,有网页时那件事归 SYSTEM_ROUTE,不重复花调用。
                 await dispatch(u, kind, chart, client=client, use_image=_USE_IMAGE, proxy=_PROXY,
-                               event_urls=media)
+                               event_urls=all_urls)
             except Exception as e:                           # noqa: BLE001 — ONE bad url must not lose the other urls'
                 chart.set_status(u, f"failed:{type(e).__name__}")   # work; record it loudly and keep going
                 print(f"[enrich] ⚠️ event {eid} url {u[:60]} raised {type(e).__name__}: {str(e)[:80]}", flush=True)
@@ -200,6 +225,31 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         # links that belong to this event; those land in the chart's ledger as new pending urls.
         for u in _ordered(media):
             await _run(u)
+
+        # THE DOCUMENT-ONLY PASS STOPS HERE. Everything below this line reasons about the html half of the event, and
+        # on a filtered chart every one of those judgements is wrong in a way that DESTROYS a good event:
+        #   • chart.verdict() reads what the render produced. With no html url dispatched there is nothing to read, so
+        #     it returns 'dead' and the branch below would fail_event an already-enriched row — and this event was
+        #     judged not-a-hub, not-dead once already, when it was first enriched.
+        #   • pass 2 dispatches the documents the MODEL named off the page. No model ran, so pending_urls() is empty
+        #     by construction; the loop is not merely useless, its emptiness would be indistinguishable from "the page
+        #     offered nothing".
+        #   • the NOTHING-USABLE branch turns an event with no artifacts into a failure. Here the artifacts exist —
+        #     they were written by the first enrichment — so a failed document fetch must cost the LEDGER an entry and
+        #     the event nothing at all.
+        # Clearing pending_kinds is unconditional on success: it records that an ATTEMPT was owed, not that a document
+        # is missing, and leaving it set when a fetch fails would re-claim this row every round forever. What was
+        # actually obtained lives in event_media_urls, which upserts and can therefore correct itself.
+        # {MIGRATION 20260810051500 "WHAT PENDING_KINDS IS NOT: IT IS NOT A LEDGER"}
+        if only_kinds:
+            docs = chart.build_documents()
+            ok = await db_media.write_documents_only(
+                pool, eid, tok, docs,
+                url_status={s["url"]: s.get("status", "") for s in chart.urls.values()},
+                source_url=detail or (all_urls[0] if all_urls else ""))
+            print(f"[enrich] 📎 event {eid} partial({','.join(sorted(only_kinds))}) → {len(docs)} doc(s) "
+                  f"{'written' if ok else 'DROPPED (lease lost)'}", flush=True)
+            return
 
         # PAGE VERDICT — decided before pass 2, because a hub has nothing worth fetching and a dead page has nothing
         # at all. Acting here rather than inside the handler is deliberate: dropping an event and promoting a hub are
@@ -285,8 +335,23 @@ async def process_event(pool, client: QwenClient, ev) -> None:
         print(f"[enrich] {'✅' if ok else '⚠️ lost-lease'} event {eid} ← {len(media)} urls → "
               f"{n_docs} docs ({n_chars:,} chars), {n_segs} segments, {n_audio} audio", flush=True)
     except Exception as e:                               # noqa: BLE001 — one event's crash must NOT sink the whole batch
-        print(f"[enrich] ⛔ event {eid} UNEXPECTED {type(e).__name__}: {e} — fail (batch continues)", flush=True)
+        # A DOCUMENT-ONLY PASS MUST NOT BE ABLE TO FAIL AN ALREADY-ENRICHED EVENT, not even by crashing. The three
+        # skips inside the try block cover the paths that RETURN a failure; this covers the one that THROWS, and it is
+        # not hypothetical — the first 20-event trial produced exactly this:
+        # {LIVE 2026-08-10 — "[enrich] ⛔ event 2e719526 UNEXPECTED CharacterNotInRepertoireError: invalid byte
+        #  sequence for encoding \"UTF8\": 0x00 — fail", after which that row read status='failed' with
+        #  pending_kinds still {pdf,xlsx,docx,pptx}}
+        # The event's html, blocks and metadata were all intact; a NUL byte in one fetched pdf demoted the whole row.
+        # [CONFIDENCE: CONFIRMED 100% — the log line and the resulting row were read minutes apart in the same trial.]
+        # Clearing the debt rather than leaving it set is deliberate: a crash that recurs would otherwise re-claim this
+        # row every round forever. The url ledger already carries whatever the failing url did.
+        _partial = bool(only_kinds)
+        print(f"[enrich] {'↩' if _partial else '⛔'} event {eid} UNEXPECTED {type(e).__name__}: {e} — "
+              f"{'partial pass abandoned, event left enriched' if _partial else 'fail'} (batch continues)", flush=True)
         try:
+            if _partial:
+                await db.clear_pending_kinds(pool, eid, tok)
+                return
             await db.fail_event(pool, eid, tok, f"crash:{type(e).__name__}: {e}")
         except Exception as fe:                          # noqa: BLE001 — even fail_event failing must not raise out
             # fail_event ITSELF failed (pool exhausted / DB blip). Previously `pass` — the event then sat in 'rendering'

@@ -173,7 +173,7 @@ export default async function handler(_req, res) {
     // Every count is one HEAD-shaped request; they all fire together. Counting in parallel matters because this handler
     // is polled every 30s and a serial chain of a dozen round-trips to us-west-2 would not fit inside that budget.
     const [
-      backlog, inflight, enriched, failed,
+      backlog, inflight, enriched, failed, partial,
       titleFixed, dateFixed,
       blocks, files, viaCoords, viaDocling, viaUnknown, viaFallback, kPdf, kXlsx, kDocx, kPptx, segments, audio,
       ledgerDone, ledgerFailed, ledgerSkipped,
@@ -184,6 +184,11 @@ export default async function handler(_req, res) {
       sbCount("events?select=id&status=eq.rendering"),          // claimed and being worked right now
       sbCount("events?select=id&status=eq.enriched"),
       sbCount("events?select=id&status=eq.failed"),
+      // 'partial' — enriched, but a lane that was closed when it ran still owes an attempt. It counts as
+      // BACKLOG, not as done: without this the four status counters silently drop these rows and the
+      // dashboard under-reports remaining work by exactly the size of the backfill.
+      // {MIGRATION 20260810051500 — 14,893 events qualify for enrolment}
+      sbCount("events?select=id&status=eq.partial"),
       // WHAT THE METADATA TASK ACTUALLY REPAIRED. A key is present in meta_fixed only when that field was replaced,
       // and its value is what it was replaced FROM — so these two counts are the task's real output rather than "how
       // many events we called the model on". Until 2026-08-06 the answer was structurally zero: the writer's UPDATE
@@ -271,7 +276,7 @@ export default async function handler(_req, res) {
 
     res.json({
       pipeline: {
-        backlog, inflight, enriched, failed,
+        backlog, inflight, enriched, failed, partial,
         // `blocks` counts html documents = the pages whose prose we extracted; `files` counts office documents = the
         // docling lane. Naming them by what produced them beats naming them by table.
         meta: { title_fixed: titleFixed, date_fixed: dateFixed },

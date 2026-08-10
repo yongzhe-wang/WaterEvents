@@ -85,8 +85,18 @@ out=0
 # {EVENTS.PY:232 "RECLAIM EVENTS STUCK IN `RENDERING` PAST THEIR LEASE (CRASHED ENRICHMENT WORKER) → BACK TO `DISCOVERED`"}
 # [CONFIDENCE: CONFIRMED 100% — zero call sites at the time of writing; currently 0 rows are stuck, so this lands
 #  before it is needed rather than after].
+# RETURN IT TO WHERE IT CAME FROM, NOT TO 'discovered'. A row that was mid-DOCUMENT-ONLY pass carries a non-empty
+# pending_kinds; sending it back to 'discovered' would silently upgrade it to a full pass and re-render html this event
+# already has, which is the exact cost the partial state exists to avoid. The array is the single source of truth for
+# which pass is owed, so the reclaim branches on it rather than on a second in-flight status.
+# {MIGRATION 20260810051500 "WHY ONE STATE + ONE ARRAY, AND NOT A PAIR OF STATES ... THE TWO RECLAIM SITES BRANCH ON
+#  THE ARRAY INSTEAD OF ON A STATUS, SO `RENDERING` KEEPS ITS ONE MEANING AND ITS ONE LEASE"}
+# [CONFIDENCE: CONFIRMED 100% — this is one of the two sites that migration names; the other is claim_events' own
+#  lease-expired arm, which needs no change because it re-claims in place and carries pending_kinds through.]
 ev=$("$PSQL" "$DSN" -t -A -c \
-  "WITH u AS (UPDATE waterevents.events SET status='discovered', claim_token=NULL
+  "WITH u AS (UPDATE waterevents.events
+                 SET status = CASE WHEN pending_kinds <> '{}' THEN 'partial' ELSE 'discovered' END,
+                     claim_token=NULL
                WHERE status='rendering' AND lease_until < now() RETURNING 1)
    SELECT count(*) FROM u" 2>/dev/null | tr -d ' ')
 [ "${ev:-0}" != "0" ] && echo "reaper: reclaimed $ev stalled event lease(s)" || true
