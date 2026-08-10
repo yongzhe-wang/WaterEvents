@@ -135,9 +135,25 @@ def _try_get(url: str, proxy: str | None, fmt_guess: str = "") -> tuple[bytes, s
         # NOT `allow_redirects=True`: fetch_bytes validates only the URL it was HANDED, so letting the client chase hops
         # on its own would let a public host redirect us onto 169.254.169.254 or a private address — the exact hole
         # `_host_is_public` exists to close. Every hop is therefore re-validated here before it is taken.
-        cur, resp = url, None
-        for _ in range(_MAX_REDIRECTS + 1):
-            resp = cffi_requests.get(
+        # ONE SESSION FOR THE WHOLE CHAIN, CLOSED BY THE `with`. `cffi_requests.get()` builds a curl handle per call and
+        # nothing here ever released it — the response object owns a libcurl easy-handle plus its receive buffer, and
+        # letting it fall out of scope does not free the native side. That was already true when this function made ONE
+        # call per attempt; following redirects turned it into up to six, and the leak scaled with it:
+        # {IR-RENDER-16 2026-08-10, same code same box, measured by waterevents-resmon —
+        #  redirects ON  → render RSS 5.16 GB → 15.85 GB in 8.5 min (~1250 MB/min);
+        #  redirects OFF (OFFICE_FETCH_MAX_REDIRECTS=0) → 6.35 GB → 7.69 GB in 6 min (~220 MB/min)}
+        # The 5.7x ratio is the hop count; the residual 220 MB/min is the SAME leak at one call per attempt, which is
+        # why closing the handles matters more than the redirect count. Unfixed, this took the VM down at 06:16 with
+        # every userspace process stopping writes at once and no OOM line — logging died before the kill could be
+        # recorded. {journalctl -k -b -1 → 0 OOM lines, 0 hung-task, 0 I/O errors; disk 12%, inodes 2%}
+        # [CONFIDENCE: CONFIRMED 100% — the two rates are a controlled before/after on one box under live load, toggled
+        #  by an env var with no code change between them.]
+        # `data` is materialised INSIDE the `with`: the body is read off the handle, so reading it after the session
+        # closed would return empty.
+        with cffi_requests.Session() as sess:
+          cur, resp = url, None
+          for _ in range(_MAX_REDIRECTS + 1):
+            resp = sess.get(
                 cur, impersonate="chrome", timeout=_TIMEOUT_S, allow_redirects=False,
                 headers={"User-Agent": _BROWSER_UA,
                          "Accept": "application/pdf,application/vnd.openxmlformats-officedocument.*,*/*"},
@@ -156,32 +172,32 @@ def _try_get(url: str, proxy: str | None, fmt_guess: str = "") -> tuple[bytes, s
                 _loud(f"REFUSED redirect to non-public host {p.hostname} from {cur[:60]}")
                 return b"", "redirect-ssrf-blocked"                  # the guard that made allow_redirects unsafe
             cur = nxt
-        else:
-            return b"", f"too-many-redirects-{_MAX_REDIRECTS}"       # for/else: never broke = still redirecting
-        if resp.status_code != 200:
-            return b"", f"http-{resp.status_code}"               # loud: the exact status (403 wall, 404 gone)
-        data = resp.content
-        if not data:
-            return b"", "empty-body"
-        if len(data) > _MAX_BYTES:
-            return b"", f"oversized-{len(data) // 1_000_000}MB"  # loud: the size, not a silent drop
-        # PASS THE URL'S OWN GUESS INTO THE SNIFFER. This argument was hard-coded to "" and that single empty string
-        # made the OLE2 support in _sniff_format dead code from the day it shipped: the 1997 compound-document container
-        # is shared by .xls, .doc and .ppt, so its magic identifies the CONTAINER and only the url's extension can name
-        # the payload — which is exactly why that branch ends `return url_guess if url_guess in (...) else ""`. Handed
-        # "", it returned "", the caller read that as "not a document", and every legacy workbook was rejected here with
-        # the very magic the branch tests for. The same emptiness disarms the PK-zip branch's own extension fallback.
-        # {LIVE 2026-08-10 five ledger urls re-fetched with the shipped code — vodafone financial-results .xls,
-        #  mb.cision.com/…/b314189899f16a52.xls, orkla quarterly-figures, group.ntt fy2018q1hosoku0807.xls — all five
-        #  returned "WRONG-MAGIC-B'\XD0\XCF\X11\XE0\XA1\XB1\X1A\XE1'", i.e. OLE2 recognised and then discarded}
-        # {DB 2026-08-10 event_media_urls "FAILED:FETCH-FAILED:DIRECT[WRONG-MAGIC-B'\XD0\XCF\… 54" — unchanged while
-        #  the redirect fix in the same deploy took its own bucket from 278 down to 230}
-        # [CONFIDENCE: CONFIRMED 100% — the two buckets moved differently under one deploy, and the five re-fetches
-        #  reproduce the rejection against the running code.]
-        fmt = _sniff_format(data, fmt_guess)
-        if not fmt:
-            return b"", f"wrong-magic-{data[:8]!r}"              # loud: got bytes but not a document (an HTML wall etc.)
-        return data, ""
+          else:
+              return b"", f"too-many-redirects-{_MAX_REDIRECTS}"       # for/else: never broke = still redirecting
+          if resp.status_code != 200:
+              return b"", f"http-{resp.status_code}"               # loud: the exact status (403 wall, 404 gone)
+          data = resp.content
+          if not data:
+              return b"", "empty-body"
+          if len(data) > _MAX_BYTES:
+              return b"", f"oversized-{len(data) // 1_000_000}MB"  # loud: the size, not a silent drop
+          # PASS THE URL'S OWN GUESS INTO THE SNIFFER. This argument was hard-coded to "" and that single empty string
+          # made the OLE2 support in _sniff_format dead code from the day it shipped: the 1997 compound-document container
+          # is shared by .xls, .doc and .ppt, so its magic identifies the CONTAINER and only the url's extension can name
+          # the payload — which is exactly why that branch ends `return url_guess if url_guess in (...) else ""`. Handed
+          # "", it returned "", the caller read that as "not a document", and every legacy workbook was rejected here with
+          # the very magic the branch tests for. The same emptiness disarms the PK-zip branch's own extension fallback.
+          # {LIVE 2026-08-10 five ledger urls re-fetched with the shipped code — vodafone financial-results .xls,
+          #  mb.cision.com/…/b314189899f16a52.xls, orkla quarterly-figures, group.ntt fy2018q1hosoku0807.xls — all five
+          #  returned "WRONG-MAGIC-B'\XD0\XCF\X11\XE0\XA1\XB1\X1A\XE1'", i.e. OLE2 recognised and then discarded}
+          # {DB 2026-08-10 event_media_urls "FAILED:FETCH-FAILED:DIRECT[WRONG-MAGIC-B'\XD0\XCF\… 54" — unchanged while
+          #  the redirect fix in the same deploy took its own bucket from 278 down to 230}
+          # [CONFIDENCE: CONFIRMED 100% — the two buckets moved differently under one deploy, and the five re-fetches
+          #  reproduce the rejection against the running code.]
+          fmt = _sniff_format(data, fmt_guess)
+          if not fmt:
+              return b"", f"wrong-magic-{data[:8]!r}"              # loud: got bytes but not a document (an HTML wall etc.)
+          return data, ""
     except Exception as e:                                       # noqa: BLE001 — loud: the exception type + message
         return b"", f"{type(e).__name__}:{str(e)[:80]}"
 
