@@ -191,6 +191,66 @@ def solve(profile: dict, n_hub: int, inc_pages: float, inc_calls: float, hit_rat
     }
 
 
+async def _respace_events(pool) -> int:
+    """Deal the stage-2 event queue by HOST — one row per host per round — and write only the positions that changed.
+
+    用一句话讲完: 同优先级的 18 万行现在是无序堆(next_retry_at 全是 NULL, 一律并列), 于是"哪一行先跑"由 planner
+    决定。这里给每一行算一个位置: 整数部分是"第几轮", 小数部分是稳定的 host 抖动 —— 第 1 轮每个 host 各出一张牌,
+    第 2 轮再来一遍。队头永远是 3,107 个不同 host 各一行。
+
+    WHY it exists: an unordered queue starves a re-queued row, and the only tool for un-starving it (enrich_priority)
+    manufactures head-of-line blocking. Both were measured hours apart on the same day —
+    {DB 2026-08-10 — 216 rows returned to 'discovered' at the default priority sat untouched across five samples over
+     ten minutes while the fleet ran at full rate}
+    {DB 2026-08-10 — 313 rows lifted to enrich_priority=8 put 39 in-flight events on ONE host (www.vodafone.com);
+     throughput fell 884 → 144 docs/h and recovered to 444 within minutes of capping the batch to 2 per host}
+    [CONFIDENCE: CONFIRMED 100% — both readings came from this database, and the second recovered when the clumping
+     was removed and nothing else changed.]
+
+    THE ARITHMETIC IS THE GUARANTEE, not a tunable. `slot` normalises each population onto the same 1..n_in_host ruler,
+    so round k contains one row from every host holding at least k rows; the biggest host is 1,661 of 183,589 rows, so
+    its density at the head is 1/3107. The same normalisation interleaves the two populations at their own local
+    ratio, which is why the backfill appears one row in 12.3 rather than as a block.
+
+    `WHERE ... IS DISTINCT FROM` is what keeps this cheap in steady state: the deal is stable while the host histogram
+    is stable, so after the first full pass only new rows and rows whose host's count moved are written. Without it
+    this would rewrite ~180k rows every tick and hand autovacuum the bill.
+
+    'rendering' is excluded — a row someone is holding must not have its position moved under it; it gets one on the
+    next tick after it lands. Returns rows repositioned."""
+    async with pool.acquire() as conn:
+        tag = await conn.execute(
+            """
+            WITH pool AS (
+                SELECT id,
+                       coalesce(substring(source_url from '://([^/]+)'), '') AS host,
+                       (status = 'partial')                                  AS is_backfill,
+                       created_at
+                FROM events
+                WHERE status IN ('discovered','failed','partial')
+            ), dealt AS (
+                SELECT id, host,
+                       row_number() OVER (PARTITION BY host, is_backfill ORDER BY created_at, id) AS seq_in_pop,
+                       count(*)     OVER (PARTITION BY host, is_backfill)                         AS n_in_pop,
+                       count(*)     OVER (PARTITION BY host)                                      AS n_in_host
+                FROM pool
+            )
+            UPDATE events e
+            SET queue_pos = (d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
+                            + (abs(hashtext(d.host)) % 1024) / 1024.0
+            FROM dealt d
+            WHERE e.id = d.id
+              AND e.queue_pos IS DISTINCT FROM
+                  ((d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
+                   + (abs(hashtext(d.host)) % 1024) / 1024.0);
+            """
+        )
+    try:
+        return int(tag.split()[-1]) if tag and tag.startswith("UPDATE") else 0
+    except (ValueError, IndexError):
+        return 0
+
+
 async def _respace_incremental(pool, t_star_s: float) -> int:
     """Spread all QUEUED incremental rows evenly across [now, now+T*] by rank → the fleet touches the hubs at a steady
     drip over the whole period instead of a burst, and full backfills the gaps. running rows are left alone (they re-arm
@@ -400,9 +460,12 @@ async def solve_and_apply(pool) -> dict:
     # controller was written and full never was; that asymmetry is why the weekly deadline was being missed at 70% of
     # the required rate while capacity sat idle. See _respace_full for the measurement.
     respaced_full = await _respace_full(pool, profile["week_hours"])
+    # Stage-2's queue gets the same treatment on the same tick — one controller, one cadence, so the two
+    # halves of the pipeline cannot drift into different ideas of what order work happens in.
+    respaced_ev = await _respace_events(pool)
     await _publish(pool, profile, sol, tp, n_hub, eta_full_h, note)
     sol["_note"], sol["_tp"], sol["_n_hub"], sol["_n_full"], sol["_eta_full_h"] = note, tp, n_hub, n_full, eta_full_h
-    sol["_respaced_full"] = respaced_full
+    sol["_respaced_full"], sol["_respaced_ev"] = respaced_full, respaced_ev
     # THE NUMBER THAT PROVES THE RATCHET WORKS. With the old sliding ladder this was structurally pinned at ~0 no matter
     # how far behind the lane ran, because every tick moved the deadlines out from under the deficit — so a healthy fleet
     # and a fleet missing its contract by a quarter printed the identical log line. Now an unmet full deadline survives
@@ -430,7 +493,7 @@ def _fmt(sol: dict) -> str:
             f"T_render={sol['t_render_h']:.2f}h T_vlm={sol['t_vlm_h']:.2f}h | "
             # full's own two numbers were missing from this line entirely: it printed incremental's respace count and
             # nothing at all about the lane whose weekly contract the whole solve exists to protect.
-            f"respaced={sol.get('_respaced', 0)}/{sol.get('_respaced_full', 0)}f "
+            f"respaced={sol.get('_respaced', 0)}/{sol.get('_respaced_full', 0)}f/{sol.get('_respaced_ev', 0)}ev "
             f"full_late={sol.get('_full_late', 0)} reaped={sol.get('_reaped', 0)} | {sol['_note']}")
 
 

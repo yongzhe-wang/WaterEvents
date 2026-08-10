@@ -253,9 +253,27 @@ async def claim_events(pool: asyncpg.Pool, limit: int = ENRICH_BATCH) -> list[as
                   AND NOT (jsonb_array_length(media_urls) = 1 AND media_urls->>0 = source_url)
                 -- enrich_priority first: a chosen batch (a test set, a customer's backlog) is pushed to the front
                 -- without disturbing anything else. Every row defaults to 0, so with no batch enqueued this orders
-                -- exactly as it did before. next_retry_at stays the tiebreaker so backed-off failures still sink
-                -- below fresh rows within the same priority. {MIGRATION 20260806025158 "ENRICH_PRIORITY"}
-                ORDER BY enrich_priority DESC, next_retry_at NULLS FIRST
+                -- exactly as it did before. {MIGRATION 20260806025158 "ENRICH_PRIORITY"}
+                --
+                -- THEN queue_pos, which replaces a tiebreaker that was not breaking anything. Every `discovered` row
+                -- has next_retry_at NULL, so all 168k of them tied at the front and the winner was whatever the
+                -- planner returned — an unordered heap wearing an ORDER BY. Two measured failures came out of that
+                -- single fact, in opposite directions:
+                --   {DB 2026-08-10 — 216 rows returned to 'discovered' sat untouched across five samples ten minutes
+                --    apart, while the fleet ran at full rate: a re-queued row is never reached}
+                --   {DB 2026-08-10 — the escape hatch, enrich_priority=8 on 313 rows, put 39 in-flight events on ONE
+                --    host and took throughput 884 → 144 docs/h: the only tool for un-starving manufactures clumping}
+                -- queue_pos deals the queue by host — round k holds one row per host with at least k rows — so the
+                -- head is 3,107 distinct hosts and the biggest host's density there is 1/3107. See migration
+                -- 20260810062000 and pacer.py::_respace_events for the arithmetic.
+                -- [CONFIDENCE: CONFIRMED 100% — both incidents measured on this database hours apart.]
+                --
+                -- `next_retry_at IS NOT NULL` is kept AHEAD of queue_pos to preserve exactly what NULLS FIRST bought:
+                -- a never-failed row still outranks a backed-off retry. Dropping it would let a retrying row with a
+                -- low position outrank fresh work, which is the anti-starvation property inverted.
+                -- NULLS LAST on queue_pos: a row the pacer has not positioned yet sinks below every positioned row
+                -- rather than jumping the queue, so a pacer outage delays new work instead of flooding the head.
+                ORDER BY enrich_priority DESC, (next_retry_at IS NOT NULL), queue_pos ASC NULLS LAST
                 FOR UPDATE SKIP LOCKED LIMIT $2
             )
             RETURNING id, claim_token, title, event_date, event_type, media_urls, pending_kinds;
