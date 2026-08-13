@@ -453,12 +453,18 @@ def _normalize_events(result: dict, tag_map: dict, source: str = "", page_url: s
             # exactly as the deleted fallback's comment warned.
             if not (date and title):
                 continue
-        # PLAUSIBILITY (injection defence layer (c)) — grounding proves the model COPIED from the page; it cannot prove
-        # the PAGE is honest, because a poisoner controls the grounding corpus too. So an event must ALSO survive a
-        # structural check that does not consult the page: a parseable date inside a sane year window, and a type inside
-        # the prompt's own enum. A forged "2099 acquisition" passes grounding and dies here.
-        # {PROMPTS.PY _FENCE_OPEN BLOCK "GROUNDING ANSWERS 'DID THE MODEL MAKE THIS UP?'; IT CANNOT ANSWER 'IS THE PAGE
-        #  LYING?'"} [CONFIDENCE: CONFIRMED 100% — structural validity is independent of attacker-controlled content].
+        # PLAUSIBILITY — grounding proves the model COPIED from the page; it cannot prove the PAGE is honest, because a
+        # poisoner controls the grounding corpus too. So an event must ALSO survive a structural check that does not
+        # consult the page: a parseable date inside a sane year window, and a type inside the prompt's own enum.
+        # A forged "2099 acquisition" passes grounding and dies here.
+        #
+        # ★ 这是 event_agent 这一侧现存的【唯一】注入缓解。原先还有两层 —— prompts.py 里的
+        # <<<UNTRUSTED_PAGE_CONTENT>>> 围栏, 以及进 prompt 前剥掉覆盖指令的 _INJECTION_RE ——
+        # 2026-08-13 按用户决定移除, 以让仓库与线上部署一致。
+        # {USER 2026-08-13 "i dont feel it is necessary for now, just delete that commit"}
+        # media_agent 一侧【不受影响】: handlers.py:203 的围栏与 media_agent/extract/prompts.py 的
+        # 对应段落仍在, 那是另一套独立实现。
+        # [CONFIDENCE: CONFIRMED 100% — 移除后逐一 grep 过残留符号, 并实际 import 验证过]
         # NORMALISE FIRST, THEN VALIDATE. The check below is structural, and it was rejecting dates that were merely
         # written in a human format: `2026-03-15T00:00:00`, `3/15/2026`, `July 15, 2026`. Validating a raw string means
         # the guard's real job (catch a forged 2099 date) gets conflated with a formatting complaint, and the event is
