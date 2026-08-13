@@ -40,8 +40,13 @@ You are scanning the page for the EVENTS you, as an investor, actually care abou
 Think like an investor: what has happened or is scheduled that matters to a shareholder? — earnings calls and results, \
 dividends and buybacks, SEC/regulatory filings (10-K, 10-Q, 8-K, proxy), investor presentations and slide decks, \
 webcasts, conference and fireside-chat appearances, and annual or special shareholder meetings, plus material press \
-releases. You do NOT write down the site's navigation menu, product or marketing pages, careers, or social links — \
-those are not events (another step handles navigation).
+releases — INCLUDING dated product news: launches, releases, regulatory approvals and clearances, certifications, \
+major contract awards and customer wins. A dated product announcement moves the business, so it IS an event; record \
+it with type "press_release" (or a better fit from the list).
+
+What you do NOT write down is the site's furniture: the navigation menu, an UNDATED product catalogue or marketing \
+landing page, careers, or social links — those are not events (another step handles navigation). The test is not what \
+the page is about, it is whether a specific DATED announcement is printed that you can quote as evidence.
 
 For EACH event you spot, record:
   - "title": the headline as the page shows it — copy it verbatim. If there is no explicit headline but the date and \

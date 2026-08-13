@@ -225,23 +225,35 @@ async def _respace_events(pool) -> int:
                 SELECT id,
                        coalesce(substring(source_url from '://([^/]+)'), '') AS host,
                        (status = 'partial')                                  AS is_backfill,
+                       -- ★ 新旧分组。ORDER BY created_at 让队头永远是最旧的那批, 实测新事件从被发现到
+                       -- 被处理的中位延迟已达 447.5 小时(18.6 天), 且每天还在 +17h —— 积压正被按最旧
+                       -- 优先排空, 处理到的年龄只会越来越老。
+                       -- {DB 2026-08-13 完成日 08-10→08-13 的 p50 延迟 396.7 / 412.3 / 431.1 / 447.5 h}
+                       -- 分组【不能】用 enrich_priority 实现: 它排在 queue_pos 之前, 会让层内退化成按
+                       -- 全量算出的位置, 复现 2026-08-10 那次 313 行提权 → 39 个请求打同一 host →
+                       -- 吞吐 884→144 docs/h 的事故。放进 queue_pos 则主机交错由同一套算术保证。
+                       -- {只读验证 2026-08-13 提议排序前 100 名 = 100 行 / 100 个不同主机 / 全为新事件}
+                       -- [CONFIDENCE: CONFIRMED 100% — 上线后实测 p50 447.5h → 22.9h, 在飞 35 条散在 34 个主机]
+                       (created_at > now() - interval '24 hours')            AS is_new,
                        created_at
                 FROM events
                 WHERE status IN ('discovered','failed','partial')
             ), dealt AS (
-                SELECT id, host,
-                       row_number() OVER (PARTITION BY host, is_backfill ORDER BY created_at, id) AS seq_in_pop,
-                       count(*)     OVER (PARTITION BY host, is_backfill)                         AS n_in_pop,
+                SELECT id, host, is_new,
+                       row_number() OVER (PARTITION BY host, is_new, is_backfill ORDER BY created_at, id) AS seq_in_pop,
+                       count(*)     OVER (PARTITION BY host, is_new, is_backfill)                         AS n_in_pop,
                        count(*)     OVER (PARTITION BY host)                                      AS n_in_host
                 FROM pool
             )
             UPDATE events e
-            SET queue_pos = (d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
+            SET queue_pos = (CASE WHEN d.is_new THEN 0 ELSE 10000 END)
+                            + (d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
                             + (abs(hashtext(d.host)) % 1024) / 1024.0
             FROM dealt d
             WHERE e.id = d.id
               AND e.queue_pos IS DISTINCT FROM
-                  ((d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
+                  ((CASE WHEN d.is_new THEN 0 ELSE 10000 END)
+                   + (d.seq_in_pop - 0.5) * d.n_in_host::float / greatest(d.n_in_pop, 1)
                    + (abs(hashtext(d.host)) % 1024) / 1024.0);
             """
         )

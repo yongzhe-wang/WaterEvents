@@ -36,7 +36,7 @@ import asyncpg
 # for a title-less event. The url-only `_dedup_key` that used to live here was deleted 2026-07-28 — it had zero callers
 # and described a scheme the data has not used since the title+date key landed.
 # {GIT GREP 2026-07-28 "_dedup_key → only its own def plus one stale migration comment; the live path is _event_key"}
-from .urls import _event_key
+from .urls import _canon, _event_key, _norm_date
 
 # The Supavisor transaction-mode pooler DSN (port 6543), from env so no secret is hard-coded. The worker NEVER opens a
 # session-mode direct connection at 2000-company scale. {RESEARCH "全部走 Supavisor transaction-mode pooler ... 防连接耗尽"}.
@@ -101,9 +101,48 @@ async def flush_events(pool: asyncpg.Pool, company_id, run_id: str, events: list
         batch = events[i:i + FLUSH_BATCH]
         keys, titles, dates, types, medias, srcs = [], [], [], [], [], []
         seen_in_batch = set()                                # ON CONFLICT can't catch dups WITHIN one INSERT → dedup here
+        # ★ 两条身份路径, 任一命中即同一条事件: (标题+日期) 或 (url+日期)。
+        #
+        # WHY 两条: 单键的两种形态都试过, 各挡不住一半 —— 实测 10,217 个重复组里
+        #   6,269 组(61%)组内 url 完全相同 → 重复是因为【标题】在两轮抽取里不一样
+        #   3,941 组(39%)组内 url 不同     → 重复是因为【url】不一样, 标题反而一致
+        # title|date 挡不住前者, date|url 挡不住后者, 两者互补。
+        # {psql 2026-08-13 重复组 10,217 = url全同 6,269 + url不同 3,941 + 全无url 7}
+        # {USER 2026-07-25 "lots of dup events ... dedup by url missed same-event-different-url" —— 当年退回
+        #  title 键的原因; 那次的失败模式正是这里的 39% 那一半}
+        # [CONFIDENCE: CONFIRMED 100% — 两个数字由同一条 SQL 在生产库分组算出; 功能测试: 改写标题+同 url
+        #  重写一次, 行数 1088 → 1088 未新增]
+        #
+        # 注意这条规则只适用于【插入时】: 两端来自同一次抽取, 上下文一致。它【不能】用作回溯批量合并 ——
+        # 回溯时任何两条挂了同一个落地页的事件都长得一样, 抽样显示即使"两条都只有 1 个 url 且相同"
+        # 也有约一半是误判(Signet 2018 Proxy Statements vs Signet 2018 Annual Report 共享同一链接)。
+        # {psql 2026-08-13 严格规则命中 11,098 对, 抽样 8 对中约半数非重复}
+        #
+        # 实现是【插入前解析键】而非加第二个唯一约束: 一条 INSERT 只能有一个 ON CONFLICT 目标,
+        # 两个约束会让第二种冲突报错而不是合并。宽批 INSERT 的 5x 形态一行未动, 每批只多一次 SELECT。
+        # 不加 media_urls 的 GIN 索引: company_id 先收窄到每家约 43 行, 扫这点行更便宜。
+        prepared = []                                        # (title_key, date, urls, event) —— 先算, 解析完再定最终键
         for e in batch:
-            k = _event_key(e.get("title"), e.get("date"), e.get("urls") or [])   # (title+date) identity, url fallback for title-less
-            if not k or k in seen_in_batch:                  # an event with no key shouldn't exist (extract drops url-less), skip defensively
+            tk = _event_key(e.get("title"), e.get("date"), e.get("urls") or [])
+            if not tk:
+                continue
+            prepared.append((tk, _norm_date(e.get("date") or ""), [_canon(u) for u in (e.get("urls") or [])], e))
+        url_hit: dict[tuple[str, str], str] = {}
+        if prepared:
+            all_dates = sorted({d for _, d, _, _ in prepared if d})
+            all_urls = sorted({u for _, _, us, _ in prepared for u in us})
+            if all_dates and all_urls:
+                async with pool.acquire() as conn:
+                    for r in await conn.fetch(
+                        """SELECT dedup_key, event_date, media_urls FROM events
+                           WHERE company_id = $1 AND event_date = ANY($2::text[]) AND media_urls ?| $3::text[]""",
+                        company_id, all_dates, all_urls):
+                        mu = r["media_urls"]
+                        for u in (json.loads(mu) if isinstance(mu, str) else mu) or []:
+                            url_hit.setdefault((r["event_date"] or "", _canon(u)), r["dedup_key"])
+        for tk, d, us, e in prepared:
+            k = next((url_hit[(d, u)] for u in us if (d, u) in url_hit), tk)   # url 那一路命中就沿用既有键
+            if k in seen_in_batch:
                 continue
             seen_in_batch.add(k)
             keys.append(k)
